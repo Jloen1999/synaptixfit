@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../../domain/enums/data_topic.dart';
 import '../../../../../domain/errors/app_error.dart';
+import '../../../../../domain/models/training/check_in_answers.dart';
 import '../../../../../domain/models/training/today_adaptation.dart';
 import '../../../../../domain/use_cases/training/get_today_adaptation_use_case.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
@@ -37,12 +38,47 @@ class QuickCheckInBloc extends Bloc<QuickCheckInEvent, QuickCheckInState>
       if (state.sending || state.editing) return;
       await _load(emit);
     });
-    on<QuickCheckInEditRequested>(
-      (_, emit) =>
-          emit(state.copyWith(editing: true, justSent: false, error: null)),
-    );
+    on<QuickCheckInEditRequested>((_, emit) {
+      // Al cambiar, se parte de lo que ya se contestó hoy.
+      final today = state.adaptation?.todayAnswers;
+      emit(
+        state.copyWith(
+          editing: true,
+          justSent: false,
+          error: null,
+          answers: today == null
+              ? const CheckInAnswers()
+              : CheckInAnswers.all(
+                  sleep: today.sleepQuality,
+                  energy: today.energy,
+                  soreness: today.soreness,
+                ),
+        ),
+      );
+    });
+    on<QuickCheckInAnswered>((e, emit) {
+      final answers = state.answers.withAnswer(e.question, e.value);
+      final saves =
+          answers.complete &&
+          CheckInAnswers.savesOnLastAnswer(
+            loggedToday: state.editing,
+            withDetails: false,
+          );
+      emit(
+        state.copyWith(
+          answers: answers,
+          saveRequest: saves ? state.saveRequest + 1 : state.saveRequest,
+        ),
+      );
+    });
     on<QuickCheckInEditCancelled>(
-      (_, emit) => emit(state.copyWith(editing: false, error: null)),
+      (_, emit) => emit(
+        state.copyWith(
+          editing: false,
+          error: null,
+          answers: const CheckInAnswers(),
+        ),
+      ),
     );
     on<QuickCheckInSubmitted>((event, emit) async {
       if (state.sending) return;
@@ -52,7 +88,14 @@ class QuickCheckInBloc extends Bloc<QuickCheckInEvent, QuickCheckInState>
         emit(state.copyWith(sending: false, error: error));
         return;
       }
-      emit(state.copyWith(sending: false, editing: false, justSent: true));
+      emit(
+        state.copyWith(
+          sending: false,
+          editing: false,
+          justSent: true,
+          answers: const CheckInAnswers(),
+        ),
+      );
       await _load(emit);
     });
   }

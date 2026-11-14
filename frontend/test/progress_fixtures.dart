@@ -73,6 +73,7 @@ final testOverview = ProgressOverview(
 
 final testWeekly = WeeklyAnalytics(
   period: AnalyticsPeriod.monthly,
+  currentWeekStart: DateTime(2026, 10, 5),
   weeks: [
     WeekMetric(
       weekStart: DateTime(2026, 10, 5),

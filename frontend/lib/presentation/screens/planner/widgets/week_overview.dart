@@ -240,7 +240,9 @@ class BalanceStateChip extends StatelessWidget {
   );
 }
 
-/// Entregas y exámenes de la semana como chips desplazables.
+/// Entregas y exámenes de la semana como chips desplazables. Cada chip abre su
+/// entrega (la lista entera ya está en el atajo «Entregas y exámenes»: un
+/// camino por destino).
 class WeekDeadlinesStrip extends StatelessWidget {
   const WeekDeadlinesStrip({
     super.key,
@@ -249,7 +251,9 @@ class WeekDeadlinesStrip extends StatelessWidget {
   });
 
   final List<TimelineEntry> deadlines;
-  final VoidCallback onTap;
+
+  /// Abre la entrega tocada (su id).
+  final ValueChanged<String> onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +277,7 @@ class WeekDeadlinesStrip extends StatelessWidget {
             label: Text(
               '${PlannerFormats.dayShort(d.start)} · ${d.title ?? type?.label(context) ?? ''}',
             ),
-            onPressed: onTap,
+            onPressed: () => onTap(d.id),
           );
         },
       ),

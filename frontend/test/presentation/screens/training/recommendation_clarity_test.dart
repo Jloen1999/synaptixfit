@@ -75,7 +75,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Peso: 40 → 42 kg'), findsOneWidget);
       expect(find.text('Repeticiones: 12 → 8'), findsOneWidget);
-      expect(find.textContaining('RPE 6 de 10'), findsOneWidget);
+      expect(find.textContaining('moderado (6 de 10)'), findsOneWidget);
       expect(find.textContaining('próxima vez que hagas este día'), findsOne);
       expect(find.textContaining('la quita y tu rutina sigue igual'), findsOne);
       expect(find.text('Ahora no'), findsOneWidget);

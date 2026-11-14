@@ -42,11 +42,11 @@ void main() {
     test('WEEKS usa el plural ICU de las semanas', () {
       expect(
         message(InsightType.streak, 'WEEKS', {'days': 8, 'weeks': 1}),
-        contains('(alrededor de una semana)'),
+        contains('(una semana)'),
       );
       expect(
         message(InsightType.streak, 'WEEKS', {'days': 21, 'weeks': 3}),
-        contains('unas 3 semanas'),
+        contains('(3 semanas)'),
       );
     });
 
@@ -69,7 +69,7 @@ void main() {
     test('BUILDING con 1 semana usa el singular', () {
       expect(
         message(InsightType.consistency, 'BUILDING', {'weeks': 1}),
-        startsWith('1 semana consecutiva'),
+        startsWith('1 semana seguida'),
       );
     });
 
@@ -89,7 +89,7 @@ void main() {
         'weeks': 4,
         'averageHoursPerWeek': 1.9,
       });
-      expect(text, contains('últimas 4 semanas'));
+      expect(text, contains('En 4 semanas'));
       expect(text, contains('7,5 h'));
       expect(text, contains('1,9 h por semana'));
     });
@@ -101,7 +101,7 @@ void main() {
           'weeks': 1,
           'averageHoursPerWeek': 2,
         }),
-        startsWith('Esta semana acumulaste 2 h'),
+        startsWith('Esta semana: 2 h'),
       );
     });
 

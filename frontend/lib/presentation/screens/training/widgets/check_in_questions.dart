@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../domain/models/training/check_in_answers.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../theme/tokens.g.dart';
@@ -10,67 +11,58 @@ import '../../../theme/tokens.g.dart';
 /// detalles opcionales.
 ///
 /// Todas las respuestas van en el mismo sentido: **a la derecha, lo mejor**
-/// («Mal · Regular · Bien», «Muchas · Algo · Nada»). Solo cambia el orden en
-/// pantalla: el servidor sigue guardando las escalas 1-5 de siempre (en
-/// agujetas, 5 = muchas), así no cambian las fórmulas de fatiga ni de energía.
+/// («Mal · Regular · Bien», «Muchas · Algo · Nada»). El sentido de cada escala
+/// lo da el dominio ([CheckInScale]): el servidor sigue guardando las escalas
+/// 1-5 de siempre, así no cambian las fórmulas de fatiga ni de energía.
 class CheckInQuestions extends StatelessWidget {
   const CheckInQuestions({
     super.key,
-    required this.sleep,
-    required this.energy,
-    required this.soreness,
-    required this.onSleep,
-    required this.onEnergy,
-    required this.onSoreness,
+    required this.answers,
+    required this.onAnswer,
   });
 
-  /// Valores 1-5 del servidor (nulo: sin contestar).
-  final int? sleep;
-  final int? energy;
-  final int? soreness;
-  final ValueChanged<int> onSleep;
-  final ValueChanged<int> onEnergy;
-  final ValueChanged<int> onSoreness;
+  /// Lo contestado hasta ahora (valores 1-5 del servidor).
+  final CheckInAnswers answers;
+  final void Function(CheckInQuestion question, int value) onAnswer;
 
-  /// Valor que se guarda con cada respuesta: los extremos y el centro de la
-  /// escala 1-5.
-  static const bad = 1;
-  static const mid = 3;
-  static const good = 5;
-
-  /// Respuesta que se marca para un valor de la escala 1-5 (un registro
-  /// antiguo puede traer un 2 o un 4: se marca la más cercana).
-  static int? snap(int? value) => switch (value) {
-    null => null,
-    <= 2 => bad,
-    3 => mid,
-    _ => good,
+  static String title(AppLocalizations l10n, CheckInQuestion q) => switch (q) {
+    CheckInQuestion.sleep => l10n.trainingQuickSleep,
+    CheckInQuestion.energy => l10n.trainingQuickEnergy,
+    CheckInQuestion.soreness => l10n.trainingQuickSoreness,
   };
 
-  /// Las tres respuestas de cada pregunta, de peor a mejor (izquierda a
-  /// derecha). En agujetas, «Nada» es lo mejor y se guarda como 1.
-  static List<(int, String)> sleepOptions(AppLocalizations l10n) => [
-    (bad, l10n.trainingQuickBad),
-    (mid, l10n.trainingQuickSoSo),
-    (good, l10n.trainingQuickGood),
-  ];
+  /// Palabras de peor a mejor de cada pregunta (izquierda a derecha).
+  static List<String> _words(AppLocalizations l10n, CheckInQuestion q) =>
+      switch (q) {
+        CheckInQuestion.sleep => [
+          l10n.trainingQuickBad,
+          l10n.trainingQuickSoSo,
+          l10n.trainingQuickGood,
+        ],
+        CheckInQuestion.energy => [
+          l10n.trainingQuickLow,
+          l10n.trainingQuickMid,
+          l10n.trainingQuickHigh,
+        ],
+        CheckInQuestion.soreness => [
+          l10n.trainingQuickSoreLot,
+          l10n.trainingQuickSoreSome,
+          l10n.trainingQuickSoreNone,
+        ],
+      };
 
-  static List<(int, String)> energyOptions(AppLocalizations l10n) => [
-    (bad, l10n.trainingQuickLow),
-    (mid, l10n.trainingQuickMid),
-    (good, l10n.trainingQuickHigh),
-  ];
-
-  static List<(int, String)> sorenessOptions(AppLocalizations l10n) => [
-    (good, l10n.trainingQuickSoreLot),
-    (mid, l10n.trainingQuickSoreSome),
-    (bad, l10n.trainingQuickSoreNone),
-  ];
+  /// Las tres respuestas de una pregunta: (valor que se guarda, palabra), de
+  /// peor a mejor según el sentido de su escala.
+  static List<(int, String)> options(AppLocalizations l10n, CheckInQuestion q) {
+    final words = _words(l10n, q);
+    final values = q.scale.threeWorstToBest;
+    return [for (var i = 0; i < values.length; i++) (values[i], words[i])];
+  }
 
   /// La respuesta en palabras de un valor guardado (historial).
-  static String answer(List<(int, String)> options, int value) {
-    final snapped = snap(value);
-    return options.firstWhere((o) => o.$1 == snapped).$2;
+  static String answer(AppLocalizations l10n, CheckInQuestion q, int value) {
+    final snapped = CheckInScale.snap(value);
+    return options(l10n, q).firstWhere((o) => o.$1 == snapped).$2;
   }
 
   @override
@@ -79,25 +71,13 @@ class CheckInQuestions extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Question(
-          label: l10n.trainingQuickSleep,
-          options: sleepOptions(l10n),
-          value: snap(sleep),
-          onChanged: onSleep,
-        ),
-        _Question(
-          label: l10n.trainingQuickEnergy,
-          options: energyOptions(l10n),
-          value: snap(energy),
-          onChanged: onEnergy,
-        ),
-        _Question(
-          label: l10n.trainingQuickSoreness,
-          options: sorenessOptions(l10n),
-          // En agujetas el 1 es «Nada» y el 5 «Muchas»: el centro no cambia.
-          value: snap(soreness),
-          onChanged: onSoreness,
-        ),
+        for (final q in CheckInQuestion.values)
+          _Question(
+            label: title(l10n, q),
+            options: options(l10n, q),
+            value: CheckInScale.snap(answers[q]),
+            onChanged: (v) => onAnswer(q, v),
+          ),
       ],
     );
   }

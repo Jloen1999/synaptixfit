@@ -336,9 +336,10 @@ class _Content extends StatelessWidget {
                   ),
                 ),
               ] else ...[
+                // Información, no un fallo: tono neutro (antes, de aviso).
                 AppInlineMessage(
                   message: l10n.runDesktopExplain,
-                  tone: AppMessageTone.warning,
+                  tone: AppMessageTone.info,
                 ),
                 const SizedBox(height: TokensSpacing.s),
                 AppPrimaryButton(

@@ -6,15 +6,14 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import 'chart_card.dart';
 
-/// «Tu estudio»: cómo va la semana académica (concentración, bloques de estudio
-/// hechos, repasos y aciertos en simulacros). Es el equivalente del resumen de
-/// entrenamiento para quien estudia.
+/// «Tu estudio»: cómo va la semana académica (concentración, estudios del
+/// calendario hechos, repasos y aciertos en simulacros). Va en «Ver más» de
+/// Progreso; «Repasar ahora» está arriba, en lo que sigue.
 class StudyWeekCard extends StatelessWidget {
   const StudyWeekCard({
     super.key,
     required this.week,
     required this.onFocus,
-    required this.onReview,
     required this.onRetry,
   });
 
@@ -23,9 +22,6 @@ class StudyWeekCard extends StatelessWidget {
 
   /// Abre el Pomodoro (acción del estado vacío).
   final VoidCallback onFocus;
-
-  /// Lleva a los repasos pendientes.
-  final VoidCallback onReview;
 
   /// Vuelve a cargar Progreso tras un error.
   final VoidCallback onRetry;
@@ -75,16 +71,6 @@ class StudyWeekCard extends StatelessWidget {
     return ChartCard(
       title: l10n.progressStudyTitle,
       subtitle: l10n.progressStudySubtitle,
-      footer: data.reviewsDue > 0
-          ? Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(
-                onPressed: onReview,
-                icon: const Icon(Icons.replay_rounded),
-                label: Text(l10n.progressStudyReviewNow(data.reviewsDue)),
-              ),
-            )
-          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -110,6 +96,7 @@ class StudyWeekCard extends StatelessWidget {
                 bare: true,
                 icon: Icons.event_available_rounded,
                 color: study,
+                // «6 de 8 hechos» ya lo dice todo: sin porcentaje aparte.
                 value: data.studyBlocksPlanned == 0
                     ? l10n.progressStudyNoPlan
                     : l10n.progressStudyBlocksDone(
@@ -117,9 +104,6 @@ class StudyWeekCard extends StatelessWidget {
                         data.studyBlocksPlanned,
                       ),
                 label: l10n.progressStudyBlocksLabel,
-                detail: data.planAdherence == null
-                    ? null
-                    : l10n.progressStudyAdherence(data.planAdherence!),
               ),
               AppMetricTile(
                 bare: true,
@@ -169,26 +153,33 @@ class _GoalProgress extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          // Wrap: al 200 % «Objetivo cumplido» baja de línea sin desbordar.
+          Wrap(
+            spacing: TokensSpacing.s,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  l10n.progressStudyGoal(hours, goal),
-                  style: context.textStyles.titleSmall,
-                ),
+              Text(
+                l10n.progressStudyGoal(hours, goal),
+                style: context.textStyles.titleSmall,
               ),
-              if (reached) ...[
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: color,
-                  size: TokensSize.iconS,
+              if (reached)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: color,
+                      size: TokensSize.iconS,
+                    ),
+                    const SizedBox(width: TokensSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        l10n.progressStudyGoalReached,
+                        style: context.textStyles.labelLarge,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: TokensSpacing.xs),
-                Text(
-                  l10n.progressStudyGoalReached,
-                  style: context.textStyles.labelLarge,
-                ),
-              ],
             ],
           ),
           const SizedBox(height: TokensSpacing.xs),

@@ -156,7 +156,7 @@ class _RecommendationCardState extends State<RecommendationCard> {
                 onPressed: widget.busy ? null : widget.onDiscard,
                 child: Text(l10n.trainingNotNow),
               ),
-              AppPrimaryButton(
+              AppSecondaryButton(
                 label: l10n.trainingApply,
                 loading: widget.busy,
                 onPressed: widget.onApply,

@@ -303,7 +303,7 @@ void main() {
       // Con la cifra de lo hecho: no se pierde nada.
       expect(
         find.text(
-          'No pierdes nada: la serie que has marcado ya está guardada.',
+          'La serie marcada ya está guardada.',
         ),
         findsOneWidget,
       );
@@ -385,23 +385,24 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('el descanso se ve en grande con −15 s, +15 s y Saltar descanso', (
-      tester,
-    ) async {
-      when(() => bloc.state).thenReturn(ready(rest: 75));
-      await pump(
-        tester,
-        const LiveSessionPage(sessionId: 's1'),
-        textScale: 2,
-        height: 640,
-      );
-      expect(tester.takeException(), isNull);
-      expect(find.text('1:15'), findsOneWidget);
-      expect(find.text('−15 s'), findsOneWidget);
-      expect(find.text('+15 s'), findsOneWidget);
-      expect(find.text('Saltar descanso'), findsOneWidget);
-      await tester.pumpWidget(const SizedBox());
-    });
+    testWidgets(
+      'el descanso se ve en grande con −15 s, +15 s y Saltar descanso',
+      (tester) async {
+        when(() => bloc.state).thenReturn(ready(rest: 75));
+        await pump(
+          tester,
+          const LiveSessionPage(sessionId: 's1'),
+          textScale: 2,
+          height: 640,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('1:15'), findsOneWidget);
+        expect(find.text('−15 s'), findsOneWidget);
+        expect(find.text('+15 s'), findsOneWidget);
+        expect(find.text('Saltar descanso'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
 
     testWidgets('«Deshacer» va en el panel del descanso y desmarca esa serie', (
       tester,
@@ -413,9 +414,7 @@ void main() {
       expect(find.text('Serie 1 registrada'), findsOneWidget);
       await tester.tap(find.text('Deshacer'));
       await tester.pump();
-      verify(
-        () => bloc.add(const LiveSessionEvent.setDeleted('x1')),
-      ).called(1);
+      verify(() => bloc.add(const LiveSessionEvent.setDeleted('x1'))).called(1);
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -428,9 +427,7 @@ void main() {
       await tester.ensureVisible(check);
       await tester.tap(check);
       await tester.pump();
-      verify(
-        () => bloc.add(const LiveSessionEvent.setDeleted('x1')),
-      ).called(1);
+      verify(() => bloc.add(const LiveSessionEvent.setDeleted('x1'))).called(1);
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('Serie 1 desmarcada'), findsOneWidget);
       expect(find.text('Deshacer'), findsOneWidget);
@@ -456,10 +453,10 @@ void main() {
       expect(find.textContaining('faltaron'), findsNothing);
       // «Hasta no poder más» en una línea; su explicación, solo con «?».
       expect(find.text('Hasta no poder más'), findsOneWidget);
-      expect(find.textContaining('ni una repetición más'), findsNothing);
+      expect(find.textContaining('ni una más'), findsNothing);
       await tester.tap(find.byTooltip('Qué es «Hasta no poder más»'));
       await tester.pump();
-      expect(find.textContaining('ni una repetición más'), findsOneWidget);
+      expect(find.textContaining('ni una más'), findsOneWidget);
       // «Desmarcar serie»: gris, sin papelera.
       expect(find.text('Desmarcar serie'), findsOneWidget);
       expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);

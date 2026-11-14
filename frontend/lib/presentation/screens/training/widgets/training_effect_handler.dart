@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../mixins/errors_message_mixin.dart';
+import '../../../theme/tokens.g.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../training_effect.dart';
 import '../training_routes.dart';
@@ -13,12 +14,12 @@ import '../training_routes.dart';
 class TrainingEffectHandler with ErrorsMessageMixin {
   const TrainingEffectHandler();
 
-  /// [onUnskipDay]: «Recuperar» del aviso de día saltado cuando ya se está
-  /// en la rutina.
+  /// [onUnskipDay]: «Deshacer» del aviso de día saltado (saltar no se
+  /// confirma: es reversible). Sin él, el aviso dice dónde recuperarlo.
   void handle(
     BuildContext context,
     TrainingEffect effect, {
-    ValueChanged<String>? onUnskipDay,
+    void Function(String routineId, String dayId)? onUnskipDay,
   }) {
     final l10n = context.localizations;
     switch (effect) {
@@ -46,24 +47,17 @@ class TrainingEffectHandler with ErrorsMessageMixin {
           TrainingPaths.sessionCompleted(result.session.id),
           extra: result,
         );
-      case TrainingEffectDaySkipped(
-        :final routineId,
-        :final dayId,
-        :final inRoutine,
-      ):
-        // Nunca «se puede recuperar» sin decir dónde (vocabulario.md).
-        if (inRoutine && onUnskipDay != null) {
+      case TrainingEffectDaySkipped(:final routineId, :final dayId):
+        // Reversible: aviso con «Deshacer» durante la ventana de deshacer.
+        if (onUnskipDay != null) {
           context.showActionSnack(
             l10n.trainingDaySkippedHere,
-            actionLabel: l10n.trainingUnskipDay,
-            onAction: () => onUnskipDay(dayId),
+            actionLabel: l10n.commonUndo,
+            onAction: () => onUnskipDay(routineId, dayId),
+            duration: TokensDuration.undoWindow,
           );
         } else {
-          context.showActionSnack(
-            l10n.trainingDaySkippedWhere,
-            actionLabel: l10n.trainingSeeRoutine,
-            onAction: () => context.push(TrainingPaths.routine(routineId)),
-          );
+          context.showSnack(l10n.trainingDaySkipped);
         }
       case TrainingEffectClose():
         if (context.canPop()) {
@@ -92,7 +86,6 @@ class TrainingEffectHandler with ErrorsMessageMixin {
     TrainingMessage.checkInSaved => l10n.trainingMsgCheckInSaved,
     TrainingMessage.planSaved => l10n.trainingMsgPlanSaved,
     TrainingMessage.planDeleted => l10n.trainingMsgPlanDeleted,
-    TrainingMessage.sessionUnmarked => l10n.trainingMsgSessionUnmarked,
     TrainingMessage.sessionAbandoned => l10n.trainingMsgSessionAbandoned,
     TrainingMessage.setSaved => l10n.trainingMsgSetSaved,
     TrainingMessage.sessionShared => l10n.trainingMsgSessionShared,

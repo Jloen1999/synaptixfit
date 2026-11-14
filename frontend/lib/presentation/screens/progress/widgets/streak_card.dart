@@ -6,7 +6,8 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import 'progress_labels.dart';
 
-/// Racha diaria: días actuales, récord, hitos y aviso de riesgo.
+/// Detalle de la racha (en «Ver más» de Progreso): días, récord, días libres
+/// e hitos. El resumen de una línea lo da `WeekHeadlineCard`.
 class StreakCard extends StatelessWidget {
   const StreakCard({super.key, required this.streak});
 
@@ -26,16 +27,17 @@ class StreakCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(TokensSpacing.s),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
+                  color: color.withValues(alpha: AppPill.tintAlpha),
                   borderRadius: BorderRadius.circular(TokensRadius.m),
                 ),
                 child: Icon(
                   Icons.local_fire_department_rounded,
                   color: color,
-                  size: 28,
+                  size: TokensSize.iconM,
                 ),
               ),
               const SizedBox(width: TokensSpacing.m),
+              // Todo en una columna: con el texto al 200 % nada se aplasta.
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,62 +52,57 @@ class StreakCard extends StatelessWidget {
                       l10n.progressStreakDays(streak.currentDays),
                       style: context.textStyles.headlineSmall,
                     ),
+                    Text(
+                      l10n.progressStreakBest(streak.bestDays),
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                    if (streak.activeToday)
+                      _StatusChip(
+                        icon: Icons.check_circle_rounded,
+                        label: l10n.progressStreakActiveToday,
+                        color: context.palette.success,
+                      ),
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (streak.activeToday)
-                    _StatusChip(
-                      icon: Icons.check_circle_rounded,
-                      label: l10n.progressStreakActiveToday,
-                      color: context.palette.success,
-                    ),
-                  const SizedBox(height: TokensSpacing.xs),
-                  Text(
-                    l10n.progressStreakBest(streak.bestDays),
-                    style: context.textStyles.labelMedium?.copyWith(
+            ],
+          ),
+          // Días libres (comodines en el servidor): cuántos quedan y, si alguno
+          // salvó la racha, cuándo. El aviso de riesgo va en el titular.
+          const SizedBox(height: TokensSpacing.m),
+          AppHelpToggle(
+            help: l10n.progressStreakFreezesHelp,
+            tooltip: l10n.commonHelpAbout(l10n.progressStreakFreezesAbout),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExcludeSemantics(
+                  child: Icon(
+                    Icons.ac_unit_rounded,
+                    color: streak.freezesAvailable > 0
+                        ? context.colors.tertiary
+                        : context.colors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(
+                  child: Text(
+                    [
+                      l10n.progressStreakFreezes(streak.freezesAvailable),
+                      if (streak.frozenDays.isNotEmpty)
+                        l10n.progressStreakFrozen(
+                          ProgressFormat.date(streak.frozenDays.last),
+                        ),
+                    ].join(' '),
+                    style: context.textStyles.bodySmall?.copyWith(
                       color: context.colors.onSurfaceVariant,
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
-          if (streak.atRisk) ...[
-            const SizedBox(height: TokensSpacing.m),
-            _RiskBanner(message: l10n.progressStreakAtRisk),
-          ],
-          // Comodines: cuántos quedan y, si alguno salvó la racha, cuándo.
-          const SizedBox(height: TokensSpacing.m),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ExcludeSemantics(
-                child: Icon(
-                  Icons.ac_unit_rounded,
-                  color: streak.freezesAvailable > 0
-                      ? context.colors.tertiary
-                      : context.colors.onSurfaceVariant,
                 ),
-              ),
-              const SizedBox(width: TokensSpacing.s),
-              Expanded(
-                child: Text(
-                  [
-                    l10n.progressStreakFreezes(streak.freezesAvailable),
-                    if (streak.frozenDays.isNotEmpty)
-                      l10n.progressStreakFrozen(
-                        ProgressFormat.date(streak.frozenDays.last),
-                      ),
-                  ].join(' '),
-                  style: context.textStyles.bodySmall?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: TokensSpacing.m),
           if (next != null) ...[
@@ -139,9 +136,8 @@ class StreakCard extends StatelessWidget {
                 Expanded(
                   child: _MilestoneChip(
                     days: milestone,
-                    reached:
-                        streak.reachedMilestones.contains(milestone) ||
-                        streak.bestDays >= milestone,
+                    // Lo decide el servidor (`StreakStatus`): sin reglas aquí.
+                    reached: streak.reachedMilestones.contains(milestone),
                   ),
                 ),
                 if (milestone != Streak.milestones.last)
@@ -190,7 +186,7 @@ class _MilestoneChip extends StatelessWidget {
           children: [
             Icon(
               reached ? Icons.check_rounded : Icons.flag_outlined,
-              size: 16,
+              size: TokensSize.iconXs,
               color: color,
             ),
             const SizedBox(width: TokensSpacing.xxs),
@@ -224,40 +220,13 @@ class _StatusChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: color),
+        Icon(icon, size: TokensSize.iconXs, color: color),
         const SizedBox(width: TokensSpacing.xxs),
         Text(
           label,
           style: context.textStyles.labelMedium?.copyWith(color: color),
         ),
       ],
-    );
-  }
-}
-
-class _RiskBanner extends StatelessWidget {
-  const _RiskBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final warning = context.palette.warning;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(TokensSpacing.s),
-      decoration: BoxDecoration(
-        color: warning.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(TokensRadius.m),
-        border: Border.all(color: warning.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: warning),
-          const SizedBox(width: TokensSpacing.s),
-          Expanded(child: Text(message, style: context.textStyles.bodyMedium)),
-        ],
-      ),
     );
   }
 }

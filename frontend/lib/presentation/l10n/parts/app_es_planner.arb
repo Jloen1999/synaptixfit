@@ -1,7 +1,6 @@
 {
   "@@locale": "es",
   "plannerTitle": "Calendario",
-  "plannerCalendarTitle": "Calendario semanal",
   "plannerPrevWeek": "Semana anterior",
   "plannerNextWeek": "Semana siguiente",
   "plannerToday": "Hoy",
@@ -26,7 +25,7 @@
   },
   "plannerBlockCompleted": "Marcado como hecho",
   "plannerBlockUncompleted": "Desmarcado",
-  "plannerOverlapWarning": "{count, plural, =1{Ojo: a esta hora ya tienes otro evento} other{Ojo: a esta hora ya tienes {count} eventos}}",
+  "plannerOverlapWarning": "{count, plural, =1{Ya tienes otro evento a esta hora} other{Ya tienes {count} eventos a esta hora}}",
   "@plannerOverlapWarning": {
     "placeholders": {
       "count": {
@@ -57,13 +56,12 @@
       }
     }
   },
-  "plannerConflictsHint": "Son eventos que ocupan la misma hora, así que no podrás hacer los dos. Toca uno para cambiarlo de hora o borrarlo.",
-  "plannerDeadlinesThisWeek": "Entregas de la semana",
+  "plannerConflictsHint": "Coinciden en la hora. Toca uno para moverlo o borrarlo.",
   "plannerMenuDeadlines": "Entregas y exámenes",
   "plannerMenuSuggestions": "Sugerir un plan",
   "plannerMenuScheduleImport": "Importar o exportar horario",
   "plannerMoreOptions": "Más opciones",
-  "plannerReminderLine": "{type, select, STUDY{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} REVIEW{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} SPORT{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} PERSONAL{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} CLASS{Si tienes activado el aviso de clases en «Más avisos», te avisaremos poco antes de empezar.} EXAM{Te avisaremos del examen los días antes que elegiste en «Más avisos».} DELIVERY{Te avisaremos de la entrega los días antes que elegiste en «Más avisos».} other{Este tipo de evento no lleva aviso.}}",
+  "plannerReminderLine": "{type, select, STUDY{Aviso antes de empezar, según «Más avisos».} REVIEW{Aviso antes de empezar, según «Más avisos».} SPORT{Aviso antes de empezar, según «Más avisos».} PERSONAL{Aviso antes de empezar, según «Más avisos».} CLASS{Aviso de clase si lo activaste en «Más avisos».} EXAM{Aviso los días que elegiste en «Más avisos».} DELIVERY{Aviso los días que elegiste en «Más avisos».} other{Sin aviso.}}",
   "@plannerReminderLine": {
     "description": "Cuándo avisa el servidor de un evento según su tipo (ReminderPlanner); type es el código del tipo (STUDY, CLASS, PERSONAL…). La antelación es la global de Ajustes › Avisos.",
     "placeholders": {
@@ -74,8 +72,8 @@
   },
   "plannerReminderSettings": "Ajustar los avisos",
   "plannerAddBlock": "Añadir al calendario",
-  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un evento o pide que te sugiramos un plan.",
-  "plannerDragHint": "Mantén pulsado un evento para moverlo y arrastra su borde inferior para cambiar la duración.",
+  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un evento.",
+  "plannerDragHint": "Mantén pulsado para mover; arrastra el borde para cambiar la duración.",
   "plannerResizeHandle": "Cambiar duración",
   "plannerBlockSemantics": "{type}, de {start} a {end}",
   "@plannerBlockSemantics": {
@@ -93,7 +91,6 @@
   },
   "plannerCompletedLabel": "Hecho",
   "plannerFixedLabel": "Fijo",
-  "plannerPrivateLabel": "Privado",
   "plannerTimeRange": "{start} – {end}",
   "@plannerTimeRange": {
     "placeholders": {
@@ -128,7 +125,6 @@
   "plannerBalanceBalanced": "Equilibrada",
   "plannerBalanceStudyHeavy": "Mucho estudio",
   "plannerBalanceSportHeavy": "Mucho deporte",
-  "plannerWeekSummary": "Resumen de la semana",
   "plannerStudyHours": "Estudio",
   "plannerSportHours": "Deporte",
   "plannerHoursProgress": "{actual} / {planned} h",
@@ -142,7 +138,6 @@
       }
     }
   },
-  "plannerOpenWeeklyLoad": "Ver carga semanal",
   "plannerWeeklyLoadTitle": "Carga semanal",
   "plannerPlannedHours": "Horas planificadas",
   "plannerActualHours": "Horas reales",
@@ -223,9 +218,6 @@
   "plannerFieldDeadlineTitle": "Título de la entrega",
   "plannerFieldDeadlineTitleHint": "Si lo dejas vacío se usan los temas",
   "plannerFieldDifficulty": "Dificultad",
-  "plannerLinks": "Vínculos",
-  "plannerDetails": "Detalles",
-  "plannerSchedule": "Horario",
   "plannerCreateBlock": "Añadir al calendario",
   "plannerSaveChanges": "Guardar cambios",
   "plannerDeleteBlock": "Eliminar evento",
@@ -246,7 +238,7 @@
       }
     }
   },
-  "plannerDistributeIntro": "Reparte todos los días de una rutina en el calendario a partir de la fecha que elijas.",
+  "plannerDistributeIntro": "Pon los días de una rutina en el calendario desde la fecha que elijas.",
   "plannerFieldWeekdays": "Días de entrenamiento",
   "plannerFieldStartDate": "Empezar el",
   "plannerFieldPreferredTime": "Hora",
@@ -269,7 +261,7 @@
   "plannerNewDeadline": "Nueva entrega",
   "plannerEditDeadline": "Editar entrega",
   "plannerDeadlinesEmptyTitle": "Sin entregas",
-  "plannerDeadlinesEmptyMessage": "Añade tus entregas y exámenes para planificar el estudio con tiempo.",
+  "plannerDeadlinesEmptyMessage": "Añade tus entregas y exámenes.",
   "plannerFieldTitle": "Título",
   "plannerFieldDueDate": "Fecha límite",
   "plannerFieldDueTime": "Hora de entrega",
@@ -287,19 +279,10 @@
   "plannerDeadlineDeleted": "Entrega eliminada",
   "plannerDeadlineCompleted": "Entrega hecha",
   "plannerDeadlinePending": "Entrega desmarcada",
-  "plannerDueOn": "Vence el {date}",
-  "@plannerDueOn": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "plannerOverdue": "Vencida",
   "plannerImported": "Importada",
   "plannerLoadMore": "Cargar más",
   "plannerSuggestionsTitle": "Te sugerimos un plan",
-  "plannerSuggestionsIntro": "Indica tus objetivos y te propondremos cuándo estudiar y hacer deporte en los huecos libres de la semana.",
+  "plannerSuggestionsIntro": "Te proponemos cuándo estudiar y entrenar en tus huecos libres.",
   "plannerThisWeek": "Esta semana",
   "plannerNextWeekShort": "Próxima semana",
   "plannerStudyHoursGoal": "Horas de estudio",
@@ -358,7 +341,7 @@
   "plannerOpenCalendar": "Ver calendario",
   "plannerScheduleTitle": "Importar horario",
   "plannerScanSection": "Escanear el horario",
-  "plannerScanIntro": "Sube el PDF o una foto de tu horario y crearemos las clases de todo el semestre.",
+  "plannerScanIntro": "Sube el PDF o una foto de tu horario y creamos tus clases.",
   "plannerPickFile": "Elegir PDF o imagen",
   "plannerUploading": "Subiendo… {percent} %",
   "@plannerUploading": {
@@ -387,14 +370,14 @@
   "plannerUnmatchedSubjects": "No hemos encontrado estas asignaturas:",
   "plannerUnmatchedHint": "Créalas en Académico y vuelve a escanear el horario.",
   "plannerSemesterDatesTitle": "Fechas del semestre",
-  "plannerSemesterDatesIntro": "Para repetir tus clases cada semana necesitamos saber cuándo empiezan y terminan.",
+  "plannerSemesterDatesIntro": "¿Cuándo empieza y termina el semestre?",
   "plannerClassesStart": "Inicio de clases",
   "plannerClassesEnd": "Fin de clases",
   "plannerSaveAndScan": "Guardar y escanear",
   "plannerDatesInvalid": "La fecha de fin debe ser posterior a la de inicio.",
   "plannerPickDate": "Elegir fecha",
   "plannerIcsSection": "Calendario de una asignatura",
-  "plannerIcsIntro": "Pega el enlace del calendario de la asignatura tal cual aparece en el Campus Virtual: un ICS o un calendario de Google. Se importan las clases, exámenes y entregas del curso actual.",
+  "plannerIcsIntro": "Pega el enlace del calendario de la asignatura (ICS o Google) del Campus Virtual.",
   "plannerIcsUrl": "Enlace del calendario (opcional)",
   "plannerIcsUrlHint": "Vacía: se usa la guardada en la asignatura",
   "plannerIcsImport": "Importar",
@@ -426,7 +409,7 @@
   "plannerIcsForce": "Importar igualmente",
   "plannerIcsNoSubjects": "Añade asignaturas en Académico para importar su calendario.",
   "plannerExportSection": "Exportar mi calendario",
-  "plannerExportIntro": "Descarga tus eventos y entregas en un archivo .ics para Google Calendar, Outlook o Apple Calendar.",
+  "plannerExportIntro": "Descarga tus eventos y entregas en un archivo .ics.",
   "plannerExportAction": "Exportar .ics",
   "plannerExported": "Calendario exportado",
   "plannerPomodoroTitle": "Pomodoro",
@@ -439,7 +422,7 @@
   "plannerPomodoroFocusDone": "¡Buen trabajo! Toca descansar.",
   "plannerPomodoroBreakDone": "Descanso terminado. ¡A por la siguiente concentración!",
   "plannerPomodoroRecordFailed": "No se ha podido guardar la sesión.",
-  "plannerPomodoroXpLimitReached": "¡Buen trabajo! Hoy ya sumaste todo lo que da la concentración; el Pomodoro sigue contando en tus estadísticas.",
+  "plannerPomodoroXpLimitReached": "¡Buen trabajo! Hoy ya sumaste el máximo; esto sigue contando en tus cifras.",
   "plannerStatsToday": "Hoy",
   "plannerStatsWeek": "Esta semana",
   "plannerFocusMinutesLabel": "Min. de foco",
@@ -566,7 +549,7 @@
   "plannerMenuCalendarSync": "Sincronizar calendarios",
   "plannerSyncTitle": "Sincronizar calendarios",
   "plannerSyncFeedTitle": "Tu plan en otro calendario",
-  "plannerSyncFeedIntro": "Añade tu calendario a Google Calendar, Apple Calendar u Outlook con un enlace secreto, sin contraseña. Se actualiza solo (Google puede tardar hasta un día en traer los cambios).",
+  "plannerSyncFeedIntro": "Añade tu calendario a Google, Apple u Outlook con un enlace secreto. Se actualiza solo.",
   "plannerSyncActiveSince": "Enlace activo desde el {date}",
   "@plannerSyncActiveSince": {
     "placeholders": {
@@ -582,8 +565,8 @@
   "plannerSyncNewLinkMessage": "El enlace anterior dejará de funcionar: añade el nuevo en tu calendario y quita el antiguo.",
   "plannerSyncRevoke": "Desactivar enlace",
   "plannerSyncRevokeTitle": "¿Desactivar el enlace?",
-  "plannerSyncRevokeMessage": "Tu calendario externo dejará de recibir el calendario. Quítalo también de Google Calendar para que desaparezca lo que ya se ve.",
-  "plannerSyncSaveLinkWarning": "Guárdalo ahora: no podrás volver a verlo. Funciona como una contraseña: quien tenga el enlace puede ver tus eventos, exámenes y entregas (no cambiarlos). No lo compartas; si crees que alguien lo tiene, crea uno nuevo.",
+  "plannerSyncRevokeMessage": "Tu calendario externo dejará de actualizarse. Quítalo también de Google Calendar.",
+  "plannerSyncSaveLinkWarning": "Guárdalo ahora: no podrás volver a verlo. Quien lo tenga ve tus eventos; no lo compartas.",
   "plannerSyncCopy": "Copiar enlace",
   "plannerSyncCopied": "Enlace copiado",
   "plannerSyncOpen": "Abrir en el calendario",
@@ -724,7 +707,7 @@
   "plannerDistributeReplaces": "Se sustituirán los entrenamientos pendientes que esta rutina ya tenga en el calendario.",
   "plannerErrorBlockRoutineLinked": "Este entreno va con su sesión de la rutina: hazlo o apúntalo desde la rutina.",
   "plannerFieldChallengeTask": "Tarea del reto",
-  "plannerFieldChallengeTaskHint": "Cada evento hecho hace avanzar esa tarea. El evento debe caer dentro de las fechas del reto.",
+  "plannerFieldChallengeTaskHint": "Cada evento hecho en las fechas del reto la hace avanzar.",
   "plannerNoChallengeTask": "Ninguna en concreto",
   "plannerErrorBlockOutsideChallenge": "El evento queda fuera de las fechas de su reto. Muévelo o amplía el reto.",
   "plannerDeadlineDoneCaption": "Hecha",
@@ -739,14 +722,14 @@
       }
     }
   },
-  "plannerPomodoroBlockHint": "Si ya está, márcalo como hecho en tu calendario. Si no, sigue con otro Pomodoro.",
+  "plannerPomodoroBlockHint": "Si ya está, márcalo como hecho en el calendario.",
   "plannerPomodoroBlockYes": "Sí, está hecho",
   "plannerPomodoroBlockNotYet": "Aún no",
   "plannerPomodoroBlockMarked": "Marcado como hecho.",
   "plannerErrorPastActivityType": "Solo puedes apuntar después deporte o estudio.",
   "plannerMenuPastStudy": "Apuntar estudio hecho",
   "plannerPastStudyTitle": "Apuntar estudio hecho",
-  "plannerPastStudyIntro": "¿Estudiaste sin la app? Apúntalo aquí (de hoy o de los 6 días anteriores): queda en tu calendario como estudio hecho y cuenta para tu semana.",
+  "plannerPastStudyIntro": "Apunta lo que estudiaste sin la app (hasta 6 días atrás).",
   "plannerPastStudySubject": "Asignatura",
   "plannerPastStudyNoSubject": "Sin asignatura",
   "plannerPastStudyWhat": "Qué estudiaste (opcional)",
@@ -777,7 +760,7 @@
   "plannerPastStudyRetry": "Reintentar",
   "plannerDeadlineFromReminder": "Te avisamos de esta entrega",
   "plannerPomodoroResetTitle": "¿Empezar de cero?",
-  "plannerPomodoroResetMessage": "Se pierde el tiempo que llevas contado. Si solo necesitas un respiro, mejor pausa.",
+  "plannerPomodoroResetMessage": "Se pierde el tiempo contado. Para un respiro, mejor pausa.",
   "plannerPomodoroResetKeep": "Seguir",
   "@plannerEditBlockTitle": {
     "description": "Título de la hoja al editar; type es el código del tipo de evento (STUDY, SPORT, PERSONAL…).",
@@ -853,5 +836,7 @@
   "plannerDueTomorrow": "Mañana",
   "plannerDueInAWeek": "En una semana",
   "plannerDeleteDeadline": "Eliminar",
-  "plannerOpensDeadlineForm": "Abre el formulario de entrega"
+  "plannerOpensDeadlineForm": "Abre el formulario de entrega",
+  "plannerSubjectArchived": "Asignatura archivada",
+  "plannerDeadlinesSwipeHint": "Desliza una entrega a la izquierda para borrarla."
 }

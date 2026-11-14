@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:synaptixfit/domain/enums/analytics_enums.dart';
+import 'package:synaptixfit/domain/enums/usage_focus.dart';
 import 'package:synaptixfit/domain/models/progress/physical_load.dart';
 import 'package:synaptixfit/domain/models/progress/rpe_trend.dart';
 import 'package:synaptixfit/domain/models/progress/study_week.dart';
@@ -10,12 +11,12 @@ import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/analytics_summary.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/badge_tile.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/correlation_card.dart';
-import 'package:synaptixfit/presentation/screens/progress/widgets/level_card.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/physical_load_card.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/rpe_trend_card.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/streak_card.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/study_week_card.dart';
 import 'package:synaptixfit/presentation/screens/progress/widgets/volume_chart_card.dart';
+import 'package:synaptixfit/presentation/screens/progress/widgets/week_headline_card.dart';
 import 'package:synaptixfit/presentation/theme/app_palette.dart';
 
 import '../../../progress_fixtures.dart';
@@ -46,7 +47,11 @@ void main() {
   final week = DateTime(2026, 10, 5);
   final cards = Column(
     children: [
-      const LevelCard(account: testAccount),
+      const WeekHeadlineCard(
+        account: testAccount,
+        streak: testStreak,
+        focus: UsageFocus.both,
+      ),
       const StreakCard(streak: testStreak),
       WeeklySummaryCard(weekly: testWeekly, onOpen: () {}),
       PhysicalLoadCard(
@@ -132,6 +137,44 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  group('Titular de la semana', () {
+    testWidgets('dice las horas de estudio y los entrenos de esta semana', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        WeekHeadlineCard(
+          account: testAccount,
+          streak: testStreak,
+          focus: UsageFocus.both,
+          studyWeek: StudyWeek(weekStart: DateTime(2026, 10, 5), studyHours: 4),
+          weekly: testWeekly,
+        ),
+      );
+      expect(find.text('4 h de estudio · 3 entrenos'), findsOneWidget);
+      expect(find.text('Racha: 5 días · récord 12 días'), findsOneWidget);
+      // En riesgo: una línea, sin cajas de aviso.
+      expect(
+        find.text('¡No pierdas tu racha! Completa una actividad hoy.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('con solo deporte no nombra el estudio', (tester) async {
+      await pump(
+        tester,
+        WeekHeadlineCard(
+          account: testAccount,
+          streak: testStreak,
+          focus: UsageFocus.fitness,
+          studyWeek: StudyWeek(weekStart: DateTime(2026, 10, 5), studyHours: 4),
+          weekly: testWeekly,
+        ),
+      );
+      expect(find.text('3 entrenos'), findsOneWidget);
+    });
+  });
+
   group('Tu estudio', () {
     final studyWeek = StudyWeek(
       weekStart: DateTime(2026, 10, 19),
@@ -150,20 +193,14 @@ void main() {
     testWidgets('muestra la semana de estudio con sus cifras', (tester) async {
       await pump(
         tester,
-        StudyWeekCard(
-          week: studyWeek,
-          onFocus: () {},
-          onReview: () {},
-          onRetry: () {},
-        ),
+        StudyWeekCard(week: studyWeek, onFocus: () {}, onRetry: () {}),
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('150 min'), findsOneWidget);
-      expect(find.text('6 de 8'), findsOneWidget);
-      expect(find.text('75 % del plan'), findsOneWidget);
+      expect(find.text('6 de 8 hechos'), findsOneWidget);
+      expect(find.text('Estudios del calendario'), findsOneWidget);
       expect(find.text('80 %'), findsOneWidget);
-      expect(find.text('Repasar ahora (4 pendientes)'), findsOneWidget);
     });
 
     testWidgets('vacía invita a concentrarse', (tester) async {
@@ -173,7 +210,6 @@ void main() {
         StudyWeekCard(
           week: StudyWeek(weekStart: DateTime(2026, 10, 19)),
           onFocus: () => opened = true,
-          onReview: () {},
           onRetry: () {},
         ),
       );
@@ -188,7 +224,6 @@ void main() {
         StudyWeekCard(
           week: null,
           onFocus: () {},
-          onReview: () {},
           onRetry: () => retried = true,
         ),
       );
@@ -203,12 +238,7 @@ void main() {
         tester,
         MediaQuery(
           data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-          child: StudyWeekCard(
-            week: studyWeek,
-            onFocus: () {},
-            onReview: () {},
-            onRetry: () {},
-          ),
+          child: StudyWeekCard(week: studyWeek, onFocus: () {}, onRetry: () {}),
         ),
         dark: true,
       );

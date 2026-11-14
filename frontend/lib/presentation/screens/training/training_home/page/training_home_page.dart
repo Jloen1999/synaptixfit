@@ -109,8 +109,13 @@ class _TrainingHomeView extends StatelessWidget {
     final l10n = context.localizations;
     return BlocConsumer<TrainingHomeBloc, TrainingHomeState>(
       listenWhen: (p, c) => c.effect != null && p.effect != c.effect,
-      listener: (context, state) =>
-          const TrainingEffectHandler().handle(context, state.effect!),
+      listener: (context, state) => const TrainingEffectHandler().handle(
+        context,
+        state.effect!,
+        onUnskipDay: (routineId, dayId) => context.read<TrainingHomeBloc>().add(
+          TrainingHomeEvent.dayUnskipped(routineId: routineId, dayId: dayId),
+        ),
+      ),
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar(
@@ -469,18 +474,8 @@ class _PendingDayCard extends StatelessWidget {
                 TextButton.icon(
                   icon: const Icon(Icons.redo_rounded),
                   label: Text(l10n.trainingSkipDay),
-                  onPressed: busy || starting
-                      ? null
-                      : () async {
-                          final ok = await showConfirmDialog(
-                            context,
-                            title: l10n.trainingSkipDayTitle,
-                            message: l10n.trainingSkipDayMessage,
-                            confirmLabel: l10n.trainingSkipDay,
-                            destructive: false,
-                          );
-                          if (ok) onSkip(day);
-                        },
+                  // Reversible: sin confirmar, con «Deshacer» en el aviso.
+                  onPressed: busy || starting ? null : () => onSkip(day),
                 ),
             ],
           ),

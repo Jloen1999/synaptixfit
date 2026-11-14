@@ -306,10 +306,7 @@ void main() {
       await pump(tester);
       await tester.tap(find.text('Hacer foto'));
       await tester.pumpAndSettle();
-      expect(
-        find.textContaining('ya no vuelve a preguntar'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('ya no pregunta'), findsOneWidget);
       await tester.tap(find.text('Abrir ajustes del móvil'));
       await tester.pumpAndSettle();
       expect(phone.settingsOpened, [DevicePermission.camera]);
@@ -364,18 +361,22 @@ void main() {
       await tester.tap(find.text('Permitir').first);
       await tester.pumpAndSettle();
       expect(
-        find.text('No se ha permitido. Puedes volver a intentarlo cuando quieras.'),
+        find.text(
+          'No se ha permitido. Puedes volver a intentarlo cuando quieras.',
+        ),
         findsWidgets,
       );
     });
 
-    testWidgets('ya permitido: deja abrir los ajustes del móvil para quitarlo', (
-      tester,
-    ) async {
-      phone.statuses[DevicePermission.camera] = DevicePermissionStatus.granted;
-      await pump(tester);
-      expect(find.text('Abrir ajustes del móvil'), findsWidgets);
-    });
+    testWidgets(
+      'ya permitido: deja abrir los ajustes del móvil para quitarlo',
+      (tester) async {
+        phone.statuses[DevicePermission.camera] =
+            DevicePermissionStatus.granted;
+        await pump(tester);
+        expect(find.text('Abrir ajustes del móvil'), findsWidgets);
+      },
+    );
 
     for (final (name, theme) in [
       ('claro', AppTheme.light),

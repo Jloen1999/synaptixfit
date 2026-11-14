@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:synaptixfit/domain/models/training/check_in_answers.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/check_in_questions.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
@@ -31,12 +32,14 @@ void main() {
         ],
         home: Scaffold(
           body: CheckInQuestions(
-            sleep: sleep,
-            energy: energy,
-            soreness: soreness,
-            onSleep: (v) => answers['sleep'] = v,
-            onEnergy: (v) => answers['energy'] = v,
-            onSoreness: (v) => answers['soreness'] = v,
+            answers: CheckInAnswers(
+              values: {
+                CheckInQuestion.sleep: ?sleep,
+                CheckInQuestion.energy: ?energy,
+                CheckInQuestion.soreness: ?soreness,
+              },
+            ),
+            onAnswer: (q, v) => answers[q.name] = v,
           ),
         ),
       ),
@@ -82,9 +85,35 @@ void main() {
     expect(chip('Algo').selected, isTrue);
   });
 
-  test('el historial dice la respuesta en palabras', () {
-    final options = [(1, 'Mal'), (3, 'Regular'), (5, 'Bien')];
-    expect(CheckInQuestions.answer(options, 4), 'Bien');
-    expect(CheckInQuestions.answer(options, 2), 'Mal');
+  test('el historial dice la respuesta en palabras', () async {
+    final l10n = await AppLocalizations.delegate.load(const Locale('es'));
+    expect(CheckInQuestions.answer(l10n, CheckInQuestion.sleep, 4), 'Bien');
+    expect(CheckInQuestions.answer(l10n, CheckInQuestion.sleep, 2), 'Mal');
+    expect(
+      CheckInQuestions.answer(l10n, CheckInQuestion.soreness, 1),
+      'Nada',
+      reason: 'en agujetas 1 es lo mejor',
+    );
+  });
+
+  test('la tercera respuesta guarda solo la primera vez y sin detalles', () {
+    var answers = const CheckInAnswers()
+        .withAnswer(CheckInQuestion.sleep, 5)
+        .withAnswer(CheckInQuestion.energy, 3);
+    expect(answers.complete, isFalse);
+    answers = answers.withAnswer(CheckInQuestion.soreness, 1);
+    expect(answers.complete, isTrue);
+    expect(
+      CheckInAnswers.savesOnLastAnswer(loggedToday: false, withDetails: false),
+      isTrue,
+    );
+    expect(
+      CheckInAnswers.savesOnLastAnswer(loggedToday: true, withDetails: false),
+      isFalse,
+    );
+    expect(
+      CheckInAnswers.savesOnLastAnswer(loggedToday: false, withDetails: true),
+      isFalse,
+    );
   });
 }

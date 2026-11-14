@@ -45,6 +45,7 @@ void registerTrainingPresentation(GetIt getIt) {
         watchChanges: getIt(),
         getOpenSessions: getIt(),
         skipDay: getIt(),
+        unskipDay: getIt(),
         finishSession: getIt(),
         discardSession: getIt(),
         restartRoutine: getIt(),

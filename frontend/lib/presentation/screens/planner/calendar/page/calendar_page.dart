@@ -454,7 +454,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
                     const SizedBox(height: TokensSpacing.s),
                     WeekDeadlinesStrip(
                       deadlines: state.deadlines,
-                      onTap: () => context.push(PlannerPaths.deadlines),
+                      onTap: (id) => context.push(PlannerPaths.deadline(id)),
                     ),
                   ],
                   if (state.visibleBlocks.isEmpty) ...[

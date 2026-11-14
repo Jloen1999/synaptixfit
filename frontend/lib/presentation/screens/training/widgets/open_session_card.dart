@@ -100,8 +100,9 @@ class OpenSessionCard extends StatelessWidget {
                       },
                 child: Text(l10n.trainingDiscardSession),
               ),
+              // Sin destacar: en Gimnasio la acción principal es «Empezar».
               if (open.stale || onContinue == null)
-                FilledButton.icon(
+                OutlinedButton.icon(
                   onPressed: busy
                       ? null
                       : () async {
@@ -116,7 +117,7 @@ class OpenSessionCard extends StatelessWidget {
                   label: Text(l10n.trainingFinishAction),
                 )
               else
-                FilledButton(
+                OutlinedButton(
                   onPressed: busy ? null : onContinue,
                   child: Text(l10n.trainingContinueDay),
                 ),

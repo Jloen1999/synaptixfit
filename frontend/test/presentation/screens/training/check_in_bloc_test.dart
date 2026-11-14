@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/training/check_in_answers.dart';
 import 'package:synaptixfit/domain/models/training/training_page.dart';
 import 'package:synaptixfit/domain/models/training/wellbeing.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
@@ -126,5 +127,74 @@ void main() {
       ),
       isA<CheckInState>().having((s) => s.effect, 'effect', isNull),
     ],
+  );
+
+  blocTest<CheckInBloc, CheckInState>(
+    'la tercera respuesta pide guardar la primera vez del día',
+    build: build,
+    seed: () => const CheckInState(status: CheckInStatus.ready),
+    act: (bloc) => bloc
+      ..add(
+        const CheckInEvent.answered(
+          CheckInQuestion.sleep,
+          5,
+          withDetails: false,
+        ),
+      )
+      ..add(
+        const CheckInEvent.answered(
+          CheckInQuestion.energy,
+          3,
+          withDetails: false,
+        ),
+      )
+      ..add(
+        const CheckInEvent.answered(
+          CheckInQuestion.soreness,
+          1,
+          withDetails: false,
+        ),
+      ),
+    verify: (bloc) {
+      expect(bloc.state.saveRequest, 1);
+      expect(bloc.state.input.sleepQuality, 5);
+      expect(bloc.state.input.soreness, 1);
+    },
+  );
+
+  blocTest<CheckInBloc, CheckInState>(
+    'con «Añadir detalles» abierto no guarda solo',
+    build: build,
+    seed: () => CheckInState(
+      status: CheckInStatus.ready,
+      answers: const CheckInAnswers()
+          .withAnswer(CheckInQuestion.sleep, 5)
+          .withAnswer(CheckInQuestion.energy, 5),
+    ),
+    act: (bloc) => bloc.add(
+      const CheckInEvent.answered(
+        CheckInQuestion.soreness,
+        3,
+        withDetails: true,
+      ),
+    ),
+    verify: (bloc) => expect(bloc.state.saveRequest, 0),
+  );
+
+  blocTest<CheckInBloc, CheckInState>(
+    'conserva lo contestado en la tarjeta y el estrés empieza sin marcar',
+    setUp: () =>
+        when(() => today()).thenAnswer((_) async => const Success(null)),
+    build: build,
+    act: (bloc) => bloc.add(
+      CheckInEvent.started(
+        initial: const CheckInAnswers().withAnswer(CheckInQuestion.sleep, 1),
+      ),
+    ),
+    verify: (bloc) {
+      expect(bloc.state.answers[CheckInQuestion.sleep], 1);
+      expect(bloc.state.input.sleepQuality, 1);
+      expect(bloc.state.stressAnswered, isFalse);
+    },
   );
 }

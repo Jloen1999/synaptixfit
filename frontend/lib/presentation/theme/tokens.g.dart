@@ -27,6 +27,8 @@ abstract final class TokensLightColors {
   static const Color onErrorContainer = Color(0xFF7F1D1D);
   static const Color success = Color(0xFF157A3A);
   static const Color warning = Color(0xFFA1520A);
+  static const Color onSuccess = Color(0xFFFFFFFF);
+  static const Color onWarning = Color(0xFFFFFFFF);
   static const Color cycle = Color(0xFFA21CAF);
   static const Color onCycle = Color(0xFFFFFFFF);
   static const Color cycleContainer = Color(0xFFFAE8FF);
@@ -71,6 +73,8 @@ abstract final class TokensDarkColors {
   static const Color onErrorContainer = Color(0xFFFECACA);
   static const Color success = Color(0xFF4ADE80);
   static const Color warning = Color(0xFFFBBF24);
+  static const Color onSuccess = Color(0xFF052E16);
+  static const Color onWarning = Color(0xFF451A03);
   static const Color cycle = Color(0xFFE879F9);
   static const Color onCycle = Color(0xFF0B0D12);
   static const Color cycleContainer = Color(0xFF3B1440);

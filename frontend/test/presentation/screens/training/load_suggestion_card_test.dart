@@ -46,9 +46,7 @@ void main() {
           child: child!,
         ),
         home: Scaffold(
-          body: SingleChildScrollView(
-            child: LoadSuggestionLine(suggestion: s),
-          ),
+          body: SingleChildScrollView(child: LoadSuggestionLine(suggestion: s)),
         ),
       ),
     );
@@ -65,12 +63,12 @@ void main() {
       findsOneWidget,
     );
     // Nada que aceptar ni explicaciones a la vista.
-    expect(find.textContaining('la última vez hiciste 40 kg'), findsNothing);
+    expect(find.textContaining('la última vez, 40 kg'), findsNothing);
     expect(find.byType(FilledButton), findsNothing);
 
     await tester.tap(find.byTooltip('Por qué esta propuesta'));
     await tester.pump();
-    expect(find.textContaining('la última vez hiciste 40 kg'), findsOneWidget);
+    expect(find.textContaining('la última vez, 40 kg'), findsOneWidget);
     expect(find.textContaining('tu rutina sigue igual'), findsOneWidget);
   });
 

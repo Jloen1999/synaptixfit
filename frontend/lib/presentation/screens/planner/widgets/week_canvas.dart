@@ -172,6 +172,10 @@ class _WeekCanvasState extends State<WeekCanvas> {
                     child: SingleChildScrollView(
                       controller: _axis,
                       physics: const NeverScrollableScrollPhysics(),
+                      // Mismo hueco que la cuadrícula: siguen alineadas.
+                      padding: const EdgeInsets.only(
+                        bottom: TokensLayout.fabClearance,
+                      ),
                       child: _HourAxis(geometry: geometry),
                     ),
                   ),
@@ -180,6 +184,11 @@ class _WeekCanvasState extends State<WeekCanvas> {
                       controller: _vertical,
                       child: SingleChildScrollView(
                         controller: _vertical,
+                        // Hueco al final: «Añadir» (flotante) no tapa las
+                        // últimas horas (vocabulario §4: nada flotante tapa).
+                        padding: const EdgeInsets.only(
+                          bottom: TokensLayout.fabClearance,
+                        ),
                         child: Scrollbar(
                           controller: _horizontal,
                           notificationPredicate: (n) => n.depth == 0,

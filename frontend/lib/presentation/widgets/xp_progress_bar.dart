@@ -24,13 +24,15 @@ class XpProgressBar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        // Wrap: con el texto al 200 % la cifra baja de línea en vez de
+        // partir «Nivel 14» letra a letra.
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          spacing: TokensSpacing.s,
           children: [
-            Expanded(
-              child: Text(
-                context.localizations.commonLevel(level),
-                style: context.textStyles.labelLarge,
-              ),
+            Text(
+              context.localizations.commonLevel(level),
+              style: context.textStyles.labelLarge,
             ),
             Text(
               context.localizations.commonXpProgress(levelXp, levelThreshold),
@@ -43,6 +45,11 @@ class XpProgressBar extends StatelessWidget {
         const SizedBox(height: TokensSpacing.xs),
         // Grosor y radio del tema (`progressIndicatorTheme`).
         LinearProgressIndicator(
+          // El valor del lector es numérico (porcentaje); la cifra de XP va
+          // en la etiqueta.
+          semanticsLabel:
+              '${context.localizations.commonLevel(level)}, '
+              '${context.localizations.commonXpProgress(levelXp, levelThreshold)}',
           value: progress,
           color: context.palette.accent,
           backgroundColor: context.palette.accentContainer,

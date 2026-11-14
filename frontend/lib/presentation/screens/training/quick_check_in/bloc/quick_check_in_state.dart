@@ -15,6 +15,13 @@ abstract class QuickCheckInState with _$QuickCheckInState {
     /// Se acaba de enviar: la explicación se anuncia al lector solo entonces,
     /// no cada vez que se abre Rutinas con el registro ya hecho.
     @Default(false) bool justSent,
+
+    /// Lo contestado en las tres preguntas.
+    @Default(CheckInAnswers()) CheckInAnswers answers,
+
+    /// Sube cada vez que toca guardar solo (regla de los tres toques): la
+    /// tarjeta pide antes el permiso de datos de salud y envía.
+    @Default(0) int saveRequest,
     AppError? error,
   }) = _QuickCheckInState;
 

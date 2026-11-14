@@ -81,7 +81,10 @@ public class UserActivityPersistenceAdapter implements UserActivityPort {
                 sessionDays(userId, zone),
                 checkInDays(userId),
                 countStudyBlocks(userId),
-                count("select count(*) from planes_estudio where usuario_id = :user", userId),
+                // Solo las semanas que dieron la XP de planificar (ADR 0038): un plan guardado
+                // por una app antigua sin eventos no cuenta para «Planificador nato».
+                count("select count(*) from planes_estudio where usuario_id = :user"
+                        + " and xp_planificacion_otorgado = true", userId),
                 count("select count(*) from apuntes where usuario_id = :user", userId),
                 jdbc.sql("select count(*) from actividades_sociales where usuario_id = :user and tipo not in (:automatic)")
                         .param("user", userId)

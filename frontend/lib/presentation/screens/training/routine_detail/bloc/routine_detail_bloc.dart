@@ -172,11 +172,8 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
       (e, emit) => _mutate(
         emit,
         (id) => _uc.skipDay(id, e.dayId),
-        effect: (id) => TrainingEffect.daySkipped(
-          routineId: id,
-          dayId: e.dayId,
-          inRoutine: true,
-        ),
+        effect: (id) =>
+            TrainingEffect.daySkipped(routineId: id, dayId: e.dayId),
       ),
     );
     on<RoutineDetailDayUnskipped>(

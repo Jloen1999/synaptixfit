@@ -8,13 +8,11 @@
   "commonEdit": "Editar",
   "commonClose": "Cerrar",
   "commonConfirm": "Confirmar",
-  "commonContinue": "Continuar",
   "commonBack": "Volver",
   "commonOr": "o",
   "commonYes": "Sí",
   "commonNo": "No",
   "commonSeeAll": "Ver todo",
-  "commonComingSoon": "Esta sección se está preparando.",
   "commonSaved": "Cambios guardados",
   "commonLevel": "Nivel {level}",
   "@commonLevel": {
@@ -147,9 +145,9 @@
   },
   "loginForgotPassword": "¿Has olvidado tu contraseña?",
   "authForgotTitle": "Recupera tu cuenta",
-  "authForgotSubtitle": "Escribe tu correo y te enviaremos un enlace para elegir una contraseña nueva.",
+  "authForgotSubtitle": "Te enviaremos un enlace para elegir otra contraseña.",
   "authForgotSend": "Enviar enlace",
-  "authForgotSent": "Si hay una cuenta con {email}, te hemos enviado un enlace. Caduca en 30 minutos. Si no lo ves, mira en el correo no deseado.",
+  "authForgotSent": "Si hay una cuenta con {email}, te hemos enviado un enlace (caduca en 30 min). Mira también en spam.",
   "authForgotResend": "Enviarlo otra vez",
   "authBackToLogin": "Volver a iniciar sesión",
   "authResetTitle": "Elige una contraseña nueva",
@@ -177,7 +175,6 @@
     "description": "Los 30 minutos son PasswordResetToken.TTL del backend: si cambia, cambia también este texto."
   },
   "commonLoadingMore": "Cargando más",
-  "commonDateDue": "Vence",
   "commonDateOverdue": "Venció",
   "commonDateToday": "Hoy",
   "commonDateTomorrow": "Mañana",
@@ -209,19 +206,19 @@
   },
   "xpGuideOpen": "Cómo se gana XP",
   "xpGuideTitle": "Cómo se gana XP",
-  "xpGuideIntro": "La XP premia la constancia: sumas al hacer lo que planificas. Los topes evitan que se pueda inflar.",
+  "xpGuideIntro": "Sumas XP al hacer lo que planificas.",
   "xpGuideTraining": "Entrenar",
-  "xpGuideTrainingDetail": "Cada sesión terminada da 50 XP, más 1 por minuto (hasta 90) y 5 por punto de esfuerzo. Las de menos de 10 minutos no cuentan y solo las 2 primeras del día dan XP.",
+  "xpGuideTrainingDetail": "50 XP por sesión + 1 por minuto (hasta 90) + 5 por punto de esfuerzo. Desde 10 min; 2 al día.",
   "xpGuideCheckIn": "¿Qué tal estás hoy?",
   "xpGuideCheckInDetail": "20 XP por el primer registro de cada día.",
   "xpGuideBlocks": "Eventos del calendario",
-  "xpGuideBlocksDetail": "10 XP por cada media hora de evento hecho (hasta 4 horas por evento); como mucho 200 XP al día en eventos. Un evento no se puede marcar como hecho antes de que empiece.",
+  "xpGuideBlocksDetail": "10 XP por media hora hecha (hasta 4 h por evento y 200 XP al día).",
   "xpGuidePomodoro": "Pomodoro",
   "xpGuidePomodoroDetail": "5 XP por cada concentración de al menos 10 minutos, hasta 20 XP al día.",
   "xpGuideStudyWeek": "Semana de estudio",
   "xpGuideStudyWeekDetail": "150 XP extra al llegar a tus horas de estudio de la semana.",
   "xpGuideTests": "Tests y práctica",
-  "xpGuideTestsDetail": "Con al menos 5 preguntas; como mucho 5 tests con XP cada 24 horas. Practicar un banco de preguntas da XP una sola vez.",
+  "xpGuideTestsDetail": "Tests de 5 preguntas o más; hasta 5 al día con XP.",
   "xpGuideDeadlines": "Entregas",
   "xpGuideDeadlinesDetail": "Marcar una entrega como hecha da XP; como mucho 5 cada 24 horas.",
   "xpGuideChallenges": "Retos",
@@ -288,11 +285,12 @@
     }
   },
   "xpGuidePlanning": "Planificar la semana",
-  "xpGuidePlanningDetail": "Con 3 eventos planificados en esta semana o la siguiente, 100 XP más 5 por evento. Una vez por semana; llega sola.",
+  "xpGuidePlanningDetail": "3 eventos planificados en la semana: 100 XP + 5 por evento. Una vez por semana.",
   "@xpGuidePlanning": {
     "description": "Guía de XP: planificar la semana (ADR 0038)."
   },
   "@xpGuidePlanningDetail": {
     "description": "Guía de XP: regla de la XP de planificar la semana, sin botón."
-  }
+  },
+  "commonShowLess": "Ver menos"
 }

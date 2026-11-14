@@ -10,7 +10,7 @@ Regla general: palabras cotidianas, verbos en los botones, una acción útil sig
 |---|---|---|---|
 | Bloque del calendario (`CalendarBlock`) | Según su tipo: «Estudio de Física», «Entreno», «Repaso», «Clase», «Examen», «Entrega», «Descanso», «Comida», «Sueño», «Personal: Dentista». Genérico o mezcla: **evento** («Añadir al calendario», «3 eventos hoy», «Mover evento») | «bloque» | Los nombres internos (`CalendarBlock`, `BLOCK_*`, tablas) no cambian |
 | Tipo `PERSONAL` (nuevo) | «Personal» (trabajo, médico, recados, quedadas…) con nombre libre | «otro» | No suma carga de estudio, ni kcal de estudio, ni XP; sí sale en Tu día, avisos, resumen de la mañana y calendario exportado |
-| Hoja de crear/editar evento | Pasos «¿Qué es?», «¿Cuándo?», «Repetir y aviso»; lo demás en «Más opciones». Tipos poco usados en «Más tipos». Un personal pide «Nombre» | «Detalles», «Vínculos» como títulos de sección | El aviso no es por evento: se dice que llega «con la antelación que elegiste en Ajustes › Avisos», con botón «Ajustar los avisos» |
+| Hoja de crear/editar evento | Pasos «¿Qué es?», «¿Cuándo?», «Repetir y aviso»; lo demás en «Más opciones». Tipos poco usados en «Más tipos». Un personal pide «Nombre» | «Detalles», «Vínculos» como títulos de sección | El aviso no es por evento: una línea dice que llega «según «Más avisos»», con botón «Ajustar los avisos» |
 | Hito de un reto (`Milestone`) | **tarea** («Tarea del reto») | — | «Tarea» se reserva para los retos |
 | Actividad hecha fuera del plan (`PastActivity`, carrera, partido…) | **actividad** («Apuntar una actividad», «Tus actividades») | — | «Actividad» se reserva para lo ya hecho/registrado |
 | Carrera grabada con GPS | «Carrera» (o «Paseo», «Bici» según el tipo); origen: «GPS de la app» / «Apuntada a mano» / «Marcada en el calendario» | «workout», «run» en español | Es una **actividad**. Un entreno de carrera planificado que se graba deja su evento del calendario como **Hecho** (lo marca el planificador, su dueño) |
@@ -34,7 +34,7 @@ Regla general: palabras cotidianas, verbos en los botones, una acción útil sig
 | Resumen de la mañana (`MORNING_SUMMARY`) | «Hoy: 2 estudios, 1 entreno, entrega de Física y 1 tarea de reto» | «digest», «resumen diario» | Solo si hay algo; incluye el recordatorio del registro diario de ese día (ADR 0035) |
 | Avisos de dónde queda algo | «Asignatura archivada. La tienes en Académico › Archivadas» + «Ver»; «Usuario bloqueado. Para desbloquearlo: Comunidad › Amigos › Bloqueados» + «Ver»; «Reto añadido. Lo tienes en Progreso › Retos» | «se puede recuperar», «queda guardado» sin decir dónde | La ruta usa los nombres que se ven (pestaña › apartado). Si el aviso abre ya la pantalla, basta con el texto; si no, lleva «Ver» (`showActionSnack`) |
 | Copiar algo de otra persona | «Añadir a mis rutinas», «Añadir a mis retos»; origen: «Copiada de Ana» | «Clonar», «clonada» | Icono `AppIcons.copyToMine` en los dos |
-| Antelación de los avisos | «Avisarme antes de…»: «15 min antes», «1 y 3 días antes», «La tarde anterior», «La mañana del día» | «lead time», «offset» | Opciones cerradas en Perfil › Ajustes › Notificaciones › «Más avisos» |
+| Antelación de los avisos | «Avisarme antes de…»: «15 min antes», «1 y 3 días antes», «La tarde anterior», «La mañana del día» | «lead time», «offset» | Opciones cerradas en Perfil › Ajustes › Preferencias de notificaciones › «Más avisos» (grupo «Avisos y permisos») |
 
 ## 2. Dueños de cada pieza compartida
 
@@ -89,3 +89,9 @@ Decisión del propietario: «la aplicación debe ir al grano, facilitar al usuar
   - **Borrar no ocupa sitio en cada fila:** se desliza con «Deshacer» o se hace desde el detalle (con su acción para el lector de pantalla). Marcar hecho sigue a un toque.
   - **Nada flotante tapa botones:** «Nueva rutina» va en la cabecera de «Mis rutinas».
   - **Lo ocasional de una pantalla, en su ⋮** (editar, archivar, eliminar una asignatura); la barra no recorta el título con iconos.
+- **Menos texto (fase 4, ADR 0041):**
+  - **Una línea o un «?».** Ninguna explicación de más de una línea a la vista; lo demás, en `AppHelpToggle`. Ningún texto repite lo que dice el botón ni el mismo consejo en otra pantalla.
+  - **Filas sin subtítulo** si el título basta (Perfil y Ajustes). Ajustes va por uso: avisos y permisos, apariencia, idioma, cuenta y, al final, privacidad, exportar y eliminar.
+  - **Progreso abre con un titular** («Esta semana: 4 h de estudio · 3 entrenos»), el nivel y la racha en una línea, lo que sigue («Ver 3 repasos pendientes», la próxima insignia) y el resto en «Ver más cifras».
+  - **Palabras de todos los días:** «días libres» (no «comodines»), «Estudios del calendario: 6 de 8 hechos» (no «Sin plan»), la fatiga en palabras y la carga física sin fórmulas.
+  - **Saltar un día de rutina** no pregunta: «Día saltado» + «Deshacer».

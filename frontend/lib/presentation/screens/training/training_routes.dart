@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../../domain/models/training/check_in_answers.dart';
 import '../../../domain/models/training/session.dart';
 import '../../../domain/models/training/session_history.dart';
 import 'check_in/page/check_in_page.dart';
@@ -61,6 +62,27 @@ abstract final class TrainingPaths {
 
   /// «¿Qué tal estás hoy?» con «Añadir detalles» ya desplegado.
   static const checkInDetails = '$checkIn?details=1';
+
+  /// Igual, con lo ya contestado en la tarjeta de Gimnasio (no se pierde).
+  static String checkInDetailsWith(CheckInAnswers answers) => Uri(
+    path: checkIn,
+    queryParameters: {
+      'details': '1',
+      for (final q in CheckInQuestion.values)
+        if (answers[q] case final v?) q.name: '$v',
+    },
+  ).toString();
+
+  /// Lee lo contestado de la dirección de [checkInDetailsWith].
+  static CheckInAnswers answersFrom(Map<String, String> query) {
+    var answers = const CheckInAnswers();
+    for (final q in CheckInQuestion.values) {
+      final v = int.tryParse(query[q.name] ?? '');
+      if (v != null && v >= 1 && v <= 5) answers = answers.withAnswer(q, v);
+    }
+    return answers;
+  }
+
   static const weeklyPlan = '$root/weekly-plan';
   static const community = '$root/community';
 
@@ -185,8 +207,10 @@ List<RouteBase> trainingRoutes() => [
   // vuelve siempre a quien lo abrió.
   GoRoute(
     path: TrainingPaths.checkIn,
-    builder: (_, state) =>
-        CheckInPage(details: state.uri.queryParameters['details'] == '1'),
+    builder: (_, state) => CheckInPage(
+      details: state.uri.queryParameters['details'] == '1',
+      initialAnswers: TrainingPaths.answersFrom(state.uri.queryParameters),
+    ),
   ),
   GoRoute(
     path: TrainingPaths.pastActivity,

@@ -13,6 +13,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.onAccentContainer,
     required this.success,
     required this.warning,
+    required this.onSuccess,
+    required this.onWarning,
     required this.cycle,
     required this.onCycle,
     required this.cycleContainer,
@@ -30,6 +32,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     onAccentContainer: TokensLightColors.onAccentContainer,
     success: TokensLightColors.success,
     warning: TokensLightColors.warning,
+    onSuccess: TokensLightColors.onSuccess,
+    onWarning: TokensLightColors.onWarning,
     cycle: TokensLightColors.cycle,
     onCycle: TokensLightColors.onCycle,
     cycleContainer: TokensLightColors.cycleContainer,
@@ -47,6 +51,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     onAccentContainer: TokensDarkColors.onAccentContainer,
     success: TokensDarkColors.success,
     warning: TokensDarkColors.warning,
+    onSuccess: TokensDarkColors.onSuccess,
+    onWarning: TokensDarkColors.onWarning,
     cycle: TokensDarkColors.cycle,
     onCycle: TokensDarkColors.onCycle,
     cycleContainer: TokensDarkColors.cycleContainer,
@@ -66,6 +72,10 @@ class AppPalette extends ThemeExtension<AppPalette> {
   final Color onAccentContainer;
   final Color success;
   final Color warning;
+
+  /// Iconos y texto sobre [success] y [warning] (p. ej. el ✓ de una serie).
+  final Color onSuccess;
+  final Color onWarning;
 
   /// «Mi ciclo»: la regla y su leyenda. No es el color de error (la regla no
   /// es un fallo); los días de regla usan [cycleContainer] con
@@ -89,6 +99,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? onAccentContainer,
     Color? success,
     Color? warning,
+    Color? onSuccess,
+    Color? onWarning,
     Color? cycle,
     Color? onCycle,
     Color? cycleContainer,
@@ -104,6 +116,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     onAccentContainer: onAccentContainer ?? this.onAccentContainer,
     success: success ?? this.success,
     warning: warning ?? this.warning,
+    onSuccess: onSuccess ?? this.onSuccess,
+    onWarning: onWarning ?? this.onWarning,
     cycle: cycle ?? this.cycle,
     onCycle: onCycle ?? this.onCycle,
     cycleContainer: cycleContainer ?? this.cycleContainer,
@@ -128,6 +142,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       )!,
       success: Color.lerp(success, other.success, t)!,
       warning: Color.lerp(warning, other.warning, t)!,
+      onSuccess: Color.lerp(onSuccess, other.onSuccess, t)!,
+      onWarning: Color.lerp(onWarning, other.onWarning, t)!,
       cycle: Color.lerp(cycle, other.cycle, t)!,
       onCycle: Color.lerp(onCycle, other.onCycle, t)!,
       cycleContainer: Color.lerp(cycleContainer, other.cycleContainer, t)!,

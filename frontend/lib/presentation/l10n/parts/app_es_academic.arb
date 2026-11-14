@@ -7,7 +7,7 @@
   "academicOpenPlanner": "Abrir calendario",
   "academicMoreActions": "Más acciones",
   "academicEmptyTitle": "Aún no tienes asignaturas",
-  "academicEmptyMessage": "Sube el plan docente y te proponemos la asignatura con sus temas, o añádela a mano con el botón +.",
+  "academicEmptyMessage": "Sube el plan docente o añade la asignatura con +.",
   "academicArchivedEmptyTitle": "No tienes asignaturas archivadas",
   "academicAddFromCatalog": "Desde el plan de estudios",
   "academicAddFromCatalogHint": "Elige varias asignaturas de tu carrera",
@@ -211,7 +211,7 @@
       }
     }
   },
-  "academicNotesEmpty": "Todavía no hay apuntes. Crea uno: puedes escribir o pegar texto y darle formato.",
+  "academicNotesEmpty": "Aún no hay apuntes.",
   "academicFilesEmpty": "Sube PDF, imágenes o documentos de la asignatura (máx. 25 MB).",
   "academicFileUpload": "Subir archivo",
   "academicFileUploading": "Subiendo… {percent} %",
@@ -295,7 +295,7 @@
   "academicMindMapExpandAll": "Desplegar todo",
   "academicMindMapCollapseAll": "Plegar todo",
   "academicGenerateTitle": "Centro de generación",
-  "academicGenerateHint": "Te proponemos resúmenes, tarjetas y preguntas a partir de tus apuntes y archivos",
+  "academicGenerateHint": "Resúmenes, tarjetas y preguntas de tus apuntes y archivos",
   "academicGenerateNoSubjects": "Añade una asignatura con apuntes o archivos para generar material.",
   "academicGenerateStepSubject": "1. Asignatura",
   "academicGenerateStepKind": "2. ¿Qué quieres generar?",
@@ -351,14 +351,6 @@
   },
   "academicReviewHistory": "Historial",
   "academicReviewHistoryEmpty": "Aún no has repasado este material.",
-  "academicReviewAdjusted": "Ajustada {value}",
-  "@academicReviewAdjusted": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
   "academicReviewOpenSource": "Abrir material",
   "academicReviewDone": "¡Repaso registrado!",
   "academicQuality0": "No lo recuerdo nada",
@@ -515,7 +507,7 @@
   "academicErrorStudyDocumentNotFound": "Aún no se ha generado este documento.",
   "academicErrorStudySourceNotSupported": "Solo podemos leer apuntes, PDF e imágenes.",
   "academicErrorStudySourceWithoutSubject": "Asigna el apunte a una asignatura para poder repasarlo.",
-  "academicErrorStudyGuideEmpty": "No hemos podido leer el plan docente. Comprueba que el PDF tiene texto y no es una foto escaneada.",
+  "academicErrorStudyGuideEmpty": "No se ha podido leer el plan docente. Sube un PDF con texto, no escaneado.",
   "academicErrorStudyMaterialNotFound": "No encontramos ese material de estudio.",
   "academicErrorQuizBankNotFound": "Este material aún no tiene preguntas.",
   "academicErrorQuizBankEmpty": "No hay preguntas disponibles para practicar.",
@@ -550,7 +542,7 @@
   "academicImportStepRead": "Leyendo el plan docente",
   "academicImportWaitHint": "Suele tardar menos de un minuto.",
   "academicImportReviewTitle": "Revisa lo que hemos encontrado",
-  "academicImportReviewHint": "Corrige lo que haga falta. No se guarda nada hasta que confirmes abajo.",
+  "academicImportReviewHint": "Corrige lo que haga falta. No se guarda hasta que confirmes.",
   "academicImportSubject": "Asignatura",
   "academicImportName": "Nombre",
   "academicImportCode": "Código",
@@ -598,7 +590,6 @@
       }
     }
   },
-  "academicImportRemoveTopic": "Quitar tema",
   "academicImportEvaluation": "Evaluación",
   "academicImportModeQuestion": "¿Cómo te vas a evaluar?",
   "academicImportDuration": "{minutes} min",
@@ -618,7 +609,6 @@
     }
   },
   "academicImportAddDate": "Poner fecha",
-  "academicImportClearDate": "Quitar fecha",
   "academicImportTotalWarning": "Los pesos suman {total} %. Revísalos si no cuadra con tu plan docente.",
   "@academicImportTotalWarning": {
     "placeholders": {
@@ -728,7 +718,6 @@
   "academicImportDiscardMessage": "Perderás los cambios que has hecho en este plan docente.",
   "academicImportDiscardConfirm": "Descartar",
   "academicGuideModeLabel": "Modalidad de evaluación",
-  "academicGradeNone": "Sin nota",
   "academicGuideSyllabusCount": "{done} de {total} temas · {percent} %",
   "@academicGuideSyllabusCount": {
     "placeholders": {
@@ -812,7 +801,7 @@
   },
   "academicFlashcardsExportAnki": "Exportar a Anki",
   "academicFlashcardsAnkiDeck": "SynaptixFit",
-  "academicFlashcardsAnkiExported": "Archivo guardado en la carpeta que elegiste (en el navegador, en Descargas). En Anki (ordenador): Archivo › Importar y elige el archivo; en AnkiDroid: menú ⋮ › Importar.",
+  "academicFlashcardsAnkiExported": "Archivo guardado. En Anki: Archivo › Importar; en AnkiDroid: ⋮ › Importar.",
   "academicReviewNext": "{count, plural, =1{Siguiente repaso (queda 1)} other{Siguiente repaso (quedan {count})}}",
   "academicReviewStopQueue": "Dejarlo por hoy",
   "@academicReviewNext": {
@@ -825,9 +814,9 @@
   "academicSharedTabFriends": "Amigos",
   "academicSharedTabCommunity": "Comunidad",
   "academicSharedFriendsEmptyTitle": "Tus amigos aún no comparten apuntes",
-  "academicSharedFriendsEmptyMessage": "Cuando un amigo comparta un apunte, lo verás aquí. Añade amigos para empezar.",
+  "academicSharedFriendsEmptyMessage": "Aquí verás los apuntes que compartan tus amigos.",
   "academicSharedCommunityEmptyTitle": "Aún nadie ha compartido apuntes públicos",
-  "academicSharedCommunityEmptyMessage": "Aquí verás los apuntes que cualquier usuario de SynaptixFit comparte en público.",
+  "academicSharedCommunityEmptyMessage": "Aquí verás los apuntes públicos de la comunidad.",
   "academicSharedAuthorEmptyTitle": "Todavía no hay apuntes compartidos contigo",
   "academicSharedFindFriends": "Buscar amigos",
   "academicSharedOpenAuthor": "Ver el perfil de {name}",
@@ -841,7 +830,7 @@
   "academicSharedNoteTitle": "Apunte compartido",
   "academicSharedCopy": "Guardar copia en mis apuntes",
   "academicSharedCopyHint": "La copia es privada: puedes editarla sin cambiar el original.",
-  "academicSharedCopied": "Copia guardada en tus apuntes: en esa asignatura si la tienes o, si no, en Académico, entre los apuntes sin asignatura.",
+  "academicSharedCopied": "Copia guardada en tus apuntes (en su asignatura o en Académico, sin asignatura).",
   "academicSharedOpenCopy": "Abrir mi copia",
   "academicSharedOpenMine": "Abrir en mis apuntes",
   "academicVisibilityWho": "Quién lo verá: {who}",
@@ -886,7 +875,7 @@
       }
     }
   },
-  "academicInboxHint": "Llévalos a su asignatura para repasarlos y sacarles resúmenes y preguntas.",
+  "academicInboxHint": "Llévalos a su asignatura para repasarlos.",
   "academicInboxMove": "Mover a asignatura",
   "academicInboxMoveTitle": "Mover «{title}» a…",
   "@academicInboxMoveTitle": {
@@ -906,7 +895,7 @@
   },
   "academicInboxOpenHint": "Abrir el apunte",
   "academicPracticeRegenerateTitle": "¿Generar preguntas nuevas?",
-  "academicPracticeRegenerateMessage": "Se borran las preguntas de ahora y tus aciertos y fallos en cada una (las cifras de intentadas y acertadas vuelven a cero). Tus simulacros conservan su nota, pero ya no verás sus preguntas (tampoco las de uno a medias).",
+  "academicPracticeRegenerateMessage": "Se borran las preguntas de ahora y sus aciertos. Las notas de tus simulacros se conservan.",
   "academicPracticeRegenerateConfirm": "Generar nuevas",
   "academicGenerateCreateNote": "Crear apunte",
   "academicGenerateUploadFile": "Subir archivo",
@@ -951,7 +940,7 @@
       }
     }
   },
-  "academicReviewSameInterval": "La última vez te costó, así que el repaso empieza de nuevo: vuelve mañana y después cada vez más espaciado.",
+  "academicReviewSameInterval": "Te costó: vuelve a repasarlo mañana.",
   "academicReviewSave": "Guardar repaso",
   "academicReviewChooseFirst": "Elige cómo te fue",
   "academicReviewDoFirst": "Primero repásalo",
@@ -966,20 +955,20 @@
   },
   "academicReviewNoOptions": "No se pudieron cargar las respuestas.",
   "academicAiRegenerateTitle": "¿Escribirlo de nuevo?",
-  "academicAiRegenerateMessage": "Te propondremos otra versión, que sustituirá a la que ves ahora. La de ahora no se podrá recuperar.",
+  "academicAiRegenerateMessage": "Se cambiará por otra versión y la de ahora se perderá.",
   "academicSubjectArchiveTitle": "¿Archivar la asignatura?",
-  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el calendario. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras en Académico › Archivadas.",
+  "academicSubjectArchiveMessage": "Deja de salir en listas y calendario. La recuperas en Académico › Archivadas.",
   "academicScanEntry": "Desde una foto",
   "academicScanEntryLong": "Fotografiar apuntes en papel",
   "academicScanEntryHint": "Haz fotos de tus hojas y las pasamos a un apunte",
   "academicScanTitle": "Fotografiar apuntes",
   "academicScanReviewTitle": "Revisa el texto",
-  "academicScanIntro": "Haz una foto de cada página. Leemos el texto y lo ordenamos para que solo tengas que revisarlo y guardarlo.",
+  "academicScanIntro": "Haz una foto de cada página; luego revisas el texto y lo guardas.",
   "academicScanTipLight": "Con buena luz y sin sombras sobre la hoja.",
   "academicScanTipWhole": "Con la hoja entera, recta y llenando la foto.",
   "academicScanTipHandwriting": "Funciona mejor con letra clara o apuntes impresos.",
   "academicScanEmptyTitle": "Aún no hay fotos",
-  "academicScanEmptyMessage": "Empieza por la primera página: haz una foto o elígela de tu galería.",
+  "academicScanEmptyMessage": "Haz una foto de la primera página o elígela de la galería.",
   "academicScanPhotos": "Páginas ({count} de {max})",
   "@academicScanPhotos": {
     "placeholders": {
@@ -1009,7 +998,7 @@
   },
   "academicScanCamera": "Hacer foto",
   "academicScanGallery": "Elegir de la galería",
-  "academicScanFull": "Ya tienes {max} páginas, el máximo de una vez. Pasa estas a texto y luego empieza otro apunte.",
+  "academicScanFull": "Máximo {max} páginas. Pásalas a texto y empieza otro apunte.",
   "@academicScanFull": {
     "placeholders": {
       "max": {
@@ -1035,14 +1024,14 @@
   },
   "academicScanReadingHint": "Puede tardar unos segundos por página. No cierres esta pantalla.",
   "academicScanTidied": "Ordenado para ti",
-  "academicScanTidiedHint": "Hemos corregido errores de lectura y le hemos dado formato. Revisa que diga lo mismo que tus apuntes.",
+  "academicScanTidiedHint": "Revisa que diga lo mismo que tus apuntes.",
   "academicScanRaw": "Texto tal cual se leyó",
   "academicScanRawHint": "Ahora no hemos podido ordenarlo. Corrige lo que no se haya leído bien.",
   "academicScanDefaultTitle": "Apuntes escaneados",
   "academicScanTextLabel": "Texto del apunte",
   "academicScanBackToPhotos": "Volver a las fotos",
   "academicScanSave": "Guardar apunte",
-  "academicScanSaved": "Apunte guardado (solo lo ves tú). Lo tienes en su asignatura, en «Apuntes y archivos»; si no elegiste ninguna, en Académico, entre los apuntes sin asignatura.",
+  "academicScanSaved": "Apunte guardado en su asignatura (o en Académico, sin asignatura).",
   "academicScanLeaveTitle": "¿Salir sin guardar?",
   "academicScanLeaveMessage": "Se perderán las fotos y el texto leído.",
   "academicScanLeaveConfirm": "Salir",
@@ -1051,10 +1040,10 @@
   "academicErrorNoteScanNothingFound": "No hemos podido leer texto en las fotos. Prueba con más luz y la hoja recta.",
   "academicErrorNoteScanUnavailable": "Ahora mismo no podemos leer fotos. Inténtalo en un rato.",
   "academicMockCardTitle": "Simulacro de la asignatura",
-  "academicMockCardBody": "Mezcla preguntas de varios apuntes y archivos, como en el examen de verdad. Así sabes qué llevas bien y qué no.",
+  "academicMockCardBody": "Preguntas mezcladas de varios apuntes, como en el examen.",
   "academicMockCardAction": "Hacer un simulacro",
   "academicMockSetupTitle": "Preparar simulacro",
-  "academicMockSetupIntro": "Elige qué apuntes y archivos entran y cuántas preguntas quieres. Las preguntas salen mezcladas y se corrigen al terminar.",
+  "academicMockSetupIntro": "Elige qué entra y cuántas preguntas quieres.",
   "academicMockSetupWhat": "¿Qué entra?",
   "academicMockSetupAll": "Elegir todo",
   "academicMockSetupNone": "Quitar todo",
@@ -1075,7 +1064,7 @@
     }
   },
   "academicMockSetupHowMany": "¿Cuántas preguntas?",
-  "academicMockSetupAvailable": "{count, plural, =1{Hay 1 pregunta entre lo que has elegido.} other{Hay {count} preguntas entre lo que has elegido.}}",
+  "academicMockSetupAvailable": "{count, plural, =1{1 pregunta disponible} other{{count} preguntas disponibles}}",
   "@academicMockSetupAvailable": {
     "placeholders": {
       "count": {
@@ -1093,15 +1082,15 @@
     }
   },
   "academicMockSetupEmptyTitle": "Aún no hay preguntas",
-  "academicMockSetupEmptyMessage": "Abre un apunte o un archivo de la asignatura y toca «Practicar»: te preparamos preguntas con su contenido. Luego vuelve aquí.",
+  "academicMockSetupEmptyMessage": "Abre un apunte o archivo y toca «Practicar» para crear preguntas.",
   "academicMockSetupEmptyAction": "Volver a la asignatura",
-  "academicGenerateReviewHint": "Revisa que esté bien antes de guardarlo y corrige lo que haga falta.",
+  "academicGenerateReviewHint": "Revisa que esté bien antes de guardarlo.",
   "academicGenerateEditedPill": "Corregido por ti",
   "academicGenerateFix": "Corregir",
   "academicGenerateRemove": "Quitar",
   "academicGenerateFixSummary": "Corregir el texto",
   "academicGenerateFixSummaryTitle": "Corregir el resumen",
-  "academicGenerateFixSummaryHint": "Cambia lo que esté mal o sobre. Las líneas que empiezan por # son títulos; las que empiezan por un guion, listas.",
+  "academicGenerateFixSummaryHint": "Corrige lo que sobre o esté mal. # es un título y - una lista.",
   "academicGenerateFixSummaryLabel": "Texto del resumen",
   "academicGenerateFixDone": "Listo",
   "academicGenerateFixCardTitle": "Corregir la tarjeta",
@@ -1158,15 +1147,14 @@
       }
     }
   },
-  "academicGenerateItemRemoved": "Quitada",
   "academicGenerateAllRemoved": "Has quitado todo",
   "academicGenerateAllRemovedHint": "Deshaz el último cambio o vuelve a generar para tener preguntas nuevas.",
   "academicGenerateLoseEditsTitle": "¿Perder tus correcciones?",
-  "academicGenerateLoseEditsMessage": "Has corregido este resultado. Si lo descartas o lo generas otra vez, se perderán tus cambios.",
+  "academicGenerateLoseEditsMessage": "Se perderán tus cambios.",
   "academicGenerateLoseEditsConfirm": "Sí, perderlas",
   "academicAiFixHint": "Para corregirlo o tenerlo con tus apuntes, guárdalo como apunte.",
   "academicAiSaveAsNote": "Guardar como apunte",
-  "academicAiSaveAsNoteHint": "Se crea un apunte tuyo que puedes editar. Este documento no cambia.",
+  "academicAiSaveAsNoteHint": "Se crea un apunte tuyo que puedes editar; esto no cambia.",
   "academicAiNoteTitle": "{kind} · {source}",
   "@academicAiNoteTitle": {
     "placeholders": {
@@ -1179,7 +1167,7 @@
     }
   },
   "academicAiSavedAsNote": "Guardado como apunte en su asignatura, en «Apuntes y archivos». Ya puedes corregirlo.",
-  "academicScanCameraDenied": "Para hacer fotos, SynaptixFit necesita la cámara. Actívala en los ajustes del móvil o elige las fotos de tu galería.",
+  "academicScanCameraDenied": "Sin permiso de cámara. Actívalo en los ajustes del móvil o elige fotos de la galería.",
   "academicScanCameraMissing": "Este dispositivo no tiene cámara. Elige las fotos de tu galería.",
   "academicScanChangePhotos": "Cambiar las fotos",
   "academicScanBackTitle": "¿Volver a las fotos?",
@@ -1277,7 +1265,7 @@
   },
   "academicSearchTitle": "Buscar en Académico",
   "academicSearchLabel": "Buscar asignaturas, apuntes, archivos y entregas",
-  "academicSearchHint": "Escribe al menos dos letras. Buscamos en asignaturas, apuntes, archivos y entregas.",
+  "academicSearchHint": "Escribe al menos dos letras.",
   "academicSearchGroupSubjects": "Asignaturas",
   "academicSearchGroupNotes": "Apuntes",
   "academicSearchGroupFiles": "Archivos",

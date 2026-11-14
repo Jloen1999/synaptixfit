@@ -327,7 +327,7 @@ class _DeadlinesViewState extends State<_DeadlinesView>
                       );
                     }
                     final d = state.visibleItems[i];
-                    return _DeadlineTile(
+                    final tile = _DeadlineTile(
                       deadline: d,
                       highlighted: d.id == state.focusId,
                       subjectName: state.subjectName(d.subjectId),
@@ -339,6 +339,36 @@ class _DeadlinesViewState extends State<_DeadlinesView>
                       },
                       onEdit: () => _openForm(context, deadline: d),
                       onDelete: () => _delete(context, d.id),
+                    );
+                    // Una línea sobre la primera: borrar es deslizar (el
+                    // lector tiene la acción en la fila).
+                    if (i != 0) return tile;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ExcludeSemantics(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.swipe_left_rounded,
+                                size: TokensSize.iconXs,
+                                color: context.colors.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: TokensSpacing.xs),
+                              Expanded(
+                                child: Text(
+                                  l10n.plannerDeadlinesSwipeHint,
+                                  style: context.textStyles.bodySmall?.copyWith(
+                                    color: context.colors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: TokensSpacing.xs),
+                        tile,
+                      ],
                     );
                   },
                 ),

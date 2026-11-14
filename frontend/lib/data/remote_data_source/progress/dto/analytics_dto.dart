@@ -23,6 +23,9 @@ DateTime _week(String value) {
 abstract class WeeklyAnalyticsDto with _$WeeklyAnalyticsDto {
   const factory WeeklyAnalyticsDto({
     String? period,
+
+    /// Semana en curso según el servidor (lunes, `2026-10-12`).
+    String? toWeek,
     @Default(<WeekMetricDto>[]) List<WeekMetricDto> weeks,
     @Default(0) int totalSessions,
     @Default(0) int totalMinutes,
@@ -37,6 +40,7 @@ abstract class WeeklyAnalyticsDto with _$WeeklyAnalyticsDto {
 
   WeeklyAnalytics toDomain() => WeeklyAnalytics(
     period: AnalyticsPeriod.fromApi(period),
+    currentWeekStart: toWeek == null ? null : _week(toWeek!),
     weeks: weeks.map((w) => w.toDomain()).toList(),
     totalSessions: totalSessions,
     totalMinutes: totalMinutes,

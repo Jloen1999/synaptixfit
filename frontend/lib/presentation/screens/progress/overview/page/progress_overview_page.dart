@@ -20,13 +20,14 @@ import '../../widgets/study_week_card.dart';
 import '../../widgets/analytics_summary.dart';
 import '../../widgets/balance_card.dart';
 import '../../widgets/community_preview_card.dart';
-import '../../widgets/level_card.dart';
 import '../../widgets/next_badge_card.dart';
 import '../../widgets/physical_load_card.dart';
 import '../../widgets/streak_card.dart';
+import '../../widgets/week_headline_card.dart';
 import '../bloc/progress_overview_bloc.dart';
 
-/// Pestaña Progreso: «Resumen» (nivel, racha y cifras), «Retos» e
+/// Pestaña Progreso: «Resumen» (titular de la semana, nivel, racha y, plegadas,
+/// las cifras), «Retos» e
 /// «Insignias». Aquí viven el XP, las rachas, las insignias y los retos
 /// (vocabulario.md §4); el resto de la app no enseña cifras de XP. El apartado
 /// llega con `?tab=` (avisos, Inicio, celebraciones).
@@ -132,6 +133,9 @@ class _ProgressOverviewView extends StatefulWidget {
 
 class _ProgressOverviewViewState extends State<_ProgressOverviewView>
     with ErrorsMessageMixin {
+  /// «Ver más»: plegado de entrada para que el resumen vaya al grano.
+  bool _more = false;
+
   Future<void> _refresh() {
     final bloc = context.read<ProgressOverviewBloc>()
       ..add(const ProgressOverviewEvent.refreshed());
@@ -159,6 +163,7 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.localizations;
     return BlocConsumer<ProgressOverviewBloc, ProgressOverviewState>(
       listenWhen: (previous, current) =>
           current is ProgressOverviewLoaded && previous != current,
@@ -185,61 +190,87 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                 onRefresh: _refresh,
                 child: _Constrained(
                   children: [
-                    LevelCard(account: overview.account),
-                    StreakCard(streak: overview.streak),
-                    // Carga cognitiva, carga física y energía de hoy: cifras
-                    // técnicas que salieron de Inicio (ADR 0038).
-                    if (today != null)
-                      BalanceCard(
-                        cognitive: today.cognitive,
-                        crossRegulation: today.crossRegulation,
-                        wellbeing: today.wellbeing,
-                        focus: focus,
-                        // Sin enlaces propios: el análisis y el Pomodoro ya se
-                        // abren desde sus tarjetas (un camino por destino).
-                      )
-                    else if (todayError != null)
-                      _BalanceError(
-                        focus: focus,
-                        error: todayError,
-                        onRetry: () => context.read<ProgressOverviewBloc>().add(
-                          const ProgressOverviewEvent.refreshed(),
+                    // Al grano (vocabulario §4): el titular de la semana, el
+                    // nivel y la racha; lo que sigue; y el resto, plegado.
+                    WeekHeadlineCard(
+                      account: overview.account,
+                      streak: overview.streak,
+                      focus: focus,
+                      studyWeek: overview.studyWeek,
+                      weekly: overview.weekly,
+                      onRetry: () => context.read<ProgressOverviewBloc>().add(
+                        const ProgressOverviewEvent.refreshed(),
+                      ),
+                      // Semana a cero: la acción útil es planificar algo.
+                      onStart: () =>
+                          context.go(ProgressExternalPaths.addEvent()),
+                    ),
+                    if (focus.includesAcademic &&
+                        (overview.studyWeek?.reviewsDue ?? 0) > 0)
+                      AppPrimaryButton(
+                        label: l10n.progressStudyReviewNow(
+                          overview.studyWeek!.reviewsDue,
                         ),
+                        icon: Icons.replay_rounded,
+                        // Los repasos pendientes están en la pestaña Académico.
+                        onPressed: () =>
+                            context.go(ProgressExternalPaths.academic),
                       ),
                     // Las ganadas están en «Insignias»: aquí solo la siguiente.
                     if (overview.nextBadge case final next?)
                       NextBadgeCard(badge: next, onOpen: widget.onOpenBadges),
-                    // Cifras de estudio: solo si la persona estudia.
-                    if (focus.includesAcademic)
-                      StudyWeekCard(
-                        week: overview.studyWeek,
-                        onFocus: () =>
-                            context.push(ProgressExternalPaths.pomodoro),
-                        // Los repasos pendientes están en la pestaña Académico.
-                        onReview: () =>
-                            context.go(ProgressExternalPaths.academic),
-                        onRetry: () => context.read<ProgressOverviewBloc>().add(
-                          const ProgressOverviewEvent.refreshed(),
+                    _MoreToggle(
+                      open: _more,
+                      onToggle: () => setState(() => _more = !_more),
+                    ),
+                    if (_more) ...[
+                      // Carga cognitiva, carga física y energía de hoy: cifras
+                      // técnicas que salieron de Inicio (ADR 0038).
+                      if (today != null)
+                        BalanceCard(
+                          cognitive: today.cognitive,
+                          crossRegulation: today.crossRegulation,
+                          wellbeing: today.wellbeing,
+                          focus: focus,
+                        )
+                      else if (todayError != null)
+                        _BalanceError(
+                          focus: focus,
+                          error: todayError,
+                          onRetry: () => context
+                              .read<ProgressOverviewBloc>()
+                              .add(const ProgressOverviewEvent.refreshed()),
+                        ),
+                      StreakCard(streak: overview.streak),
+                      // Cifras de estudio: solo si la persona estudia.
+                      if (focus.includesAcademic) ...[
+                        StudyWeekCard(
+                          week: overview.studyWeek,
+                          onFocus: () =>
+                              context.push(ProgressExternalPaths.pomodoro),
+                          onRetry: () => context
+                              .read<ProgressOverviewBloc>()
+                              .add(const ProgressOverviewEvent.refreshed()),
+                        ),
+                        StudyBySubjectCard(report: overview.studyBySubject),
+                      ],
+                      // Cifras de entrenamiento: solo si la persona hace deporte.
+                      if (focus.includesFitness) ...[
+                        WeeklySummaryCard(
+                          weekly: overview.weekly,
+                          onOpen: () => _open(ProgressPaths.analytics),
+                        ),
+                        PhysicalLoadCard(load: overview.physicalLoad),
+                      ],
+                      CommunityPreviewCard(
+                        posts: overview.communityPosts,
+                        onOpenWall: () =>
+                            context.push(ProgressExternalPaths.socialWall),
+                        onOpenPost: (post) => context.push(
+                          ProgressExternalPaths.socialPost(post.id),
                         ),
                       ),
-                    if (focus.includesAcademic)
-                      StudyBySubjectCard(report: overview.studyBySubject),
-                    // Cifras de entrenamiento: solo si la persona hace deporte.
-                    if (focus.includesFitness) ...[
-                      WeeklySummaryCard(
-                        weekly: overview.weekly,
-                        onOpen: () => _open(ProgressPaths.analytics),
-                      ),
-                      PhysicalLoadCard(load: overview.physicalLoad),
                     ],
-                    CommunityPreviewCard(
-                      posts: overview.communityPosts,
-                      onOpenWall: () =>
-                          context.push(ProgressExternalPaths.socialWall),
-                      onOpenPost: (post) => context.push(
-                        ProgressExternalPaths.socialPost(post.id),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -291,11 +322,9 @@ class _OverviewSkeleton extends StatelessWidget {
     return const AppSkeletonGroup(
       child: _Constrained(
         children: [
-          AppSkeleton(height: 148),
-          AppSkeleton(height: 200),
-          AppSkeleton(height: 160),
-          AppSkeleton(height: 120),
-          AppSkeleton(height: 160),
+          AppSkeleton(height: TokensSize.chartCompact),
+          AppSkeleton(height: TokensSize.listTileMin),
+          AppSkeleton(height: TokensSize.skeletonCard),
         ],
       ),
     );
@@ -330,4 +359,30 @@ class _BalanceError extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// «Ver más» / «Ver menos»: despliega las cifras de detalle del resumen.
+class _MoreToggle extends StatelessWidget {
+  const _MoreToggle({required this.open, required this.onToggle});
+
+  final bool open;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Semantics(
+      expanded: open,
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          onPressed: onToggle,
+          icon: Icon(
+            open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+          ),
+          label: Text(open ? l10n.commonShowLess : l10n.progressShowMore),
+        ),
+      ),
+    );
+  }
 }

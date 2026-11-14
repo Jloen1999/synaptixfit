@@ -7,23 +7,15 @@
   "trainingNewRoutineManualHint": "Diseña tú las semanas, días y ejercicios",
   "trainingMyRoutines": "Mis rutinas",
   "trainingNoRoutinesTitle": "Aún no tienes rutinas",
-  "trainingNoRoutinesMessage": "Crea tu primera rutina: te proponemos una con tus objetivos o la montas tú desde cero.",
+  "trainingNoRoutinesMessage": "Crea tu primera rutina: te proponemos una o la montas tú.",
   "trainingNextWorkout": "Próximo entrenamiento",
   "trainingNoPendingDay": "No tienes días pendientes",
   "trainingNoPendingDayHint": "Activa una rutina o haz una sesión libre.",
   "trainingFreeSession": "Sesión libre",
   "trainingStart": "Empezar",
   "trainingTrain": "Entrenar",
-  "trainingFatigueScore": "Fatiga {score}/100",
-  "@trainingFatigueScore": {
-    "placeholders": {
-      "score": {
-        "type": "int"
-      }
-    }
-  },
   "trainingFatigueTitle": "Puntuación de fatiga",
-  "trainingFatigueAdapt": "Con este cansancio, tu sesión de hoy se adapta sola: menos series en cada ejercicio (lo verás al empezarla). Tu rutina no cambia.",
+  "trainingFatigueAdapt": "Con este cansancio, hoy harás menos series. Tu rutina no cambia.",
   "trainingFatigueOk": "Estás en buena forma para entrenar.",
   "trainingRecommendationsTitle": "Sugerencias",
   "trainingRecommendationsCount": "{count, plural, =1{1 sugerencia} other{{count} sugerencias}}",
@@ -272,9 +264,6 @@
   "trainingWeekNoDays": "Esta semana no tiene días.",
   "trainingDayNoExercises": "Sin ejercicios todavía.",
   "trainingDayTaken": "Ya existe",
-  "trainingMoveUp": "Subir",
-  "trainingMoveDown": "Bajar",
-  "trainingEditParameters": "Editar parámetros",
   "trainingRemoveExercise": "Quitar ejercicio",
   "trainingRemoveExerciseMessage": "¿Quitar «{name}» de este día?",
   "@trainingRemoveExerciseMessage": {
@@ -495,15 +484,6 @@
   "trainingSessionFree": "Sesión libre",
   "trainingSessionRoutine": "Sesión de rutina",
   "trainingSessionWeekly": "Sesión del plan semanal",
-  "trainingInProgress": "En curso",
-  "trainingSetsCount": "{count, plural, =1{1 serie} other{{count} series}}",
-  "@trainingSetsCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "trainingCheckInTitle": "¿Qué tal estás hoy?",
   "trainingPainZones": "Zonas con dolor",
   "trainingPainNeck": "Cuello",
@@ -586,7 +566,6 @@
   "trainingMsgCheckInSaved": "Guardado: adaptamos tu día a cómo estás",
   "trainingMsgPlanSaved": "Plan semanal guardado",
   "trainingMsgPlanDeleted": "Plan semanal eliminado",
-  "trainingMsgSessionUnmarked": "Sesión desmarcada",
   "trainingMsgSessionAbandoned": "Sesión descartada",
   "trainingMsgSetSaved": "Serie registrada",
   "trainingErrorExerciseNotFound": "Ese ejercicio no existe.",
@@ -613,7 +592,6 @@
   "trainingVideoPlay": "Reproducir vídeo",
   "trainingVideoPause": "Pausar vídeo",
   "trainingRecordsTitle": "Tus récords",
-  "trainingSessionsTitle": "Sesiones",
   "trainingRecordWeight": "{weight} kg × {reps}",
   "@trainingRecordWeight": {
     "placeholders": {
@@ -644,7 +622,6 @@
       }
     }
   },
-  "trainingMoreOptions": "Más opciones",
   "trainingRecordUnnamed": "Ejercicio",
   "trainingRecordBrokenUnnamed": "Récord: {value}",
   "@trainingRecordBrokenUnnamed": {
@@ -666,14 +643,6 @@
   "trainingCategoryOlympic": "Halterofilia",
   "trainingCategoryCombat": "Combate",
   "trainingCategoryRehab": "Readaptación",
-  "trainingExerciseMoreActions": "Más opciones de {name}",
-  "@trainingExerciseMoreActions": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "trainingReplaceExercise": "Cambiar ejercicio",
   "trainingReplaceHint": "Ejercicios que trabajan lo mismo que «{name}». Se conservan las series y el descanso.",
   "@trainingReplaceHint": {
@@ -785,14 +754,6 @@
   "trainingAdaptedExam": "Tienes un examen cerca.",
   "trainingAdaptedOvertraining": "Tu carga de entrenamiento está muy alta.",
   "trainingAdaptedFatigue": "Hoy te encuentras con mucho cansancio.",
-  "trainingAdaptedSets": "Por eso hoy, series al {percent} % de lo planificado.",
-  "@trainingAdaptedSets": {
-    "placeholders": {
-      "percent": {
-        "type": "int"
-      }
-    }
-  },
   "trainingVolumeMoved": "{kg} kg movidos",
   "@trainingVolumeMoved": {
     "placeholders": {
@@ -850,7 +811,7 @@
     }
   },
   "trainingMsgSessionShared": "Publicado. Lo tienes en Comunidad (Inicio › Muro de la comunidad).",
-  "trainingMsgPendingSetDiscarded": "Una serie guardada sin conexión no se pudo subir y se ha descartado. Revísala y apúntala de nuevo.",
+  "trainingMsgPendingSetDiscarded": "Una serie sin conexión no se pudo subir. Apúntala de nuevo.",
   "@trainingMsgPendingSetDiscarded": {
     "description": "Aviso: una serie de la cola sin conexión fue rechazada por el servidor."
   },
@@ -884,7 +845,7 @@
     }
   },
   "trainingPastActivityTitle": "Apuntar actividad",
-  "trainingPastActivityIntro": "¿Hiciste deporte sin la app? Apúntalo y contará en tu carga física y en tu semana. Puedes apuntar lo de los últimos 7 días; lo verás en Entreno › Historial › Actividades y partidos.",
+  "trainingPastActivityIntro": "Apunta lo que hiciste sin la app (últimos 7 días). Cuenta en tu semana.",
   "trainingPastActivityWhat": "¿Qué hiciste?",
   "trainingPastActivityName": "Actividad",
   "trainingPastActivityFootball": "Fútbol",
@@ -906,7 +867,7 @@
       }
     }
   },
-  "trainingOfflinePending": "{count, plural, =1{Sin conexión: 1 serie se guardará en cuanto vuelva la cobertura.} other{Sin conexión: {count} series se guardarán en cuanto vuelva la cobertura.}} Para terminar el entreno hace falta conexión.",
+  "trainingOfflinePending": "{count, plural, =1{Sin conexión: 1 serie por subir.} other{Sin conexión: {count} series por subir.}} Para terminar hace falta conexión.",
   "@trainingOfflinePending": {
     "placeholders": {
       "count": {
@@ -982,7 +943,7 @@
       }
     }
   },
-  "trainingHowToEmpty": "Aún no hay instrucciones escritas para este ejercicio: guíate por la demostración.",
+  "trainingHowToEmpty": "Sin instrucciones escritas: guíate por la demostración.",
   "trainingChipSetsRepsLabel": "{sets, plural, =1{1 serie} other{{sets} series}} × {reps} reps",
   "@trainingChipSetsRepsLabel": {
     "placeholders": {
@@ -1087,13 +1048,11 @@
     }
   },
   "trainingSkipDay": "Saltar este día",
-  "trainingSkipDayTitle": "¿Saltar este día?",
-  "trainingSkipDayMessage": "La rutina pasa al día siguiente y el calendario quita este entreno. Para recuperarlo: abre la rutina, toca ese día y pulsa «Recuperar».",
   "trainingUnskipDay": "Recuperar",
   "trainingDaySkipped": "Día saltado",
   "trainingDayUnskipped": "Día recuperado",
   "trainingSkipEarlierTitle": "¿Entrenar este día?",
-  "trainingSkipEarlierMessage": "Aún quedan días anteriores por hacer. Al terminar este, se darán por saltados. Para recuperarlos: en la rutina, toca cada día y pulsa «Recuperar».",
+  "trainingSkipEarlierMessage": "Los días anteriores sin hacer se darán por saltados. Puedes recuperarlos desde la rutina.",
   "trainingDiscardSession": "Descartar sesión",
   "trainingDiscardSessionTitle": "¿Descartar la sesión?",
   "trainingDiscardSessionMessage": "Se borran las series que has marcado. No se puede deshacer.",
@@ -1142,7 +1101,7 @@
   "trainingRoutineRestarted": "Nuevo ciclo empezado",
   "trainingPastActivityModeOther": "Otro deporte",
   "trainingPastActivityModeRoutine": "Día de mi rutina",
-  "trainingPastActivityRoutineIntro": "Apunta un día de tu rutina que entrenaste sin la app: avanza la rutina y cuenta en su fecha.",
+  "trainingPastActivityRoutineIntro": "Apunta un día de tu rutina que hiciste sin la app.",
   "trainingPastActivityRoutineDay": "Qué día de la rutina",
   "trainingPastActivityNoRoutine": "No tienes una rutina en curso. Empieza una para apuntar sus días.",
   "trainingErrorRoutineDayNotSkippable": "Ese día ya está hecho: no se puede saltar.",
@@ -1289,20 +1248,6 @@
   },
   "trainingMsgExerciseReplaced": "Ejercicio cambiado",
   "trainingMsgExerciseRemoved": "Ejercicio quitado",
-  "trainingLiveProgress": "{done} de {total} ejercicios · {minutes} min",
-  "@trainingLiveProgress": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
   "trainingLiveStripItem": "Ejercicio {index} de {total}: {name}, {done} de {sets} series",
   "@trainingLiveStripItem": {
     "placeholders": {
@@ -1477,7 +1422,7 @@
   "trainingRecommendationScope": "Cuándo: se guarda en tu rutina y lo verás desde la próxima vez que hagas este día.",
   "trainingRecommendationScopeApplied": "Ya está en tu rutina: lo verás la próxima vez que hagas este día.",
   "trainingRecommendationIfNot": "«Ahora no» la quita y tu rutina sigue igual.",
-  "trainingWhyFailedReps": "{count, plural, =1{Por qué: fallaste 1 repetición en la última sesión.} other{Por qué: fallaste {count} repeticiones en la última sesión.}}",
+  "trainingWhyFailedReps": "{count, plural, =1{Por qué: fallaste 1 repetición la última vez.} other{Por qué: fallaste {count} repeticiones la última vez.}}",
   "@trainingWhyFailedReps": {
     "placeholders": {
       "count": {
@@ -1501,7 +1446,7 @@
       }
     }
   },
-  "trainingWhyLowRpe": "Por qué: completaste todas las series sin fallos con un esfuerzo moderado (RPE {rpe} de 10).",
+  "trainingWhyLowRpe": "Por qué: hiciste todas las series con esfuerzo moderado ({rpe} de 10).",
   "@trainingWhyLowRpe": {
     "placeholders": {
       "rpe": {
@@ -1643,7 +1588,7 @@
     }
   },
   "trainingAdaptedDeclineTitle": "¿Hacer la sesión completa?",
-  "trainingAdaptedDeclineMessage": "Hoy se recortaron series para cuidarte. Si la haces completa, entrenarás con todas las series planificadas.",
+  "trainingAdaptedDeclineMessage": "Hoy tocaban menos series para cuidarte. Si la haces completa, harás todas.",
   "trainingLoadUp": "Hoy prueba {value}",
   "@trainingLoadUp": {
     "placeholders": {
@@ -1745,7 +1690,7 @@
       }
     }
   },
-  "trainingLoadWhyLowRpe": "Por qué: la última vez hiciste {previous} y te costó {rpe} de 10, sin llegar al fallo. Puedes subir un poco.",
+  "trainingLoadWhyLowRpe": "Por qué: la última vez, {previous} con esfuerzo {rpe} de 10. Puedes subir un poco.",
   "@trainingLoadWhyLowRpe": {
     "placeholders": {
       "previous": {
@@ -1767,7 +1712,7 @@
       }
     }
   },
-  "trainingLoadWhyVeryHighRpe": "Por qué: la última vez hiciste {previous} y te costó {rpe} de 10, al límite. Mejor bajar un poco.",
+  "trainingLoadWhyVeryHighRpe": "Por qué: la última vez, {previous} con esfuerzo {rpe} de 10. Mejor bajar un poco.",
   "@trainingLoadWhyVeryHighRpe": {
     "placeholders": {
       "previous": {
@@ -1778,7 +1723,7 @@
       }
     }
   },
-  "trainingLoadWhyFailed": "Por qué: la última vez no completaste todas las repeticiones con {previous}. Mejor bajar un poco.",
+  "trainingLoadWhyFailed": "Por qué: la última vez no llegaste a todas las repeticiones con {previous}.",
   "@trainingLoadWhyFailed": {
     "placeholders": {
       "previous": {
@@ -1863,7 +1808,7 @@
     }
   },
   "trainingLeaveTitle": "¿Salir sin terminar?",
-  "trainingLeaveMessage": "{count, plural, =0{Aún no has marcado ninguna serie.} =1{No pierdes nada: la serie que has marcado ya está guardada.} other{No pierdes nada: las {count} series que has marcado ya están guardadas.}}",
+  "trainingLeaveMessage": "{count, plural, =0{Aún no has marcado ninguna serie.} =1{La serie marcada ya está guardada.} other{Las {count} series marcadas ya están guardadas.}}",
   "trainingLeavePause": "Pausar y salir",
   "trainingLeavePauseHint": "El tiempo se para.",
   "trainingLeaveFinishHint": "Se guarda con lo que has hecho",
@@ -1947,7 +1892,7 @@
   "trainingGuideKeyPoints": "Las claves",
   "trainingGuideMistakes": "Errores comunes",
   "trainingNoteTitle": "Tu nota",
-  "trainingNoteHint": "Apunta lo que quieras recordar: cómo ajustaste la máquina, qué agarre te va mejor… Solo la ves tú.",
+  "trainingNoteHint": "Ajustes de la máquina, agarre… Solo la ves tú.",
   "trainingNoteAdd": "Añadir una nota",
   "trainingNoteEdit": "Editar nota",
   "trainingNoteFieldLabel": "Tu nota sobre este ejercicio",
@@ -1961,7 +1906,7 @@
   "trainingEquipmentLabel": "Material",
   "trainingSwapTodayAction": "Cambiar solo hoy",
   "trainingSwapTodayTitle": "Cambiar solo hoy",
-  "trainingSwapTodayHint": "¿Máquina ocupada o prefieres otro? Elige uno que trabaje lo mismo que «{name}». Tu rutina no cambia: es solo para esta sesión.",
+  "trainingSwapTodayHint": "Elige otro que trabaje lo mismo que «{name}». Solo para hoy.",
   "@trainingSwapTodayHint": {
     "placeholders": {
       "name": {
@@ -1989,7 +1934,7 @@
     }
   },
   "trainingWarmupSetsTitle": "Series de calentamiento",
-  "trainingWarmupSetsHint": "Series suaves para preparar el cuerpo antes de las de trabajo. No suman a tus series ni cambian el peso que te proponemos.",
+  "trainingWarmupSetsHint": "Series suaves antes de las de trabajo. No cuentan ni cambian el peso propuesto.",
   "trainingWarmupSetNumber": "Calentamiento {set}",
   "@trainingWarmupSetNumber": {
     "placeholders": {
@@ -2000,7 +1945,7 @@
   },
   "trainingWarmupAdd": "Añadir serie de calentamiento",
   "trainingToFailure": "Hasta no poder más",
-  "trainingToFailureHint": "Actívalo si no podías hacer ni una repetición más. Así no te propondremos subir el peso la próxima vez.",
+  "trainingToFailureHint": "Si no podías hacer ni una más. Así no te propondremos subir peso.",
   "trainingToFailureMark": "Hasta no poder más",
   "trainingFreeLogSet": "Apuntar serie {set}",
   "@trainingFreeLogSet": {
@@ -2075,7 +2020,7 @@
     }
   },
   "trainingTemplatesTitle": "Plantillas listas",
-  "trainingTemplatesIntro": "Elige una y se crea como rutina tuya. Después puedes cambiar lo que quieras.",
+  "trainingTemplatesIntro": "Elige una y será tuya; luego la cambias a tu gusto.",
   "trainingTemplatesAll": "Todas",
   "trainingTemplatesDays": "{count, plural, =1{1 día/semana} other{{count} días/semana}}",
   "@trainingTemplatesDays": {
@@ -2244,10 +2189,10 @@
   "trainingErrorRoutineTemplateNotFound": "Esa plantilla ya no está disponible.",
   "trainingCycleTitle": "Mi ciclo",
   "trainingCycleEntryTitle": "Seguimiento del ciclo",
-  "trainingCycleEntryHint": "Opcional, si tienes la regla: apunta tus días y cómo te sientes, y ajustamos el entreno.",
+  "trainingCycleEntryHint": "Opcional: apunta tu regla y ajustamos el entreno.",
   "trainingCycleIntroTitle": "Entrena según cómo te sientes",
-  "trainingCycleIntro": "Si lo activas, puedes apuntar los días de regla, tu energía y las molestias. Con eso calculamos en qué momento del ciclo estás y, si un día tienes molestias o poca energía, ese día el entreno es un poco más suave.",
-  "trainingCyclePrivacy": "Son datos de salud: solo los ves tú y no se comparten con nadie. Puedes borrarlos cuando quieras aquí abajo, con «Borrar todo lo apuntado».",
+  "trainingCycleIntro": "Apunta la regla, tu energía y las molestias. Los días flojos, el entreno será más suave.",
+  "trainingCyclePrivacy": "Datos de salud: solo los ves tú. Bórralos con «Borrar todo lo apuntado».",
   "trainingCycleConsent": "Acepto que SynaptixFit guarde estos datos para ajustar mi entreno",
   "trainingCycleEnable": "Activar",
   "trainingCycleDayOf": "Día {day} del ciclo",
@@ -2297,7 +2242,6 @@
       }
     }
   },
-  "trainingCycleMonth": "Tu mes",
   "trainingCycleMonthHint": "Toca un día para apuntarlo o corregirlo.",
   "trainingCyclePrevMonth": "Mes anterior",
   "trainingCycleNextMonth": "Mes siguiente",
@@ -2338,7 +2282,7 @@
   "trainingCycleDeleteAllMessage": "Se borran todos los días del ciclo. No se puede deshacer.",
   "trainingCycleDeleteAllConfirm": "Borrar todo",
   "trainingCycleHistoryDeleted": "Lo apuntado se ha borrado",
-  "trainingCycleDisabled": "Seguimiento desactivado. Para activarlo de nuevo: en Entreno › Gimnasio, abre «¿Qué tal estás hoy?» y entra en «Mi ciclo».",
+  "trainingCycleDisabled": "Desactivado. Para volver a activarlo: «¿Qué tal estás hoy?» › «Mi ciclo».",
   "trainingAdaptedCycle": "Molestias o poca energía que apuntaste hoy",
   "trainingQuickCheckInTitle": "¿Qué tal estás hoy?",
   "trainingQuickCheckInHint": "Tres toques: se guarda al contestar la tercera.",
@@ -2357,14 +2301,7 @@
   "trainingQuickChange": "Cambiar",
   "trainingQuickFull": "Añadir detalles",
   "trainingQuickAllGood": "Hoy entrenas normal. ¡A por ello!",
-  "trainingQuickAdapted": "Hoy harás menos series: un {percent} % de lo previsto.",
-  "@trainingQuickAdapted": {
-    "placeholders": {
-      "percent": {
-        "type": "int"
-      }
-    }
-  },
+  "trainingQuickAdapted": "Hoy harás menos series.",
   "trainingQuickReasonFatigue": "Porque {cause}.",
   "@trainingQuickReasonFatigue": {
     "placeholders": {
@@ -2533,8 +2470,7 @@
   "trainingErrorHealthConsentRequired": "Antes de apuntar cómo te encuentras, danos tu permiso para guardarlo.",
   "trainingSectionGym": "Gimnasio",
   "trainingSectionRun": "Correr",
-  "trainingDaySkippedHere": "Día saltado. Si cambias de idea, recupéralo aquí con «Recuperar».",
-  "trainingDaySkippedWhere": "Día saltado. Para recuperarlo: abre la rutina, toca ese día y pulsa «Recuperar».",
+  "trainingDaySkippedHere": "Día saltado.",
   "trainingPlanThisWeek": "Esta semana: {type}. {why}",
   "@trainingPlanThisWeek": {
     "placeholders": {
@@ -2679,13 +2615,13 @@
   "runStartNow": "Empezar",
   "runCreateWorkout": "Crear entreno",
   "runCreateWorkoutTitle": "Nuevo entreno de carrera",
-  "runCreateWorkoutIntro": "Elige uno listo para usar o créalo desde cero. Luego puedes cambiarlo.",
+  "runCreateWorkoutIntro": "Elige uno listo o créalo desde cero.",
   "runCreateFromScratch": "Desde cero",
   "runCreateFromScratchHint": "Tú eliges los pasos: calentar, correr, recuperar y enfriar.",
-  "runDesktopExplain": "Las carreras con GPS se graban desde la app del móvil. Aquí puedes apuntar una actividad a mano y ver todo lo que grabes.",
+  "runDesktopExplain": "Las carreras con GPS se graban en el móvil. Aquí puedes apuntarlas a mano.",
   "runUnsupportedTitle": "Graba desde el móvil",
   "runLogByHand": "Apuntar a mano",
-  "runPendingUploads": "{count, plural, =1{1 carrera espera conexión: se subirá sola, sin duplicarse.} other{{count} carreras esperan conexión: se subirán solas, sin duplicarse.}}",
+  "runPendingUploads": "{count, plural, =1{1 carrera espera conexión; se subirá sola.} other{{count} carreras esperan conexión; se subirán solas.}}",
   "@runPendingUploads": {
     "placeholders": {
       "count": {
@@ -2716,7 +2652,7 @@
   "runWeekTime": "en movimiento",
   "runWeekElevation": "de desnivel",
   "runWeekOutings": "salidas",
-  "runWeekEmpty": "Aún no has salido esta semana. Con tu primera salida verás aquí tu avance.",
+  "runWeekEmpty": "Aún no has salido esta semana.",
   "runWeekChartSpoken": "Distancia por día: {days}",
   "@runWeekChartSpoken": {
     "placeholders": {
@@ -2786,24 +2722,24 @@
   "runActivitiesEmptyMessage": "Graba tu primera carrera o apunta a mano lo que hiciste sin la app.",
   "runWorkoutsTitle": "Tus entrenos de carrera",
   "runWorkoutsEmptyTitle": "Aún no tienes entrenos de carrera",
-  "runWorkoutsEmptyMessage": "Un entreno te guía paso a paso mientras corres: calentar, correr, recuperar y enfriar.",
+  "runWorkoutsEmptyMessage": "Un entreno te guía paso a paso mientras corres.",
   "runEditWorkout": "Cambiar entreno",
   "runDeleteWorkout": "Borrar entreno",
   "runDeleteWorkoutTitle": "¿Borrar este entreno?",
   "runDeleteWorkoutMessage": "Las carreras que ya grabaste y los eventos del calendario se quedan como están.",
   "runBatteryHelp": "¿Se corta el GPS con la pantalla apagada?",
   "runBatteryTitle": "Que no se corte el GPS",
-  "runBatteryIntro": "Algunos móviles cortan el GPS con la pantalla apagada para ahorrar batería. Si tu ruta sale con saltos o se para, haz esto una vez:",
-  "runBatteryStep1": "Toca «Abrir los ajustes de la app» (o, en los ajustes del móvil, Aplicaciones › SynaptixFit) y entra en «Batería».",
+  "runBatteryIntro": "Si la ruta sale con saltos o se para, haz esto una vez:",
+  "runBatteryStep1": "Toca «Abrir los ajustes de la app» y entra en «Batería».",
   "runBatteryStep2": "Elige «Sin restricciones» (o quita la optimización de batería).",
-  "runBatteryStep3": "Mientras grabas, deja el aviso «Grabando tu carrera» en la barra de notificaciones: es lo que mantiene el GPS encendido.",
+  "runBatteryStep3": "Mientras grabas, deja el aviso «Grabando tu carrera»: mantiene el GPS encendido.",
   "runBatteryOk": "Entendido",
   "runNotificationTitle": "Grabando tu carrera",
   "runNotificationChannel": "Carrera en curso",
   "runKindQuestion": "¿Qué vas a hacer?",
-  "runGuideIntro": "Te guiaremos paso a paso: verás el paso actual en grande y el móvil vibrará al cambiar.",
-  "runLocationWhy": "Usamos tu ubicación exacta solo mientras grabas, para medir la distancia, el ritmo y dibujar tu ruta. La ruta es privada: solo la ves tú.",
-  "runLocationOff": "La ubicación del móvil está apagada. Enciéndela en los ajustes rápidos y vuelve a pulsar «Empezar».",
+  "runGuideIntro": "Verás el paso actual en grande y el móvil vibrará al cambiar.",
+  "runLocationWhy": "Solo mientras grabas, para medir distancia, ritmo y ruta. La ruta es privada.",
+  "runLocationOff": "La ubicación está apagada. Enciéndela y pulsa «Empezar» otra vez.",
   "runDistance": "Distancia",
   "runTime": "Tiempo",
   "runPause": "Pausar",
@@ -2811,7 +2747,7 @@
   "runFinish": "Terminar",
   "runPausedBanner": "En pausa: lo que te muevas ahora no cuenta. Pulsa «Seguir» para continuar.",
   "runSearchingSignal": "Buscando señal GPS… Si estás entre edificios altos, sal a un sitio más abierto.",
-  "runScreenOffHint": "Puedes apagar la pantalla: sigue grabando y verás la distancia y el tiempo en el aviso fijo.",
+  "runScreenOffHint": "Puedes apagar la pantalla: sigue grabando.",
   "runGuideStepOf": "Paso {current} de {total}",
   "@runGuideStepOf": {
     "placeholders": {
@@ -2849,7 +2785,7 @@
   },
   "runGuideDone": "Entreno completado. Puedes seguir o pulsar «Terminar».",
   "runTooShortTitle": "Aún no cuenta",
-  "runTooShortMessage": "Llevas menos de {minutes} minutos en movimiento: así no contaría como actividad. Sigue un poco más o descártala.",
+  "runTooShortMessage": "Menos de {minutes} min en movimiento: no contaría. Sigue un poco más o descártala.",
   "@runTooShortMessage": {
     "placeholders": {
       "minutes": {
@@ -2876,7 +2812,7 @@
   "runLeavePauseWhere": "Queda guardada. La sigues en Entreno › Correr, con «Seguir con la carrera».",
   "runPausedWhere": "Carrera en pausa. Síguela en Entreno › Correr con «Seguir con la carrera».",
   "runSavedWhere": "Carrera guardada. La tienes en Entreno › Correr › Tus actividades.",
-  "runQueuedWhere": "Sin conexión: la carrera está guardada en este móvil y se subirá sola. La verás en Entreno › Correr.",
+  "runQueuedWhere": "Sin conexión: se subirá sola. La verás en Entreno › Correr.",
   "runRejectedTitle": "No se ha podido guardar",
   "runBackToRun": "Volver a Correr",
   "runMovingTime": "Tiempo en movimiento",
@@ -2925,10 +2861,10 @@
   },
   "runDelete": "Borrar carrera",
   "runDeleted": "Carrera borrada",
-  "runDeletedHint": "Deja de contar en tu semana. Pulsa «Deshacer» si fue sin querer.",
+  "runDeletedHint": "Ya no cuenta en tu semana.",
   "runUndo": "Deshacer",
   "runWorkoutName": "Nombre del entreno",
-  "runEditorIntro": "Cada serie de pasos se repite las veces que digas. Ejemplo: 6 veces «Correr 800 m» y «Recuperar 2 min».",
+  "runEditorIntro": "Cada serie se repite las veces que digas. Ej.: 6 × «Correr 800 m» + «Recuperar 2 min».",
   "runEditorAddGroup": "Añadir serie",
   "runEditorRemoveGroup": "Quitar serie",
   "runEditorRepeat": "Veces",
@@ -3077,7 +3013,7 @@
       }
     }
   },
-  "trainingFinishMissing": "{count, plural, =1{Te falta 1 serie: se guarda lo que has hecho.} other{Te faltan {count} series: se guarda lo que has hecho.}}",
+  "trainingFinishMissing": "{count, plural, =1{Falta 1 serie; se guarda lo hecho.} other{Faltan {count} series; se guarda lo hecho.}}",
   "@trainingFinishMissing": {
     "placeholders": {
       "count": {
@@ -3135,5 +3071,5 @@
   },
   "trainingRecommendationsShow": "Ver sugerencias",
   "trainingCheckInAutoSaveHint": "Se guarda al contestar la tercera pregunta.",
-  "trainingCheckInChangeHint": "Cambia lo que quieras y pulsa «Guardar cambios»."
+  "trainingCheckInChangeHint": "Cambia lo que quieras y toca «Guardar cambios»."
 }

@@ -227,8 +227,7 @@ void main() {
           isLiveRegion: true,
           label:
               'Si hay una cuenta con ana@example.com, te hemos enviado un '
-              'enlace. Caduca en 30 minutos. Si no lo ves, mira en el correo '
-              'no deseado.',
+              'enlace (caduca en 30 min). Mira también en spam.',
         ),
       );
       semantics.dispose();

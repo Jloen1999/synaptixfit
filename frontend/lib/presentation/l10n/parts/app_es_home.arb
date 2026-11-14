@@ -25,7 +25,6 @@
     }
   },
   "homeOpenProfile": "Abrir perfil",
-  "homeNotifications": "Notificaciones",
   "homeNotificationsUnread": "{count, plural, =0{Notificaciones, ninguna sin leer} =1{Notificaciones, 1 sin leer} other{Notificaciones, {count} sin leer}}",
   "@homeNotificationsUnread": {
     "placeholders": {
@@ -35,14 +34,6 @@
     }
   },
   "homeAdminPanel": "Panel de administración",
-  "homeStreakDays": "{days, plural, =0{Sin racha} =1{1 día} other{{days} días}}",
-  "@homeStreakDays": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "homeStreakTooltip": "{days, plural, =0{Aún no tienes racha. ¡Empieza hoy!} =1{Racha de 1 día} other{Racha de {days} días}}",
   "@homeStreakTooltip": {
     "placeholders": {
@@ -51,8 +42,8 @@
       }
     }
   },
-  "homeBannerPhysicalOverloadTitle": "Carga física elevada",
-  "homeBannerPhysicalOverloadMessage": "Esta semana has entrenado bastante más de lo habitual: prioriza recuperar y estudia como mucho {minutes} min.",
+  "homeBannerPhysicalOverloadTitle": "Semana de mucho entreno",
+  "homeBannerPhysicalOverloadMessage": "Descansa y estudia como mucho {minutes} min.",
   "@homeBannerPhysicalOverloadMessage": {
     "placeholders": {
       "minutes": {
@@ -110,7 +101,7 @@
   },
   "homeBannerTrainingStreakMessage": "No rompas la cadena.",
   "homeBannerComebackTitle": "¡Qué bien verte de nuevo!",
-  "homeBannerComebackMessage": "{days, plural, =1{1 día sin entrenar: vuelve con una sesión más suave de lo habitual.} other{{days} días sin entrenar: vuelve con una sesión más suave de lo habitual.}}",
+  "homeBannerComebackMessage": "{days, plural, =1{1 día sin entrenar: vuelve con una sesión suave.} other{{days} días sin entrenar: vuelve con una sesión suave.}}",
   "@homeBannerComebackMessage": {
     "placeholders": {
       "days": {
@@ -127,8 +118,7 @@
   "homeBannerActionPlan": "Ver en el calendario",
   "homeBannerActionPomodoro": "Descanso guiado",
   "homeBannerActionTrain": "Entrenar",
-  "homeBannerActionCheckIn": "¿Qué tal estás hoy?",
-  "homeWeekTitle": "Esta semana",
+  "homeBannerActionCheckIn": "Contestar",
   "homeWeekSessions": "{count, plural, =1{1 entreno} other{{count} entrenos}}",
   "@homeWeekSessions": {
     "placeholders": {
@@ -157,12 +147,12 @@
     }
   },
   "homeGaugeCognitiveLoad": "Carga cognitiva",
-  "homeGaugeCognitiveLoadHint": "Sube con lo que estudias hoy. Unas 4 h exigentes llevan a la zona crítica.",
-  "homeGaugeAttentionHint": "Baja a la mitad tras 52 min seguidos. Un descanso de 17 min la recupera.",
+  "homeGaugeCognitiveLoadHint": "Sube con lo que estudias hoy.",
+  "homeGaugeAttentionHint": "Baja tras mucho rato seguido; un descanso la recupera.",
   "homeGaugeEnergyHint": "Según tu sueño, recuperación y estrés de hoy.",
   "homeGaugeEnergyNoCheckIn": "Cuéntanos cómo estás hoy para calcularla.",
   "homeGaugeAcwr": "Carga física",
-  "homeGaugeAcwrHint": "Compara lo que has entrenado esta semana con tu media del último mes. Lo ideal es la zona óptima.",
+  "homeGaugeAcwrHint": "Esta semana frente a tu media del mes.",
   "homeGaugePercent": "{value} %",
   "@homeGaugePercent": {
     "placeholders": {
@@ -442,7 +432,7 @@
       }
     }
   },
-  "homeBannerOverdueDeadlinesMessage": "{count, plural, =1{Si aún puedes, entrégala hoy; si no, márcala o habla con tu profesor.} other{Si aún puedes, entrégalas hoy; si no, márcalas o habla con tu profesor.}}",
+  "homeBannerOverdueDeadlinesMessage": "{count, plural, =1{Entrégala hoy si aún puedes, o márcala.} other{Entrégalas hoy si aún puedes, o márcalas.}}",
   "homeBannerMissedBlocksTitle": "{count, plural, =1{1 evento se quedó sin hacer} other{{count} eventos se quedaron sin hacer}}",
   "@homeBannerMissedBlocksTitle": {
     "placeholders": {
@@ -451,7 +441,7 @@
       }
     }
   },
-  "homeBannerMissedBlocksMessage": "{count, plural, =1{Márcalo si lo hiciste o llévalo al próximo hueco libre.} other{Márcalos si los hiciste o llévalos al próximo hueco libre.}}",
+  "homeBannerMissedBlocksMessage": "{count, plural, =1{Márcalo si lo hiciste o muévelo a otro hueco.} other{Márcalos si los hiciste o muévelos a otro hueco.}}",
   "@homeBannerMissedBlocksMessage": {
     "placeholders": {
       "count": {
@@ -483,7 +473,7 @@
   "homeSetupSubjects": "Añade tus asignaturas",
   "homeSetupSubjectsHint": "Para planificar tu estudio y tus repasos.",
   "homeSetupWellness": "Completa tu perfil físico",
-  "homeSetupWellnessHint": "Peso, altura y actividad para calcular tus calorías y tu carga.",
+  "homeSetupWellnessHint": "Peso, altura y actividad.",
   "homeSetupRoutine": "Elige o crea una rutina",
   "homeSetupRoutineHint": "Así sabrás qué toca entrenar cada día.",
   "homeSetupWeekPlan": "Importa tu horario",

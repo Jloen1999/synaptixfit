@@ -846,7 +846,7 @@ class _EditorViewState extends State<_EditorView>
             !state.subjects.any((s) => s.id == _subjectId))
           DropdownMenuItem(
             value: _subjectId,
-            child: Text(l10n.plannerFieldSubject),
+            child: Text(l10n.plannerSubjectArchived),
           ),
       ],
       onChanged: (v) => setState(() {

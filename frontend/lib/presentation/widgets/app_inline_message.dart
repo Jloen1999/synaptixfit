@@ -5,7 +5,8 @@ import '../theme/tokens.g.dart';
 import 'app_pill.dart';
 
 /// Tono de [AppInlineMessage]: color e icono.
-enum AppMessageTone { error, warning, success }
+/// [info]: un dato que conviene saber (no es un fallo ni un riesgo).
+enum AppMessageTone { error, warning, success, info }
 
 /// Aviso en línea junto a lo que lo provoca (un campo, una hoja inferior):
 /// a diferencia de un SnackBar, no se cierra solo ni queda oculto. Es región
@@ -34,6 +35,10 @@ class AppInlineMessage extends StatelessWidget {
       AppMessageTone.success => (
         context.palette.success,
         Icons.check_circle_outline_rounded,
+      ),
+      AppMessageTone.info => (
+        context.colors.onSurfaceVariant,
+        Icons.info_outline_rounded,
       ),
     };
     return Container(

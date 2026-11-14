@@ -23,7 +23,9 @@ import '../bloc/settings_bloc.dart';
 /// Versión mostrada en Ajustes (coincide con `version` de pubspec.yaml).
 const String profileAppVersion = '1.0.0';
 
-/// Ajustes (`/profile/settings`).
+/// Ajustes (`/profile/settings`): primero lo que se toca a menudo (avisos,
+/// apariencia, idioma), después la cuenta y, al final, lo raro: privacidad,
+/// exportar y eliminar la cuenta.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -109,6 +111,29 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
           return ProfileScrollBody(
             children: [
               _Group(
+                title: l10n.profileSettingsNotificationsGroup,
+                children: [
+                  AppFocusOutline(
+                    child: ListTile(
+                      leading: const Icon(AppIcons.notifications),
+                      title: Text(l10n.profileNotificationsTitle),
+                      trailing: const Icon(AppIcons.next),
+                      onTap: () => context.push(ProfilePaths.notifications),
+                    ),
+                  ),
+                  AppFocusOutline(
+                    child: ListTile(
+                      leading: const Icon(Icons.verified_user_outlined),
+                      title: Text(l10n.profilePermissionsTitle),
+                      trailing: const Icon(AppIcons.next),
+                      onTap: () => context.push(ProfilePaths.permissions),
+                    ),
+                  ),
+                ],
+              ),
+              const _AppearanceGroup(),
+              const _LanguageGroup(),
+              _Group(
                 title: l10n.profileSettingsAccountGroup,
                 children: [
                   AppFocusOutline(
@@ -134,20 +159,11 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                       onTap: () => context.push(ProfilePaths.editAccount),
                     ),
                   ),
-                ],
-              ),
-              const _AppearanceGroup(),
-              const _LanguageGroup(),
-              _Group(
-                title: l10n.profileSettingsNotificationsGroup,
-                children: [
                   AppFocusOutline(
                     child: ListTile(
-                      leading: const Icon(AppIcons.notifications),
-                      title: Text(l10n.profileNotificationsTitle),
-                      subtitle: Text(l10n.profileNotificationsHint),
-                      trailing: const Icon(AppIcons.next),
-                      onTap: () => context.push(ProfilePaths.notifications),
+                      leading: const Icon(AppIcons.leave),
+                      title: Text(l10n.profileLogoutAction),
+                      onTap: () => _logout(context),
                     ),
                   ),
                 ],
@@ -157,18 +173,8 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                 children: [
                   AppFocusOutline(
                     child: ListTile(
-                      leading: const Icon(Icons.verified_user_outlined),
-                      title: Text(l10n.profilePermissionsTitle),
-                      subtitle: Text(l10n.profilePermissionsHint),
-                      trailing: const Icon(AppIcons.next),
-                      onTap: () => context.push(ProfilePaths.permissions),
-                    ),
-                  ),
-                  AppFocusOutline(
-                    child: ListTile(
                       leading: const Icon(Icons.privacy_tip_outlined),
                       title: Text(l10n.profileLegalPrivacy),
-                      subtitle: Text(l10n.profileLegalPrivacyHint),
                       trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(
                         ProfilePaths.legal(LegalDocumentKind.privacy),
@@ -179,7 +185,6 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                     child: ListTile(
                       leading: const Icon(Icons.description_outlined),
                       title: Text(l10n.profileLegalTerms),
-                      subtitle: Text(l10n.profileLegalTermsHint),
                       trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(
                         ProfilePaths.legal(LegalDocumentKind.terms),
@@ -191,7 +196,6 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                     child: ListTile(
                       leading: const Icon(Icons.download_rounded),
                       title: Text(l10n.profileExportTitle),
-                      subtitle: Text(l10n.profileExportHint),
                       trailing: state.exporting
                           ? const SizedBox.square(
                               dimension: TokensSize.iconS,
@@ -218,7 +222,6 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                           color: context.colors.error,
                         ),
                       ),
-                      subtitle: Text(l10n.profileDeleteHint),
                       trailing: state.deleting
                           ? const SizedBox.square(
                               dimension: TokensSize.iconS,
@@ -229,17 +232,6 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                           : null,
                       enabled: !state.deleting,
                       onTap: () => _delete(context, hasPassword),
-                    ),
-                  ),
-                ],
-              ),
-              _Group(
-                children: [
-                  AppFocusOutline(
-                    child: ListTile(
-                      leading: const Icon(AppIcons.leave),
-                      title: Text(l10n.profileLogoutAction),
-                      onTap: () => _logout(context),
                     ),
                   ),
                 ],
@@ -351,9 +343,6 @@ class _LanguageGroup extends StatelessWidget {
                               ),
                               child: ExcludeSemantics(child: Text(label)),
                             ),
-                      subtitle: value == AppLanguage.system
-                          ? Text(l10n.profileLanguageSystemHint)
-                          : null,
                     ),
                   ),
               ],
@@ -417,9 +406,6 @@ class _AppearanceGroup extends StatelessWidget {
                       controlAffinity: ListTileControlAffinity.trailing,
                       secondary: Icon(icon),
                       title: Text(label),
-                      subtitle: value == AppearanceMode.system
-                          ? Text(l10n.profileAppearanceSystemHint)
-                          : null,
                     ),
                   ),
               ],

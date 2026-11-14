@@ -171,7 +171,7 @@ class _DetailViewState extends State<_DetailView> {
       listener: (context, state) => const TrainingEffectHandler().handle(
         context,
         state.effect!,
-        onUnskipDay: (dayId) => context.read<RoutineDetailBloc>().add(
+        onUnskipDay: (_, dayId) => context.read<RoutineDetailBloc>().add(
           RoutineDetailEvent.dayUnskipped(dayId),
         ),
       ),
@@ -702,18 +702,10 @@ class _DayCardState extends State<_DayCard> {
     bloc.add(RoutineDetailEvent.sessionStarted(day.id));
   }
 
-  Future<void> _skip(BuildContext context) async {
-    final bloc = context.read<RoutineDetailBloc>();
-    final l10n = context.localizations;
-    final ok = await showConfirmDialog(
-      context,
-      title: l10n.trainingSkipDayTitle,
-      message: l10n.trainingSkipDayMessage,
-      confirmLabel: l10n.trainingSkipDay,
-      destructive: false,
-    );
-    if (ok) bloc.add(RoutineDetailEvent.daySkipped(day.id));
-  }
+  /// Saltar es reversible: sin confirmar, con «Deshacer» en el aviso.
+  void _skip(BuildContext context) => context.read<RoutineDetailBloc>().add(
+    RoutineDetailEvent.daySkipped(day.id),
+  );
 
   Widget _trainButton(BuildContext context) {
     final l10n = context.localizations;
@@ -729,11 +721,19 @@ class _DayCardState extends State<_DayCard> {
         icon: const Icon(Icons.play_arrow_rounded),
         label: Text(l10n.trainingContinueDay),
       ),
-      ProgressStatus.pending || ProgressStatus.skipped => FilledButton.icon(
-        onPressed: onPressed,
-        icon: const Icon(Icons.play_arrow_rounded),
-        label: Text(l10n.trainingTrain),
-      ),
+      // Una acción principal: solo el día que toca va destacado.
+      ProgressStatus.pending || ProgressStatus.skipped =>
+        widget.isNext && routine.status == RoutineStatus.active
+            ? FilledButton.icon(
+                onPressed: onPressed,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(l10n.trainingTrain),
+              )
+            : OutlinedButton.icon(
+                onPressed: onPressed,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(l10n.trainingTrain),
+              ),
     };
   }
 
@@ -797,7 +797,8 @@ class _DayCardState extends State<_DayCard> {
         context,
         title: l10n.trainingRemoveExercise,
         message: l10n.trainingRemoveExerciseMessage(e.exerciseName),
-        confirmLabel: l10n.commonDelete,
+        // El verbo exacto (vocabulario §4): quita de la rutina, no borra.
+        confirmLabel: l10n.trainingRemoveFromPlan,
       );
       if (ok) bloc.add(RoutineDetailEvent.exerciseRemoved(e.id));
     }

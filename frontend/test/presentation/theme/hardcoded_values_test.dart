@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// número nuevo: bájalo aquí en el mismo cambio. Si lo supera, usa un token
 /// (o añade uno a `docs/05-design/tokens.json` y ejecuta
 /// `dart run tool/generate_tokens.dart`); no subas el máximo.
-const _maxAllowed = 80;
+const _maxAllowed = 72;
 
 /// Patrones vigilados. `size:` y `minTileHeight:` solo con un número literal.
 final _patterns = <String, RegExp>{

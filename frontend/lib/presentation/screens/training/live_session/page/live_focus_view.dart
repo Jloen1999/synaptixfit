@@ -902,7 +902,10 @@ class _LiveSetRow extends StatelessWidget {
               backgroundColor: done.completed
                   ? context.palette.success
                   : context.palette.warning,
-              foregroundColor: context.colors.onPrimary,
+              // Su «on» propio: con onPrimary el ✓ no llegaba a AA en oscuro.
+              foregroundColor: done.completed
+                  ? context.palette.onSuccess
+                  : context.palette.onWarning,
             ),
       onPressed: done != null
           ? () => onUnmark(e, done)

@@ -31,12 +31,10 @@ sealed class TrainingEffect with _$TrainingEffect {
   const factory TrainingEffect.sessionFinished(FinishSessionResult result) =
       TrainingEffectSessionFinished;
 
-  /// Día de rutina saltado: el aviso dice dónde se recupera y lleva un botón
-  /// para ir allí ([inRoutine]: ya se está en la rutina, el botón recupera).
+  /// Día de rutina saltado: el aviso lleva «Deshacer» (saltar no se confirma).
   const factory TrainingEffect.daySkipped({
     required String routineId,
     required String dayId,
-    @Default(false) bool inRoutine,
   }) = TrainingEffectDaySkipped;
 
   /// Cerrar la pantalla (p. ej. tras borrar o abandonar).
@@ -59,7 +57,6 @@ enum TrainingMessage {
   checkInSaved,
   planSaved,
   planDeleted,
-  sessionUnmarked,
   sessionAbandoned,
   setSaved,
   sessionShared,

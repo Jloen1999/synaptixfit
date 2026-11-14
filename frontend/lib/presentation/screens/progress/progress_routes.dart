@@ -46,6 +46,14 @@ abstract final class ProgressExternalPaths {
   static const training = '/training';
   static const pomodoro = '/planner/pomodoro';
   static const academic = '/academic';
+
+  /// Calendario con «Añadir al calendario» abierto en el próximo hueco.
+  static String addEvent([DateTime? now]) => Uri(
+    path: '/planner',
+    queryParameters: {
+      'new': '${(now ?? DateTime.now()).millisecondsSinceEpoch}',
+    },
+  ).toString();
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).

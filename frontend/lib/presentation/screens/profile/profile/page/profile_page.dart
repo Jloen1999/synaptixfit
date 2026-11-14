@@ -20,7 +20,8 @@ import '../../widgets/profile_labels.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/profile_bloc.dart';
 
-/// Perfil del usuario (`/profile`).
+/// Perfil del usuario (`/profile`): cuenta, lo social, el perfil físico y el
+/// académico. Ajustes se abre con el engranaje de la barra (un solo camino).
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
@@ -182,6 +183,8 @@ class _ProfileContent extends StatelessWidget {
             onAction: () => _open(context, ProfilePaths.editAccount),
           ),
         ],
+        const SizedBox(height: TokensSpacing.l),
+        _SocialCard(account: account, pendingRequests: pendingRequests),
         // Solo los perfiles del ámbito que la persona usa.
         if (account.usageFocus.includesFitness) ...[
           const SizedBox(height: TokensSpacing.l),
@@ -191,40 +194,23 @@ class _ProfileContent extends StatelessWidget {
           const SizedBox(height: TokensSpacing.l),
           _AcademicSummary(profile: summary.academic, degrees: summary.degrees),
         ],
-        const SizedBox(height: TokensSpacing.l),
-        _SocialCard(account: account, pendingRequests: pendingRequests),
-        const SizedBox(height: TokensSpacing.l),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              if (account.isAdmin) ...[
-                AppFocusOutline(
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.admin_panel_settings_outlined,
-                      color: context.colors.primary,
-                    ),
-                    title: Text(l10n.profileAdminPanel),
-                    subtitle: Text(l10n.profileAdminPanelHint),
-                    trailing: const Icon(AppIcons.next),
-                    onTap: () => context.push(ProfilePaths.adminPanel),
-                  ),
+        if (account.isAdmin) ...[
+          const SizedBox(height: TokensSpacing.l),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: AppFocusOutline(
+              child: ListTile(
+                leading: Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: context.colors.primary,
                 ),
-                const Divider(height: 1),
-              ],
-              AppFocusOutline(
-                child: ListTile(
-                  leading: const Icon(AppIcons.settings),
-                  title: Text(l10n.profileSettingsTitle),
-                  subtitle: Text(l10n.profileSettingsHint),
-                  trailing: const Icon(AppIcons.next),
-                  onTap: () => _open(context, ProfilePaths.settings),
-                ),
+                title: Text(l10n.profileAdminPanel),
+                trailing: const Icon(AppIcons.next),
+                onTap: () => context.push(ProfilePaths.adminPanel),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: TokensSpacing.l),
       ],
     );
@@ -254,11 +240,9 @@ class _SocialCard extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(AppIcons.friends),
                   title: Text(l10n.profileFriends),
-                  subtitle: Text(
-                    pendingRequests > 0
-                        ? l10n.profileFriendsPending(pendingRequests)
-                        : l10n.profileFriendsHint,
-                  ),
+                  subtitle: pendingRequests > 0
+                      ? Text(l10n.profileFriendsPending(pendingRequests))
+                      : null,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -282,7 +266,6 @@ class _SocialCard extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(AppIcons.community),
                   title: Text(l10n.profileCommunity),
-                  subtitle: Text(l10n.profileCommunityHint),
                   trailing: const Icon(AppIcons.next),
                   onTap: () => _open(context, ProfilePaths.community),
                 ),
@@ -293,11 +276,9 @@ class _SocialCard extends StatelessWidget {
                   leading: const Icon(Icons.badge_outlined),
                   title: Text(l10n.profilePublicProfile),
                   // Con el perfil privado nadie más lo ve: decirlo tal cual.
-                  subtitle: Text(
-                    account.privacy == Visibility.private
-                        ? l10n.profilePublicProfilePrivateHint
-                        : l10n.profilePublicProfileHint,
-                  ),
+                  subtitle: account.privacy == Visibility.private
+                      ? Text(l10n.profilePublicProfilePrivateHint)
+                      : null,
                   trailing: const Icon(AppIcons.next),
                   onTap: () =>
                       _open(context, ProfilePaths.publicProfile(account.id)),
@@ -328,7 +309,7 @@ class _AccountHeader extends StatelessWidget {
               AppAvatar(
                 name: account.fullName,
                 imageUrl: account.avatarUrl,
-                radius: 32,
+                radius: TokensSize.heroRing / 2,
               ),
               const SizedBox(width: TokensSpacing.m),
               Expanded(
@@ -353,7 +334,7 @@ class _AccountHeader extends StatelessWidget {
                       children: [
                         Icon(
                           account.privacy.icon,
-                          size: 16,
+                          size: TokensSize.iconXs,
                           color: context.colors.onSurfaceVariant,
                         ),
                         const SizedBox(width: TokensSpacing.xs),
@@ -381,7 +362,7 @@ class _AccountHeader extends StatelessWidget {
             children: [
               Icon(
                 Icons.local_fire_department_rounded,
-                size: 20,
+                size: TokensSize.iconS,
                 color: context.palette.streak,
               ),
               const SizedBox(width: TokensSpacing.xs),
@@ -593,28 +574,23 @@ class _AcademicSummary extends StatelessWidget {
                     color: context.palette.study,
                   ),
                   title: Text(l10n.profileSubjectsTitle),
-                  subtitle: Text(l10n.profileSubjectsHint),
                   trailing: const Icon(AppIcons.next),
                   onTap: () => _open(context, ProfilePaths.subjects),
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: TokensSpacing.s),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: AppFocusOutline(
-            child: ListTile(
-              leading: Icon(
-                Icons.upload_file_rounded,
-                color: context.palette.study,
+              const Divider(height: 1),
+              AppFocusOutline(
+                child: ListTile(
+                  leading: Icon(
+                    Icons.upload_file_rounded,
+                    color: context.palette.study,
+                  ),
+                  title: Text(l10n.profileEnrollmentEntry),
+                  trailing: const Icon(AppIcons.next),
+                  onTap: () => _open(context, ProfilePaths.enrollmentImport),
+                ),
               ),
-              title: Text(l10n.profileEnrollmentEntry),
-              subtitle: Text(l10n.profileEnrollmentEntryHint),
-              trailing: const Icon(AppIcons.next),
-              onTap: () => _open(context, ProfilePaths.enrollmentImport),
-            ),
+            ],
           ),
         ),
       ],

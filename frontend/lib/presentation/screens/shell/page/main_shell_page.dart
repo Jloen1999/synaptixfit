@@ -120,20 +120,27 @@ class MainShellPage extends StatelessWidget {
                   top: BorderSide(color: context.colors.outlineVariant),
                 ),
               ),
+              // Cinco pestañas en un móvil estrecho: las etiquetas crecen con
+              // el texto hasta 1,3×; más allá se cortarían (el tooltip lo
+              // compensa al mantener pulsado).
               child: AppFocusGroup(
-                child: NavigationBar(
-                  selectedIndex: selected < 0 ? 0 : selected,
-                  onDestinationSelected: onSelected,
-                  destinations: [
-                    for (final d in destinations)
-                      NavigationDestination(
-                        icon: AppNavFocusRing(child: Icon(d.icon)),
-                        selectedIcon: AppNavFocusRing(child: Icon(d.selected)),
-                        label: d.label,
-                        // La etiqueta ya está visible: un tooltip la repetiría.
-                        tooltip: '',
-                      ),
-                  ],
+                child: MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: 1.3,
+                  child: NavigationBar(
+                    selectedIndex: selected < 0 ? 0 : selected,
+                    onDestinationSelected: onSelected,
+                    destinations: [
+                      for (final d in destinations)
+                        NavigationDestination(
+                          icon: AppNavFocusRing(child: Icon(d.icon)),
+                          selectedIcon: AppNavFocusRing(
+                            child: Icon(d.selected),
+                          ),
+                          label: d.label,
+                          tooltip: d.label,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

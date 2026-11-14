@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/models/training/check_in_answers.dart';
 import '../../../../../domain/models/training/session_adaptation.dart';
 import '../../../../../domain/models/training/today_adaptation.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -152,40 +153,22 @@ class _Questions extends StatefulWidget {
 }
 
 class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
-  int? _sleep;
-  int? _energy;
-  int? _soreness;
-
-  @override
-  void initState() {
-    super.initState();
-    // Al cambiar, se parte de lo que ya se contestó hoy.
-    final answers = widget.state.adaptation?.todayAnswers;
-    _sleep = answers?.sleepQuality;
-    _energy = answers?.energy;
-    _soreness = answers?.soreness;
-  }
-
-  bool get _complete => _sleep != null && _energy != null && _soreness != null;
+  CheckInAnswers get _answers => widget.state.answers;
 
   Future<void> _save() async {
-    if (!_complete) return;
+    final answers = _answers;
+    if (!answers.complete) return;
     final bloc = context.read<QuickCheckInBloc>();
     if (bloc.state.sending) return;
     final input = QuickCheckIn(
-      sleepQuality: _sleep!,
-      energy: _energy!,
-      soreness: _soreness!,
+      sleepQuality: answers[CheckInQuestion.sleep]!,
+      energy: answers[CheckInQuestion.energy]!,
+      soreness: answers[CheckInQuestion.soreness]!,
     );
     // Datos de salud: antes, el permiso expreso (ADR 0034).
     if (await ensureHealthConsent(context)) {
       bloc.add(QuickCheckInEvent.submitted(input));
     }
-  }
-
-  /// La primera vez del día, con las tres contestadas se guarda solo.
-  void _answered() {
-    if (!widget.state.editing) _save();
   }
 
   @override
@@ -195,22 +178,16 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CheckInQuestions(
-          sleep: _sleep,
-          energy: _energy,
-          soreness: _soreness,
-          onSleep: (v) {
-            setState(() => _sleep = v);
-            _answered();
-          },
-          onEnergy: (v) {
-            setState(() => _energy = v);
-            _answered();
-          },
-          onSoreness: (v) {
-            setState(() => _soreness = v);
-            _answered();
-          },
+        // La regla de los tres toques la aplica el bloc (`saveRequest`).
+        BlocListener<QuickCheckInBloc, QuickCheckInState>(
+          listenWhen: (a, b) => a.saveRequest != b.saveRequest,
+          listener: (_, _) => _save(),
+          child: CheckInQuestions(
+            answers: _answers,
+            onAnswer: (q, v) => context.read<QuickCheckInBloc>().add(
+              QuickCheckInEvent.answered(q, v),
+            ),
+          ),
         ),
         if (widget.state.sending && !editing) const LinearProgressIndicator(),
         if (widget.state.error case final error?) ...[
@@ -220,14 +197,15 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
             AppSecondaryButton(
               label: l10n.commonRetry,
               icon: const Icon(AppIcons.refresh),
-              onPressed: _complete ? _save : null,
+              onPressed: _answers.complete ? _save : null,
             ),
         ],
+        // Secundario: en Gimnasio la acción principal es empezar el entreno.
         if (editing)
-          AppPrimaryButton(
+          AppSecondaryButton(
             label: l10n.trainingCheckInUpdateAction,
             loading: widget.state.sending,
-            onPressed: _complete ? _save : null,
+            onPressed: _answers.complete ? _save : null,
           ),
         Wrap(
           alignment: WrapAlignment.end,
@@ -241,7 +219,10 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
                 child: Text(l10n.commonCancel),
               ),
             TextButton(
-              onPressed: () => context.push<void>(TrainingPaths.checkInDetails),
+              // Lo ya contestado viaja a la pantalla del registro.
+              onPressed: () => context.push<void>(
+                TrainingPaths.checkInDetailsWith(_answers),
+              ),
               child: Text(l10n.trainingQuickFull),
             ),
           ],
@@ -326,9 +307,7 @@ class _ExplanationState extends State<_Explanation> {
               Expanded(
                 child: Text(
                   adapted
-                      ? l10n.trainingQuickAdapted(
-                          (adaptation.volumeFactor * 100).round(),
-                        )
+                      ? l10n.trainingQuickAdapted
                       : l10n.trainingQuickAllGood,
                   style: context.textStyles.titleSmall,
                 ),

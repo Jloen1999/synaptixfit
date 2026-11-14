@@ -20,6 +20,7 @@ import '../../../../../domain/use_cases/training/get_recommendations_use_case.da
 import '../../../../../domain/use_cases/training/get_today_check_in_use_case.dart';
 import '../../../../../domain/use_cases/training/restart_routine_use_case.dart';
 import '../../../../../domain/use_cases/training/skip_routine_day_use_case.dart';
+import '../../../../../domain/use_cases/training/unskip_routine_day_use_case.dart';
 import '../../../../../domain/use_cases/training/start_session_use_case.dart';
 import '../../training_effect.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
@@ -48,6 +49,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     required this._watchChanges,
     required this._getOpenSessions,
     required this._skipDay,
+    required this._unskipDay,
     required this._finishSession,
     required this._discardSession,
     required this._restartRoutine,
@@ -66,6 +68,14 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
           routineId: e.routineId,
           dayId: e.dayId,
         ),
+      ),
+    );
+    // «Deshacer» del aviso: saltar es reversible y no se confirma (vocabulario §4).
+    on<TrainingHomeDayUnskipped>(
+      (e, emit) => _act(
+        emit,
+        () => _unskipDay(e.routineId, e.dayId),
+        TrainingMessage.dayUnskipped,
       ),
     );
     on<TrainingHomeStaleFinished>(
@@ -105,6 +115,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
   final WatchDataChangesUseCaseContract _watchChanges;
   final GetOpenSessionsUseCaseContract _getOpenSessions;
   final SkipRoutineDayUseCaseContract _skipDay;
+  final UnskipRoutineDayUseCaseContract _unskipDay;
   final FinishSessionUseCaseContract _finishSession;
   final CancelSessionUseCaseContract _discardSession;
   final RestartRoutineUseCaseContract _restartRoutine;

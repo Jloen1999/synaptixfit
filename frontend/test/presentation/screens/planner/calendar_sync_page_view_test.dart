@@ -100,7 +100,7 @@ void main() {
   ) async {
     await pump(tester, states['enlace recién creado']!);
 
-    expect(find.textContaining('Funciona como una contraseña'), findsOneWidget);
+    expect(find.textContaining('no podrás volver a verlo'), findsOneWidget);
     expect(find.text('Copiar enlace'), findsOneWidget);
     expect(find.text('Desactivar enlace'), findsOneWidget);
   });

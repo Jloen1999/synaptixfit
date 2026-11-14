@@ -243,7 +243,7 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
                     !widget.subjects.any((s) => s.id == _subjectId))
                   DropdownMenuItem(
                     value: _subjectId,
-                    child: Text(l10n.plannerFieldSubject),
+                    child: Text(l10n.plannerSubjectArchived),
                   ),
               ],
               onChanged: (v) => setState(() => _subjectId = v),

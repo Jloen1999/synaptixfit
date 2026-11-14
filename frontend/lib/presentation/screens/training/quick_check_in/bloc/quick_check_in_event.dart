@@ -10,6 +10,12 @@ sealed class QuickCheckInEvent with _$QuickCheckInEvent {
   const factory QuickCheckInEvent.submitted(QuickCheckIn input) =
       QuickCheckInSubmitted;
 
+  /// Un toque en una de las tres preguntas.
+  const factory QuickCheckInEvent.answered(
+    CheckInQuestion question,
+    int value,
+  ) = QuickCheckInAnswered;
+
   /// Volver a preguntar aunque ya esté hecho hoy («Cambiar»).
   const factory QuickCheckInEvent.editRequested() = QuickCheckInEditRequested;
 

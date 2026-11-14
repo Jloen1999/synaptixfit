@@ -27,6 +27,12 @@ sealed class TrainingHomeEvent with _$TrainingHomeEvent {
     required String dayId,
   }) = TrainingHomeDaySkipped;
 
+  /// «Deshacer» tras saltar el día: vuelve a ser el que toca.
+  const factory TrainingHomeEvent.dayUnskipped({
+    required String routineId,
+    required String dayId,
+  }) = TrainingHomeDayUnskipped;
+
   /// Terminar una sesión abandonada con lo registrado (cuenta en su día).
   const factory TrainingHomeEvent.staleFinished(
     String sessionId, {

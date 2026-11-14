@@ -43,35 +43,11 @@
   "challengesEffortMedium": "Equilibrado",
   "challengesEffortHigh": "Intenso",
   "challengesEmptyTitle": "Tu primer reto empieza aquí",
-  "challengesEmptyMessage": "Ponte una meta de estudio o de deporte con fecha. Pulsa «Nuevo reto» o inspírate en la comunidad.",
+  "challengesEmptyMessage": "Ponte una meta de estudio o deporte con fecha.",
   "challengesEmptyFilteredTitle": "Sin resultados",
   "challengesEmptyFilteredMessage": "Ningún reto coincide con los filtros.",
   "challengesCommunityEmptyTitle": "No hay retos de la comunidad",
   "challengesCommunityEmptyMessage": "Cuando otros compartan retos aparecerán aquí.",
-  "challengesEndsOn": "Termina el {date}",
-  "@challengesEndsOn": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "challengesEndedOn": "Terminó el {date}",
-  "@challengesEndedOn": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "challengesDaysLeft": "{count, plural, =0{Termina hoy} =1{Queda 1 día} other{Quedan {count} días}}",
-  "@challengesDaysLeft": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "challengesMilestonesProgress": "{done}/{total} tareas",
   "@challengesMilestonesProgress": {
     "placeholders": {
@@ -161,7 +137,6 @@
     }
   },
   "challengesDetailTitle": "Reto",
-  "challengesDetailProgress": "Progreso",
   "challengesDetailTasks": "Tareas",
   "challengesDetailGraph": "Tareas que dependen de otras",
   "challengesDetailGraphSummary": "{count, plural, =1{1 tarea depende de otras} other{{count} tareas dependen de otras}}",
@@ -275,7 +250,6 @@
     }
   },
   "challengesConditionXOfYOption": "X de Y",
-  "challengesProgressTitle": "Registrar progreso",
   "challengesProgressTask": "Tarea",
   "challengesProgressAction": "Registrar",
   "challengesReorderTitle": "Reordenar tareas",
@@ -304,7 +278,6 @@
   "challengesFormTitle": "Nuevo reto",
   "challengesFormEditTasksTitle": "Editar tareas",
   "challengesFormSectionDetails": "Detalles",
-  "challengesFormSectionDates": "Fechas",
   "challengesFormSectionVisibility": "Visibilidad",
   "challengesFormSectionTasks": "Tareas",
   "challengesFormSectionLink": "Vínculo",
@@ -319,7 +292,7 @@
   },
   "challengesFormAddTask": "Añadir tarea",
   "challengesFormNoTasks": "Sin tareas: completarás el reto de una vez.",
-  "challengesFormLinkHint": "Vincula el reto a una entrega o examen que venza dentro de sus fechas: se completará cuando lo marques como hecho en el calendario.",
+  "challengesFormLinkHint": "Se completa al marcar como hecha la entrega o el examen.",
   "challengesFormAddLink": "Vincular",
   "challengesFormRemoveLink": "Quitar vínculo",
   "challengesFormSave": "Guardar reto",
@@ -336,7 +309,7 @@
   "challengesIssueSessionTarget": "Indica entre 1 y 365 sesiones.",
   "challengesFieldSessionTarget": "Objetivo de sesiones de entrenamiento",
   "challengesFieldSessionTargetHint": "Opcional, p. ej. 12",
-  "challengesFieldSessionTargetHelper": "Las sesiones que termines en Entreno › Gimnasio cuentan solas.",
+  "challengesFieldSessionTargetHelper": "Cuentan solas las sesiones de Gimnasio.",
   "challengesSessionsProgress": "{target, plural, =1{{done} / 1 sesión} other{{done} / {target} sesiones}}",
   "@challengesSessionsProgress": {
     "placeholders": {
@@ -348,7 +321,7 @@
       }
     }
   },
-  "challengesDetailSessionsInfo": "Las sesiones que termines en Entreno › Gimnasio dentro de las fechas del reto cuentan solas. Al llegar al objetivo, el reto se marca como hecho.",
+  "challengesDetailSessionsInfo": "Cuentan solas las sesiones de Gimnasio dentro de las fechas del reto.",
   "challengesTaskNew": "Nueva tarea",
   "challengesTaskEdit": "Editar tarea",
   "challengesTaskTitle": "Título de la tarea",
@@ -407,7 +380,6 @@
     }
   },
   "challengesNextMarkDone": "Márcalo como hecho cuando lo termines",
-  "challengesNextAddTasks": "Divídelo en tareas para avanzar paso a paso",
   "challengesCompletedNoXp": "¡Conseguido!",
   "challengesExpiredHint": "Se acabó el plazo. Amplía la fecha para seguir.",
   "challengesStreakStart": "Avanza hoy para empezar una racha",
@@ -415,7 +387,7 @@
   "challengesDetailGoTraining": "Ir a Entreno",
   "challengesDetailExtend": "Ampliar fecha",
   "challengesDetailNoTasksTitle": "Sin tareas todavía",
-  "challengesDetailNoTasksHint": "Divide el reto en pasos pequeños: verás tu avance tarea a tarea.",
+  "challengesDetailNoTasksHint": "Divide el reto en pasos pequeños.",
   "challengesDetailNoTasksReadOnly": "Este reto no tiene tareas.",
   "challengesMilestoneNext": "Siguiente",
   "challengesPendingShowAll": "Ver todas ({count})",
@@ -428,8 +400,8 @@
   },
   "challengesPendingShowLess": "Ver menos",
   "challengesEmptyCommunityAction": "Ver retos de la comunidad",
-  "challengesCommunityIntro": "Inspírate en los retos que comparten otros estudiantes y añádelos a los tuyos.",
-  "challengesQuickSubtitle": "Un objetivo y una fecha bastan. Después puedes dividirlo en tareas.",
+  "challengesCommunityIntro": "Retos que comparten otros estudiantes; añádelos a los tuyos.",
+  "challengesQuickSubtitle": "Un objetivo y una fecha bastan.",
   "challengesFieldTitleHintFitness": "Ej.: Correr 3 veces por semana",
   "challengesDurationLabel": "Duración",
   "challengesDurationWeek": "1 semana",
@@ -473,7 +445,6 @@
       }
     }
   },
-  "challengesDateDue": "Vence",
   "challengesDateStarts": "Empieza",
   "challengesDateExpired": "Venció",
   "challengesDateDone": "Hecho",
@@ -530,12 +501,11 @@
   "challengesFormMoreOptions": "Más opciones",
   "challengesFormMoreOptionsHint": "Objetivo, inicio, esfuerzo, visibilidad y vínculo",
   "challengesTaskEffortHint": "Una tarea más intensa cuenta más en el progreso.",
-  "challengesLinkEmptyPeriod": "Solo aparecen las entregas y exámenes pendientes que vencen dentro de las fechas del reto.",
   "challengesErrorNotStarted": "Este reto aún no ha empezado: podrás avanzar desde su fecha de inicio.",
   "challengesErrorLinked": "Este reto se completa con su entrega o examen: márcalo como hecho en el calendario.",
-  "challengesErrorMilestoneLinked": "Esta tarea avanza con su entrega o sus eventos del calendario: márcalos como hechos en el calendario.",
+  "challengesErrorMilestoneLinked": "Esta tarea avanza al marcar su entrega o sus eventos en el calendario.",
   "challengesErrorLinkOutsidePeriod": "La entrega o el examen vence fuera de las fechas del reto. Amplía el reto o elige otro.",
-  "challengesFormTasksReplaceSessions": "Este reto avanza con tus entrenamientos. Si le añades tareas, dejará de contarlos y avanzará con las tareas.",
+  "challengesFormTasksReplaceSessions": "Con tareas, el reto deja de contar tus entrenos.",
   "challengesLinkRoutineDayLabel": "Día de rutina",
   "challengesLinkRoutineDay": "Vinculado a un día de tu rutina",
   "challengesLinkRoutineDays": "Días de tu rutina",
@@ -555,7 +525,7 @@
     }
   },
   "challengesLinkOpenRoutine": "Ver en tu rutina",
-  "challengesLinkEmptyWithRoutine": "No hay entregas ni exámenes en las fechas del reto ni días pendientes en tu rutina. Añade una entrega en el calendario o empieza una rutina para vincular un día.",
+  "challengesLinkEmptyWithRoutine": "No hay entregas en las fechas del reto ni días pendientes de tu rutina.",
   "challengesCompletedByRoutineDay": "Se completa al entrenar el {day} de la semana {week} de «{routine}»",
   "challengesCompletedByRoutineDayGeneric": "Se completa al entrenar ese día de tu rutina",
   "@challengesCompletedByRoutineDay": {

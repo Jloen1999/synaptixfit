@@ -16,6 +16,7 @@ import 'package:synaptixfit/domain/use_cases/training/finish_session_use_case.da
 import 'package:synaptixfit/domain/use_cases/training/get_open_sessions_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/restart_routine_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/skip_routine_day_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/unskip_routine_day_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/discard_recommendation_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_my_routines_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_pending_day_use_case.dart';
@@ -47,6 +48,8 @@ class _MockOpen extends Mock implements GetOpenSessionsUseCaseContract {}
 
 class _MockSkip extends Mock implements SkipRoutineDayUseCaseContract {}
 
+class _MockUnskip extends Mock implements UnskipRoutineDayUseCaseContract {}
+
 class _MockFinish extends Mock implements FinishSessionUseCaseContract {}
 
 class _MockCancel extends Mock implements CancelSessionUseCaseContract {}
@@ -63,6 +66,7 @@ void main() {
   late _MockStart start;
   late _MockOpen open;
   late _MockSkip skip;
+  late _MockUnskip unskip;
   late FakeDataChanges changes;
 
   const pendingDay = PendingDay(
@@ -102,6 +106,7 @@ void main() {
     start = _MockStart();
     open = _MockOpen();
     skip = _MockSkip();
+    unskip = _MockUnskip();
     changes = FakeDataChanges();
     when(() => open()).thenAnswer((_) async => const Success(<OpenSession>[]));
     when(() => pending()).thenAnswer((_) async => const Success(pendingDay));
@@ -129,6 +134,7 @@ void main() {
     watchChanges: changes.useCase,
     getOpenSessions: open,
     skipDay: skip,
+    unskipDay: unskip,
     finishSession: _MockFinish(),
     discardSession: _MockCancel(),
     restartRoutine: _MockRestart(),
@@ -238,6 +244,19 @@ void main() {
       verify(() => skip('r1', 'd1')).called(1);
       verify(() => pending()).called(1);
     },
+  );
+
+  blocTest<TrainingHomeBloc, TrainingHomeState>(
+    '«Deshacer» tras saltar recupera el día sin confirmar',
+    setUp: () => when(
+      () => unskip('r1', 'd1'),
+    ).thenAnswer((_) async => Success(TrainingFixtures.routine())),
+    build: build,
+    seed: () => ready,
+    act: (bloc) => bloc.add(
+      const TrainingHomeEvent.dayUnskipped(routineId: 'r1', dayId: 'd1'),
+    ),
+    verify: (_) => verify(() => unskip('r1', 'd1')).called(1),
   );
 
   tearDown(() => changes.close());

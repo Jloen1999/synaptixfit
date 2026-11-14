@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/models/training/check_in_answers.dart';
 import '../../../../../domain/models/training/wellbeing.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../l10n/gen_l10n/app_localizations.dart';
@@ -52,14 +53,23 @@ String _painZoneLabel(AppLocalizations l10n, String zone) => switch (zone) {
 /// detalles»: estrés, zonas con dolor, si estás para entrenar y notas. Con
 /// [details] (desde «Añadir detalles») se abre ya desplegado.
 class CheckInPage extends StatelessWidget {
-  const CheckInPage({super.key, this.details = false});
+  const CheckInPage({
+    super.key,
+    this.details = false,
+    this.initialAnswers = const CheckInAnswers(),
+  });
 
   final bool details;
+
+  /// Lo ya contestado en la tarjeta de Gimnasio (no se pierde al venir).
+  final CheckInAnswers initialAnswers;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<CheckInBloc>()..add(const CheckInEvent.started()),
+      create: (_) =>
+          getIt<CheckInBloc>()
+            ..add(CheckInEvent.started(initial: initialAnswers)),
       child: _CheckInView(details: details),
     );
   }
@@ -111,12 +121,6 @@ class _FormState extends State<_Form> {
     text: widget.state.input.notes ?? '',
   );
 
-  /// Preguntas ya contestadas. Sin registro hoy, ninguna: el valor por
-  /// defecto del formulario (3) no cuenta como respuesta.
-  late final Set<_Quick> _answered = widget.state.today == null
-      ? <_Quick>{}
-      : _Quick.values.toSet();
-
   /// «Añadir detalles» desplegado: si se pidió o si hoy ya hay alguno.
   late bool _details = widget.details || _hasDetails(widget.state.today);
 
@@ -125,7 +129,7 @@ class _FormState extends State<_Form> {
       (c.painZones.isNotEmpty ||
           (c.notes?.isNotEmpty ?? false) ||
           !c.readyToTrain ||
-          c.stress != CheckInQuestions.mid);
+          c.stress != const CheckInInput().stress);
 
   @override
   void dispose() {
@@ -144,20 +148,12 @@ class _FormState extends State<_Form> {
     }
   }
 
-  /// La primera vez del día y sin detalles abiertos, la tercera respuesta
-  /// guarda (tres toques; se avisa encima de las preguntas). Al cambiar un
-  /// registro ya hecho o con los detalles abiertos, se guarda con «Guardar».
-  bool get _autoSave => widget.state.today == null && !_details;
-
-  void _quick(_Quick question, CheckInInput input) {
-    _update(input);
-    setState(() => _answered.add(question));
-    if (_answered.length == _Quick.values.length && _autoSave) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _save();
-      });
-    }
-  }
+  /// Se avisa encima de las preguntas cuando la tercera respuesta guarda
+  /// sola; la regla vive en el dominio y la aplica el bloc (`saveRequest`).
+  bool get _autoSave => CheckInAnswers.savesOnLastAnswer(
+    loggedToday: widget.state.today != null,
+    withDetails: _details,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -204,20 +200,15 @@ class _FormState extends State<_Form> {
                 ),
                 const SizedBox(height: TokensSpacing.s),
               ],
-              CheckInQuestions(
-                sleep: _answered.contains(_Quick.sleep)
-                    ? input.sleepQuality
-                    : null,
-                energy: _answered.contains(_Quick.energy) ? input.energy : null,
-                soreness: _answered.contains(_Quick.soreness)
-                    ? input.soreness
-                    : null,
-                onSleep: (v) =>
-                    _quick(_Quick.sleep, input.copyWith(sleepQuality: v)),
-                onEnergy: (v) =>
-                    _quick(_Quick.energy, input.copyWith(energy: v)),
-                onSoreness: (v) =>
-                    _quick(_Quick.soreness, input.copyWith(soreness: v)),
+              BlocListener<CheckInBloc, CheckInState>(
+                listenWhen: (a, b) => a.saveRequest != b.saveRequest,
+                listener: (_, _) => _save(),
+                child: CheckInQuestions(
+                  answers: state.answers,
+                  onAnswer: (q, v) => context.read<CheckInBloc>().add(
+                    CheckInEvent.answered(q, v, withDetails: _details),
+                  ),
+                ),
               ),
               if (state.submitting && _autoSave)
                 const LinearProgressIndicator(),
@@ -245,7 +236,7 @@ class _FormState extends State<_Form> {
               ),
               if (_details) ..._detailFields(context, input),
               if (!_autoSave) ...[
-                if (_answered.length < _Quick.values.length) ...[
+                if (!state.answers.complete) ...[
                   Text(
                     l10n.trainingCheckInAnswerFirst,
                     style: context.textStyles.bodyMedium?.copyWith(
@@ -259,9 +250,7 @@ class _FormState extends State<_Form> {
                       ? l10n.trainingCheckInSave
                       : l10n.trainingCheckInUpdateAction,
                   loading: state.submitting,
-                  onPressed: _answered.length == _Quick.values.length
-                      ? _save
-                      : null,
+                  onPressed: state.answers.complete ? _save : null,
                 ),
               ],
               const SizedBox(height: TokensSpacing.m),
@@ -315,8 +304,10 @@ class _FormState extends State<_Form> {
     return [
       const SizedBox(height: TokensSpacing.s),
       _StressQuestion(
-        value: input.stress,
-        onChanged: (v) => _update(input.copyWith(stress: v)),
+        // Sin contestar no sale ninguna marcada (antes salía «Algo»).
+        value: widget.state.stressAnswered ? input.stress : null,
+        onChanged: (v) =>
+            context.read<CheckInBloc>().add(CheckInEvent.stressChanged(v)),
       ),
       Text(l10n.trainingPainZones, style: context.textStyles.titleSmall),
       const SizedBox(height: TokensSpacing.xs),
@@ -350,38 +341,41 @@ class _FormState extends State<_Form> {
           onChanged: (v) => _update(input.copyWith(readyToTrain: v)),
         ),
       ),
-      TextField(
+      AppTextField(
+        label: l10n.trainingNotes,
         controller: _notes,
         maxLength: 1000,
         minLines: 2,
         maxLines: 4,
-        decoration: InputDecoration(labelText: l10n.trainingNotes),
+        textCapitalization: TextCapitalization.sentences,
         onChanged: (v) => _update(input.copyWith(notes: v)),
       ),
     ];
   }
 }
 
-/// Las tres preguntas rápidas, para saber cuáles se han contestado.
-enum _Quick { sleep, energy, soreness }
-
 /// Estrés, en el mismo sentido que el resto: a la derecha, lo mejor (menos
 /// estrés). Se guarda en la escala 1-5 de siempre (5 = mucho estrés).
 class _StressQuestion extends StatelessWidget {
   const _StressQuestion({required this.value, required this.onChanged});
 
-  final int value;
+  final int? value;
   final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    final words = [
+      l10n.trainingStressLot,
+      l10n.trainingStressQuite,
+      l10n.trainingStressSome,
+      l10n.trainingStressLittle,
+      l10n.trainingStressNone,
+    ];
+    // El sentido de la escala lo da el dominio: menos estrés es mejor.
+    final values = CheckInScale.lowerIsBetter.worstToBest;
     final options = [
-      (5, l10n.trainingStressLot),
-      (4, l10n.trainingStressQuite),
-      (3, l10n.trainingStressSome),
-      (2, l10n.trainingStressLittle),
-      (1, l10n.trainingStressNone),
+      for (var i = 0; i < values.length; i++) (values[i], words[i]),
     ];
     return Padding(
       padding: const EdgeInsets.only(bottom: TokensSpacing.m),
@@ -433,22 +427,13 @@ class _TodaySummary extends StatelessWidget {
       child: AppCard(
         child: Row(
           children: [
-            SizedBox.square(
-              dimension: 56,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: checkIn.fatigueScore / 100,
-                    color: color,
-                    backgroundColor: context.colors.surfaceContainer,
-                    strokeWidth: 6,
-                  ),
-                  Text(
-                    '${checkIn.fatigueScore}',
-                    style: context.textStyles.titleSmall,
-                  ),
-                ],
+            // En palabras, sin la cifra de fatiga (vocabulario §4).
+            ExcludeSemantics(
+              child: Icon(
+                checkIn.requiresAdaptation
+                    ? Icons.battery_3_bar_rounded
+                    : Icons.battery_full_rounded,
+                color: color,
               ),
             ),
             const SizedBox(width: TokensSpacing.m),
@@ -501,22 +486,17 @@ class _HistoryTile extends StatelessWidget {
       subtitle: Text(
         l10n.trainingCheckInHistoryWords(
           CheckInQuestions.answer(
-            CheckInQuestions.sleepOptions(l10n),
+            l10n,
+            CheckInQuestion.sleep,
             checkIn.sleepQuality,
           ),
+          CheckInQuestions.answer(l10n, CheckInQuestion.energy, checkIn.energy),
           CheckInQuestions.answer(
-            CheckInQuestions.energyOptions(l10n),
-            checkIn.energy,
-          ),
-          CheckInQuestions.answer(
-            CheckInQuestions.sorenessOptions(l10n),
+            l10n,
+            CheckInQuestion.soreness,
             checkIn.soreness,
           ),
         ),
-      ),
-      trailing: Text(
-        l10n.trainingFatigueScore(checkIn.fatigueScore),
-        style: context.textStyles.labelLarge?.copyWith(color: color),
       ),
     );
   }
