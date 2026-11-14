@@ -15114,6 +15114,20 @@ components:
         updatedAt:
           type: string
           format: date-time
+        loadLevel:
+          type: string
+          enum:
+          - LOW
+          - MODERATE
+          - HIGH
+          - CRITICAL
+        attentionLevel:
+          type: string
+          enum:
+          - LOW
+          - MODERATE
+          - HIGH
+          - CRITICAL
     SignedUrlResponse:
       type: object
       properties:
@@ -15233,6 +15247,21 @@ components:
         currentStreak:
           type: integer
           format: int32
+    DashboardNextDeadlineResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        type:
+          type: string
+        dueAt:
+          type: string
+          format: date-time
+        subjectName:
+          type: string
     DashboardResponse:
       type: object
       properties:
@@ -15264,6 +15293,8 @@ components:
             $ref: "#/components/schemas/TodayEventResponse"
         banner:
           $ref: "#/components/schemas/BannerResponse"
+        nextDeadline:
+          $ref: "#/components/schemas/DashboardNextDeadlineResponse"
     DashboardWeekResponse:
       type: object
       properties:
