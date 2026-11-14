@@ -7,7 +7,7 @@
 #   - /root/synaptixfit/app-secrets.env JWT_SECRET (se genera aquí si falta), DEEPSEEK_API_KEY
 #     y, si existen, R2_ACCESS_KEY / R2_SECRET_KEY / R2_ENDPOINT / R2_PUBLIC_BASE_URL
 #
-#   sudo bash 07-desplegar-synaptixfit.sh <IMAGE_TAG> <GOOGLE_CLIENT_IDS> [/ruta/docker-compose.prod.yml]
+#   sudo bash 07-desplegar-synaptixfit.sh <IMAGE_TAG> <GOOGLE_CLIENT_IDS> [/ruta/synaptixfit-compose.prod.yml]
 #
 # Resultado: /root/synaptixfit/service-uuid con el uuid del recurso de Coolify.
 set -euo pipefail
@@ -15,7 +15,7 @@ umask 077
 
 IMAGE_TAG="${1:?Uso: $0 <IMAGE_TAG> <GOOGLE_CLIENT_IDS> [compose]}"
 GOOGLE_CLIENT_IDS="${2:-}"
-COMPOSE="${3:-/tmp/docker-compose.prod.yml}"
+COMPOSE="${3:-/tmp/synaptixfit-compose.prod.yml}"
 DOMAIN=https://synaptixfit.jloenit.dev
 
 DIR=/root/synaptixfit
@@ -29,6 +29,9 @@ ENVIRONMENT_UUID=mfubcsqxxsugk0uutjz86ryi   # production
 DESTINATION_UUID=masrbaubzcsmuhwnaqprhxiw   # infra-app-db: la misma red que la BD
 
 [[ -s "$COMPOSE" ]] || { echo "No encuentro el compose en $COMPOSE" >&2; exit 1; }
+# El VPS aloja otras apps (Ceiba Docs usó /tmp/docker-compose.prod.yml): no desplegar nunca un compose ajeno.
+grep -q 'ghcr.io/jloen1999/synaptixfit-backend:' "$COMPOSE" && grep -q 'ghcr.io/jloen1999/synaptixfit-web:' "$COMPOSE" \
+  || { echo "$COMPOSE no es el compose de SynaptixFit: no se despliega" >&2; exit 1; }
 [[ -s "$DIR/db-app.env" ]] || { echo "Falta $DIR/db-app.env (paso 02)" >&2; exit 1; }
 touch "$DIR/app-secrets.env"
 chmod 600 "$DIR/app-secrets.env"

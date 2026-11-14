@@ -15,7 +15,10 @@ $ids = ((Get-Content backend\.env | Where-Object { $_ -like 'GOOGLE_CLIENT_IDS=*
 if (-not $ids) { throw 'GOOGLE_CLIENT_IDS no encontrado en backend/.env' }
 
 Write-Host '1/5 Subiendo los scripts...'
-& $scp docker-compose.prod.yml infra\scripts\00-copia-bd-synaptixfit.sh infra\scripts\07-desplegar-synaptixfit.sh `
+# El compose va con nombre propio: /tmp lo comparten otras apps del VPS (Ceiba Docs) y se pisaban.
+& $scp docker-compose.prod.yml infra-ovh:/tmp/synaptixfit-compose.prod.yml
+if ($LASTEXITCODE -ne 0) { throw 'No se pudo subir el compose' }
+& $scp infra\scripts\00-copia-bd-synaptixfit.sh infra\scripts\07-desplegar-synaptixfit.sh `
     infra\scripts\08-verificar-synaptixfit.sh infra\scripts\11-filtrar-salida-backend.sh infra-ovh:/tmp/
 if ($LASTEXITCODE -ne 0) { throw 'No se pudieron subir los scripts' }
 & $ssh infra-ovh 'sed -i ''s/\r$//'' /tmp/0*.sh /tmp/1*.sh'
@@ -25,7 +28,7 @@ Write-Host '2/5 Copia de la base de datos...'
 if ($LASTEXITCODE -ne 0) { throw 'La copia de la BD fallo: no se despliega' }
 
 Write-Host "3/5 Desplegando $Tag..."
-& $ssh infra-ovh "sudo bash /tmp/07-desplegar-synaptixfit.sh $Tag '$ids' /tmp/docker-compose.prod.yml"
+& $ssh infra-ovh "sudo bash /tmp/07-desplegar-synaptixfit.sh $Tag '$ids' /tmp/synaptixfit-compose.prod.yml"
 if ($LASTEXITCODE -ne 0) { throw "El despliegue fallo con codigo $LASTEXITCODE" }
 
 Write-Host '4/5 Esperando a que arranquen los contenedores...'

@@ -32,8 +32,9 @@ Navegador ──HTTPS──▶ Cloudflare (proxy, Full strict) ──▶ VPS :44
 3. Desplegar esa etiqueta (desde Windows). Lo más cómodo es `infra\desplegar.ps1 -Tag <commit>`, que además hace
    una copia de la BD antes, vuelve a aplicar el filtro de salida del backend y verifica. A mano:
    ```powershell
-   scp docker-compose.prod.yml infra\scripts\07-desplegar-synaptixfit.sh infra\scripts\08-verificar-synaptixfit.sh infra-ovh:/tmp/
-   ssh infra-ovh 'sed -i "s/\r$//" /tmp/0*.sh && sudo bash /tmp/07-desplegar-synaptixfit.sh <commit> <GOOGLE_CLIENT_IDS> /tmp/docker-compose.prod.yml'
+   scp docker-compose.prod.yml infra-ovh:/tmp/synaptixfit-compose.prod.yml
+   scp infra\scripts\07-desplegar-synaptixfit.sh infra\scripts\08-verificar-synaptixfit.sh infra-ovh:/tmp/
+   ssh infra-ovh 'sed -i "s/\r$//" /tmp/0*.sh && sudo bash /tmp/07-desplegar-synaptixfit.sh <commit> <GOOGLE_CLIENT_IDS> /tmp/synaptixfit-compose.prod.yml'
    ssh infra-ovh 'sudo bash /tmp/08-verificar-synaptixfit.sh'
    ```
    También vale el panel de Coolify: Service *synaptixfit* → *Environment Variables* → `IMAGE_TAG` = commit → *Restart*.
@@ -69,7 +70,7 @@ Viven solo en el VPS y en Coolify (marcados como *shown once*): nunca en el repo
 3. **Producción**, desde Windows, sin que la clave pase por la línea de comandos:
    ```powershell
    (Get-Content backend\.env | Where-Object { $_ -match '^DEEPSEEK_API_KEY=' }) | ssh infra-ovh 'sudo bash /tmp/guardar-secreto.sh'
-   ssh infra-ovh 'sudo bash /tmp/07-desplegar-synaptixfit.sh <commit actual> <GOOGLE_CLIENT_IDS> /tmp/docker-compose.prod.yml'
+   ssh infra-ovh 'sudo bash /tmp/07-desplegar-synaptixfit.sh <commit actual> <GOOGLE_CLIENT_IDS> /tmp/synaptixfit-compose.prod.yml'
    ```
    (`infra/scripts/guardar-secreto.sh` sustituye la línea en `app-secrets.env`; el paso 07 la sube a Coolify y reinicia.) Alternativa: Coolify → Service *synaptixfit* → *Environment Variables* → `DEEPSEEK_API_KEY` → *Restart*.
 
