@@ -393,5 +393,414 @@
         "type": "String"
       }
     }
-  }
+  },
+  "togetherTitle": "Con amigos",
+  "togetherEntry": "Retos, rachas y entrenos con tus amigos",
+  "togetherIntro": "Solo con amigos mutuos. Nunca se comparte cómo estás.",
+  "togetherHelp": "Aquí solo ven tu parte los amigos que invites: si has sumado en un reto, si has hecho tu parte de la racha y qué ejercicios llevas al entrenar juntos. Nunca se comparte cómo te encuentras, tu ciclo, tu sueño, tu peso ni dónde estás. Desde el menú de cada persona puedes bloquearla o denunciarla.",
+  "togetherEmptyTitle": "Aún no tienes nada con amigos",
+  "togetherEmptyMessage": "Crea un reto juntos o proponle una racha a un amigo.",
+  "togetherNewChallenge": "Nuevo reto con amigos",
+  "togetherStreakPropose": "Proponer racha",
+  "togetherStreakPickTitle": "¿Con quién quieres una racha?",
+  "togetherInvitations": "Invitaciones",
+  "togetherInvitedChallenge": "{name} te invita a un reto: {title}",
+  "@togetherInvitedChallenge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherInvitedStreak": "{name} te propone una racha juntos",
+  "@togetherInvitedStreak": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherInvitedWorkout": "{name} te invita a entrenar hoy: {routine}",
+  "@togetherInvitedWorkout": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "routine": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherWorkoutTitle": "Entrenar juntos",
+  "togetherJoin": "Unirme",
+  "togetherDecline": "No, gracias",
+  "togetherChallengesSection": "Retos con amigos",
+  "togetherChallengesEmpty": "Sin retos con amigos ahora mismo.",
+  "togetherStreaksSection": "Rachas con amigos",
+  "togetherStreaksEmpty": "Hasta 5 rachas: suma cada día que los dos hacéis algo.",
+  "togetherWorkoutsSection": "Entrenar juntos hoy",
+  "togetherWorkoutsEmpty": "Desde una rutina, en Más › Entrenar con amigos.",
+  "togetherGroupProgress": "Entre todos: {value} de {target}",
+  "@togetherGroupProgress": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherMyPoints": "{count, plural, =0{Aún no has sumado puntos} =1{Llevas 1 punto} other{Llevas {count} puntos}}",
+  "@togetherMyPoints": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherMyProgress": "Tú: {value} de {target}",
+  "@togetherMyProgress": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherChallengeOver": "Terminado",
+  "togetherChallengeUntil": "Hasta el {date}",
+  "@togetherChallengeUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherStreakWaiting": "Esperando a {name}",
+  "@togetherStreakWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherStreakPaused": "En pausa",
+  "togetherStreakBothDone": "Hoy los dos habéis cumplido",
+  "togetherStreakMyPart": "Te falta tu parte de hoy",
+  "togetherStreakFriendPart": "A {name} le falta su parte de hoy",
+  "@togetherStreakFriendPart": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherStreakWith": "{days, plural, =0{Racha con {name}: 0 días} =1{Racha con {name}: 1 día} other{Racha con {name}: {days} días}}",
+  "@togetherStreakWith": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherStreakProposedTo": "Racha propuesta a {name}",
+  "@togetherStreakProposedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherNudge": "Recordárselo",
+  "togetherStreakEnd": "Terminar racha",
+  "togetherStreakWithdraw": "Retirar propuesta",
+  "togetherStreakEndTitle": "¿Terminar la racha?",
+  "togetherStreakEndMessage": "Se pierden los días seguidos con {name}.",
+  "@togetherStreakEndMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherStreakProposed": "Racha propuesta. La verás aquí en cuanto acepte.",
+  "togetherStreakAccepted": "Racha en marcha: cuenta desde hoy",
+  "togetherStreakEnded": "Racha terminada",
+  "togetherStreakNudged": "Se lo hemos recordado",
+  "togetherMemberMenu": "Opciones de {name}",
+  "@togetherMemberMenu": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherViewProfile": "Ver perfil",
+  "togetherReport": "Denunciar",
+  "togetherNoFriendsTitle": "Aún no tienes amigos",
+  "togetherNoFriendsMessage": "Solo puedes invitar a amigos mutuos.",
+  "togetherFindFriends": "Buscar amigos",
+  "togetherPickedCount": "Elegidos: {count} de {max}",
+  "@togetherPickedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherDeletedUser": "Cuenta eliminada",
+  "togetherReactionClap": "Aplausos",
+  "togetherReactionFire": "Fuego",
+  "togetherReactionMuscle": "Fuerza",
+  "togetherReactionHeart": "Cariño",
+  "togetherModeTogether": "Juntos",
+  "togetherModeCompetition": "Competición",
+  "togetherModeTogetherHint": "Sumáis entre todos para una meta común.",
+  "togetherModeCompetitionHint": "Cada uno suma sus puntos, con un tope al día.",
+  "togetherNotStarted": "Aún no ha empezado",
+  "togetherTraining": "Entrenando",
+  "togetherFinished": "Ha terminado",
+  "togetherChallengeCreated": "Reto creado. Lo tienes en Progreso › Retos › Con amigos.",
+  "togetherNoTemplatesTitle": "No hay retos para hacer con amigos",
+  "togetherNoTemplatesMessage": "Los retos de bienestar no se comparten nunca.",
+  "togetherFormWhat": "¿Qué reto?",
+  "togetherFormDays": "¿Cuántos días?",
+  "togetherDays": "{count, plural, =0{0 días} =1{1 día} other{{count} días}}",
+  "@togetherDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherFormMode": "¿Cómo?",
+  "togetherFormWho": "¿Con quién?",
+  "togetherCreateChallenge": "Crear reto",
+  "togetherChallengeTitle": "Reto con amigos",
+  "togetherDeclined": "Invitación rechazada",
+  "togetherLeftChallenge": "Has salido del reto",
+  "togetherGoalReached": "¡Meta conseguida!",
+  "togetherInvitedBy": "{name} te invita a este reto",
+  "@togetherInvitedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherRanking": "Clasificación",
+  "togetherPeople": "Quién está",
+  "togetherBoard": "Tablón",
+  "togetherBoardEmpty": "Cuando alguien sume, aparecerá aquí.",
+  "togetherLeaveChallenge": "Salir del reto",
+  "togetherMemberInvited": "Invitación enviada",
+  "togetherPoints": "{count, plural, =0{0 puntos} =1{1 punto} other{{count} puntos}}",
+  "@togetherPoints": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherContributed": "Ha aportado",
+  "togetherNotYetContributed": "Aún no ha aportado",
+  "togetherYou": "Tú",
+  "togetherBoardMine": "Sumaste el {day}",
+  "@togetherBoardMine": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherBoardEntry": "{name} sumó el {day}",
+  "@togetherBoardEntry": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherNoReactionsYet": "Aún sin reacciones",
+  "togetherReactionCount": "{count, plural, =0{{reaction}: ninguna} =1{{reaction}: 1} other{{reaction}: {count}}}",
+  "@togetherReactionCount": {
+    "placeholders": {
+      "reaction": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherReactTo": "Reaccionar con {reaction} a {name}",
+  "@togetherReactTo": {
+    "placeholders": {
+      "reaction": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherTrainWithFriends": "Entrenar con amigos",
+  "togetherWorkoutIntro": "Hoy, la misma rutina, cada uno en su móvil.",
+  "togetherWorkoutHelp": "Cada uno entrena con su sesión de siempre. Verás por ejercicio quién lo tiene hecho, nunca sus pesos ni su esfuerzo. Quien no tenga la rutina recibe una copia en pausa en «Mis rutinas», que puede eliminar cuando quiera.",
+  "togetherInvite": "Invitar",
+  "togetherWorkoutInvited": "Invitación enviada",
+  "togetherWorkoutLeft": "Has salido del entreno",
+  "togetherDayNumber": "Día {number}",
+  "@togetherDayNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherWorkoutToday": "Hoy: {day}",
+  "@togetherWorkoutToday": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherWorkoutOn": "{day} · {date}",
+  "@togetherWorkoutOn": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherKeepTraining": "Seguir entrenando",
+  "togetherJoinAndStart": "Unirme y empezar",
+  "togetherStart": "Empezar",
+  "togetherWhoDidWhat": "Quién lleva cada ejercicio",
+  "togetherLeaveWorkout": "Salir del entreno",
+  "togetherSlotState": "{name}: {state}",
+  "@togetherSlotState": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherDone": "Hecho",
+  "togetherToDo": "Por hacer",
+  "togetherSummaryTitle": "Entrenasteis juntos",
+  "togetherSummaryAlone": "Esta vez sin compañía.",
+  "togetherSummaryWith": "Con {names}",
+  "@togetherSummaryWith": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherSummaryStats": "{minutes} min · {exercises, plural, =0{sin ejercicios} =1{1 ejercicio} other{{exercises} ejercicios}}",
+  "@togetherSummaryStats": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "exercises": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherWaitingFriends": "Entrenar juntos: esperando a tus amigos",
+  "togetherTrainingWith": "Entrenas con {names}",
+  "@togetherTrainingWith": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "socialErrorFriendChallengeNotFound": "Ese reto ya no está disponible.",
+  "socialErrorFriendStreakNotFound": "Esa racha ya no existe.",
+  "socialErrorWorkoutTogetherNotFound": "Ese entreno ya no está disponible.",
+  "socialErrorTogetherNotFriends": "Solo puedes invitar a amigos mutuos.",
+  "socialErrorTogetherGroupSize": "Elige entre 1 y 24 amigos para un reto, o entre 1 y 4 para entrenar juntos.",
+  "socialErrorTogetherInvalidState": "Eso ya no se puede hacer. Vuelve a cargar la pantalla.",
+  "socialErrorFriendChallengeTemplateNotAllowed": "Ese reto no se puede hacer con amigos.",
+  "socialErrorFriendStreakLimitReached": "Ya hay 5 rachas con amigos: termina una para empezar otra.",
+  "socialErrorFriendStreakAlreadyExists": "Ya tenéis una racha juntos.",
+  "socialErrorFriendStreakNudgeUnavailable": "Hoy ya se lo has recordado o ya ha hecho su parte.",
+  "socialErrorUserReportNotFound": "Esa denuncia ya se revisó.",
+  "socialNotifFriendChallengeTitle": "Reto con amigos",
+  "socialNotifFriendChallengeBody": "{name} te invita a un reto: {title}",
+  "@socialNotifFriendChallengeBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifFriendStreakTitle": "Racha con un amigo",
+  "socialNotifFriendStreakBody": "{name} te propone una racha juntos",
+  "@socialNotifFriendStreakBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifWorkoutTogetherTitle": "Entrenamos juntos",
+  "socialNotifWorkoutTogetherBody": "{name} te invita a entrenar hoy: {title}",
+  "@socialNotifWorkoutTogetherBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifStreakNudgeBody": "Racha con {name}: te falta tu parte de hoy",
+  "@socialNotifStreakNudgeBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifActionTogether": "Ver",
+  "togetherBlockMessage": "{name} no podrá ver tu perfil y se terminan las rachas, retos y entrenos que compartís.",
+  "@togetherBlockMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherSummaryAloneTitle": "Entreno hecho",
+  "togetherStreakWithdrawn": "Propuesta retirada"
 }

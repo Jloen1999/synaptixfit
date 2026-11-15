@@ -1,7 +1,9 @@
-/// Tipo de contenido reportado.
+/// Tipo de contenido reportado. [user]: una persona denunciada desde «Con
+/// amigos» (ADR 0044); no hay contenido que borrar.
 enum AdminReportType {
   post,
-  comment;
+  comment,
+  user;
 
   /// Valor que espera la API (UPPER_SNAKE_CASE).
   String get apiValue =>

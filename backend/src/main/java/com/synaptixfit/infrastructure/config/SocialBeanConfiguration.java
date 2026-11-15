@@ -19,6 +19,7 @@ import com.synaptixfit.application.port.input.social.ListCommentsUseCase;
 import com.synaptixfit.application.port.input.social.ListFriendshipsUseCase;
 import com.synaptixfit.application.port.input.social.ListReportedContentUseCase;
 import com.synaptixfit.application.port.input.social.RejectFriendRequestUseCase;
+import com.synaptixfit.application.port.input.social.ReportUserUseCase;
 import com.synaptixfit.application.port.input.social.RemoveFriendshipUseCase;
 import com.synaptixfit.application.port.input.social.RemoveReportedContentUseCase;
 import com.synaptixfit.application.port.input.social.ReportCommentUseCase;
@@ -31,6 +32,8 @@ import com.synaptixfit.application.service.social.FriendshipService;
 import com.synaptixfit.application.service.social.ModerationService;
 import com.synaptixfit.application.service.social.PostService;
 import com.synaptixfit.application.service.social.SocialProfileService;
+import com.synaptixfit.application.service.social.UserReportService;
+import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.social.CommentRepositoryPort;
 import com.synaptixfit.domain.port.output.social.FriendshipRepositoryPort;
 import com.synaptixfit.domain.port.output.social.ModerationAuditPort;
@@ -38,6 +41,7 @@ import com.synaptixfit.domain.port.output.social.PostLikeRepositoryPort;
 import com.synaptixfit.domain.port.output.social.PostRepositoryPort;
 import com.synaptixfit.domain.port.output.social.ReportedContentQueryPort;
 import com.synaptixfit.domain.port.output.social.SocialQueryPort;
+import com.synaptixfit.domain.port.output.social.UserReportRepositoryPort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import java.time.Clock;
 import java.time.ZoneId;
@@ -62,6 +66,8 @@ public class SocialBeanConfiguration {
     private final ModerationAuditPort audit;
     private final UserRepositoryPort users;
     private final CreateNotificationUseCase notifications;
+    private final UserReportRepositoryPort userReports;
+    private final DomainEventPublisherPort events;
     private final Clock clock;
     private final ZoneId zone;
 
@@ -69,7 +75,8 @@ public class SocialBeanConfiguration {
                                    PostLikeRepositoryPort likes, CommentRepositoryPort comments,
                                    FriendshipRepositoryPort friendships, SocialQueryPort queries,
                                    ReportedContentQueryPort reported, ModerationAuditPort audit,
-                                   UserRepositoryPort users, CreateNotificationUseCase notifications, Clock clock,
+                                   UserRepositoryPort users, CreateNotificationUseCase notifications,
+                                   UserReportRepositoryPort userReports, DomainEventPublisherPort events, Clock clock,
                                    @Value("${synaptixfit.notifications.zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.posts = posts;
@@ -81,6 +88,8 @@ public class SocialBeanConfiguration {
         this.audit = audit;
         this.users = users;
         this.notifications = notifications;
+        this.userReports = userReports;
+        this.events = events;
         this.clock = clock;
         this.zone = ZoneId.of(zone);
     }
@@ -173,7 +182,7 @@ public class SocialBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     FriendshipService friendshipService() {
-        return new FriendshipService(friendships, users, queries, notifications, clock);
+        return new FriendshipService(friendships, users, queries, notifications, events, clock);
     }
 
     @Bean
@@ -223,11 +232,18 @@ public class SocialBeanConfiguration {
         return tx.wrap(GetPublicProfileUseCase.class, socialProfileService());
     }
 
+    // ---------------------------------------------------------------- denuncias de personas (ADR 0044)
+
+    @Bean
+    ReportUserUseCase reportUserUseCase() {
+        return tx.wrap(ReportUserUseCase.class, new UserReportService(userReports, users, clock));
+    }
+
     // ---------------------------------------------------------------- moderación
 
     @Bean(autowireCandidate = false)
     ModerationService moderationService() {
-        return new ModerationService(posts, comments, reported, audit);
+        return new ModerationService(posts, comments, reported, audit, userReports);
     }
 
     @Bean

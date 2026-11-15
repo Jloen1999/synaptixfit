@@ -68,4 +68,11 @@ public class SocialModerationController {
     public void removeComment(@CurrentUserId UUID adminId, @PathVariable UUID commentId) {
         removeContent.remove(adminId, ReportedContentType.COMMENT, commentId);
     }
+
+    /** Quita de la cola la denuncia de una persona (ADR 0044) una vez revisada. */
+    @PostMapping("/user-reports/{reportId}/dismiss-report")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void dismissUserReport(@CurrentUserId UUID adminId, @PathVariable UUID reportId) {
+        dismissReport.dismiss(adminId, ReportedContentType.USER, reportId);
+    }
 }

@@ -18,6 +18,7 @@ import com.synaptixfit.application.port.input.training.RestartRoutineUseCase;
 import com.synaptixfit.application.port.input.training.SkipRoutineDayUseCase;
 import com.synaptixfit.application.port.input.training.UnskipRoutineDayUseCase;
 import com.synaptixfit.application.port.input.training.CloneRoutineUseCase;
+import com.synaptixfit.application.port.input.training.CopyRoutineForFriendUseCase;
 import com.synaptixfit.application.port.input.training.CreateExerciseUseCase;
 import com.synaptixfit.application.port.input.training.CreateRoutineUseCase;
 import com.synaptixfit.application.port.input.training.DeleteExerciseUseCase;
@@ -75,6 +76,7 @@ import com.synaptixfit.application.service.training.ExerciseNameTranslationServi
 import com.synaptixfit.application.service.training.RecommendationService;
 import com.synaptixfit.application.service.training.RoutineGenerationService;
 import com.synaptixfit.application.service.training.RoutineProgressService;
+import com.synaptixfit.application.service.training.RoutineFriendCopyService;
 import com.synaptixfit.application.service.training.RoutineService;
 import com.synaptixfit.application.service.training.LoadSuggestionService;
 import com.synaptixfit.application.service.training.TrainingSessionService;
@@ -336,6 +338,12 @@ public class TrainingBeanConfiguration {
     @Bean
     DuplicateRoutineUseCase duplicateRoutineUseCase() {
         return tx.wrap(DuplicateRoutineUseCase.class, routineService());
+    }
+
+    /** Copia en pausa para «Entrenamos juntos» (ADR 0044); solo la usa el módulo social. */
+    @Bean
+    CopyRoutineForFriendUseCase copyRoutineForFriendUseCase() {
+        return tx.wrap(CopyRoutineForFriendUseCase.class, new RoutineFriendCopyService(routines, users, clock));
     }
 
     @Bean

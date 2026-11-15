@@ -90,10 +90,10 @@ void main() {
     });
 
     test('pausar o reanudar la racha refresca Progreso y los avisos', () {
-      expect(
-        DataChangeInterceptor.topicsFor('POST', '/api/v1/streak/pause'),
-        {DataTopic.gamification, DataTopic.social},
-      );
+      expect(DataChangeInterceptor.topicsFor('POST', '/api/v1/streak/pause'), {
+        DataTopic.gamification,
+        DataTopic.social,
+      });
       expect(
         DataChangeInterceptor.topicsFor('DELETE', '/api/v1/streak/pause'),
         {DataTopic.gamification, DataTopic.social},
@@ -111,6 +111,20 @@ void main() {
       expect(
         DataChangeInterceptor.topicsFor('POST', '/api/v1/shared-routines/copy'),
         contains(DataTopic.training),
+      );
+    });
+
+    test('empezar a entrenar con amigos refresca Entreno y lo social', () {
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'POST',
+          '/api/v1/together/workouts/w/start',
+        ),
+        {DataTopic.social, DataTopic.training},
+      );
+      expect(
+        DataChangeInterceptor.topicsFor('GET', '/api/v1/together'),
+        isEmpty,
       );
     });
 

@@ -61,7 +61,16 @@ class _FriendsViewState extends State<_FriendsView> {
       listener: (context, state) =>
           showSocialFeedback(context, state.feedback!, inFriends: true),
       child: Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.socialFriendsTitle)),
+        appBar: AppPageBar.reading(
+          title: Text(l10n.socialFriendsTitle),
+          actions: [
+            IconButton(
+              tooltip: l10n.togetherTitle,
+              icon: const Icon(AppIcons.friends),
+              onPressed: () => context.push(SocialPaths.together),
+            ),
+          ],
+        ),
         body: SocialContentWidth(
           child: Column(
             children: [

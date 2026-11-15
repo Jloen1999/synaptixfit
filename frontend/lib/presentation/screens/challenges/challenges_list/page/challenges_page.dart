@@ -226,6 +226,8 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                       // Retos listos que se cuentan solos (ADR 0043): una fila,
                       // secundaria frente a «Nuevo reto».
                       const _TemplatesEntry(),
+                      const SizedBox(height: TokensSpacing.s),
+                      const _FriendsEntry(),
                       const SizedBox(height: TokensSpacing.m),
                       if (!firstTime) ...[
                         AppSectionHeader(
@@ -400,6 +402,28 @@ class _TemplatesEntry extends StatelessWidget {
             await context.push(ChallengesPaths.templates);
             bloc.add(const ChallengesListEvent.refreshed());
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila que abre «Con amigos» (ADR 0044): retos, rachas y entrenos con amigos.
+class _FriendsEntry extends StatelessWidget {
+  const _FriendsEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: AppFocusOutline(
+        child: ListTile(
+          leading: Icon(AppIcons.friends, color: context.colors.primary),
+          title: Text(l10n.togetherTitle),
+          subtitle: Text(l10n.togetherEntry),
+          trailing: const Icon(AppIcons.next),
+          onTap: () => context.push(ChallengesExternalPaths.together),
         ),
       ),
     );

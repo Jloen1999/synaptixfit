@@ -31,6 +31,10 @@ class AdminModerationRemoteDataSource {
   Future<void> dismissCommentReport(String commentId) =>
       _dio.post<void>('$_base/comments/$commentId/dismiss-report');
 
+  /// Quita de la cola la denuncia de una persona (ADR 0044).
+  Future<void> dismissUserReport(String reportId) =>
+      _dio.post<void>('$_base/user-reports/$reportId/dismiss-report');
+
   Future<void> removePost(String postId) =>
       _dio.delete<void>('$_base/posts/$postId');
 

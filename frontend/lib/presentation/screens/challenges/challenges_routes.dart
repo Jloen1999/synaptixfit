@@ -51,6 +51,9 @@ abstract final class ChallengesExternalPaths {
 
   /// Pestaña Rutinas: se navega con `go` (es una pestaña, no una pantalla).
   static const training = '/training';
+
+  /// «Con amigos» (módulo social, ADR 0044), a pantalla completa.
+  static const together = '/social/together';
 }
 
 /// Valores iniciales del formulario «Nuevo reto» recibidos por `extra`.

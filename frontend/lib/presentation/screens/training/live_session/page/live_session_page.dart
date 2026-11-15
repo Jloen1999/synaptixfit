@@ -27,6 +27,7 @@ import '../../widgets/set_fields.dart';
 import '../../../../../domain/models/training/live_session_draft.dart';
 import '../../exercise_alternatives/page/exercise_alternatives_sheet.dart';
 import '../bloc/live_session_bloc.dart';
+import '../../../social/together/widgets/workout_together_progress.dart';
 import 'finish_session_sheet.dart';
 import 'live_focus_view.dart';
 import 'set_record_sheet.dart';
@@ -632,6 +633,8 @@ class _LiveViewState extends State<_LiveView> {
                         onWarmup: (e, set, existing) =>
                             unawaited(_warmup(state, e, set, existing)),
                         header: [
+                          // Entrenar con amigos (ADR 0044): solo se ve si lo es.
+                          WorkoutTogetherPanel(sessionId: state.session!.id),
                           // Sin conexión: las series se guardan en el teléfono.
                           if (state.pendingSets.isNotEmpty) ...[
                             AppInlineMessage(
@@ -1021,6 +1024,8 @@ class _ExerciseList extends StatelessWidget {
                     ),
                   ),
                 ),
+              // Entrenar con amigos (ADR 0044): solo se ve si lo es.
+              WorkoutTogetherPanel(sessionId: session.id),
               // Sin conexión: las series se guardan en el teléfono.
               if (state.pendingSets.isNotEmpty) ...[
                 AppInlineMessage(

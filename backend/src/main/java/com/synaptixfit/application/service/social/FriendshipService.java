@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.social.ListFriendshipsUseCase;
 import com.synaptixfit.application.port.input.social.RejectFriendRequestUseCase;
 import com.synaptixfit.application.port.input.social.RemoveFriendshipUseCase;
 import com.synaptixfit.application.port.input.social.SendFriendRequestUseCase;
+import com.synaptixfit.domain.event.social.FriendshipEnded;
 import com.synaptixfit.domain.exception.social.FriendshipAlreadyExistsException;
 import com.synaptixfit.domain.exception.social.FriendshipBlockedException;
 import com.synaptixfit.domain.exception.social.FriendshipNotFoundException;
@@ -20,6 +21,7 @@ import com.synaptixfit.domain.model.social.Friendship;
 import com.synaptixfit.domain.model.social.FriendshipListKind;
 import com.synaptixfit.domain.model.social.FriendshipView;
 import com.synaptixfit.domain.model.user.User;
+import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.social.FriendshipRepositoryPort;
 import com.synaptixfit.domain.port.output.social.SocialQueryPort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
@@ -27,7 +29,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Solicitudes de amistad, amistades y bloqueos. */
+/**
+ * Solicitudes de amistad, amistades y bloqueos. Al bloquear o eliminar una amistad publica {@link FriendshipEnded}
+ * para dejar lo compartido con amigos (ADR 0044).
+ */
 public class FriendshipService implements SendFriendRequestUseCase, AcceptFriendRequestUseCase,
         RejectFriendRequestUseCase, BlockUserUseCase, RemoveFriendshipUseCase, ListFriendshipsUseCase {
 
@@ -35,14 +40,16 @@ public class FriendshipService implements SendFriendRequestUseCase, AcceptFriend
     private final UserRepositoryPort users;
     private final SocialQueryPort queries;
     private final SocialNotifier notifier;
+    private final DomainEventPublisherPort events;
     private final Clock clock;
 
     public FriendshipService(FriendshipRepositoryPort friendships, UserRepositoryPort users, SocialQueryPort queries,
-                             CreateNotificationUseCase notifications, Clock clock) {
+                             CreateNotificationUseCase notifications, DomainEventPublisherPort events, Clock clock) {
         this.friendships = friendships;
         this.users = users;
         this.queries = queries;
         this.notifier = new SocialNotifier(notifications, users);
+        this.events = events;
         this.clock = clock;
     }
 
@@ -123,7 +130,9 @@ public class FriendshipService implements SendFriendRequestUseCase, AcceptFriend
             existing.blockBy(userId, now);
             result = existing;
         }
-        return FriendshipView.of(friendships.save(result), userId, target);
+        FriendshipView view = FriendshipView.of(friendships.save(result), userId, target);
+        events.publish(new FriendshipEnded(userId, targetUserId, true, now));
+        return view;
     }
 
     @Override
@@ -132,6 +141,9 @@ public class FriendshipService implements SendFriendRequestUseCase, AcceptFriend
                 .orElseThrow(() -> new FriendshipNotFoundException(friendshipId));
         friendship.ensureRemovableBy(userId);
         friendships.delete(friendship.id());
+        if (friendship.isAccepted()) {
+            events.publish(new FriendshipEnded(userId, friendship.otherThan(userId), false, clock.instant()));
+        }
     }
 
     @Override

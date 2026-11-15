@@ -5,6 +5,11 @@ import 'feed/page/feed_page.dart';
 import 'friends/page/friends_page.dart';
 import 'notifications/page/notifications_page.dart';
 import 'post_detail/page/post_detail_page.dart';
+import 'together/challenge_detail/page/friend_challenge_detail_page.dart';
+import 'together/challenge_form/page/friend_challenge_form_page.dart';
+import 'together/hub/page/together_page.dart';
+import 'together/workout_detail/page/workout_together_page.dart';
+import 'together/workout_invite/page/workout_invite_page.dart';
 import 'user_profile/page/user_profile_page.dart';
 
 /// Rutas del módulo social. Los enlaces de las notificaciones sociales usan
@@ -19,6 +24,18 @@ abstract final class SocialPaths {
   static const blocked = '/social/friends/blocked';
   static const userPattern = '/social/users/:userId';
   static const notifications = '/notifications';
+
+  /// «Con amigos» (ADR 0044): retos, rachas y entrenos con amigos.
+  static const together = '/social/together';
+  static const togetherNewChallenge = '/social/together/challenges/new';
+  static const togetherChallengePattern = '/social/together/challenges/:id';
+  static const togetherNewWorkout = '/social/together/workouts/new';
+  static const togetherWorkoutPattern = '/social/together/workouts/:id';
+
+  static String togetherChallenge(String id) =>
+      '/social/together/challenges/$id';
+
+  static String togetherWorkout(String id) => '/social/together/workouts/$id';
 
   static String post(String postId) => '/social/posts/$postId';
 
@@ -50,6 +67,10 @@ abstract final class SocialExternalPaths {
     path: '/academic/notes/shared',
     queryParameters: {'authorId': authorId},
   ).toString();
+
+  /// Sesión en vivo (módulo training): «Empezar» de «Entrenamos juntos».
+  static String trainingSession(String sessionId) =>
+      '/training/sessions/$sessionId';
 
   /// `true` si [url] es la raíz de una pestaña (sin contar la query).
   static bool isTabRoot(String url) => tabRoots.contains(Uri.parse(url).path);
@@ -92,5 +113,28 @@ List<RouteBase> socialRoutes() => [
   GoRoute(
     path: SocialPaths.notifications,
     builder: (_, _) => const NotificationsPage(),
+  ),
+  GoRoute(path: SocialPaths.together, builder: (_, _) => const TogetherPage()),
+  // «new» antes que «:id» para que no se lea como un id.
+  GoRoute(
+    path: SocialPaths.togetherNewChallenge,
+    builder: (_, _) => const FriendChallengeFormPage(),
+  ),
+  GoRoute(
+    path: SocialPaths.togetherChallengePattern,
+    builder: (_, state) =>
+        FriendChallengeDetailPage(challengeId: state.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: SocialPaths.togetherNewWorkout,
+    builder: (_, state) => WorkoutInvitePage(
+      routineId: state.uri.queryParameters['routine'] ?? '',
+      dayId: state.uri.queryParameters['day'],
+    ),
+  ),
+  GoRoute(
+    path: SocialPaths.togetherWorkoutPattern,
+    builder: (_, state) =>
+        WorkoutTogetherPage(workoutId: state.pathParameters['id']!),
   ),
 ];

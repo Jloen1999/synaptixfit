@@ -102,6 +102,12 @@ abstract final class AppIcons {
   static const IconData proposal = Icons.lightbulb_outline_rounded;
 
   /// Racha (días seguidos): la llama, solo para la racha.
+  /// Empezar (una sesión, un entreno).
+  static const IconData start = Icons.play_arrow_rounded;
+
+  /// Reto (Progreso › Retos y sus plantillas).
+  static const IconData challenge = Icons.flag_outlined;
+
   static const IconData streak = Icons.local_fire_department_rounded;
 
   /// Kilocalorías gastadas: energía, distinta de la llama de la racha.

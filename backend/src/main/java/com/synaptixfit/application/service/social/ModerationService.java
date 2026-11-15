@@ -5,6 +5,7 @@ import com.synaptixfit.application.port.input.social.ListReportedContentUseCase;
 import com.synaptixfit.application.port.input.social.RemoveReportedContentUseCase;
 import com.synaptixfit.domain.exception.social.CommentNotFoundException;
 import com.synaptixfit.domain.exception.social.PostNotFoundException;
+import com.synaptixfit.domain.exception.social.UserReportNotFoundException;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
@@ -16,12 +17,15 @@ import com.synaptixfit.domain.port.output.social.CommentRepositoryPort;
 import com.synaptixfit.domain.port.output.social.ModerationAuditPort;
 import com.synaptixfit.domain.port.output.social.PostRepositoryPort;
 import com.synaptixfit.domain.port.output.social.ReportedContentQueryPort;
+import com.synaptixfit.domain.port.output.social.UserReportRepositoryPort;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * Moderación de contenido reportado (solo administradores; la ruta ya está protegida). Cada
- * acción queda en {@code admin_auditoria} con las mismas acciones que el sistema anterior.
+ * acción queda en {@code admin_auditoria} con las mismas acciones que el sistema anterior. Una denuncia de una persona
+ * (ADR 0044) no tiene contenido que borrar: aprobarla o retirarla la quita de la cola, y lo que haga falta con la
+ * cuenta se hace desde la administración de usuarios.
  */
 public class ModerationService implements ListReportedContentUseCase, DismissReportUseCase,
         RemoveReportedContentUseCase {
@@ -30,18 +34,22 @@ public class ModerationService implements ListReportedContentUseCase, DismissRep
     static final String ACTION_REMOVE = "eliminar_contenido";
     static final String ENTITY_POST = "actividades_sociales";
     static final String ENTITY_COMMENT = "comentarios_feed";
+    static final String ENTITY_USER_REPORT = "denuncias_usuario";
 
     private final PostRepositoryPort posts;
     private final CommentRepositoryPort comments;
     private final ReportedContentQueryPort reported;
     private final ModerationAuditPort audit;
+    private final UserReportRepositoryPort userReports;
 
     public ModerationService(PostRepositoryPort posts, CommentRepositoryPort comments,
-                             ReportedContentQueryPort reported, ModerationAuditPort audit) {
+                             ReportedContentQueryPort reported, ModerationAuditPort audit,
+                             UserReportRepositoryPort userReports) {
         this.posts = posts;
         this.comments = comments;
         this.reported = reported;
         this.audit = audit;
+        this.userReports = userReports;
     }
 
     @Override
@@ -51,7 +59,9 @@ public class ModerationService implements ListReportedContentUseCase, DismissRep
 
     @Override
     public void dismiss(UUID adminId, ReportedContentType type, UUID contentId) {
-        if (Guard.notNull(type, "type") == ReportedContentType.POST) {
+        if (Guard.notNull(type, "type") == ReportedContentType.USER) {
+            resolveUserReport(adminId, ACTION_DISMISS, contentId);
+        } else if (type == ReportedContentType.POST) {
             Post post = post(contentId);
             post.dismissReport();
             posts.save(post);
@@ -67,7 +77,9 @@ public class ModerationService implements ListReportedContentUseCase, DismissRep
     /** Las publicaciones se borran de verdad; los comentarios, de forma lógica. */
     @Override
     public void remove(UUID adminId, ReportedContentType type, UUID contentId) {
-        if (Guard.notNull(type, "type") == ReportedContentType.POST) {
+        if (Guard.notNull(type, "type") == ReportedContentType.USER) {
+            resolveUserReport(adminId, ACTION_REMOVE, contentId);
+        } else if (type == ReportedContentType.POST) {
             Post post = post(contentId);
             posts.delete(post.id());
             record(adminId, ACTION_REMOVE, ENTITY_POST, contentId, post.authorId());
@@ -77,6 +89,13 @@ public class ModerationService implements ListReportedContentUseCase, DismissRep
             comments.save(comment);
             record(adminId, ACTION_REMOVE, ENTITY_COMMENT, contentId, comment.authorId());
         }
+    }
+
+    private void resolveUserReport(UUID adminId, String action, UUID reportId) {
+        if (!userReports.delete(reportId)) {
+            throw new UserReportNotFoundException(reportId);
+        }
+        audit.record(adminId, action, ENTITY_USER_REPORT, reportId, Map.of());
     }
 
     private Post post(UUID id) {

@@ -138,6 +138,17 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
         sections.put("likes", rows("interacciones_sociales t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("friendships", rows("amistades t", "t.solicitante_id = :id OR t.receptor_id = :id",
                 "t.creado_en"));
+        // Con amigos (ADR 0044): en qué estás, tus rachas, tus reacciones y tus denuncias (no las de los demás).
+        sections.put("friendChallengesCreated", rows("retos_amigos t", "t.creador_id = :id", "t.creado_en"));
+        sections.put("friendChallenges", rows("retos_amigos_miembros t", "t.usuario_id = :id", "t.actualizado_en"));
+        sections.put("friendChallengeReactions", rows("reacciones_reto_amigos t", "t.autor_id = :id",
+                "t.creado_en"));
+        sections.put("friendStreaks", rows("rachas_amigo t", "t.solicitante_id = :id OR t.receptor_id = :id",
+                "t.creado_en"));
+        sections.put("workoutsTogetherCreated", rows("entrenos_juntos t", "t.anfitrion_id = :id", "t.creado_en"));
+        sections.put("workoutsTogether", rows("entrenos_juntos_miembros t", "t.usuario_id = :id",
+                "t.actualizado_en"));
+        sections.put("userReportsFiled", rows("denuncias_usuario t", "t.denunciante_id = :id", "t.creado_en"));
         sections.put("notifications", rows("notificaciones t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("notificationPreferences", single("preferencias_notificacion"));
         // Indicadores

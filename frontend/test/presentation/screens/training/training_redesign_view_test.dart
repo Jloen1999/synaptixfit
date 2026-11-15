@@ -20,6 +20,11 @@ import 'package:synaptixfit/presentation/screens/training/widgets/routine_summar
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 import 'training_fixtures.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
+import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/social/together.dart';
+import 'package:synaptixfit/domain/use_cases/social/together/find_workout_together_by_session_use_case.dart';
+import 'package:synaptixfit/presentation/screens/social/together/live/bloc/workout_together_live_bloc.dart';
 
 class _MockLiveBloc extends MockBloc<LiveSessionEvent, LiveSessionState>
     implements LiveSessionBloc {}
@@ -225,10 +230,19 @@ void main() {
 
     setUp(() {
       bloc = _MockLiveBloc();
-      getIt.registerFactory<LiveSessionBloc>(() => bloc);
+      getIt
+        ..registerFactory<LiveSessionBloc>(() => bloc)
+        // Panel de «Entrenamos juntos» (ADR 0044): esta sesión no lo es.
+        ..registerFactory<WorkoutTogetherLiveBloc>(
+          () => WorkoutTogetherLiveBloc(find: _NotTogether()),
+        );
     });
 
-    tearDown(() => getIt.unregister<LiveSessionBloc>());
+    tearDown(() {
+      getIt
+        ..unregister<LiveSessionBloc>()
+        ..unregister<WorkoutTogetherLiveBloc>();
+    });
 
     LiveSessionState ready({int? rest}) => LiveSessionState(
       status: LiveStatus.ready,
@@ -302,12 +316,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 600));
       expect(find.text('¿Salir sin terminar?'), findsOneWidget);
       // Con la cifra de lo hecho: no se pierde nada.
-      expect(
-        find.text(
-          'La serie marcada ya está guardada.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('La serie marcada ya está guardada.'), findsOneWidget);
       expect(find.text('Pausar y salir'), findsOneWidget);
       expect(find.text('El tiempo se para.'), findsOneWidget);
       // «Terminar» (la de la barra y la de la hoja) y «Descartar sesión».
@@ -464,4 +473,11 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   });
+}
+
+/// Ninguna sesión de estos tests es de entrenar juntos.
+class _NotTogether implements FindWorkoutTogetherBySessionUseCaseContract {
+  @override
+  Future<AppResult<WorkoutTogether?>> call(String sessionId) async =>
+      const Success(null);
 }

@@ -38,6 +38,7 @@ class AdminModerationRepository implements AdminModerationRepositoryContract {
         await switch (type) {
           AdminReportType.post => _remote.dismissPostReport(id),
           AdminReportType.comment => _remote.dismissCommentReport(id),
+          AdminReportType.user => _remote.dismissUserReport(id),
         };
         return unit;
       });
@@ -48,6 +49,8 @@ class AdminModerationRepository implements AdminModerationRepositoryContract {
         await switch (type) {
           AdminReportType.post => _remote.removePost(id),
           AdminReportType.comment => _remote.removeComment(id),
+          // Una persona no se borra desde aquí: revisar la denuncia la quita.
+          AdminReportType.user => _remote.dismissUserReport(id),
         };
         return unit;
       });

@@ -59,11 +59,13 @@ La galería usa el selector de fotos del sistema y no necesita permiso de almace
 | Fotos y vídeos › Fotos | Sí | No | Funcionalidad | Fotos de apuntes: se leen para pasarlas a texto y **no se guardan** (marcar «tratado de forma efímera») |
 | Archivos y documentos | Sí | No | Funcionalidad | Archivos que sube la persona (Cloudflare R2) |
 | Mensajes › Otros mensajes en la app | Sí | No | Funcionalidad | Publicaciones y comentarios de la comunidad |
-| Actividad en la app › Interacciones | Sí | Sí | Funcionalidad, analíticas propias | Progreso, XP, rachas (con las fechas de sus pausas, ADR 0042) e insignias (sin herramientas de analítica de terceros) |
+| Actividad en la app › Interacciones | Sí | Sí | Funcionalidad, analíticas propias | Progreso, XP, rachas (con las fechas de sus pausas, ADR 0042) e insignias (sin herramientas de analítica de terceros). «Con amigos» (ADR 0044, opcional): en qué retos, rachas y entrenos con amigos estás, las reacciones fijas que pones y las denuncias que haces. Solo lo ven los amigos mutuos que invitas, y solo si has sumado, si has hecho tu parte del día y qué ejercicios llevas; nunca bienestar, ciclo, sueño, peso ni ubicación. Pasarlo a amigos lo decide la persona en la app, así que no cuenta como «compartir» en Play |
 | Actividad en la app › Otro contenido generado | Sí | No | Funcionalidad | Apuntes, preguntas de repaso y respuestas |
 | Información y rendimiento de la app › Registros de fallos | No | — | — | No hay SDK de fallos |
 | Identificadores del dispositivo | No | — | — | No se usa id de publicidad |
 | Ubicación exacta | Sí | No | Funcionalidad de la app (grabar carreras: distancia, ritmo, desnivel y mapa de la ruta); opcional | Solo mientras se graba una carrera, con la app en uso o con el servicio en primer plano y su aviso fijo; nunca `ACCESS_BACKGROUND_LOCATION`. La ruta es privada, se cifra en tránsito, se borra con la carrera o la cuenta y se puede pedir su borrado (ADR 0037) |
+
+Compartir una rutina por enlace (ADR 0043) solo envía la rutina (nombre, días y ejercicios); quien abre el enlace no ve nada más de su autor. No es un dato nuevo para Play.
 
 No hay publicidad ni venta de datos.
 

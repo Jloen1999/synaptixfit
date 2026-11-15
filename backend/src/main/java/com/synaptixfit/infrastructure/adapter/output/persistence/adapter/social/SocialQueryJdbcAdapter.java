@@ -287,6 +287,14 @@ public class SocialQueryJdbcAdapter implements SocialQueryPort, ReportedContentQ
                      WHERE c.reportado = true AND c.eliminado = false
                     """);
         }
+        if (type == null || type == ReportedContentType.USER) {
+            // Denuncias de personas (ADR 0044): sin texto libre; el contenido es dónde pasó.
+            branches.add("""
+                    SELECT 'USER' AS kind, d.id, CAST(NULL AS uuid) AS post_id, d.denunciado_id AS usuario_id,
+                           u.nombre_completo, d.contexto AS contenido, d.denunciante_id AS reportado_por, d.creado_en
+                      FROM denuncias_usuario d JOIN usuarios u ON u.id = d.denunciado_id
+                    """);
+        }
         String union = "(" + String.join(" UNION ALL ", branches) + ") r";
         long total = jdbc.sql("SELECT count(*) FROM " + union).query(Long.class).single();
         List<ReportedContent> items = jdbc.sql("SELECT * FROM " + union

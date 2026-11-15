@@ -67,6 +67,27 @@ NotificationTexts notificationTexts(AppLocalizations l10n, AppNotification n) {
       description: l10n.socialNotifRoutineCompletedBody(name),
       action: l10n.socialNotifActionRoutine,
     ),
+    // Con amigos (ADR 0044).
+    NotificationMessageCode.friendChallengeInvited => (
+      title: l10n.socialNotifFriendChallengeTitle,
+      description: l10n.socialNotifFriendChallengeBody(name, p['title'] ?? ''),
+      action: l10n.socialNotifActionChallenge,
+    ),
+    NotificationMessageCode.friendStreakInvited => (
+      title: l10n.socialNotifFriendStreakTitle,
+      description: l10n.socialNotifFriendStreakBody(name),
+      action: l10n.socialNotifActionTogether,
+    ),
+    NotificationMessageCode.workoutTogetherInvited => (
+      title: l10n.socialNotifWorkoutTogetherTitle,
+      description: l10n.socialNotifWorkoutTogetherBody(name, p['title'] ?? ''),
+      action: l10n.socialNotifActionTogether,
+    ),
+    NotificationMessageCode.friendStreakNudge => (
+      title: l10n.socialNotifFriendStreakTitle,
+      description: l10n.socialNotifStreakNudgeBody(name),
+      action: l10n.socialNotifActionTogether,
+    ),
   };
 }
 

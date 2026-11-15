@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.synaptixfit.domain.model.social.UserReport;
+import com.synaptixfit.domain.model.social.UserReportContext;
+import com.synaptixfit.domain.port.output.social.UserReportRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +36,7 @@ class SocialProfileAndModerationServiceTest {
     private SocialProfileService profiles;
     private ModerationService moderation;
     private final List<AuditEntry> audit = new ArrayList<>();
+    private final List<UserReport> userReports = new ArrayList<>();
     private User viewer;
 
     @BeforeEach
@@ -40,7 +44,8 @@ class SocialProfileAndModerationServiceTest {
         fakes = new SocialFakes();
         profiles = new SocialProfileService(fakes.userPort(), fakes.friendshipPort(), fakes.queryPort());
         moderation = new ModerationService(fakes.postPort(), fakes.commentPort(), (type, page) -> null,
-                (admin, action, entity, id, detail) -> audit.add(new AuditEntry(admin, action, entity, id, detail)));
+                (admin, action, entity, id, detail) -> audit.add(new AuditEntry(admin, action, entity, id, detail)),
+                userReportPort());
         viewer = fakes.user("Viewer", Visibility.PUBLIC);
     }
 
@@ -141,5 +146,38 @@ class SocialProfileAndModerationServiceTest {
 
         assertThatThrownBy(() -> moderation.remove(admin, ReportedContentType.POST, post.id()))
                 .isInstanceOf(PostNotFoundException.class);
+    }
+
+    @Test
+    void aReportedPersonIsReportedOnceAndLeavesTheQueueWhenReviewed() {
+        User reported = fakes.user("Denunciada", Visibility.PUBLIC);
+        UserReportService service = new UserReportService(userReportPort(), fakes.userPort(), SocialFakes.CLOCK);
+        service.reportUser(viewer.id(), reported.id(), UserReportContext.FRIEND_STREAK);
+        service.reportUser(viewer.id(), reported.id(), UserReportContext.FRIEND_CHALLENGE);
+        assertThat(userReports).singleElement().satisfies(r -> {
+            assertThat(r.reportedId()).isEqualTo(reported.id());
+            assertThat(r.context()).isEqualTo(UserReportContext.FRIEND_STREAK);
+        });
+        assertThatThrownBy(() -> service.reportUser(viewer.id(), UUID.randomUUID(), UserReportContext.PROFILE))
+                .isInstanceOf(com.synaptixfit.domain.exception.social.SocialUserNotFoundException.class);
+
+        UUID admin = UUID.randomUUID();
+        UUID reportId = userReports.getFirst().id();
+        moderation.dismiss(admin, ReportedContentType.USER, reportId);
+        assertThat(userReports).isEmpty();
+        assertThat(audit).singleElement().satisfies(a -> assertThat(a.entity()).isEqualTo("denuncias_usuario"));
+        assertThatThrownBy(() -> moderation.remove(admin, ReportedContentType.USER, reportId))
+                .isInstanceOf(com.synaptixfit.domain.exception.social.UserReportNotFoundException.class);
+    }
+
+    private UserReportRepositoryPort userReportPort() {
+        return new UserReportRepositoryPort() {
+            public void save(UserReport report) { userReports.add(report); }
+            public boolean existsPending(UUID reporter, UUID reported) {
+                return userReports.stream().anyMatch(r -> r.reporterId().equals(reporter)
+                        && r.reportedId().equals(reported));
+            }
+            public boolean delete(UUID id) { return userReports.removeIf(r -> r.id().equals(id)); }
+        };
     }
 }

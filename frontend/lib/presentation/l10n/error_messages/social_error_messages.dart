@@ -21,5 +21,18 @@ String? socialErrorMessage(
   'SOCIAL_CANNOT_REPORT_OWN_CONTENT' => l10n.socialErrorSocialCannotReportOwn,
   'NOTIFICATION_NOT_FOUND' => l10n.socialErrorNotificationNotFound,
   'NOTIFICATION_INVALID_QUIET_HOURS' => l10n.socialErrorNotificationQuietHours,
+  'FRIEND_CHALLENGE_NOT_FOUND' => l10n.socialErrorFriendChallengeNotFound,
+  'FRIEND_STREAK_NOT_FOUND' => l10n.socialErrorFriendStreakNotFound,
+  'WORKOUT_TOGETHER_NOT_FOUND' => l10n.socialErrorWorkoutTogetherNotFound,
+  'TOGETHER_NOT_FRIENDS' => l10n.socialErrorTogetherNotFriends,
+  'TOGETHER_GROUP_SIZE' => l10n.socialErrorTogetherGroupSize,
+  'TOGETHER_INVALID_STATE' => l10n.socialErrorTogetherInvalidState,
+  'FRIEND_CHALLENGE_TEMPLATE_NOT_ALLOWED' =>
+    l10n.socialErrorFriendChallengeTemplateNotAllowed,
+  'FRIEND_STREAK_LIMIT_REACHED' => l10n.socialErrorFriendStreakLimitReached,
+  'FRIEND_STREAK_ALREADY_EXISTS' => l10n.socialErrorFriendStreakAlreadyExists,
+  'FRIEND_STREAK_NUDGE_UNAVAILABLE' =>
+    l10n.socialErrorFriendStreakNudgeUnavailable,
+  'USER_REPORT_NOT_FOUND' => l10n.socialErrorUserReportNotFound,
   _ => null,
 };

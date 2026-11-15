@@ -27,6 +27,7 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 - "My cycle", only if you turn it on: period days, energy and discomfort you log and your notes.
 - Photos of paper notes: we read them to turn them into text and do not keep the photo. Only the note you decide to save is stored.
 - What you share in the community: posts, comments, shared notes, friendships and visible badges.
+- What you do «With friends», if you use it: the challenges, streaks and workouts with friends you take part in, the reactions you give and the people you report.
 - Reminders: your reminder preferences and, if you turn it on, the weekly summary email.
 - Technical data: the IP address and the type of browser or phone that reach the server, needed for the app to work and stay secure.
 
@@ -48,6 +49,16 @@ Cycle data is only visible to you: it is not shared with anyone, not even the ar
 - Your route is always private: it does not appear on your public profile or in the community. When you share a run only the figures are shared, never the map, because it could reveal where you live.
 - The map is drawn with MapTiler: your phone requests the images of the area shown (like any map). We do not send it your route, your name or your email.
 - They are deleted when you delete the run or your account. They are included in the copy of your data that you download yourself, but not in the one an administrator may prepare to handle a request.
+
+## With friends and shared routines
+
+- «With friends» is optional and only works between mutual friends (you have both accepted the friendship). Nobody else sees it.
+- In a challenge with friends, they see whether you have added something and, only if you choose competition, your points. In a streak with a friend, they see whether you have done your part today. When training together, they see which exercises you have done. The app works this out from what you already do (reviews, Pomodoros and workouts); it never shows how you feel, your cycle, your sleep, your weight, the weights you lift or your effort, or where you are.
+- There is no chat: only fixed reactions. Only you see how many reactions your entries have.
+- If you train together using someone else's routine, a paused copy marked with their name is saved in your routines; you can delete it whenever you like.
+- You can leave a challenge or end a streak at any time. When you block someone or stop being friends, you stop sharing what you had in common.
+- If you report someone, we keep who reported, who was reported and where it happened, so the moderation team can review it. The reported person does not know who reported them.
+- If you share a routine by link, whoever opens it only sees the routine (name, days and exercises), never your name, your profile or your sessions. The link expires after 30 days and you can stop sharing it earlier.
 
 ## What we use it for
 

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 class FriendshipServiceTest {
 
+    private final java.util.List<com.synaptixfit.domain.event.DomainEvent> events = new java.util.ArrayList<>();
     private SocialFakes fakes;
     private FriendshipService service;
     private User ana;
@@ -28,7 +29,7 @@ class FriendshipServiceTest {
     void setUp() {
         fakes = new SocialFakes();
         service = new FriendshipService(fakes.friendshipPort(), fakes.userPort(), fakes.queryPort(),
-                fakes.notificationPort(), SocialFakes.CLOCK);
+                fakes.notificationPort(), events::add, SocialFakes.CLOCK);
         ana = fakes.user("Ana", Visibility.PUBLIC);
         bea = fakes.user("Bea", Visibility.FRIENDS);
     }
@@ -118,5 +119,21 @@ class FriendshipServiceTest {
         User troll = fakes.user("Troll", Visibility.PUBLIC, true);
         service.sendRequest(troll.id(), ana.id());
         assertThat(fakes.notifications).isEmpty();
+    }
+
+    @Test
+    void blockingOrRemovingAFriendLeavesWhatTheyShared() {
+        FriendshipView sent = service.sendRequest(ana.id(), bea.id());
+        service.accept(bea.id(), sent.id());
+        service.remove(ana.id(), sent.id());
+        service.block(ana.id(), bea.id());
+        assertThat(events).hasSize(2).allSatisfy(e -> assertThat(e)
+                .isInstanceOf(com.synaptixfit.domain.event.social.FriendshipEnded.class));
+        var removed = (com.synaptixfit.domain.event.social.FriendshipEnded) events.get(0);
+        var blocked = (com.synaptixfit.domain.event.social.FriendshipEnded) events.get(1);
+        assertThat(removed.blocked()).isFalse();
+        assertThat(removed.otherUserId()).isEqualTo(bea.id());
+        assertThat(blocked.blocked()).isTrue();
+        assertThat(blocked.userId()).isEqualTo(ana.id());
     }
 }

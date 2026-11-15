@@ -208,7 +208,9 @@ class _ReportCard extends StatelessWidget {
           ),
           const SizedBox(height: TokensSpacing.s),
           Text(
-            item.content,
+            item.type == AdminReportType.user
+                ? adminUserReportContext(l10n, item.content)
+                : item.content,
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
             style: context.textStyles.bodyMedium,
@@ -247,33 +249,34 @@ class _ReportCard extends StatelessWidget {
                 icon: const Icon(Icons.check_rounded, size: 18),
                 label: Text(l10n.adminReportsDismiss),
               ),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: colors.error,
-                  foregroundColor: colors.onError,
+              if (item.type != AdminReportType.user)
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.error,
+                    foregroundColor: colors.onError,
+                  ),
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          final ok = await showAdminConfirmDialog(
+                            context,
+                            title: l10n.adminReportsRemove,
+                            message: l10n.adminReportsRemoveConfirm,
+                            confirmLabel: l10n.commonDelete,
+                            destructive: true,
+                          );
+                          if (ok) {
+                            bloc.add(AdminReportsEvent.removeRequested(item));
+                          }
+                        },
+                  icon: busy
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(AppIcons.delete, size: 18),
+                  label: Text(l10n.adminReportsRemove),
                 ),
-                onPressed: busy
-                    ? null
-                    : () async {
-                        final ok = await showAdminConfirmDialog(
-                          context,
-                          title: l10n.adminReportsRemove,
-                          message: l10n.adminReportsRemoveConfirm,
-                          confirmLabel: l10n.commonDelete,
-                          destructive: true,
-                        );
-                        if (ok) {
-                          bloc.add(AdminReportsEvent.removeRequested(item));
-                        }
-                      },
-                icon: busy
-                    ? const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(AppIcons.delete, size: 18),
-                label: Text(l10n.adminReportsRemove),
-              ),
             ],
           ),
         ],

@@ -10,7 +10,11 @@ enum NotificationMessageCode {
   postCommented('POST_COMMENTED'),
   friendRequestReceived('FRIEND_REQUEST_RECEIVED'),
   friendRequestAccepted('FRIEND_REQUEST_ACCEPTED'),
-  routineCompleted('ROUTINE_COMPLETED');
+  routineCompleted('ROUTINE_COMPLETED'),
+  friendChallengeInvited('FRIEND_CHALLENGE_INVITED'),
+  friendStreakInvited('FRIEND_STREAK_INVITED'),
+  workoutTogetherInvited('WORKOUT_TOGETHER_INVITED'),
+  friendStreakNudge('FRIEND_STREAK_NUDGE');
 
   const NotificationMessageCode(this.apiValue);
 

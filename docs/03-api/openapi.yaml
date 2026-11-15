@@ -192,6 +192,53 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/SubmitCheckInResponse"
+  /api/v1/together/challenges/{challengeId}/reactions:
+    put:
+      tags:
+      - Social - Together
+      operationId: react
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionRequest"
+        required: true
+      responses:
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - Social - Together
+      operationId: removeReaction
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: recipientId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: day
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "204":
+          description: No Content
   /api/v1/subjects/{subjectId}/teaching-guide/mode:
     put:
       tags:
@@ -1399,6 +1446,230 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/RecommendationResponse"
+  /api/v1/together/workouts:
+    post:
+      tags:
+      - Social - Together
+      operationId: createWorkout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkoutTogetherRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkoutTogetherResponse"
+  /api/v1/together/workouts/{workoutId}/start:
+    post:
+      tags:
+      - Social - Together
+      operationId: startWorkout
+      parameters:
+      - name: workoutId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkoutTogetherStartResponse"
+  /api/v1/together/workouts/{workoutId}/leave:
+    post:
+      tags:
+      - Social - Together
+      operationId: leaveWorkout
+      parameters:
+      - name: workoutId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+  /api/v1/together/workouts/{workoutId}/join:
+    post:
+      tags:
+      - Social - Together
+      operationId: joinWorkout
+      parameters:
+      - name: workoutId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkoutTogetherResponse"
+  /api/v1/together/workouts/{workoutId}/decline:
+    post:
+      tags:
+      - Social - Together
+      operationId: declineWorkout
+      parameters:
+      - name: workoutId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+  /api/v1/together/streaks:
+    post:
+      tags:
+      - Social - Together
+      operationId: proposeStreak
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FriendStreakRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FriendStreakResponse"
+  /api/v1/together/streaks/{streakId}/nudge:
+    post:
+      tags:
+      - Social - Together
+      operationId: nudgeStreak
+      parameters:
+      - name: streakId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FriendStreakResponse"
+  /api/v1/together/streaks/{streakId}/decline:
+    post:
+      tags:
+      - Social - Together
+      operationId: declineStreak
+      parameters:
+      - name: streakId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+  /api/v1/together/streaks/{streakId}/accept:
+    post:
+      tags:
+      - Social - Together
+      operationId: acceptStreak
+      parameters:
+      - name: streakId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FriendStreakResponse"
+  /api/v1/together/challenges:
+    post:
+      tags:
+      - Social - Together
+      operationId: createChallenge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFriendChallengeRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FriendChallengeResponse"
+  /api/v1/together/challenges/{challengeId}/leave:
+    post:
+      tags:
+      - Social - Together
+      operationId: leaveChallenge
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+  /api/v1/together/challenges/{challengeId}/join:
+    post:
+      tags:
+      - Social - Together
+      operationId: joinChallenge
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FriendChallengeResponse"
+  /api/v1/together/challenges/{challengeId}/decline:
+    post:
+      tags:
+      - Social - Together
+      operationId: declineChallenge
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
   /api/v1/test-sessions:
     get:
       tags:
@@ -2105,6 +2376,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/StreakResponse"
+  /api/v1/social/users/{targetUserId}/report:
+    post:
+      tags:
+      - Social - Users
+      operationId: report
+      parameters:
+      - name: targetUserId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportUserRequest"
+        required: true
+      responses:
+        "204":
+          description: No Content
   /api/v1/social/posts:
     get:
       tags:
@@ -2176,7 +2468,7 @@ paths:
     post:
       tags:
       - Social - Posts
-      operationId: report
+      operationId: report_1
       parameters:
       - name: postId
         in: path
@@ -2322,7 +2614,7 @@ paths:
     post:
       tags:
       - Social - Comments
-      operationId: report_1
+      operationId: report_2
       parameters:
       - name: commentId
         in: path
@@ -3805,6 +4097,21 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ErasureReportResponse"
+  /api/v1/admin/social/user-reports/{reportId}/dismiss-report:
+    post:
+      tags:
+      - Admin - Social moderation
+      operationId: dismissUserReport
+      parameters:
+      - name: reportId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
   /api/v1/admin/social/posts/{postId}/dismiss-report:
     post:
       tags:
@@ -5200,6 +5507,89 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/TodayAdaptationResponse"
+  /api/v1/together:
+    get:
+      tags:
+      - Social - Together
+      operationId: overview_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TogetherOverviewResponse"
+  /api/v1/together/workouts/{workoutId}:
+    get:
+      tags:
+      - Social - Together
+      operationId: workout
+      parameters:
+      - name: workoutId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkoutTogetherResponse"
+  /api/v1/together/workouts/by-session/{sessionId}:
+    get:
+      tags:
+      - Social - Together
+      operationId: workoutBySession
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkoutTogetherResponse"
+  /api/v1/together/challenges/{challengeId}:
+    get:
+      tags:
+      - Social - Together
+      operationId: challenge
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FriendChallengeResponse"
+  /api/v1/together/challenges/templates:
+    get:
+      tags:
+      - Social - Together
+      operationId: templates_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChallengeTemplateResponse"
   /api/v1/test-sessions/{sessionId}:
     get:
       tags:
@@ -7216,6 +7606,7 @@ paths:
           enum:
           - POST
           - COMMENT
+          - USER
       - name: page
         in: query
         required: false
@@ -7433,6 +7824,21 @@ paths:
       operationId: discard_1
       parameters:
       - name: recommendationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+  /api/v1/together/streaks/{streakId}:
+    delete:
+      tags:
+      - Social - Together
+      operationId: endStreak
+      parameters:
+      - name: streakId
         in: path
         required: true
         schema:
@@ -7838,6 +8244,26 @@ components:
         xpAwarded:
           type: integer
           format: int32
+    ReactionRequest:
+      type: object
+      properties:
+        recipientId:
+          type: string
+          format: uuid
+        day:
+          type: string
+          format: date
+        reaction:
+          type: string
+          enum:
+          - CLAP
+          - FIRE
+          - MUSCLE
+          - HEART
+      required:
+      - day
+      - reaction
+      - recipientId
     EvaluationModeRequest:
       type: object
       properties:
@@ -10326,6 +10752,294 @@ components:
         conflicts:
           type: integer
           format: int32
+    CreateWorkoutTogetherRequest:
+      type: object
+      properties:
+        routineId:
+          type: string
+          format: uuid
+        dayId:
+          type: string
+          format: uuid
+        friendIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 4
+          minItems: 0
+          uniqueItems: true
+      required:
+      - friendIds
+      - routineId
+    PersonResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        avatarUrl:
+          type: string
+    WorkoutTogetherMember:
+      type: object
+      properties:
+        person:
+          $ref: "#/components/schemas/PersonResponse"
+        status:
+          type: string
+          enum:
+          - INVITED
+          - JOINED
+          - DECLINED
+          - LEFT
+        state:
+          type: string
+          enum:
+          - NOT_STARTED
+          - TRAINING
+          - FINISHED
+        doneSlots:
+          type: array
+          items:
+            type: integer
+            format: int32
+        me:
+          type: boolean
+    WorkoutTogetherResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        host:
+          $ref: "#/components/schemas/PersonResponse"
+        routineName:
+          type: string
+        dayName:
+          type: string
+        dayNumber:
+          type: integer
+          format: int32
+        date:
+          type: string
+          format: date
+        today:
+          type: boolean
+        myStatus:
+          type: string
+          enum:
+          - INVITED
+          - JOINED
+          - DECLINED
+          - LEFT
+        mySessionId:
+          type: string
+          format: uuid
+        myMinutes:
+          type: integer
+          format: int32
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutTogetherSlot"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutTogetherMember"
+    WorkoutTogetherSlot:
+      type: object
+      properties:
+        index:
+          type: integer
+          format: int32
+        exerciseId:
+          type: string
+          format: uuid
+        name:
+          type: string
+    WorkoutTogetherStartResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+    FriendStreakRequest:
+      type: object
+      properties:
+        friendId:
+          type: string
+          format: uuid
+      required:
+      - friendId
+    FriendStreakResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - PENDING
+          - ACTIVE
+        friend:
+          $ref: "#/components/schemas/PersonResponse"
+        requestedByMe:
+          type: boolean
+        days:
+          type: integer
+          format: int32
+        meDone:
+          type: boolean
+        friendDone:
+          type: boolean
+        paused:
+          type: boolean
+        canNudge:
+          type: boolean
+    CreateFriendChallengeRequest:
+      type: object
+      properties:
+        templateId:
+          type: string
+          format: uuid
+        days:
+          type: integer
+          format: int32
+          maximum: 14
+          minimum: 7
+        mode:
+          type: string
+          enum:
+          - COOPERATIVE
+          - COMPETITION
+        friendIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 24
+          minItems: 0
+          uniqueItems: true
+      required:
+      - friendIds
+      - templateId
+    FriendChallengeBoardEntry:
+      type: object
+      properties:
+        person:
+          $ref: "#/components/schemas/PersonResponse"
+        day:
+          type: string
+          format: date
+        mine:
+          type: boolean
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+        myReaction:
+          type: string
+          enum:
+          - CLAP
+          - FIRE
+          - MUSCLE
+          - HEART
+    FriendChallengeMember:
+      type: object
+      properties:
+        person:
+          $ref: "#/components/schemas/PersonResponse"
+        status:
+          type: string
+          enum:
+          - INVITED
+          - JOINED
+          - DECLINED
+          - LEFT
+        contributed:
+          type: boolean
+        points:
+          type: integer
+          format: int32
+        me:
+          type: boolean
+    FriendChallengeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        goal:
+          type: string
+        metric:
+          type: string
+          enum:
+          - REVIEWS
+          - FOCUS_MINUTES
+          - EARLY_FOCUS
+          - WORKOUTS
+          - STUDY_AND_MOVE
+          - TESTS
+          - CHECK_INS
+          - PLANNED_WEEKS
+          - RUNS
+        unit:
+          type: string
+          enum:
+          - DAY
+          - WEEK
+          - TOTAL
+        mode:
+          type: string
+          enum:
+          - COOPERATIVE
+          - COMPETITION
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        days:
+          type: integer
+          format: int32
+        myStatus:
+          type: string
+          enum:
+          - INVITED
+          - JOINED
+          - DECLINED
+          - LEFT
+        creator:
+          $ref: "#/components/schemas/PersonResponse"
+        groupTotal:
+          type: integer
+          format: int32
+        groupTarget:
+          type: integer
+          format: int32
+        myPoints:
+          type: integer
+          format: int32
+        myTarget:
+          type: integer
+          format: int32
+        over:
+          type: boolean
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendChallengeMember"
+        board:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendChallengeBoardEntry"
     QuizStartSessionRequest:
       type: object
       properties:
@@ -11384,6 +12098,18 @@ components:
           format: int32
         canPause:
           type: boolean
+    ReportUserRequest:
+      type: object
+      properties:
+        context:
+          type: string
+          enum:
+          - FRIEND_CHALLENGE
+          - FRIEND_STREAK
+          - WORKOUT_TOGETHER
+          - PROFILE
+      required:
+      - context
     CreatePostRequest:
       type: object
       properties:
@@ -12766,6 +13492,10 @@ components:
           - FRIEND_REQUEST_RECEIVED
           - FRIEND_REQUEST_ACCEPTED
           - ROUTINE_COMPLETED
+          - FRIEND_CHALLENGE_INVITED
+          - FRIEND_STREAK_INVITED
+          - WORKOUT_TOGETHER_INVITED
+          - FRIEND_STREAK_NUDGE
         messageParams:
           type: object
           additionalProperties:
@@ -14060,6 +14790,54 @@ components:
           - EASY
           - NORMAL
           - HARD
+    TogetherOverviewResponse:
+      type: object
+      properties:
+        challenges:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendChallengeResponse"
+        streaks:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendStreakResponse"
+        workouts:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutTogetherResponse"
+    ChallengeTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        goal:
+          type: string
+        type:
+          type: string
+          enum:
+          - FITNESS
+          - ACADEMIC
+        difficulty:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+        xpReward:
+          type: integer
+          format: int32
+        days:
+          type: integer
+          format: int32
+        rule:
+          $ref: "#/components/schemas/ChallengeRuleResponse"
+        running:
+          type: boolean
     TestSessionSummaryResponse:
       type: object
       properties:
@@ -15880,39 +16658,6 @@ components:
         createdAt:
           type: string
           format: date-time
-    ChallengeTemplateResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        code:
-          type: string
-        title:
-          type: string
-        goal:
-          type: string
-        type:
-          type: string
-          enum:
-          - FITNESS
-          - ACADEMIC
-        difficulty:
-          type: string
-          enum:
-          - LOW
-          - MEDIUM
-          - HIGH
-        xpReward:
-          type: integer
-          format: int32
-        days:
-          type: integer
-          format: int32
-        rule:
-          $ref: "#/components/schemas/ChallengeRuleResponse"
-        running:
-          type: boolean
     ChallengeSummaryResponse:
       type: object
       properties:
@@ -16580,6 +17325,7 @@ components:
           enum:
           - POST
           - COMMENT
+          - USER
         id:
           type: string
           format: uuid

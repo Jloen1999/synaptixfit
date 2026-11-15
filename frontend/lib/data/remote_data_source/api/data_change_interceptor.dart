@@ -108,6 +108,9 @@ class DataChangeInterceptor extends Interceptor {
       DataTopic.planner,
     },
     '/api/v1/social': {DataTopic.social},
+    // Con amigos (ADR 0044): empezar a entrenar juntos crea una sesión y puede
+    // copiar la rutina.
+    '/api/v1/together': {DataTopic.social, DataTopic.training},
     '/api/v1/notifications': {DataTopic.social},
   };
 

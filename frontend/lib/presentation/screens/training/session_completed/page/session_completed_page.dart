@@ -18,6 +18,7 @@ import '../bloc/session_completed_bloc.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
 import '../../../../../domain/models/progress/streak.dart';
 import '../../../challenges/challenges_routes.dart';
+import '../../../social/together/widgets/workout_together_progress.dart';
 
 /// Pantalla de sesión completada.
 class SessionCompletedPage extends StatelessWidget {
@@ -121,6 +122,7 @@ class _CompletedView extends StatelessWidget {
                       // Pocas cifras y legibles; la XP se celebra aparte
                       // (nivel o insignia nueva) y se ve en Progreso.
                       _Metrics(state: state),
+                      WorkoutTogetherSessionCard(sessionId: sessionId),
                       if (state.highlights != null) ...[
                         const SizedBox(height: TokensSpacing.m),
                         _HighlightsCard(

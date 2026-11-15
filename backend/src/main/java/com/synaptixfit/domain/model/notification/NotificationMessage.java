@@ -23,7 +23,11 @@ public record NotificationMessage(Code code, Map<String, String> params) {
         POST_COMMENTED,
         FRIEND_REQUEST_RECEIVED,
         FRIEND_REQUEST_ACCEPTED,
-        ROUTINE_COMPLETED
+        ROUTINE_COMPLETED,
+        FRIEND_CHALLENGE_INVITED,
+        FRIEND_STREAK_INVITED,
+        WORKOUT_TOGETHER_INVITED,
+        FRIEND_STREAK_NUDGE
     }
 
     public NotificationMessage {

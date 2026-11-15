@@ -20,13 +20,36 @@ import '../use_cases/social/accept_friend_request_use_case.dart';
 import '../use_cases/social/reject_friend_request_use_case.dart';
 import '../use_cases/social/block_user_use_case.dart';
 import '../use_cases/social/remove_friendship_use_case.dart';
+import '../use_cases/social/together/get_together_overview_use_case.dart';
+import '../use_cases/social/together/get_friend_challenge_templates_use_case.dart';
+import '../use_cases/social/together/create_friend_challenge_use_case.dart';
+import '../use_cases/social/together/get_friend_challenge_use_case.dart';
+import '../use_cases/social/together/join_friend_challenge_use_case.dart';
+import '../use_cases/social/together/decline_friend_challenge_use_case.dart';
+import '../use_cases/social/together/leave_friend_challenge_use_case.dart';
+import '../use_cases/social/together/react_to_friend_challenge_use_case.dart';
+import '../use_cases/social/together/remove_friend_challenge_reaction_use_case.dart';
+import '../use_cases/social/together/propose_friend_streak_use_case.dart';
+import '../use_cases/social/together/accept_friend_streak_use_case.dart';
+import '../use_cases/social/together/decline_friend_streak_use_case.dart';
+import '../use_cases/social/together/end_friend_streak_use_case.dart';
+import '../use_cases/social/together/nudge_friend_streak_use_case.dart';
+import '../use_cases/social/together/create_workout_together_use_case.dart';
+import '../use_cases/social/together/get_workout_together_use_case.dart';
+import '../use_cases/social/together/find_workout_together_by_session_use_case.dart';
+import '../use_cases/social/together/join_workout_together_use_case.dart';
+import '../use_cases/social/together/decline_workout_together_use_case.dart';
+import '../use_cases/social/together/leave_workout_together_use_case.dart';
+import '../use_cases/social/together/start_workout_together_use_case.dart';
+import '../use_cases/social/together/report_user_use_case.dart';
 import '../use_cases/notifications/get_notifications_use_case.dart';
 import '../use_cases/notifications/get_unread_notifications_count_use_case.dart';
 import '../use_cases/notifications/mark_notification_read_use_case.dart';
 import '../use_cases/notifications/mark_all_notifications_read_use_case.dart';
 import '../use_cases/notifications/delete_notification_use_case.dart';
 
-/// Casos de uso del módulo social (muro, amistades y notificaciones).
+/// Casos de uso del módulo social (muro, amistades, notificaciones y «Con
+/// amigos», ADR 0044).
 void registerSocialDomain(GetIt getIt) {
   getIt
     ..registerLazySingleton<GetFeedUseCaseContract>(
@@ -103,5 +126,71 @@ void registerSocialDomain(GetIt getIt) {
     )
     ..registerLazySingleton<DeleteNotificationUseCaseContract>(
       () => DeleteNotificationUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetTogetherOverviewUseCaseContract>(
+      () => GetTogetherOverviewUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetFriendChallengeTemplatesUseCaseContract>(
+      () => GetFriendChallengeTemplatesUseCase(getIt()),
+    )
+    ..registerLazySingleton<CreateFriendChallengeUseCaseContract>(
+      () => CreateFriendChallengeUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetFriendChallengeUseCaseContract>(
+      () => GetFriendChallengeUseCase(getIt()),
+    )
+    ..registerLazySingleton<JoinFriendChallengeUseCaseContract>(
+      () => JoinFriendChallengeUseCase(getIt()),
+    )
+    ..registerLazySingleton<DeclineFriendChallengeUseCaseContract>(
+      () => DeclineFriendChallengeUseCase(getIt()),
+    )
+    ..registerLazySingleton<LeaveFriendChallengeUseCaseContract>(
+      () => LeaveFriendChallengeUseCase(getIt()),
+    )
+    ..registerLazySingleton<ReactToFriendChallengeUseCaseContract>(
+      () => ReactToFriendChallengeUseCase(getIt()),
+    )
+    ..registerLazySingleton<RemoveFriendChallengeReactionUseCaseContract>(
+      () => RemoveFriendChallengeReactionUseCase(getIt()),
+    )
+    ..registerLazySingleton<ProposeFriendStreakUseCaseContract>(
+      () => ProposeFriendStreakUseCase(getIt()),
+    )
+    ..registerLazySingleton<AcceptFriendStreakUseCaseContract>(
+      () => AcceptFriendStreakUseCase(getIt()),
+    )
+    ..registerLazySingleton<DeclineFriendStreakUseCaseContract>(
+      () => DeclineFriendStreakUseCase(getIt()),
+    )
+    ..registerLazySingleton<EndFriendStreakUseCaseContract>(
+      () => EndFriendStreakUseCase(getIt()),
+    )
+    ..registerLazySingleton<NudgeFriendStreakUseCaseContract>(
+      () => NudgeFriendStreakUseCase(getIt()),
+    )
+    ..registerLazySingleton<CreateWorkoutTogetherUseCaseContract>(
+      () => CreateWorkoutTogetherUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetWorkoutTogetherUseCaseContract>(
+      () => GetWorkoutTogetherUseCase(getIt()),
+    )
+    ..registerLazySingleton<FindWorkoutTogetherBySessionUseCaseContract>(
+      () => FindWorkoutTogetherBySessionUseCase(getIt()),
+    )
+    ..registerLazySingleton<JoinWorkoutTogetherUseCaseContract>(
+      () => JoinWorkoutTogetherUseCase(getIt()),
+    )
+    ..registerLazySingleton<DeclineWorkoutTogetherUseCaseContract>(
+      () => DeclineWorkoutTogetherUseCase(getIt()),
+    )
+    ..registerLazySingleton<LeaveWorkoutTogetherUseCaseContract>(
+      () => LeaveWorkoutTogetherUseCase(getIt()),
+    )
+    ..registerLazySingleton<StartWorkoutTogetherUseCaseContract>(
+      () => StartWorkoutTogetherUseCase(getIt()),
+    )
+    ..registerLazySingleton<ReportUserUseCaseContract>(
+      () => ReportUserUseCase(getIt()),
     );
 }

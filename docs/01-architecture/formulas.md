@@ -268,6 +268,34 @@ dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se r
 - Por qué esos topes: cubren dos semanas de exámenes o una gripe más un viaje, sin que la racha deje de medir
   constancia (la misma idea que los días libres, pero elegida por la persona).
 
+## Retos con amigos (ADR 0044, `FriendChallenge`, `FriendChallengeScore`)
+- Salen de una plantilla de reto que se cuenta sola (ADR 0043) y se cuentan con la **misma regla**
+  (`ChallengeRule.count`) sobre lo que lee `ChallengeReferencePort.activity`, rehecho desde cero en cada lectura.
+  Nunca una plantilla de bienestar (`CHECK_INS`).
+- **Meta de cada persona** = `ceil(objetivo de la plantilla × días del reto / días de la plantilla)`, como mínimo 1
+  y como mucho los días (regla por días) o las semanas que pisa (regla por semanas). Ej.: «Repasa cada día» (12 de
+  14) en 7 días → 6.
+- **Juntos (por defecto):** meta común = meta de cada persona × personas dentro (aceptar o salir la ajusta); avance
+  = suma de lo de cada uno. Solo se enseña el total y quién ha aportado (sí/no).
+- **Competición (opcional):** cada uno ve sus puntos y la clasificación. **Tope diario** en los dos modos para no
+  premiar el exceso: en los retos «por suma» cada día cuenta como mucho **120 min de Pomodoro** o **1** cosa (una
+  carrera); en los de días o semanas el tope ya es natural (un día o una semana cumplidos).
+- Sin XP: el reto con amigos es para animarse; el XP sigue saliendo de lo que se hace.
+
+## Racha con un amigo (ADR 0044, `FriendStreakCount`)
+- Cuenta desde el día en que se acepta. Un día **suma** si los dos hicieron algo que cuenta (`FriendStreak.COUNTED_KINDS`:
+  repaso, test, Pomodoro o entreno hecho con la definición de `CompletedWorkoutsSql`; nunca el registro diario).
+- Si alguno de los dos tenía la racha **en pausa** ese día (ADR 0042) y no lo hicieron los dos, el día **ni suma ni
+  rompe**. Cualquier otro día pasado sin los dos **la rompe** (vuelve a 0, la racha sigue activa). Hoy suma en cuanto
+  lo hacen los dos y no rompe hasta que termina. Días en la zona de la gamificación (`Europe/Madrid`).
+- Como mucho **5 rachas** por persona (propuestas o activas). «Recordárselo»: solo si yo ya hice mi parte y el amigo
+  no, **una vez al día** por racha; el aviso no llega si el amigo apagó los avisos de racha («Más avisos»).
+
+## Entrenamos juntos (ADR 0044, `WorkoutTogether.doneSlots`)
+- Un ejercicio (hueco del día, por su posición) está **hecho** para una persona si lleva al menos tantas series de
+  trabajo (sin calentamiento) como tiene planificadas en su día de rutina. Se cuenta por hueco para que «Cambiar
+  solo hoy» siga contando. De 1 a 4 amigos; solo el día en que se crea.
+
 ## Modo exámenes automático (ADR 0023)
 - Con el modo **Normal** y un **examen pendiente en los próximos 7 días**
   (`NotificationPreferences.EXAM_SEASON_DAYS`), las notificaciones y los avisos del móvil se filtran como en el

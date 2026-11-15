@@ -345,5 +345,10 @@
   "adminErrorExerciseNotFound": "Cet exercice n’existe pas.",
   "adminErrorExerciseInactive": "Cet exercice n’est plus disponible.",
   "adminErrorCatalogReference": "Un muscle, une partie du corps ou un équipement n’existe pas.",
-  "adminExerciseActiveToggle": "Exercice actif : {name}"
+  "adminExerciseActiveToggle": "Exercice actif : {name}",
+  "adminReportTypeUser": "Personne",
+  "adminReportContextChallenge": "Signalée dans un défi entre amis",
+  "adminReportContextStreak": "Signalée dans une série avec un ami",
+  "adminReportContextWorkout": "Signalée lors d'un entraînement ensemble",
+  "adminReportContextProfile": "Signalée depuis son profil"
 }

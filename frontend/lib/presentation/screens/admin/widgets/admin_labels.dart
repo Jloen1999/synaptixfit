@@ -45,11 +45,13 @@ extension AdminReportTypeLabel on AdminReportType {
   String label(AppLocalizations l10n) => switch (this) {
     AdminReportType.post => l10n.adminReportTypePost,
     AdminReportType.comment => l10n.adminReportTypeComment,
+    AdminReportType.user => l10n.adminReportTypeUser,
   };
 
   IconData get icon => switch (this) {
     AdminReportType.post => Icons.article_outlined,
     AdminReportType.comment => Icons.chat_bubble_outline_rounded,
+    AdminReportType.user => Icons.person_off_outlined,
   };
 }
 
@@ -208,3 +210,12 @@ extension AdminMeasurementTypeLabel on AdminMeasurementType {
     AdminMeasurementType.calories => l10n.adminMeasurementCalories,
   };
 }
+
+/// Dónde se denunció a una persona (ADR 0044), en palabras.
+String adminUserReportContext(AppLocalizations l10n, String context) =>
+    switch (context) {
+      'FRIEND_CHALLENGE' => l10n.adminReportContextChallenge,
+      'FRIEND_STREAK' => l10n.adminReportContextStreak,
+      'WORKOUT_TOGETHER' => l10n.adminReportContextWorkout,
+      _ => l10n.adminReportContextProfile,
+    };

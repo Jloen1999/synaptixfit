@@ -46,6 +46,10 @@ abstract final class TrainingPaths {
 
   static String exercise(String exerciseId) => '$exercises/$exerciseId';
 
+  /// «Entrenar con amigos» hoy con esta rutina (módulo social, ADR 0044).
+  static String workoutTogetherInvite(String routineId) =>
+      '/social/together/workouts/new?routine=$routineId';
+
   /// Sesión en vivo (pantalla completa).
   static String session(String sessionId) => '$root/sessions/$sessionId';
 

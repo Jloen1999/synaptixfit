@@ -40,7 +40,7 @@ class RoutineDetailPage extends StatelessWidget {
   }
 }
 
-enum _MenuAction { edit, share, duplicate, delete, status }
+enum _MenuAction { edit, together, share, duplicate, delete, status }
 
 class _DetailView extends StatefulWidget {
   const _DetailView();
@@ -99,6 +99,8 @@ class _DetailViewState extends State<_DetailView> {
             goal: change.goal,
           ),
         );
+      case _MenuAction.together:
+        await context.push(TrainingPaths.workoutTogetherInvite(routine.id));
       case _MenuAction.share:
         await showRoutineShareSheet(context, routine);
       case _MenuAction.duplicate:
@@ -206,6 +208,13 @@ class _DetailViewState extends State<_DetailView> {
                       child: ListTile(
                         leading: const Icon(Icons.flag_outlined),
                         title: Text(l10n.trainingChangeStatus),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: _MenuAction.together,
+                      child: ListTile(
+                        leading: const Icon(AppIcons.friends),
+                        title: Text(l10n.togetherTrainWithFriends),
                       ),
                     ),
                     PopupMenuItem(

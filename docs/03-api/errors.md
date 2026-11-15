@@ -120,6 +120,17 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `NOTIFICATION_WEEKLY_EMAIL_LINK_INVALID` | 404 | El enlace de confirmación o de baja del resumen semanal no existe o ya se usó | — (página web del backend) | Enlace no válido: gestiona el resumen en Ajustes › Notificaciones. | Activo |
 | `NOTIFICATION_INVALID_QUIET_HOURS` | 400 | Solo una de las horas de silencio, o inicio igual a fin | Indica la hora de inicio y de fin del silencio (distintas). | Activo |
 | `REMINDER_OPTIONS_INVALID` | 400 | Antelación, días antes de una entrega o hora del resumen fuera de las opciones (ADR 0035) | No se pudo guardar esa opción de avisos. Elige una de la lista. | Activo |
+| `FRIEND_CHALLENGE_NOT_FOUND` | 404 | Reto con amigos inexistente o al que no estás invitado (o del que saliste); también al intentar volver tras un bloqueo o dejar de ser amigos (ADR 0044) | Ese reto ya no está disponible. | Activo |
+| `FRIEND_STREAK_NOT_FOUND` | 404 | Racha con un amigo inexistente o ajena (ADR 0044) | Esa racha ya no existe. | Activo |
+| `WORKOUT_TOGETHER_NOT_FOUND` | 404 | «Entrenamos juntos» inexistente o al que no estás invitado; también al intentar volver tras un bloqueo o dejar de ser amigos (ADR 0044). Una sesión que no es de entrenar juntos responde 204, no este error | Ese entreno ya no está disponible. | Activo |
+| `TOGETHER_NOT_FRIENDS` | 422 | Invitar a alguien que no es amigo mutuo (amistad aceptada, sin bloqueo, cuenta activa) (ADR 0044) | Solo puedes invitar a amigos mutuos. | Activo |
+| `TOGETHER_GROUP_SIZE` | 422 | Reto con amigos con 0 o más de 24 amigos, o entrenar juntos con 0 o más de 4 (ADR 0044) | Elige entre 1 y 24 amigos para un reto, o entre 1 y 4 para entrenar juntos. | Activo |
+| `TOGETHER_INVALID_STATE` | 409 | Responder a una invitación ya respondida, unirse a un reto terminado, reaccionar a una entrada no válida o empezar un entreno de otro día (ADR 0044) | Eso ya no se puede hacer. Vuelve a cargar la pantalla. | Activo |
+| `FRIEND_CHALLENGE_TEMPLATE_NOT_ALLOWED` | 422 | Crear un reto con amigos con una plantilla de bienestar (registro diario): esos datos no se comparten (ADR 0044) | Ese reto no se puede hacer con amigos. | Activo |
+| `FRIEND_STREAK_LIMIT_REACHED` | 422 | Una de las dos personas ya tiene 5 rachas con amigos (propuestas o activas) (ADR 0044) | Ya hay 5 rachas con amigos: termina una para empezar otra. | Activo |
+| `FRIEND_STREAK_ALREADY_EXISTS` | 409 | Ya hay una racha (propuesta o activa) entre las dos personas (ADR 0044) | Ya tenéis una racha juntos. | Activo |
+| `FRIEND_STREAK_NUDGE_UNAVAILABLE` | 422 | «Recordárselo» sin haber hecho tu parte, con el amigo ya hecho o por segunda vez hoy (ADR 0044) | Hoy ya se lo has recordado o ya ha hecho su parte. | Activo |
+| `USER_REPORT_NOT_FOUND` | 404 | (Administración) La denuncia de una persona ya no está en la cola (ADR 0044) | Esa denuncia ya se revisó. | Activo |
 
 ## Perfil y catálogo académico
 
