@@ -1,7 +1,7 @@
 package com.synaptixfit.application.service.notification;
 
 import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
-import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
+import com.synaptixfit.application.port.input.badge.PeekStreakUseCase;
 import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCase;
 import com.synaptixfit.application.port.input.run.ListPlannedRunsUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
@@ -94,7 +94,7 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
     }
 
     /** Fuentes de los avisos de racha y registro diario; nulo: no se avisan. */
-    public record Wellbeing(GetStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
+    public record Wellbeing(PeekStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
     }
 
     public ReminderPlanService(Stores stores, ReminderPlanner planner, Clock clock, ZoneId zone,
@@ -175,7 +175,7 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
         if (wellbeing == null || prefs.dailyLimit() <= 0) {
             return List.of();
         }
-        StreakStatus streak = options.streak() ? wellbeing.streak().getStreak(userId, zone.getId()) : null;
+        StreakStatus streak = options.streak() ? wellbeing.streak().peekStreak(userId, zone.getId()) : null;
         boolean checkInDone = options.checkIn() && wellbeing.checkIn().today(userId).isPresent();
         List<WellbeingReminders.ClassBlock> classes = options.classes()
                 ? toClasses(userId, blocksInWindow.get()) : List.of();

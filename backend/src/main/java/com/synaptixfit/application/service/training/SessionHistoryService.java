@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.training;
 import com.synaptixfit.domain.model.training.ExerciseProgress;
 import com.synaptixfit.application.port.input.training.GetExerciseProgressUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
+import com.synaptixfit.application.port.input.training.GetSessionHistoryEntryUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
 import com.synaptixfit.application.port.input.training.ListPersonalRecordsUseCase;
@@ -36,7 +37,7 @@ import java.util.UUID;
  */
 public class SessionHistoryService implements ListSessionHistoryUseCase, ListPersonalRecordsUseCase,
         ListLastPerformanceUseCase, GetSessionHighlightsUseCase, ListOpenSessionsUseCase,
-        GetExerciseProgressUseCase {
+        GetExerciseProgressUseCase, GetSessionHistoryEntryUseCase {
 
     /** Sesiones que se recorren para los récords: de sobra para años de entrenamiento habitual. */
     static final int RECORDS_WINDOW = 1000;
@@ -79,6 +80,18 @@ public class SessionHistoryService implements ListSessionHistoryUseCase, ListPer
                         s.canUnmark(today, zone)))
                 .toList();
         return new PageResult<>(entries, result.page(), result.size(), result.totalItems());
+    }
+
+    @Override
+    public SessionHistoryEntry historyEntry(UUID userId, UUID sessionId) {
+        TrainingSession session = sessions.findById(sessionId).filter(s -> s.isOwnedBy(userId))
+                .orElseThrow(() -> new SessionNotFoundException(sessionId));
+        SessionLabel label = labels.labels(List.of(sessionId)).get(sessionId);
+        List<PersonalRecord> broken = session.isCompleted()
+                ? PersonalRecords.brokenBySession(completed(userId)).getOrDefault(sessionId, List.of())
+                : List.of();
+        LocalDate today = LocalDate.ofInstant(clock.instant(), zone);
+        return new SessionHistoryEntry(session, label, broken, session.canUnmark(today, zone));
     }
 
     @Override

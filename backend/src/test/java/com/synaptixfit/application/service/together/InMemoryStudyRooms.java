@@ -36,7 +36,7 @@ final class InMemoryStudyRooms implements StudyRoomRepositoryPort {
         Instant started = previous != null && previous.startedAt() != null ? previous.startedAt() : room.startedAt();
         rooms.put(room.id(), new StudyRoom(room.id(), room.creatorId(), room.length(), room.rounds(),
                 room.createdAt(), started, 0, new TogetherMembers(room.members().all()), room.subjects(),
-                room.reactions()));
+                room.reactions(), room.enteredAt()));
         return room;
     }
 
@@ -70,6 +70,6 @@ final class InMemoryStudyRooms implements StudyRoomRepositoryPort {
         return new StudyRoom(r.id(), r.creatorId(), r.length(), r.rounds(), r.createdAt(), r.startedAt(),
                 credited.getOrDefault(r.id(), 0),
                 new TogetherMembers(r.members().all()), r.subjects(),
-                r.reactions());
+                r.reactions(), r.enteredAt());
     }
 }

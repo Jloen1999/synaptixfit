@@ -13,6 +13,12 @@ public interface RoutineShareLinkRepositoryPort {
 
     Optional<RoutineShareLink> findByTokenHash(String tokenHash);
 
+    /**
+     * Bloquea la rutina hasta el final de la transacción (ADR 0045, cierre): dos «Compartir enlace» a la vez esperan
+     * uno al otro y el segundo ya cuenta el enlace del primero, así no se pasa del tope de enlaces vigentes.
+     */
+    void lockRoutine(UUID routineId);
+
     /** Enlaces de la rutina sin revocar ni caducar en {@code now}. */
     List<RoutineShareLink> findActiveByRoutine(UUID routineId, Instant now);
 

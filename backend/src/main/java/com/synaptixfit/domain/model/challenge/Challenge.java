@@ -72,6 +72,13 @@ public final class Challenge {
     /** Tope de XP de un reto: el doble de uno difícil sin tareas. */
     public static final int MAX_XP = 2 * Difficulty.HIGH.xp();
 
+    /**
+     * Un reto con regla automática (ADR 0043) se recuenta hasta un día después de su fin: da margen a desmarcar lo
+     * del último día. Pasado ese margen su resultado queda fijo y ya no se lee (así el recuento no crece con los
+     * retos viejos).
+     */
+    public static final Duration RULE_RECOUNT_GRACE = Duration.ofDays(1);
+
     private final UUID id;
     private final UUID ownerId;
     private String title;

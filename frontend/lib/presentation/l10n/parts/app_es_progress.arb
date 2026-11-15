@@ -741,6 +741,8 @@
       }
     }
   },
+  "progressHeadlineStudyMinutes": "{minutes} min de estudio",
+  "@progressHeadlineStudyMinutes": {"description": "Titular de Progreso con menos de una hora de estudio", "placeholders": {"minutes": {"type": "int"}}},
   "progressHeadlineTrainings": "{count, plural, =1{1 entreno} other{{count} entrenos}}",
   "@progressHeadlineTrainings": {
     "placeholders": {

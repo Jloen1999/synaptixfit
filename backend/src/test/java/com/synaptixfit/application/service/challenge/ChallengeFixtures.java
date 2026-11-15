@@ -82,8 +82,11 @@ final class ChallengeFixtures {
             return store.values().stream().filter(c -> c.isOwnedBy(o) && c.type() == ChallengeType.FITNESS
                     && c.sessionTarget() != null).toList();
         }
-        public List<Challenge> findRuleTrackedByOwner(UUID o) {
-            return store.values().stream().filter(c -> c.isOwnedBy(o) && c.rule() != null).toList();
+        public void lockTemplateStarts(UUID o) {
+        }
+        public List<Challenge> findRuleTrackedByOwner(UUID o, Instant endsFrom) {
+            return store.values().stream().filter(c -> c.isOwnedBy(o) && c.rule() != null
+                    && !c.endAt().isBefore(endsFrom)).toList();
         }
         public List<Challenge> findNonPrivateByOwner(UUID o) {
             return store.values().stream().filter(c -> c.isOwnedBy(o) && c.visibility() != Visibility.PRIVATE).toList();

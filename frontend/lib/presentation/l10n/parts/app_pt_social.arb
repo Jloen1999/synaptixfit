@@ -360,5 +360,9 @@
   "socialErrorStudyRoomNotFound": "Essa sala já não está disponível.",
   "togetherStudyStatusReaction": "{status} · {reaction}",
   "togetherStudyGoneTitle": "Já não estás nesta sala",
-  "togetherStudyInsideCount": "{count, plural, =0{Ainda ninguém lá dentro} =1{1 pessoa lá dentro} other{{count} pessoas lá dentro}}"
+  "togetherStudyInsideCount": "{count, plural, =0{Ainda ninguém lá dentro} =1{1 pessoa lá dentro} other{{count} pessoas lá dentro}}",
+  "togetherStudyAlertFocusBody": "Fim da concentração · ronda {round} de {rounds}",
+  "togetherStudyAlertBreakBody": "Fim da pausa: volta a concentrar-te",
+  "togetherStudyBarLabel": "Estudar juntos, {phase}: faltam {time}. Abrir a sala",
+  "togetherStudyBarLabelNoClock": "Estudar juntos, {phase}. Abrir a sala"
 }

@@ -197,6 +197,10 @@ class TrainingFlowIT {
                 + "WHERE id = CAST(:id AS uuid)").param("id", ids.get(1)).query(String.class).optional()
                 .orElse(null);
         assertThat((String) JsonPath.read(named, "$.items[0].coverImageUrl")).isEqualTo(expectedCover);
+        // El detalle abierto sin pasar por el historial recibe la misma foto, elegida por el servidor.
+        String single = body(get("/api/v1/training/history/" + sessionId), token, 200);
+        assertThat((String) JsonPath.read(single, "$.coverImageUrl")).isEqualTo(expectedCover);
+        assertThat((String) JsonPath.read(single, "$.session.id")).isEqualTo(sessionId);
         String records = body(get("/api/v1/training/records"), token, 200);
         assertThat((List<?>) JsonPath.read(records, "$")).hasSize(1);
         assertThat((Double) JsonPath.read(records, "$[0].weightKg")).isEqualTo(42.5);

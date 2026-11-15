@@ -143,6 +143,19 @@ class PerSetTargetsTest {
     }
 
     @Test
+    void theDayCoverSkipsExercisesWithoutAPhoto() {
+        ExerciseRef withPhoto = new ExerciseRef(UUID.randomUUID(), "Remo", null, "https://img/remo.webp",
+                Modality.STRENGTH, List.of(MeasurementType.REPETITIONS), false, 5.0, true);
+        ExerciseRef noPhoto = new ExerciseRef(UUID.randomUUID(), "Sin foto", null, null, Modality.STRENGTH,
+                List.of(MeasurementType.REPETITIONS), false, 5.0, true);
+        RoutineDay day = RoutineDay.create(1, null);
+        day.addExercise(noPhoto, perSet(null));
+        assertThat(day.coverExercise()).contains(noPhoto);
+        day.addExercise(withPhoto, perSet(null));
+        assertThat(day.coverExercise()).contains(withPhoto);
+    }
+
+    @Test
     void theCoverIsTheFirstExerciseOfTheDayThatIsDue() {
         RoutineDay monday = RoutineDay.create(1, null);
         monday.addExercise(BENCH, perSet(null));

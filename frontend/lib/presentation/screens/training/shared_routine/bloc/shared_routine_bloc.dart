@@ -57,10 +57,7 @@ class SharedRoutineBloc extends Bloc<SharedRoutineEvent, SharedRoutineState> {
     final result = await _copy(state.token);
     emit(switch (result) {
       Success(:final value) => state.copyWith(copying: false, copied: value),
-      Failure(:final error) => state.copyWith(
-        copying: false,
-        copyError: error,
-      ),
+      Failure(:final error) => state.copyWith(copying: false, copyError: error),
     });
     emit(state.copyWith(copied: null, copyError: null));
   }

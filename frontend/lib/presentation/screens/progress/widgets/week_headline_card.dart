@@ -63,12 +63,18 @@ class WeekHeadlineCard extends StatelessWidget {
         (focus.includesAcademic && study == null) ||
         (focus.includesFitness && weekly == null);
     final hours = focus.includesAcademic ? study?.studyHours : null;
+    // Menos de una hora no es «0 h»: se dice en minutos, como Inicio.
+    final minutes = hours == 0 ? study?.focusMinutes ?? 0 : 0;
     final count = focus.includesFitness ? trainings : null;
     final parts = [
-      if (hours != null) l10n.progressHeadlineStudy(hours),
+      if (hours != null)
+        minutes > 0
+            ? l10n.progressHeadlineStudyMinutes(minutes)
+            : l10n.progressHeadlineStudy(hours),
       if (count != null) l10n.progressHeadlineTrainings(count),
     ];
-    final empty = !failed && (hours ?? 0) == 0 && (count ?? 0) == 0;
+    final empty =
+        !failed && (hours ?? 0) == 0 && minutes == 0 && (count ?? 0) == 0;
     final headline = empty || parts.isEmpty
         ? l10n.progressHeadlineEmpty
         : parts.join(' · ');
@@ -211,23 +217,64 @@ class _StreakLine extends StatelessWidget {
                 style: context.textStyles.bodySmall?.copyWith(color: muted),
               ),
               if (onResume != null)
-                TextButton.icon(
-                  onPressed: busy ? null : onResume,
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: Text(l10n.progressStreakResume),
+                _StreakButton(
+                  busy: busy,
+                  onPressed: onResume,
+                  icon: Icons.play_arrow_rounded,
+                  label: l10n.progressStreakResume,
                 ),
             ],
           )
         else if (streak.canPause && onPause != null)
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
-              onPressed: busy ? null : onPause,
-              icon: const Icon(Icons.pause_rounded),
-              label: Text(l10n.progressStreakPause),
+            child: _StreakButton(
+              busy: busy,
+              onPressed: onPause,
+              icon: Icons.pause_rounded,
+              label: l10n.progressStreakPause,
             ),
           ),
       ],
+    );
+  }
+}
+
+/// «Pausar racha» / «Reanudar»: mientras el servidor responde, el icono pasa a
+/// un indicador de carga (y el lector oye «Cargando») y el botón no se puede
+/// pulsar otra vez.
+class _StreakButton extends StatelessWidget {
+  const _StreakButton({
+    required this.busy,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final bool busy;
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = TextButton.icon(
+      onPressed: busy ? null : onPressed,
+      icon: busy
+          ? const SizedBox.square(
+              dimension: TokensSize.iconS,
+              child: CircularProgressIndicator(
+                strokeWidth: TokensSize.spinnerStroke,
+              ),
+            )
+          : Icon(icon),
+      label: Text(label),
+    );
+    if (!busy) return button;
+    return Semantics(
+      liveRegion: true,
+      label: '$label, ${context.localizations.commonLoading}',
+      child: ExcludeSemantics(child: button),
     );
   }
 }

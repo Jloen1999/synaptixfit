@@ -18,7 +18,8 @@ import java.util.UUID;
  * Implementa {@link CopyRoutineForFriendUseCase} para «Entrenamos juntos» (ADR 0044): la copia se guarda siempre en
  * pausa (no cambia la rutina en curso de nadie ni crea eventos en su calendario), marcada «Copiada de» su dueño, y
  * conserva el orden de semanas, días y ejercicios para encontrar el mismo día por su posición. Si la persona ya
- * tiene una copia de esa rutina, se reutiliza.
+ * tiene una copia de esa rutina con ese día igual ({@link RoutineDay#sameSlotsAs}), se reutiliza; si el dueño cambió
+ * el día después, se copia la versión nueva (la copia anterior se queda, con su historial).
  */
 public class RoutineFriendCopyService implements CopyRoutineForFriendUseCase {
 
@@ -40,9 +41,10 @@ public class RoutineFriendCopyService implements CopyRoutineForFriendUseCase {
         if (source.isOwnedBy(targetUserId)) {
             return new Copy(source.id(), dayId);
         }
+        RoutineDay sourceDay = dayAt(source, position);
         Routine copy = routines.findAllByOwner(targetUserId).stream()
                 .filter(r -> !r.isDeleted() && r.origin() != null && routineId.equals(r.origin().routineId()))
-                .filter(r -> dayAt(r, position) != null)
+                .filter(r -> sourceDay.sameSlotsAs(dayAt(r, position)))
                 .findFirst()
                 .orElseGet(() -> routines.save(newCopy(source, targetUserId)));
         return new Copy(copy.id(), dayAt(copy, position).id());

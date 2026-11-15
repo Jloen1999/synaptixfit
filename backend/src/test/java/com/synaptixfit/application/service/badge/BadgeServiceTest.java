@@ -89,7 +89,8 @@ class BadgeServiceTest {
             public User save(User u) { user = u; return u; }
         };
         streaks = new StreakService(activity, users, CLOCK, ZoneOffset.UTC);
-        service = new BadgeService(catalog, userBadges, activity, streaks, events::add, CLOCK, ZoneOffset.UTC);
+        service = new BadgeService(catalog, userBadges, activity, streaks, streaks, events::add, CLOCK,
+                ZoneOffset.UTC);
     }
 
     private static BadgeActivitySnapshot snapshot(int sessions, int challenges) {

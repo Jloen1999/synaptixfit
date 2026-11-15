@@ -1,10 +1,11 @@
+import '../../models/reminders/timer_alert.dart';
 import '../../models/result/app_result.dart';
 import '../../models/result/result.dart';
 import '../../repositories/reminder_scheduler_repository_contract.dart';
 
 /// Quita el aviso de fin de fase del Pomodoro (al pausar, saltar o salir).
 abstract interface class CancelTimerAlertUseCaseContract {
-  Future<AppResult<Unit>> call();
+  Future<AppResult<Unit>> call({TimerAlertSlot slot = TimerAlertSlot.pomodoro});
 }
 
 class CancelTimerAlertUseCase implements CancelTimerAlertUseCaseContract {
@@ -13,5 +14,7 @@ class CancelTimerAlertUseCase implements CancelTimerAlertUseCaseContract {
   final ReminderSchedulerRepositoryContract _scheduler;
 
   @override
-  Future<AppResult<Unit>> call() => _scheduler.cancelTimerAlert();
+  Future<AppResult<Unit>> call({
+    TimerAlertSlot slot = TimerAlertSlot.pomodoro,
+  }) => _scheduler.cancelTimerAlert(slot: slot);
 }

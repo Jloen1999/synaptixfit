@@ -5533,6 +5533,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/PageResponseSessionHistoryResponse"
+  /api/v1/training/history/{sessionId}:
+    get:
+      tags:
+      - Training history
+      operationId: historyEntry
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionHistoryResponse"
   /api/v1/training/exercises/{exerciseId}/progress:
     get:
       tags:

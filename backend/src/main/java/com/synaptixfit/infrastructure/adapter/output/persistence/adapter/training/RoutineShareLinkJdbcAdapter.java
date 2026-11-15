@@ -48,6 +48,13 @@ public class RoutineShareLinkJdbcAdapter implements RoutineShareLinkRepositoryPo
                 .optional();
     }
 
+    /** {@code FOR UPDATE} sobre la fila de la rutina (SQL estándar); solo se lee su id. */
+    @Override
+    public void lockRoutine(UUID routineId) {
+        jdbc.sql("select id from rutinas where id = :id for update").param("id", routineId)
+                .query(UUID.class).optional();
+    }
+
     @Override
     public List<RoutineShareLink> findActiveByRoutine(UUID routineId, Instant now) {
         return jdbc.sql("SELECT " + COLUMNS + " FROM enlaces_rutina WHERE rutina_id = :routine"

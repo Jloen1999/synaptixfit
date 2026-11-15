@@ -36,9 +36,14 @@ public interface StudyPlanJpaRepository extends JpaRepository<StudyPlanEntity, U
                        @Param("weekStart") LocalDate weekStart, @Param("weekEnd") LocalDate weekEnd,
                        @Param("visibility") String visibility, @Param("now") Instant now);
 
-    /** Anota la experiencia solo si no lo estaba: la fila la actualiza una sola petición (JPQL portable). */
+    /**
+     * Anota la experiencia solo si no lo estaba: la fila la actualiza una sola petición (SQL estándar). Guarda también
+     * cuándo se ganó ({@code xp_planificacion_en}), que es lo que cuentan los retos «Planifica tu semana»; la columna
+     * no está en la entidad para que guardar el plan nunca la borre.
+     */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("update StudyPlanEntity p set p.xpPlanificacionOtorgado = true, p.xpPlanificacionPuntos = :points,"
-            + " p.actualizadoEn = :now where p.id = :id and p.xpPlanificacionOtorgado = false")
+    @Query(value = "UPDATE planes_estudio SET xp_planificacion_otorgado = true, xp_planificacion_puntos = :points,"
+            + " xp_planificacion_en = :now, actualizado_en = :now"
+            + " WHERE id = :id AND xp_planificacion_otorgado = false", nativeQuery = true)
     int markExperienceAwarded(@Param("id") UUID id, @Param("points") int points, @Param("now") Instant now);
 }

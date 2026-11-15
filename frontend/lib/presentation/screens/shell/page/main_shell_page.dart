@@ -9,6 +9,7 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../widgets/focus_timer_bar.dart';
+import '../widgets/study_room_bar.dart';
 import '../widgets/open_session_bar.dart';
 import '../widgets/shell_navigation_bar.dart';
 import '../widgets/achievements_host.dart';
@@ -113,6 +114,7 @@ class MainShellPage extends StatelessWidget {
           children: [
             OpenSessionBar(hideRoutineSessions: onGym),
             const FocusTimerBar(),
+            const StudyRoomBar(),
             ShellNavigationBar(
               destinations: destinations,
               selectedIndex: selected < 0 ? 0 : selected,
@@ -165,6 +167,7 @@ class MainShellPage extends StatelessWidget {
                   child: OpenSessionBar(hideRoutineSessions: onGym),
                 ),
                 const SafeArea(top: false, left: false, child: FocusTimerBar()),
+                const SafeArea(top: false, left: false, child: StudyRoomBar()),
               ],
             ),
           ),

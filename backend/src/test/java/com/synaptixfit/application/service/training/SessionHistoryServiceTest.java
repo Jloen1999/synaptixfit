@@ -86,4 +86,22 @@ class SessionHistoryServiceTest {
         assertThatThrownBy(() -> service.highlights(UUID.randomUUID(), done))
                 .isInstanceOf(SessionNotFoundException.class);
     }
+
+    @Test
+    void aSingleEntryCarriesTheCoverChosenByTheServerAndOnlyForItsOwner() {
+        UUID done = UUID.randomUUID();
+        sessions.save(completed(done, "2026-10-13T18:00:00Z"));
+        sessions.recent = List.of(summary(done, "2026-10-13T18:00:00Z", 60));
+        SessionHistoryService service = new SessionHistoryService(sessions, ids -> Map.of(done,
+                new SessionLabel(done, "Fuerza", null, 1, 1).withCover(null, "https://img/press.png")),
+                java.time.Clock.systemUTC(), java.time.ZoneOffset.UTC);
+
+        SessionHistoryEntry entry = service.historyEntry(userId, done);
+
+        assertThat(entry.label().coverImageUrl()).isEqualTo("https://img/press.png");
+        // La primera sesión con ese ejercicio no bate ninguna marca anterior.
+        assertThat(entry.records()).isEmpty();
+        assertThatThrownBy(() -> service.historyEntry(UUID.randomUUID(), done))
+                .isInstanceOf(SessionNotFoundException.class);
+    }
 }

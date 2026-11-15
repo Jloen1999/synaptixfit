@@ -2041,6 +2041,12 @@
   "trainingTemplatesEmpty": "No hay plantillas con estos filtros",
   "trainingTemplatesEmptyHint": "Quita algún filtro para ver más.",
   "trainingTemplatesClearFilters": "Quitar filtros",
+  "trainingTemplatesFilter": "Filtrar",
+  "@trainingTemplatesFilter": {"description": "Botón y título de la hoja de filtros de las plantillas de rutina"},
+  "trainingTemplatesFilterActive": "Filtrar ({count})",
+  "@trainingTemplatesFilterActive": {"description": "Botón de filtros con cuántos hay puestos", "placeholders": {"count": {"type": "int"}}},
+  "trainingTemplatesShowResults": "{count, plural, =0{No hay plantillas} =1{Ver 1 plantilla} other{Ver {count} plantillas}}",
+  "@trainingTemplatesShowResults": {"description": "Botón que cierra la hoja de filtros", "placeholders": {"count": {"type": "int"}}},
   "trainingTemplatesCreated": "Listo: «{name}» ya es tu rutina.",
   "@trainingTemplatesCreated": {
     "placeholders": {

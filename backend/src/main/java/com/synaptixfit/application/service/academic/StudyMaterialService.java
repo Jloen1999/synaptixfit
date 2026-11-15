@@ -165,14 +165,25 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
         StudyMaterial m = lookups.material(userId, materialId);
         Instant now = clock.instant();
         Fatigue f = fatigue(userId, now);
-        List<ReviewPreview.Option> options = new ArrayList<>();
+        List<Double> adjustedByQuality = new ArrayList<>();
+        List<SpacedRepetition.Result> results = new ArrayList<>();
         for (int q = 0; q <= 5; q++) {
             double adjusted = FatigueAdjustedRecall.adjustedQuality(q, f.today(), f.max());
-            SpacedRepetition.Result r = m.simulate(q, adjusted, now);
-            // La misma fecha que dará el repaso de verdad: ya repartida sin picos.
-            Instant proposed = now.plus(Duration.ofDays(r.intervalDays()));
-            options.add(new ReviewPreview.Option(q, round(adjusted, 2), r.intervalDays(),
-                    m.nextReviewAfter(r, now, reviewLoad(userId, m, proposed)), r.masteryState()));
+            adjustedByQuality.add(adjusted);
+            results.add(m.simulate(q, adjusted, now));
+        }
+        // Una sola lectura para las seis notas: la ventana que cubre todas las fechas propuestas. Cada día cuenta
+        // lo mismo que si se leyera su ventana sola, así la vista previa da la misma fecha que el repaso de verdad.
+        int shortest = results.stream().mapToInt(SpacedRepetition.Result::intervalDays).min().orElse(0);
+        int longest = results.stream().mapToInt(SpacedRepetition.Result::intervalDays).max().orElse(0);
+        ReviewLoadBalancer.Load load = ReviewLoadBalancer.Load.of(materials.scheduledReviews(userId,
+                ReviewLoadBalancer.windowStart(now.plus(Duration.ofDays(shortest))),
+                ReviewLoadBalancer.windowEnd(now.plus(Duration.ofDays(longest)))), m.id(), zone);
+        List<ReviewPreview.Option> options = new ArrayList<>();
+        for (int q = 0; q <= 5; q++) {
+            SpacedRepetition.Result r = results.get(q);
+            options.add(new ReviewPreview.Option(q, round(adjustedByQuality.get(q), 2), r.intervalDays(),
+                    m.nextReviewAfter(r, now, load), r.masteryState()));
         }
         return new ReviewPreview(f.today(), f.max(), round(f.coefficient(), 3), options,
                 recentPractice(userId, m, now).orElse(null));

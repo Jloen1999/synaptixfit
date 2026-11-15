@@ -53,6 +53,8 @@ class RoutineShareLinkServiceTest {
         public Optional<RoutineShareLink> findByTokenHash(String hash) {
             return stored.stream().filter(l -> l.tokenHash().equals(hash)).findFirst();
         }
+        public void lockRoutine(UUID routineId) {
+        }
         public List<RoutineShareLink> findActiveByRoutine(UUID routineId, Instant now) {
             return stored.stream().filter(l -> l.routineId().equals(routineId) && l.isActiveAt(now)).toList();
         }

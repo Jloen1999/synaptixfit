@@ -13,8 +13,13 @@ import '../bloc/routine_share_bloc.dart';
 /// Hoja «Compartir esta rutina» (ADR 0043): un toque crea el enlace y abre el
 /// menú del sistema; si ya se comparte, dice hasta cuándo y deja de
 /// compartirla. Quien lo abra solo verá la rutina, nada de quien la comparte.
-Future<void> showRoutineShareSheet(BuildContext context, Routine routine) =>
-    showModalBottomSheet<void>(
+/// Devuelve `true` si se dejó de compartir (la pantalla de debajo devuelve el
+/// foco a su menú).
+Future<bool> showRoutineShareSheet(
+  BuildContext context,
+  Routine routine,
+) async =>
+    await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -25,7 +30,8 @@ Future<void> showRoutineShareSheet(BuildContext context, Routine routine) =>
               ..add(RoutineShareEvent.started(routine.id)),
         child: _ShareSheet(routine: routine),
       ),
-    );
+    ) ??
+    false;
 
 class _ShareSheet extends StatelessWidget with ErrorsMessageMixin {
   const _ShareSheet({required this.routine});
@@ -41,7 +47,7 @@ class _ShareSheet extends StatelessWidget with ErrorsMessageMixin {
       listenWhen: (p, c) => c.stopped && !p.stopped,
       listener: (context, state) {
         final messenger = ScaffoldMessenger.of(context);
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(l10n.trainingShareStopped)));
@@ -59,9 +65,12 @@ class _ShareSheet extends StatelessWidget with ErrorsMessageMixin {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                l10n.trainingShareTitle,
-                style: context.textStyles.titleLarge,
+              Semantics(
+                header: true,
+                child: Text(
+                  l10n.trainingShareTitle,
+                  style: context.textStyles.titleLarge,
+                ),
               ),
               const SizedBox(height: TokensSpacing.s),
               AppHelpToggle(
@@ -136,16 +145,21 @@ class _Actions extends StatelessWidget with ErrorsMessageMixin {
         AppPrimaryButton(
           label: l10n.trainingShareLink,
           icon: AppIcons.share,
-          loading: state.busy,
-          onPressed: () => bloc.add(
-            RoutineShareEvent.shareRequested(
-              l10n.trainingShareMessage(routineName),
-            ),
-          ),
+          loading: state.running == RoutineShareAction.share,
+          onPressed: state.busy
+              ? null
+              : () => bloc.add(
+                  RoutineShareEvent.shareRequested(
+                    l10n.trainingShareMessage(routineName),
+                  ),
+                ),
         ),
         if (until != null) ...[
           const SizedBox(height: TokensSpacing.s),
-          TextButton(
+          // Su propia carga: mientras se deja de compartir, «Compartir enlace»
+          // no dice que está creando uno.
+          _StopButton(
+            stopping: state.running == RoutineShareAction.stop,
             onPressed: state.busy
                 ? null
                 : () async {
@@ -157,10 +171,45 @@ class _Actions extends StatelessWidget with ErrorsMessageMixin {
                     );
                     if (ok) bloc.add(const RoutineShareEvent.stopRequested());
                   },
-            child: Text(l10n.trainingShareStop),
           ),
         ],
       ],
+    );
+  }
+}
+
+/// «Dejar de compartir»: mientras el servidor responde, un indicador junto al
+/// texto (y el lector oye «Cargando»).
+class _StopButton extends StatelessWidget {
+  const _StopButton({required this.stopping, required this.onPressed});
+
+  final bool stopping;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    if (!stopping) {
+      return TextButton(
+        onPressed: onPressed,
+        child: Text(l10n.trainingShareStop),
+      );
+    }
+    return Semantics(
+      liveRegion: true,
+      label: '${l10n.trainingShareStop}, ${l10n.commonLoading}',
+      child: ExcludeSemantics(
+        child: TextButton.icon(
+          onPressed: null,
+          icon: const SizedBox.square(
+            dimension: TokensSize.iconS,
+            child: CircularProgressIndicator(
+              strokeWidth: TokensSize.spinnerStroke,
+            ),
+          ),
+          label: Text(l10n.trainingShareStop),
+        ),
+      ),
     );
   }
 }

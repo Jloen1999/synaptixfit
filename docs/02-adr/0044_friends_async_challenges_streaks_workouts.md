@@ -92,7 +92,6 @@ un toque y nunca datos de bienestar.
 - Lo que suma cada persona se calcula en cada lectura (N personas × una lectura de lo hecho); con 25 personas es
   asumible. Si creciera, se guardaría un recuento por evento como en los retos propios.
 - Quien recibe una rutina copiada la conserva en pausa: es su copia y la puede eliminar. Si quien invita cambia
-  después su rutina, la copia reutilizada puede no coincidir en los huecos (pendiente: copiar de nuevo si la original
-  cambió).
+  después ese día de su rutina, se copia la versión nueva (resuelto en el cierre del plan premium, ADR 0045).
 - Los topes de amigos (24 y 4) también los conoce el cliente para limitar el selector; el servidor manda y responde
   `TOGETHER_GROUP_SIZE` si no se cumplen.

@@ -66,11 +66,12 @@ class ReminderSchedulerRepository
       });
 
   @override
-  Future<AppResult<Unit>> cancelTimerAlert() =>
-      RepositoryErrorHandler.guard(() async {
-        await _local.cancelTimerAlert();
-        return unit;
-      });
+  Future<AppResult<Unit>> cancelTimerAlert({
+    TimerAlertSlot slot = TimerAlertSlot.pomodoro,
+  }) => RepositoryErrorHandler.guard(() async {
+    await _local.cancelTimerAlert(slot: slot);
+    return unit;
+  });
   @override
   Stream<OpenedReminder> watchOpened() =>
       RepositoryErrorHandler.guardStream(_local.watchOpenedPayloads)

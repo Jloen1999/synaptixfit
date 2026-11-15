@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/challenge_link_type.dart';
+import '../../../../../domain/enums/challenge_rule_kind.dart';
 import '../../../../../domain/enums/challenge_status.dart';
 import '../../../../../domain/enums/challenge_type.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
@@ -347,71 +348,75 @@ class _DetailContent extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.m),
               ],
               _SummaryCard(challenge: challenge),
-              const SizedBox(height: TokensSpacing.l),
-              AppSectionHeader(
-                title: l10n.challengesDetailTasks,
-                // Editar tareas a la vista, no solo en el menú «Más opciones».
-                actionLabel: challenge.owned && challenge.hasMilestones
-                    ? l10n.challengesDetailEditTasks
-                    : null,
-                onAction: onEditTasks,
-              ),
-              if (challenge.milestones.isEmpty)
-                AppCard(
-                  child: challenge.owned
-                      ? AppEmptyState.compact(
-                          icon: Icons.checklist_rounded,
-                          title: l10n.challengesDetailNoTasksTitle,
-                          message: l10n.challengesDetailNoTasksHint,
-                          action: AppSecondaryButton(
-                            label: l10n.challengesDetailAddTasks,
-                            icon: const Icon(Icons.playlist_add_rounded),
-                            onPressed: state.busy ? null : onEditTasks,
+              // Un reto que se cuenta solo (ADR 0043) no invita a añadir
+              // tareas: sin ninguna, la sección no sale.
+              if (!(challenge.tracksRule && challenge.milestones.isEmpty)) ...[
+                const SizedBox(height: TokensSpacing.l),
+                AppSectionHeader(
+                  title: l10n.challengesDetailTasks,
+                  // Editar tareas a la vista, no solo en el menú «Más opciones».
+                  actionLabel: challenge.owned && challenge.hasMilestones
+                      ? l10n.challengesDetailEditTasks
+                      : null,
+                  onAction: onEditTasks,
+                ),
+                if (challenge.milestones.isEmpty)
+                  AppCard(
+                    child: challenge.owned
+                        ? AppEmptyState.compact(
+                            icon: Icons.checklist_rounded,
+                            title: l10n.challengesDetailNoTasksTitle,
+                            message: l10n.challengesDetailNoTasksHint,
+                            action: AppSecondaryButton(
+                              label: l10n.challengesDetailAddTasks,
+                              icon: const Icon(Icons.playlist_add_rounded),
+                              onPressed: state.busy ? null : onEditTasks,
+                            ),
+                          )
+                        : AppEmptyState.compact(
+                            icon: Icons.checklist_rounded,
+                            title: l10n.challengesDetailNoTasksReadOnly,
                           ),
-                        )
-                      : AppEmptyState.compact(
-                          icon: Icons.checklist_rounded,
-                          title: l10n.challengesDetailNoTasksReadOnly,
-                        ),
-                )
-              else
-                for (final m in challenge.milestones)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-                    child: MilestoneTile(
-                      milestone: m,
-                      isNext: challenge.owned && !expired && m.id == nextId,
-                      expired: expired,
-                      dependencyTitles: [
-                        for (final d in m.dependencies) ?titles[d],
-                      ],
-                      busy: state.busyMilestoneId == m.id,
-                      // Fuera de plazo, o si la completa su entrega o sus
-                      // bloques, no se ofrece un toque que el servidor rechaza.
-                      onToggle:
-                          challenge.owned &&
-                              !state.busy &&
-                              open &&
-                              !m.completedByLink
-                          ? () => bloc.add(
-                              ChallengeDetailEvent.milestoneToggled(m.id),
-                            )
-                          : null,
-                      onOpenNote: m.noteId == null
-                          ? null
-                          : () => context.push(
-                              ChallengesExternalPaths.note(m.noteId!),
-                            ),
-                      onOpenFile: m.fileId == null
-                          ? null
-                          : () => bloc.add(
-                              ChallengeDetailEvent.fileRequested(m.fileId!),
-                            ),
-                      onOpenLink: m.link == null || !challenge.owned
-                          ? null
-                          : () => openLink(context, m.link!),
+                  )
+                else
+                  for (final m in challenge.milestones)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+                      child: MilestoneTile(
+                        milestone: m,
+                        isNext: challenge.owned && !expired && m.id == nextId,
+                        expired: expired,
+                        dependencyTitles: [
+                          for (final d in m.dependencies) ?titles[d],
+                        ],
+                        busy: state.busyMilestoneId == m.id,
+                        // Fuera de plazo, o si la completa su entrega o sus
+                        // bloques, no se ofrece un toque que el servidor rechaza.
+                        onToggle:
+                            challenge.owned &&
+                                !state.busy &&
+                                open &&
+                                !m.completedByLink
+                            ? () => bloc.add(
+                                ChallengeDetailEvent.milestoneToggled(m.id),
+                              )
+                            : null,
+                        onOpenNote: m.noteId == null
+                            ? null
+                            : () => context.push(
+                                ChallengesExternalPaths.note(m.noteId!),
+                              ),
+                        onOpenFile: m.fileId == null
+                            ? null
+                            : () => bloc.add(
+                                ChallengeDetailEvent.fileRequested(m.fileId!),
+                              ),
+                        onOpenLink: m.link == null || !challenge.owned
+                            ? null
+                            : () => openLink(context, m.link!),
+                      ),
                     ),
-                  ),
+              ],
               if (challenge.hasDependencies) ...[
                 const SizedBox(height: TokensSpacing.l),
                 AppSectionHeader(title: l10n.challengesDetailGraph),
@@ -482,7 +487,8 @@ class _DetailContent extends StatelessWidget {
                   ),
                 ),
               ],
-              if (challenge.owned) ...[
+              // El progreso a mano no existe en un reto que se cuenta solo.
+              if (challenge.owned && !challenge.tracksRule) ...[
                 const SizedBox(height: TokensSpacing.l),
                 AppSectionHeader(title: l10n.challengesDetailHistory),
                 if (state.history.isEmpty)
@@ -958,8 +964,8 @@ class _BottomActions extends StatelessWidget {
             );
           } else if (challenge.tracksRule) {
             // Se cuenta solo con lo que se hace en la app (ADR 0043): no hay
-            // nada que marcar aquí.
-            primary = null;
+            // nada que marcar aquí, pero sí adónde ir a hacerlo.
+            primary = _ruleGoButton(context, challenge.rule?.metric);
           } else if (challenge.completedByLink) {
             // Lo completa su entrega o examen: se va a marcarlo allí.
             final link = challenge.link;
@@ -1049,6 +1055,64 @@ Future<void> _recordProgress(BuildContext context) async {
   if (result != null) {
     bloc.add(ChallengeDetailEvent.progressRecorded(value: result.value));
   }
+}
+
+/// «Ir a…» de un reto que se cuenta solo (ADR 0043): lleva adonde se hace
+/// lo que cuenta (Pomodoro, Académico, Gimnasio, Correr, el registro diario o
+/// el calendario). Nulo si esa parte de la app no está en el modo de uso.
+Widget? _ruleGoButton(BuildContext context, ChallengeRuleMetric? metric) {
+  final l10n = context.localizations;
+  final allowed = context.allowedChallengeTypes;
+  final study = allowed.contains(ChallengeType.academic);
+  final sport = allowed.contains(ChallengeType.fitness);
+  AppPrimaryButton push(String label, IconData icon, String path) =>
+      AppPrimaryButton(
+        label: label,
+        icon: icon,
+        onPressed: () => context.push<void>(path),
+      );
+  // Las pestañas se abren con `go`: el detalle es una pantalla completa.
+  AppPrimaryButton go(String label, IconData icon, String path) =>
+      AppPrimaryButton(
+        label: label,
+        icon: icon,
+        onPressed: () => context.go(path),
+      );
+  return switch (metric) {
+    ChallengeRuleMetric.focusMinutes ||
+    ChallengeRuleMetric.earlyFocus ||
+    ChallengeRuleMetric.studyAndMove when study => push(
+      l10n.challengesRuleGoFocus,
+      AppIcons.focusTimer,
+      ChallengesExternalPaths.pomodoro,
+    ),
+    ChallengeRuleMetric.reviews || ChallengeRuleMetric.tests when study => go(
+      l10n.challengesRuleGoAcademic,
+      AppIcons.tabAcademicSelected,
+      ChallengesExternalPaths.academic,
+    ),
+    ChallengeRuleMetric.workouts when sport => go(
+      l10n.challengesDetailGoTraining,
+      AppIcons.tabTrainingSelected,
+      ChallengesExternalPaths.training,
+    ),
+    ChallengeRuleMetric.runs when sport => go(
+      l10n.challengesRuleGoRun,
+      Icons.directions_run_rounded,
+      ChallengesExternalPaths.run,
+    ),
+    ChallengeRuleMetric.checkIns => push(
+      l10n.challengesRuleGoCheckIn,
+      Icons.fact_check_outlined,
+      ChallengesExternalPaths.checkIn,
+    ),
+    ChallengeRuleMetric.plannedWeeks => go(
+      l10n.challengesRuleGoCalendar,
+      AppIcons.calendar,
+      ChallengesExternalPaths.planner,
+    ),
+    _ => null,
+  };
 }
 
 class _DetailSkeleton extends StatelessWidget {

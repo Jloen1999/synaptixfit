@@ -7,6 +7,7 @@ import com.synaptixfit.domain.model.training.SessionLabel;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.LocalizedNames;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.SessionResponse;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,5 +55,9 @@ public final class HistoryDtos {
                     e.records().stream().map(PersonalRecordResponse::from).toList(), e.unmarkable(),
                     label == null ? null : label.coverImageUrl());
         }
+    }
+
+    /** Punto de la gráfica de un ejercicio. */
+    public record ExerciseProgressPointResponse(LocalDate date, double estimatedMaxKg, double weightKg, int reps) {
     }
 }

@@ -4,8 +4,9 @@ import com.synaptixfit.application.port.input.training.CreateRoutineShareLinkUse
 import com.synaptixfit.application.port.input.training.GetRoutineShareLinkStatusUseCase;
 import com.synaptixfit.application.port.input.training.RevokeRoutineShareLinksUseCase;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineShareDtos.ShareLinkResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineShareDtos.ShareLinkStatusResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,14 +36,6 @@ public class RoutineShareLinkController {
         this.create = create;
         this.status = status;
         this.revoke = revoke;
-    }
-
-    /** Token del enlace nuevo (solo se ve ahora) y hasta cuándo vale. */
-    public record ShareLinkResponse(String token, Instant expiresAt) {
-    }
-
-    /** Hasta cuándo vale el último enlace vigente; {@code null} si no se está compartiendo. */
-    public record ShareLinkStatusResponse(Instant sharedUntil) {
     }
 
     @PostMapping

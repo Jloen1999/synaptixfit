@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Implementa {@link StudyRoomRepositoryPort} sobre {@code salas_estudio} y {@code salas_estudio_miembros} (V1065,
- * ADR 0045). La asignatura y la última reacción de cada persona van en su fila de miembro.
+ * ADR 0045). La asignatura, la última reacción y la hora en que entró cada persona van en su fila de miembro.
  */
 @Component
 public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
@@ -113,18 +113,21 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
         }
         Map<UUID, UUID> subjects = room.subjects();
         Map<UUID, StudyRoom.MemberReaction> reactions = room.reactions();
+        Map<UUID, Instant> entered = room.enteredAt();
         for (TogetherMember m : room.members().all()) {
             StudyRoom.MemberReaction reaction = reactions.get(m.userId());
+            Map<String, Object> params = memberParams(room.id(), m, subjects.get(m.userId()), reaction,
+                    entered.get(m.userId()));
             int rows = jdbc.sql("UPDATE salas_estudio_miembros SET estado = :status, asignatura_id = :subject,"
-                            + " reaccion = :reaction, reaccion_en = :reactedAt, actualizado_en = :at"
-                            + " WHERE sala_id = :id AND usuario_id = :user")
-                    .params(memberParams(room.id(), m, subjects.get(m.userId()), reaction))
+                            + " reaccion = :reaction, reaccion_en = :reactedAt, actualizado_en = :at,"
+                            + " entro_en = :entered WHERE sala_id = :id AND usuario_id = :user")
+                    .params(params)
                     .update();
             if (rows == 0) {
                 jdbc.sql("INSERT INTO salas_estudio_miembros (sala_id, usuario_id, estado, asignatura_id, reaccion,"
-                                + " reaccion_en, actualizado_en)"
-                                + " VALUES (:id, :user, :status, :subject, :reaction, :reactedAt, :at)")
-                        .params(memberParams(room.id(), m, subjects.get(m.userId()), reaction))
+                                + " reaccion_en, actualizado_en, entro_en)"
+                                + " VALUES (:id, :user, :status, :subject, :reaction, :reactedAt, :at, :entered)")
+                        .params(params)
                         .update();
             }
         }
@@ -132,7 +135,7 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
     }
 
     private static Map<String, Object> memberParams(UUID roomId, TogetherMember m, UUID subject,
-                                                    StudyRoom.MemberReaction reaction) {
+                                                    StudyRoom.MemberReaction reaction, Instant entered) {
         Map<String, Object> params = new HashMap<>();
         params.put("id", roomId);
         params.put("user", m.userId());
@@ -141,6 +144,7 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
         params.put("reaction", reaction == null ? null : reaction.reaction().name());
         params.put("reactedAt", reaction == null ? null : JdbcValues.param(reaction.at()));
         params.put("at", JdbcValues.param(m.updatedAt()));
+        params.put("entered", entered == null ? null : JdbcValues.param(entered));
         return params;
     }
 
@@ -148,7 +152,8 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
         List<TogetherMember> members = new ArrayList<>();
         Map<UUID, UUID> subjects = new HashMap<>();
         Map<UUID, StudyRoom.MemberReaction> reactions = new HashMap<>();
-        jdbc.sql("SELECT usuario_id, estado, asignatura_id, reaccion, reaccion_en, actualizado_en"
+        Map<UUID, Instant> entered = new HashMap<>();
+        jdbc.sql("SELECT usuario_id, estado, asignatura_id, reaccion, reaccion_en, actualizado_en, entro_en"
                         + " FROM salas_estudio_miembros WHERE sala_id = :id ORDER BY usuario_id")
                 .param("id", h.id())
                 .query((rs, n) -> {
@@ -156,6 +161,10 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
                     UUID subject = rs.getObject("asignatura_id", UUID.class);
                     if (subject != null) {
                         subjects.put(user, subject);
+                    }
+                    Instant enteredAt = JdbcValues.instant(rs, "entro_en");
+                    if (enteredAt != null) {
+                        entered.put(user, enteredAt);
                     }
                     String reaction = rs.getString("reaccion");
                     if (reaction != null) {
@@ -168,6 +177,6 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
                 .list()
                 .forEach(members::add);
         return new StudyRoom(h.id(), h.creatorId(), h.length(), h.rounds(), h.createdAt(), h.startedAt(),
-                h.creditedRounds(), new TogetherMembers(members), subjects, reactions);
+                h.creditedRounds(), new TogetherMembers(members), subjects, reactions, entered);
     }
 }

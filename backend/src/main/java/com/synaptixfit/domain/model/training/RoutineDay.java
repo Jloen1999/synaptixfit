@@ -67,9 +67,15 @@ public final class RoutineDay {
         return planned;
     }
 
-    /** Primer ejercicio del día: su foto representa el día (y la rutina, si es el que toca). */
+    /**
+     * Ejercicio cuya foto representa el día (y la rutina, si es el que toca): el primero que tiene imagen, la misma
+     * regla que las tarjetas de sesión ({@code SessionLabel.withCover}); si ninguno la tiene, el primero.
+     */
     public Optional<ExerciseRef> coverExercise() {
-        return exercises.stream().findFirst().map(PlannedExercise::exercise);
+        return exercises.stream().map(PlannedExercise::exercise)
+                .filter(e -> e.stillImageUrl() != null && !e.stillImageUrl().isBlank())
+                .findFirst()
+                .or(() -> exercises.stream().findFirst().map(PlannedExercise::exercise));
     }
 
     public Optional<PlannedExercise> findExercise(UUID plannedExerciseId) {
@@ -149,6 +155,23 @@ public final class RoutineDay {
 
     public boolean isEmpty() {
         return exercises.isEmpty();
+    }
+
+    /**
+     * ¿Tiene los mismos huecos que {@code other}: los mismos ejercicios y en el mismo orden? «Entrenamos juntos»
+     * (ADR 0044) compara lo hecho por la posición de cada ejercicio; si el dueño cambió el día después de copiarlo,
+     * la copia ya no sirve y se hace otra con la versión nueva.
+     */
+    public boolean sameSlotsAs(RoutineDay other) {
+        if (other == null || other.exercises.size() != exercises.size()) {
+            return false;
+        }
+        for (int i = 0; i < exercises.size(); i++) {
+            if (!exercises.get(i).exerciseId().equals(other.exercises.get(i).exerciseId())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     RoutineDay copyReset() {

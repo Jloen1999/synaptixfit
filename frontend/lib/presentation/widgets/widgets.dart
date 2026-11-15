@@ -27,6 +27,7 @@ export 'app_number_cell.dart';
 export 'app_keep_alive.dart';
 export 'app_page_bar.dart';
 export 'app_pill.dart';
+export 'app_timer_strip.dart';
 export 'app_primary_button.dart';
 export 'app_scroll_behavior.dart';
 export 'app_search_field.dart';

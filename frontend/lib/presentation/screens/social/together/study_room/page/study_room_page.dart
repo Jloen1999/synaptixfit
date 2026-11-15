@@ -15,6 +15,8 @@ import '../../../../../widgets/widgets.dart';
 import '../../../../planner/widgets/pomodoro_ring_painter.dart';
 import '../../widgets/together_labels.dart';
 import '../../widgets/together_widgets.dart';
+import '../../../../shell/bloc/study_room_bar_bloc.dart';
+import '../../../../shell/widgets/study_room_bar.dart';
 import '../bloc/study_room_bloc.dart';
 
 /// Sala de «Estudiar juntos» (ADR 0045): el temporizador común, quién está,
@@ -86,68 +88,103 @@ class _RoomViewState extends State<_RoomView> with ErrorsMessageMixin {
     }
   }
 
+  /// La barra del armazón y el aviso del móvil siguen a la sala en la que
+  /// estoy (también al salir de esta pantalla); al irme, desaparecen.
+  void _syncBar(BuildContext context, StudyRoomState state) {
+    final bar = getIt<StudyRoomBarBloc>();
+    final room = state.room;
+    final gone =
+        state.status == StudyRoomStatus.failure &&
+        state.error == const AppError.business('STUDY_ROOM_NOT_FOUND');
+    if (gone && state.id != null) {
+      bar.add(StudyRoomBarEvent.cleared(state.id!));
+    } else if (room == null) {
+      return;
+    } else if (state.inside && !room.phase.over) {
+      bar.add(
+        StudyRoomBarEvent.seen(
+          room: room,
+          clockOffset: state.clockOffset,
+          texts: studyRoomAlertTexts(context),
+        ),
+      );
+    } else {
+      bar.add(StudyRoomBarEvent.cleared(room.id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final bloc = context.read<StudyRoomBloc>();
-    return TogetherSafetyListener(
-      // Si el bloqueo me saca a mí, la siguiente lectura dice que ya no estoy
-      // y la pantalla lo enseña («Ya no estás en esta sala»).
-      onBlocked: (_) => bloc.add(const StudyRoomEvent.polled()),
-      child: BlocConsumer<StudyRoomBloc, StudyRoomState>(
-        listenWhen: (p, c) =>
-            (c.closed && !p.closed) ||
-            (c.left && !p.left) ||
-            (c.actionError != null && c.actionError != p.actionError),
-        listener: (context, state) {
-          if (state.actionError case final error?) {
-            context.showSnack(errorMessage(context, error));
-          } else if (state.left) {
-            final navigator = Navigator.of(context);
-            context.showUndoSnack(
-              l10n.togetherStudyLeft,
-              onUndo: () => bloc.add(const StudyRoomEvent.leaveUndone()),
-              onCommit: () {
-                bloc.add(const StudyRoomEvent.leaveCommitted());
-                if (navigator.mounted && navigator.canPop()) navigator.pop();
-              },
+    return BlocListener<StudyRoomBloc, StudyRoomState>(
+      listenWhen: (p, c) =>
+          p.room != c.room ||
+          p.leaving != c.leaving ||
+          p.status != c.status ||
+          p.clockOffset != c.clockOffset,
+      listener: _syncBar,
+      child: TogetherSafetyListener(
+        // Si el bloqueo me saca a mí, la siguiente lectura dice que ya no estoy
+        // y la pantalla lo enseña («Ya no estás en esta sala»).
+        onBlocked: (_) => bloc.add(const StudyRoomEvent.polled()),
+        child: BlocConsumer<StudyRoomBloc, StudyRoomState>(
+          listenWhen: (p, c) =>
+              (c.closed && !p.closed) ||
+              (c.left && !p.left) ||
+              (c.actionError != null && c.actionError != p.actionError),
+          listener: (context, state) {
+            if (state.actionError case final error?) {
+              context.showSnack(errorMessage(context, error));
+            } else if (state.left) {
+              final navigator = Navigator.of(context);
+              context.showUndoSnack(
+                l10n.togetherStudyLeft,
+                onUndo: () => bloc.add(const StudyRoomEvent.leaveUndone()),
+                onCommit: () {
+                  bloc.add(const StudyRoomEvent.leaveCommitted());
+                  if (navigator.mounted && navigator.canPop()) navigator.pop();
+                },
+              );
+            } else if (state.closed) {
+              context.showSnack(l10n.togetherDeclined);
+              Navigator.of(context).maybePop();
+            }
+          },
+          builder: (context, state) {
+            // El listener no ve la sala anterior: se compara aquí, una vez por
+            // cambio de sala, y se actúa después de pintar.
+            return _RoomChangeWatcher(
+              room: state.room,
+              onChanged: _onRoomChanged,
+              child: Scaffold(
+                appBar: AppPageBar.reading(
+                  title: Text(l10n.togetherStudyTitle),
+                ),
+                body: switch (state.status) {
+                  StudyRoomStatus.loading => const AppSkeletonList(),
+                  StudyRoomStatus.failure
+                      when state.error ==
+                          const AppError.business('STUDY_ROOM_NOT_FOUND') =>
+                    _Gone(focusNode: _main),
+                  StudyRoomStatus.failure => AppErrorView(
+                    error: state.error!,
+                    onRetry: () => bloc.add(StudyRoomEvent.started(state.id!)),
+                  ),
+                  StudyRoomStatus.ready when state.room!.phase.over => _Over(
+                    room: state.room!,
+                    focusNode: _main,
+                  ),
+                  StudyRoomStatus.ready => _Body(
+                    state: state,
+                    mainFocus: _main,
+                    clockFocus: _clock,
+                  ),
+                },
+              ),
             );
-          } else if (state.closed) {
-            context.showSnack(l10n.togetherDeclined);
-            Navigator.of(context).maybePop();
-          }
-        },
-        builder: (context, state) {
-          // El listener no ve la sala anterior: se compara aquí, una vez por
-          // cambio de sala, y se actúa después de pintar.
-          return _RoomChangeWatcher(
-            room: state.room,
-            onChanged: _onRoomChanged,
-            child: Scaffold(
-              appBar: AppPageBar.reading(title: Text(l10n.togetherStudyTitle)),
-              body: switch (state.status) {
-                StudyRoomStatus.loading => const AppSkeletonList(),
-                StudyRoomStatus.failure
-                    when state.error ==
-                        const AppError.business('STUDY_ROOM_NOT_FOUND') =>
-                  _Gone(focusNode: _main),
-                StudyRoomStatus.failure => AppErrorView(
-                  error: state.error!,
-                  onRetry: () => bloc.add(StudyRoomEvent.started(state.id!)),
-                ),
-                StudyRoomStatus.ready when state.room!.phase.over => _Over(
-                  room: state.room!,
-                  focusNode: _main,
-                ),
-                StudyRoomStatus.ready => _Body(
-                  state: state,
-                  mainFocus: _main,
-                  clockFocus: _clock,
-                ),
-              },
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

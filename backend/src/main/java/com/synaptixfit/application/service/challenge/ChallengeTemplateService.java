@@ -65,6 +65,7 @@ public class ChallengeTemplateService implements ListChallengeTemplatesUseCase, 
         ChallengeTemplate template = templates.findById(templateId, language)
                 .filter(t -> t.availableFor(focusOf(userId)))
                 .orElseThrow(() -> new ChallengeTemplateNotFoundException(templateId));
+        challenges.lockTemplateStarts(userId);
         Instant now = clock.instant();
         if (running(userId, now).contains(template.code())) {
             throw new ChallengeTemplateAlreadyActiveException(template.code());

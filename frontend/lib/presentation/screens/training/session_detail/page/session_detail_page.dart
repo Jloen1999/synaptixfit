@@ -200,15 +200,6 @@ class _Content extends StatelessWidget {
   const _Content({required this.state, required this.date});
 
   /// Foto del primer ejercicio de la rutina (el que representa el día).
-  static String? _firstImage(SessionDetailState state) {
-    final exercises = state.exercises.values.toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
-    for (final e in exercises) {
-      if (e.thumbnailUrl case final url?) return url;
-    }
-    return null;
-  }
-
   final SessionDetailState state;
 
   /// Cuándo se hizo («lun, 2 nov 18:30»).
@@ -242,11 +233,11 @@ class _Content extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Cabecera con la foto del día (ADR 0042): estado en pastilla,
-              // la rutina y cuándo. Si no llegó del historial, la foto del
-              // primer ejercicio de la rutina; sin ella, el color de reserva.
+              // la rutina y cuándo. La foto la elige el servidor; sin ella, el
+              // color de reserva.
               AppCoverCard(
                 layout: AppCoverLayout.bottom,
-                imageUrl: entry.coverImageUrl ?? _firstImage(state),
+                imageUrl: entry.coverImageUrl,
                 padding: const EdgeInsets.all(TokensSpacing.m),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

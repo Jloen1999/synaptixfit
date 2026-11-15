@@ -19,12 +19,13 @@ import '../../../widgets/routine_day_labels.dart';
 /// Textos de un reto que se cuenta solo (ADR 0043). Las cifras las da el
 /// servidor; aquí solo se eligen las palabras.
 extension ChallengeRuleLabel on ChallengeRule {
-  /// La meta en palabras: «12 días», «4 semanas», «10 h», «18 carreras».
+  /// La meta en palabras: «12 días», «4 semanas», «10 horas», «18 carreras»
+  /// (horas con su palabra: el lector dice «10 horas», no «10 h»).
   String goalText(BuildContext context) =>
       _amount(context, target, hours: _inHours(target));
 
   /// Lo que lleva, con la misma unidad que la meta: «5 de 12 días», «5 de
-  /// 10 h» o, si no son horas exactas, «290 de 600 min».
+  /// 10 horas» o, si no son horas exactas, «290 de 600 min».
   String progressText(BuildContext context) {
     final done = met.clamp(0, target);
     final hours = _inHours(target) && _inHours(done);

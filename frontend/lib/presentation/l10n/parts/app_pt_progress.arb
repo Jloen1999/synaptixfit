@@ -194,6 +194,7 @@
   "progressTabSummary": "Resumo",
   "progressHeadlineTitle": "Esta semana",
   "progressHeadlineStudy": "{hours} h de estudo",
+  "progressHeadlineStudyMinutes": "{minutes} min de estudo",
   "progressHeadlineTrainings": "{count, plural, =0{{count} treinos} =1{1 treino} other{{count} treinos}}",
   "progressHeadlineEmpty": "Ainda nada esta semana",
   "progressHeadlineStreak": "{days, plural, =0{Sem sequência} =1{Sequência: 1 dia} other{Sequência: {days} dias}} · recorde {best, plural, =0{{best} dias} =1{1 dia} other{{best} dias}}",

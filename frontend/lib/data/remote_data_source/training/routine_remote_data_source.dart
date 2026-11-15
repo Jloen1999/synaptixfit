@@ -10,9 +10,13 @@ import 'dto/routine_share_dto.dart';
 
 /// Rutinas (`/api/v1/routines`). Casi todas las ediciones devuelven la rutina completa.
 class RoutineRemoteDataSource {
-  RoutineRemoteDataSource(ApiClient client) : _dio = client.dio;
+  RoutineRemoteDataSource(ApiClient client, {this._webAppUrl})
+    : _dio = client.dio;
 
   final Dio _dio;
+
+  /// Dirección de la app web (`WEB_APP_URL`); nula si no se configuró.
+  final String? _webAppUrl;
 
   static const _base = '/api/v1/routines';
 
@@ -264,12 +268,13 @@ class RoutineRemoteDataSource {
   );
 
   /// Dirección que se comparte: la app web con el token tras `#`, que nunca
-  /// llega a un servidor. En web, el origen desde el que se usa la app; en el
-  /// móvil, el de la API (en producción, el mismo dominio que la web).
+  /// llega a un servidor. La de `WEB_APP_URL` si se configuró (API y web en
+  /// dominios distintos); si no, en web el origen desde el que se usa la app y
+  /// en el móvil el de la API (en producción, el mismo dominio que la web).
   String sharedRoutineUrl(String token) {
-    final base = kIsWeb
-        ? Uri.base.origin
-        : _dio.options.baseUrl.replaceFirst(RegExp(r'/+$'), '');
+    final base =
+        (_webAppUrl ?? (kIsWeb ? Uri.base.origin : _dio.options.baseUrl))
+            .replaceFirst(RegExp(r'/+$'), '');
     return '$base/#$sharedRoutinePath/$token';
   }
 }

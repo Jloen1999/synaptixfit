@@ -360,5 +360,9 @@
   "socialErrorStudyRoomNotFound": "That room is no longer available.",
   "togetherStudyStatusReaction": "{status} · {reaction}",
   "togetherStudyGoneTitle": "You are no longer in this room",
-  "togetherStudyInsideCount": "{count, plural, =0{Nobody inside yet} =1{1 person inside} other{{count} people inside}}"
+  "togetherStudyInsideCount": "{count, plural, =0{Nobody inside yet} =1{1 person inside} other{{count} people inside}}",
+  "togetherStudyAlertFocusBody": "Focus over · round {round} of {rounds}",
+  "togetherStudyAlertBreakBody": "Break over: back to focus",
+  "togetherStudyBarLabel": "Study together, {phase}: {time} left. Open the room",
+  "togetherStudyBarLabelNoClock": "Study together, {phase}. Open the room"
 }

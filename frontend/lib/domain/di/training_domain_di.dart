@@ -43,6 +43,7 @@ import '../use_cases/training/get_routine_use_case.dart';
 import '../use_cases/training/get_session_adaptation_use_case.dart';
 import '../use_cases/training/get_session_bookends_use_case.dart';
 import '../use_cases/training/get_session_highlights_use_case.dart';
+import '../use_cases/training/get_session_history_entry_use_case.dart';
 import '../use_cases/training/get_session_history_use_case.dart';
 import '../use_cases/training/get_session_use_case.dart';
 import '../use_cases/training/get_sessions_use_case.dart';
@@ -179,6 +180,9 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetLastPerformanceUseCaseContract>(
       () => GetLastPerformanceUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetSessionHistoryEntryUseCaseContract>(
+      () => GetSessionHistoryEntryUseCase(getIt()),
     )
     ..registerLazySingleton<GetSessionHighlightsUseCaseContract>(
       () => GetSessionHighlightsUseCase(getIt()),

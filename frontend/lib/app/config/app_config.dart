@@ -10,6 +10,7 @@ class AppConfig {
     this.googleServerClientId,
     this.mapTilesKey,
     this.mapTilesUrl = defaultMapTilesUrl,
+    this.webAppUrl,
   });
 
   /// Teselas ráster de MapTiler (256 px); `{key}` se cambia por [mapTilesKey].
@@ -29,6 +30,7 @@ class AppConfig {
     mapTilesUrl:
         _orNull(const String.fromEnvironment('MAP_TILES_URL')) ??
         defaultMapTilesUrl,
+    webAppUrl: _orNull(const String.fromEnvironment('WEB_APP_URL')),
   );
 
   /// URL base del backend, sin barra final.
@@ -47,6 +49,11 @@ class AppConfig {
   /// Plantilla de las teselas (`MAP_TILES_URL`) para poder cambiar de
   /// proveedor sin tocar código: `{z}`, `{x}`, `{y}` y `{key}`.
   final String mapTilesUrl;
+
+  /// Dirección de la app web (`WEB_APP_URL`, opcional) para los enlaces que
+  /// se comparten (rutinas, ADR 0043). Sin ella, el móvil usa la de la API
+  /// (en producción, el mismo dominio que la web).
+  final String? webAppUrl;
 
   bool get mapAvailable => mapTilesKey != null;
 

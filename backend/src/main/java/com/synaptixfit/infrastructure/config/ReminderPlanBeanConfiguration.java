@@ -1,6 +1,6 @@
 package com.synaptixfit.infrastructure.config;
 
-import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
+import com.synaptixfit.application.port.input.badge.PeekStreakUseCase;
 import com.synaptixfit.application.port.input.notification.ChangeReminderOptionsUseCase;
 import com.synaptixfit.application.port.input.notification.GetReminderOptionsUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
@@ -76,7 +76,7 @@ public class ReminderPlanBeanConfiguration {
                                                   ListMyChallengesUseCase challenges,
                                                   ListPlannedRunsUseCase plannedRuns,
                                                   UserRepositoryPort users,
-                                                  GetStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
+                                                  PeekStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
         return tx.wrap(GetReminderPlanUseCase.class, new ReminderPlanService(
                 new ReminderPlanService.Stores(preferences, reminderOptions, focus, users, materials, blocks,
                         deadlines, subjects, exams),

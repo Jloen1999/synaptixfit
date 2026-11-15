@@ -182,19 +182,46 @@ class FriendPickerList extends StatelessWidget {
                     ),
                   ),
                 ),
-              for (final friend in state.friends)
-                CheckboxListTile(
-                  value: state.selected.contains(friend.id),
-                  onChanged: state.full && !state.selected.contains(friend.id)
-                      ? null
-                      : (_) => bloc.add(FriendPickerEvent.toggled(friend.id)),
-                  secondary: AppAvatar(
-                    name: friend.fullName,
-                    imageUrl: friend.avatarUrl,
+              // Con un solo amigo posible (racha), selección única: el lector
+              // dice «botón de opción» y elegir otro cambia la elección.
+              if (state.max == 1)
+                RadioGroup<String>(
+                  groupValue: state.selected.firstOrNull,
+                  onChanged: (id) {
+                    if (id != null && !state.selected.contains(id)) {
+                      bloc.add(FriendPickerEvent.toggled(id));
+                    }
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final friend in state.friends)
+                        RadioListTile<String>(
+                          value: friend.id,
+                          secondary: AppAvatar(
+                            name: friend.fullName,
+                            imageUrl: friend.avatarUrl,
+                          ),
+                          title: Text(friend.fullName),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                    ],
                   ),
-                  title: Text(friend.fullName),
-                  contentPadding: EdgeInsets.zero,
-                ),
+                )
+              else
+                for (final friend in state.friends)
+                  CheckboxListTile(
+                    value: state.selected.contains(friend.id),
+                    onChanged: state.full && !state.selected.contains(friend.id)
+                        ? null
+                        : (_) => bloc.add(FriendPickerEvent.toggled(friend.id)),
+                    secondary: AppAvatar(
+                      name: friend.fullName,
+                      imageUrl: friend.avatarUrl,
+                    ),
+                    title: Text(friend.fullName),
+                    contentPadding: EdgeInsets.zero,
+                  ),
             ],
           ),
         };

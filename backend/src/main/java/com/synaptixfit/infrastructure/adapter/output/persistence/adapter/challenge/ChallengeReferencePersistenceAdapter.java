@@ -183,15 +183,15 @@ public class ChallengeReferencePersistenceAdapter implements ChallengeReferenceP
                         .query((rs, n) -> ActivityFact.at(kind,
                                 rs.getObject("hecho_en", OffsetDateTime.class).toInstant(), 1))
                         .list();
-                // La semana cuenta desde que se planificó (creado_en) y se agrupa por su lunes.
+                // La semana cuenta cuando dio la XP de planificar (xp_planificacion_en) y se agrupa por su lunes.
                 case PLANNED_WEEK -> jdbc.sql("""
-                                select creado_en, semana_inicio from planes_estudio
+                                select xp_planificacion_en, semana_inicio from planes_estudio
                                 where usuario_id = :user and xp_planificacion_otorgado = true
-                                  and creado_en >= :from and creado_en <= :to
+                                  and xp_planificacion_en >= :from and xp_planificacion_en <= :to
                                 """)
                         .param("user", userId).param("from", start).param("to", end)
                         .query((rs, n) -> new ActivityFact(kind,
-                                rs.getObject("creado_en", OffsetDateTime.class).toInstant(),
+                                rs.getObject("xp_planificacion_en", OffsetDateTime.class).toInstant(),
                                 rs.getObject("semana_inicio", LocalDate.class), 1))
                         .list();
                 case CHECK_IN -> jdbc.sql("""

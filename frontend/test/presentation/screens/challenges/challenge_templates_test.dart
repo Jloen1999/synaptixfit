@@ -178,7 +178,7 @@ void main() {
           perUnit: 1,
           target: 600,
         ).goalText(ctx),
-        '10 h',
+        '10 horas',
       );
       const focus = ChallengeRule(
         metric: ChallengeRuleMetric.focusMinutes,
@@ -187,7 +187,7 @@ void main() {
         target: 600,
       );
       // La misma unidad a los dos lados: horas solo si las dos son exactas.
-      expect(focus.copyWith(met: 300).progressText(ctx), '5 de 10 h');
+      expect(focus.copyWith(met: 300).progressText(ctx), '5 de 10 horas');
       expect(focus.copyWith(met: 290).progressText(ctx), '290 de 600 min');
       expect(focus.copyWith(met: 290).leftText(ctx), 'Te faltan 310 min');
       expect(_rule.copyWith(met: 5).leftText(ctx), 'Te faltan 7 días');

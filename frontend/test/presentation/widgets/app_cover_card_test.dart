@@ -81,13 +81,13 @@ void main() {
   });
 
   group('texto abajo (sesiones, ADR 0042)', () {
-    testWidgets('la foto a dos tonos queda arriba y el texto abajo', (
+    testWidgets('la foto a todo color va arriba y el texto debajo', (
       tester,
     ) async {
       await _pump(tester, layout: AppCoverLayout.bottom);
       final text = tester.getRect(find.byKey(const Key('texto')));
       final card = tester.getRect(find.byType(AppCoverCard));
-      // La franja de la foto queda a la vista encima del texto.
+      // El texto no pisa la franja de la foto: va sobre la superficie lisa.
       expect(text.top - card.top, greaterThanOrEqualTo(TokensSize.coverBanner));
       final footer = tester.getRect(find.byKey(const Key('pie')));
       expect(footer.top, greaterThanOrEqualTo(text.bottom));
@@ -98,12 +98,12 @@ void main() {
           .whereType<BoxDecoration>()
           .where((d) => d.image != null)
           .single;
-      // A dos tonos: el texto cumple AA en cualquier punto (contrast_test).
-      expect(photo.image!.colorFilter, isNotNull);
+      // Con sus colores: sin filtro de dos tonos.
+      expect(photo.image!.colorFilter, isNull);
       // Mientras carga o si falla, debajo queda el color de reserva.
       expect(photo.gradient, isNotNull);
-      // Degradado vertical de tres paradas hacia la superficie.
-      final gradient = tester
+      // La parte baja de la franja se funde con la superficie (opaca abajo).
+      final fade = tester
           .widgetList<Ink>(find.byType(Ink))
           .map((i) => i.decoration)
           .whereType<BoxDecoration>()
@@ -111,7 +111,7 @@ void main() {
           .map((d) => d.gradient)
           .whereType<LinearGradient>()
           .single;
-      expect(gradient.colors, hasLength(3));
+      expect(fade.colors.last.a, 1);
     });
 
     testWidgets('con el texto al 200 % no se desborda', (tester) async {

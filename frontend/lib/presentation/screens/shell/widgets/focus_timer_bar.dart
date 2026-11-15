@@ -7,16 +7,17 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/di/app_di.dart';
 import '../../../../domain/enums/planner_enums.dart';
 import '../../../extensions/context_extensions.dart';
-import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../../planner/planner_routes.dart';
 import '../../planner/pomodoro/bloc/pomodoro_bloc.dart';
 import '../../planner/pomodoro/page/pomodoro_page.dart';
+import '../bloc/study_room_bar_bloc.dart';
 
 /// Al entrar en las pestañas recupera el Pomodoro que quedó en marcha (y
-/// registra la fase si terminó con la app cerrada); al cerrar sesión lo para.
-/// Se monta dentro de `AchievementsHost`.
+/// registra la fase si terminó con la app cerrada); al cerrar sesión lo para,
+/// y también quita la barra y el aviso de la sala «Estudiar juntos». Se monta
+/// dentro de `AchievementsHost`.
 class FocusTimerHost extends StatefulWidget {
   const FocusTimerHost({super.key, required this.child});
 
@@ -48,7 +49,10 @@ class _FocusTimerHostState extends State<FocusTimerHost> {
     listenWhen: (previous, current) =>
         previous is SessionAuthenticatedState &&
         current is! SessionAuthenticatedState,
-    listener: (_, _) => _bloc.add(const PomodoroEvent.signedOut()),
+    listener: (_, _) {
+      _bloc.add(const PomodoroEvent.signedOut());
+      getIt<StudyRoomBarBloc>().add(const StudyRoomBarEvent.signedOut());
+    },
     child: widget.child,
   );
 }
@@ -80,81 +84,27 @@ class FocusTimerBar extends StatelessWidget {
         final color = focus ? context.palette.study : context.colors.secondary;
         final clock = PomodoroBloc.clockText(state.remainingSeconds);
         final running = state.status == PomodoroStatus.running;
-        return Material(
-          color: Color.alphaBlend(
-            color.withValues(alpha: AppPill.tintAlpha),
-            context.colors.surfaceContainer,
-          ),
-          child: Row(
-            children: [
-              // El toque y la etiqueta en el mismo nodo; el botón de pausa,
-              // aparte (no se puede anidar un botón dentro de otro).
-              Expanded(
-                child: AppFocusOutline(
-                  child: InkWell(
-                    onTap: () =>
-                        unawaited(context.push<void>(PlannerPaths.pomodoro)),
-                    child: Semantics(
-                      container: true,
-                      button: true,
-                      label: running
-                          ? l10n.plannerPomodoroBarLabel(phase, clock)
-                          : l10n.plannerPomodoroBarPausedLabel(phase, clock),
-                      excludeSemantics: true,
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.only(
-                          start: TokensSpacing.m,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              focus
-                                  ? Icons.psychology_rounded
-                                  : Icons.free_breakfast_rounded,
-                              color: color,
-                              size: TokensSize.iconS,
-                            ),
-                            const SizedBox(width: TokensSpacing.s),
-                            Flexible(
-                              child: Text(
-                                running
-                                    ? phase
-                                    : l10n.plannerPomodoroOngoingPaused,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.textStyles.labelLarge,
-                              ),
-                            ),
-                            const SizedBox(width: TokensSpacing.s),
-                            Text(
-                              clock,
-                              style: context.textStyles.titleSmall?.copyWith(
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: running
-                    ? l10n.plannerPomodoroPause
-                    : l10n.plannerPomodoroResume,
-                onPressed: () => bloc.add(
-                  running
-                      ? const PomodoroEvent.pausePressed()
-                      : const PomodoroEvent.resumePressed(),
-                ),
-                icon: Icon(
-                  running ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                ),
-              ),
-            ],
+        return AppTimerStrip(
+          color: color,
+          icon: focus ? Icons.psychology_rounded : Icons.free_breakfast_rounded,
+          label: running ? phase : l10n.plannerPomodoroOngoingPaused,
+          clock: clock,
+          semanticLabel: running
+              ? l10n.plannerPomodoroBarLabel(phase, clock)
+              : l10n.plannerPomodoroBarPausedLabel(phase, clock),
+          onTap: () => unawaited(context.push<void>(PlannerPaths.pomodoro)),
+          trailing: IconButton(
+            tooltip: running
+                ? l10n.plannerPomodoroPause
+                : l10n.plannerPomodoroResume,
+            onPressed: () => bloc.add(
+              running
+                  ? const PomodoroEvent.pausePressed()
+                  : const PomodoroEvent.resumePressed(),
+            ),
+            icon: Icon(
+              running ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            ),
           ),
         );
       },

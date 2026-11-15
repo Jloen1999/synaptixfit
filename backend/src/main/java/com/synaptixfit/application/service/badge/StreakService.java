@@ -2,6 +2,7 @@ package com.synaptixfit.application.service.badge;
 
 import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
 import com.synaptixfit.application.port.input.badge.PauseStreakUseCase;
+import com.synaptixfit.application.port.input.badge.PeekStreakUseCase;
 import com.synaptixfit.application.port.input.badge.ResumeStreakUseCase;
 import com.synaptixfit.domain.model.badge.StreakPause;
 import com.synaptixfit.domain.model.badge.StreakStatus;
@@ -20,7 +21,7 @@ import java.util.UUID;
  * con sus pausas ({@link StreakPause}, guardadas con {@link StreakPauseRepositoryPort}). Pausar y reanudar devuelven
  * la racha ya recalculada.
  */
-public class StreakService implements GetStreakUseCase, PauseStreakUseCase, ResumeStreakUseCase {
+public class StreakService implements GetStreakUseCase, PeekStreakUseCase, PauseStreakUseCase, ResumeStreakUseCase {
 
     private final UserActivityPort activity;
     private final UserRepositoryPort users;

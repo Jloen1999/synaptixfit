@@ -130,7 +130,7 @@ abstract final class TokensLayout {
   static const double statsFourColumns = 560;
   static const double coverPhotoShare = 0.4;
   static const double coverPhotoFade = 0.4;
-  static const double coverBannerFadeMid = 0.5;
+  static const double coverBannerFadeMid = 0.55;
   static const double bottomBarMaxShare = 0.45;
   static const double largeTextScale = 1.3;
   static const double segmentMinWidth = 112;
@@ -166,7 +166,7 @@ abstract final class TokensSize {
   static const double dot = 5;
   static const double recordCardWidth = 168;
   static const double recordCardHeight = 92;
-  static const double coverBanner = 72;
+  static const double coverBanner = 112;
   static const double focusRing = 2;
   static const double thumbnailS = 48;
   static const double thumbnailXs = 36;
@@ -202,7 +202,6 @@ abstract final class TokensSize {
 abstract final class TokensOpacity {
   static const double glow = 0.55;
   static const double coverScrimMax = 0.85;
-  static const double coverScrimMid = 0.45;
   static const double coverTintLight = 0.25;
   static const double coverTintDark = 0.14;
   static const double disabled = 0.5;

@@ -165,9 +165,13 @@ class StudyRoomServiceTest {
         service.join(ana.id(), room.id());
         service.start(me.id(), room.id());
         clock.advance(Duration.ofMinutes(40));
-        // Nadie había contado la ronda 1: se cuenta al salir, mientras la persona sigue dentro.
+        // Salir no apunta nada (un fallo al apuntar nunca impide salir): la ronda 1, terminada con la persona
+        // dentro, la apunta el programador después, también a quien ya se fue.
         service.leave(me.id(), room.id());
-        assertThat(recorded).hasSize(2);
+        assertThat(recorded).isEmpty();
+        assertThat(service.creditRounds(room.id())).isEqualTo(2);
+        assertThat(recorded).extracting(RecordFocusSessionUseCase.Command::userId)
+                .containsExactlyInAnyOrder(me.id(), ana.id());
         assertThatThrownBy(() -> service.get(me.id(), room.id())).isInstanceOf(StudyRoomNotFoundException.class);
 
         StudyRoomView hers = service.get(ana.id(), room.id());

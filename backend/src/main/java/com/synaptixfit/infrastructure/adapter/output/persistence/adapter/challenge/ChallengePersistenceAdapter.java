@@ -181,9 +181,21 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
         return toDomain(challenges.findByUsuarioIdAndTipoAndSesionesObjetivoIsNotNull(ownerId, "fitness"));
     }
 
+    /**
+     * Bloquea la fila de la persona en {@code usuarios} (solo se lee su id; {@code FOR UPDATE} es SQL estándar). La
+     * transacción que empieza un reto no bloquea ningún reto ya existente, así que no puede cruzarse con las que
+     * actualizan retos y después la experiencia de la cuenta.
+     */
     @Override
-    public List<Challenge> findRuleTrackedByOwner(UUID ownerId) {
-        return toDomain(challenges.findByUsuarioIdAndReglaMetricaIsNotNull(ownerId));
+    public void lockTemplateStarts(UUID ownerId) {
+        jdbc.sql("select id from usuarios where id = :owner for update").param("owner", ownerId)
+                .query(UUID.class).optional();
+    }
+
+    @Override
+    public List<Challenge> findRuleTrackedByOwner(UUID ownerId, Instant endsFrom) {
+        return toDomain(challenges.findByUsuarioIdAndReglaMetricaIsNotNullAndFechaFinGreaterThanEqual(ownerId,
+                endsFrom));
     }
 
     @Override

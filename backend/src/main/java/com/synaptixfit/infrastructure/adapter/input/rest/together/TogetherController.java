@@ -22,7 +22,7 @@ import com.synaptixfit.application.port.input.together.ProposeFriendStreakUseCas
 import com.synaptixfit.application.port.input.together.ReactFriendChallengeUseCase;
 import com.synaptixfit.application.port.input.together.RemoveFriendChallengeReactionUseCase;
 import com.synaptixfit.application.port.input.together.StartWorkoutTogetherUseCase;
-import com.synaptixfit.infrastructure.adapter.input.rest.challenge.ChallengeTemplateController.ChallengeTemplateResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.ChallengeTemplateResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.ChallengeRuleResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.CreateFriendChallengeRequest;

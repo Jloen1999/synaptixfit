@@ -1,5 +1,7 @@
 import 'package:get_it/get_it.dart';
 
+import '../../app/config/app_config.dart';
+
 import '../../domain/repositories/pending_sets_repository_contract.dart';
 import '../../domain/repositories/exercise_repository_contract.dart';
 import '../../domain/repositories/live_session_draft_repository_contract.dart';
@@ -23,7 +25,14 @@ import '../repository/training_repository.dart';
 void registerTrainingData(GetIt getIt) {
   getIt
     ..registerLazySingleton(() => ExerciseRemoteDataSource(getIt()))
-    ..registerLazySingleton(() => RoutineRemoteDataSource(getIt()))
+    ..registerLazySingleton(
+      () => RoutineRemoteDataSource(
+        getIt(),
+        webAppUrl: getIt.isRegistered<AppConfig>()
+            ? getIt<AppConfig>().webAppUrl
+            : null,
+      ),
+    )
     ..registerLazySingleton(() => TrainingRemoteDataSource(getIt()))
     ..registerLazySingleton(() => TrainingHistoryRemoteDataSource(getIt()))
     ..registerLazySingleton(PendingSetsStorage.new)

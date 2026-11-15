@@ -15,6 +15,7 @@ import '../screens/social/together/study_invite/bloc/study_invite_bloc.dart';
 import '../screens/social/together/study_room/bloc/study_room_bloc.dart';
 import '../screens/social/together/workout_detail/bloc/workout_together_bloc.dart';
 import '../screens/social/together/workout_invite/bloc/workout_invite_bloc.dart';
+import '../screens/shell/bloc/study_room_bar_bloc.dart';
 import '../screens/social/user_profile/bloc/user_profile_bloc.dart';
 
 /// Blocs del módulo social.
@@ -138,6 +139,15 @@ void registerSocialPresentation(GetIt getIt) {
         chooseSubject: getIt(),
         react: getIt(),
         subjects: getIt(),
+      ),
+    )
+    // Una sola instancia: la barra de la sala y su aviso siguen al salir de la
+    // pantalla (como el Pomodoro).
+    ..registerLazySingleton(
+      () => StudyRoomBarBloc(
+        get: getIt(),
+        scheduleAlert: getIt(),
+        cancelAlert: getIt(),
       ),
     );
 }

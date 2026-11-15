@@ -110,8 +110,8 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
     public void leave(UUID userId, UUID roomId) {
         StudyRoom room = visibleForUpdate(userId, roomId);
         Instant now = clock.instant();
-        // Lo terminado antes de salir cuenta: se apunta ahora, mientras la persona sigue dentro.
-        credit(room, now);
+        // Salir no apunta nada: las rondas que terminaron con la persona dentro las apunta el programador al minuto
+        // (StudyRoom.creditsDue la sigue contando). Así un fallo al apuntar un Pomodoro nunca impide salir.
         if (room.leave(userId, now)) {
             rooms.save(room);
         }
@@ -162,8 +162,8 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
 
     /**
      * Al bloquear o dejar de ser amigos (ADR 0044): en cada sala sin terminar que comparten, sale quien diga
-     * {@link com.synaptixfit.domain.model.together.TogetherMembers#leavingWhenSeparated}. Antes se cuentan las rondas
-     * terminadas, como al salir a mano.
+     * {@link com.synaptixfit.domain.model.together.TogetherMembers#leavingWhenSeparated}. Las rondas terminadas con
+     * esa persona dentro las apunta después el programador, como al salir a mano.
      */
     void separate(UUID userId, UUID otherUserId, boolean blocked) {
         Instant now = clock.instant();
@@ -174,7 +174,7 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
             }
             room.members().leavingWhenSeparated(room.creatorId(), userId, otherUserId, blocked)
                     .ifPresent(leaving -> {
-                        credit(room, now);
+                        // Como al salir a mano: lo terminado lo apunta el programador; bloquear nunca falla por ello.
                         if (room.leave(leaving, now)) {
                             rooms.save(room);
                         }

@@ -36,8 +36,15 @@ public interface ChallengeRepositoryPort {
     /** Retos de fitness del usuario con objetivo de sesiones de entrenamiento (de cualquier estado). */
     List<Challenge> findTrainingTrackedByOwner(UUID ownerId);
 
-    /** Retos del usuario con regla automática (ADR 0043), sin terminar o completados. */
-    List<Challenge> findRuleTrackedByOwner(UUID ownerId);
+    /**
+     * Bloquea hasta el final de la transacción las altas de retos de plantilla de una persona (ADR 0045, cierre):
+     * dos «Empezar este reto» a la vez esperan uno al otro y el segundo ya ve el reto del primero, así no se crean
+     * dos retos de la misma plantilla.
+     */
+    void lockTemplateStarts(UUID ownerId);
+
+    /** Retos del usuario con regla automática (ADR 0043) cuyo periodo acaba en {@code endsFrom} o después. */
+    List<Challenge> findRuleTrackedByOwner(UUID ownerId, Instant endsFrom);
 
     /** Retos del usuario no privados. */
     List<Challenge> findNonPrivateByOwner(UUID ownerId);

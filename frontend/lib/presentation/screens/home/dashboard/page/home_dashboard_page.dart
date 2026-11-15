@@ -460,8 +460,13 @@ class _HomeContentState extends State<_HomeContent> {
               : () => onNavigate(HomeExternalPaths.routine(next.routineId)),
           onCheckIn: () => onNavigate(HomeExternalPaths.checkIn),
         ),
-      // Un aviso informativo va después del próximo entreno: no lo tapa.
-      if (!urgent) banner,
+      // Un aviso informativo va después del próximo entreno: no lo tapa. Si
+      // es el de «¿Qué tal estás hoy?» y la tarjeta del entreno ya lo ofrece,
+      // no se repite (un camino por destino, vocabulario §4).
+      if (!urgent &&
+          !(focus.includesFitness &&
+              dashboard.banner.type == HomeBannerType.checkInPending))
+        banner,
     ];
     // Columna secundaria: retos en marcha (solo si hay) y la semana. Las
     // cifras de carga, energía y XP viven en Progreso.

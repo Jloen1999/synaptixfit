@@ -209,7 +209,11 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     public void syncRuleChallenges(UUID userId) {
         LocalDate today = today();
         Instant now = clock.instant();
-        for (Challenge challenge : challenges.findRuleTrackedByOwner(userId)) {
+        // Solo los vigentes (y los recién terminados, con un día de margen): los viejos tienen el resultado fijo. El
+        // margen sirve a los completados (desmarcar lo del último día puede descompletarlos); uno vencido sin completar
+        // no se recuenta, como hasta ahora.
+        for (Challenge challenge : challenges.findRuleTrackedByOwner(userId,
+                now.minus(Challenge.RULE_RECOUNT_GRACE))) {
             if (challenge.status(now) == ChallengeStatus.EXPIRED) {
                 continue;
             }

@@ -49,11 +49,13 @@ abstract interface class LocalReminderScheduler {
 
   Future<void> cancelAll();
 
-  /// Aviso de fin de fase del Pomodoro (id propio: sustituir los
-  /// recordatorios no lo quita).
+  /// Aviso de fin de fase de un temporizador (id propio por hueco: sustituir
+  /// los recordatorios no lo quita).
   Future<void> scheduleTimerAlert(TimerAlert alert);
 
-  Future<void> cancelTimerAlert();
+  Future<void> cancelTimerAlert({
+    TimerAlertSlot slot = TimerAlertSlot.pomodoro,
+  });
 
   /// Notificación fija del Pomodoro en marcha (sustituye a la anterior).
   Future<void> showOngoingTimer(OngoingTimer timer);
@@ -83,6 +85,14 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   static const _timerChannelId = 'synaptixfit_timer';
   static const _timerId = 2147480000;
 
+  /// Id del aviso de la sala «Estudiar juntos» (mismo canal que el Pomodoro).
+  static const _roomTimerId = 2147480002;
+
+  static int _idOf(TimerAlertSlot slot) => switch (slot) {
+    TimerAlertSlot.pomodoro => _timerId,
+    TimerAlertSlot.studyRoom => _roomTimerId,
+  };
+
   /// Notificación fija del Pomodoro en marcha: canal discreto (sin sonido) y
   /// otro id fuera del rango de los recordatorios.
   static const _ongoingChannelId = 'synaptixfit_timer_ongoing';
@@ -94,9 +104,16 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   final FlutterLocalNotificationsPlugin _plugin;
   final _opened = StreamController<NotificationTap>.broadcast();
 
-  /// Aviso del temporizador pendiente: se vuelve a programar si se sustituyen
-  /// los recordatorios (eso cancela todo lo pendiente).
-  TimerAlert? _timerAlert;
+  /// Avisos de temporizador pendientes (uno por hueco): se vuelven a programar
+  /// si se sustituyen los recordatorios (eso cancela todo lo pendiente).
+  final Map<TimerAlertSlot, TimerAlert> _timerAlerts = {};
+
+  Future<void> _rescheduleTimers() async {
+    for (final alert in _timerAlerts.values.toList()) {
+      if (alert.at.isAfter(DateTime.now())) await _scheduleTimer(alert);
+    }
+  }
+
   Future<void>? _ready;
   bool _launchChecked = false;
 
@@ -201,37 +218,36 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
             : '${reminder.payload}|${snooze.encode()}',
       );
     }
-    final alert = _timerAlert;
-    if (alert != null && alert.at.isAfter(DateTime.now())) {
-      await _scheduleTimer(alert);
-    }
+    await _rescheduleTimers();
   }
 
   /// Detalles del aviso; con [snooze], con los botones «Empezar» (abre la
   /// app) y «Posponer» (lo vuelve a programar sin abrirla). En iOS los botones
   /// necesitan categorías registradas al iniciar: allí el aviso va sin ellos.
-  static NotificationDetails _details(String channelName, _SnoozeData? snooze) =>
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          channelName,
-          actions: snooze == null
-              ? null
-              : [
-                  AndroidNotificationAction(
-                    reminderStartAction,
-                    snooze.start,
-                    showsUserInterface: true,
-                  ),
-                  AndroidNotificationAction(
-                    reminderSnoozeAction,
-                    snooze.snooze,
-                    cancelNotification: true,
-                  ),
-                ],
-        ),
-        iOS: const DarwinNotificationDetails(),
-      );
+  static NotificationDetails _details(
+    String channelName,
+    _SnoozeData? snooze,
+  ) => NotificationDetails(
+    android: AndroidNotificationDetails(
+      _channelId,
+      channelName,
+      actions: snooze == null
+          ? null
+          : [
+              AndroidNotificationAction(
+                reminderStartAction,
+                snooze.start,
+                showsUserInterface: true,
+              ),
+              AndroidNotificationAction(
+                reminderSnoozeAction,
+                snooze.snooze,
+                cancelNotification: true,
+              ),
+            ],
+    ),
+    iOS: const DarwinNotificationDetails(),
+  );
 
   /// Aviso pospuesto cuya nueva hora aún no ha llegado.
   static bool _isSnoozedAndWaiting(String? payload) {
@@ -255,7 +271,9 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
     final id = response.id;
     if (payload == null || id == null) return;
     final cut = payload.lastIndexOf('|');
-    final data = cut < 0 ? null : _SnoozeData.decode(payload.substring(cut + 1));
+    final data = cut < 0
+        ? null
+        : _SnoozeData.decode(payload.substring(cut + 1));
     if (data == null) return;
     final until = DateTime.now().toUtc().add(Duration(minutes: data.minutes));
     final again = data.copyUntil(until);
@@ -274,8 +292,8 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   @override
   Future<void> scheduleTimerAlert(TimerAlert alert) async {
     await _ensureReady();
-    _timerAlert = alert;
-    await _plugin.cancel(id: _timerId);
+    _timerAlerts[alert.slot] = alert;
+    await _plugin.cancel(id: _idOf(alert.slot));
     await _scheduleTimer(alert);
   }
 
@@ -288,7 +306,7 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
         >();
     final exact = await android?.canScheduleExactNotifications() ?? true;
     await _plugin.zonedSchedule(
-      id: _timerId,
+      id: _idOf(alert.slot),
       title: alert.title,
       body: alert.body,
       scheduledDate: tz.TZDateTime.from(alert.at.toUtc(), tz.UTC),
@@ -308,10 +326,12 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   }
 
   @override
-  Future<void> cancelTimerAlert() async {
+  Future<void> cancelTimerAlert({
+    TimerAlertSlot slot = TimerAlertSlot.pomodoro,
+  }) async {
     await _ensureReady();
-    _timerAlert = null;
-    await _plugin.cancel(id: _timerId);
+    _timerAlerts.remove(slot);
+    await _plugin.cancel(id: _idOf(slot));
   }
 
   /// Con [OngoingTimer.endsAt], Android muestra la cuenta atrás él solo
@@ -365,14 +385,14 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
     await _plugin.cancelAllPendingNotifications();
     for (final shown in await _plugin.getActiveNotifications()) {
       final id = shown.id;
-      if (id != null && id != _ongoingId && id != _timerId) {
+      if (id != null &&
+          id != _ongoingId &&
+          id != _timerId &&
+          id != _roomTimerId) {
         await _plugin.cancel(id: id);
       }
     }
-    final alert = _timerAlert;
-    if (alert != null && alert.at.isAfter(DateTime.now())) {
-      await _scheduleTimer(alert);
-    }
+    await _rescheduleTimers();
   }
 
   @override
@@ -496,7 +516,9 @@ class NoopReminderScheduler implements LocalReminderScheduler {
   Future<void> scheduleTimerAlert(TimerAlert alert) async {}
 
   @override
-  Future<void> cancelTimerAlert() async {}
+  Future<void> cancelTimerAlert({
+    TimerAlertSlot slot = TimerAlertSlot.pomodoro,
+  }) async {}
 
   @override
   Future<void> showOngoingTimer(OngoingTimer timer) async {}

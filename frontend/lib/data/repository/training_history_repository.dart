@@ -35,6 +35,12 @@ class TrainingHistoryRepository implements TrainingHistoryRepositoryContract {
       );
 
   @override
+  Future<AppResult<SessionHistoryEntry>> getHistoryEntry(String sessionId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.historyEntry(sessionId)).toDomain(),
+      );
+
+  @override
   Future<AppResult<SessionHighlights>> getSessionHighlights(String sessionId) =>
       RepositoryErrorHandler.guard(
         () async => (await _remote.highlights(sessionId)).toDomain(),

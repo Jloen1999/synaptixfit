@@ -1,15 +1,16 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training;
 
-import java.time.LocalDate;
 import com.synaptixfit.domain.model.training.ExerciseProgress;
 import com.synaptixfit.application.port.input.training.GetExerciseProgressUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
+import com.synaptixfit.application.port.input.training.GetSessionHistoryEntryUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListPersonalRecordsUseCase;
 import com.synaptixfit.application.port.input.training.ListSessionHistoryUseCase;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.HistoryDtos.ExerciseProgressPointResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.HistoryDtos.PersonalRecordResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.HistoryDtos.SessionHighlightsResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.HistoryDtos.SessionHistoryResponse;
@@ -23,8 +24,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Historial de entrenamiento con nombres y récords ({@link ListSessionHistoryUseCase}, {@link ListPersonalRecordsUseCase})
- * y lo destacado de una sesión terminada ({@link GetSessionHighlightsUseCase}).
+ * Historial de entrenamiento con nombres y récords ({@link ListSessionHistoryUseCase}, {@link ListPersonalRecordsUseCase}),
+ * una sesión como en el historial ({@link GetSessionHistoryEntryUseCase}) y lo destacado de una sesión terminada
+ * ({@link GetSessionHighlightsUseCase}).
  */
 @Tag(name = "Training history")
 @RestController
@@ -37,11 +39,13 @@ public class TrainingHistoryController {
     private final GetSessionHighlightsUseCase highlights;
 
     private final GetExerciseProgressUseCase progress;
+    private final GetSessionHistoryEntryUseCase entry;
 
     public TrainingHistoryController(ListSessionHistoryUseCase history, ListPersonalRecordsUseCase records,
                                      ListLastPerformanceUseCase last, GetSessionHighlightsUseCase highlights,
-                                     GetExerciseProgressUseCase progress) {
+                                     GetExerciseProgressUseCase progress, GetSessionHistoryEntryUseCase entry) {
         this.progress = progress;
+        this.entry = entry;
         this.history = history;
         this.records = records;
         this.last = last;
@@ -62,6 +66,12 @@ public class TrainingHistoryController {
                 SessionHistoryResponse::from);
     }
 
+    /** Una sesión como en el historial (con la foto de su tarjeta): el detalle abierto sin pasar por él. */
+    @GetMapping("/history/{sessionId}")
+    public SessionHistoryResponse historyEntry(@CurrentUserId UUID userId, @PathVariable UUID sessionId) {
+        return SessionHistoryResponse.from(entry.historyEntry(userId, sessionId));
+    }
+
     /**
      * Evolución de un ejercicio para la gráfica: por día, el peso máximo estimado («lo máximo que podrías
      * levantar una vez», {@link ExerciseProgress}) y la serie que lo dio. Vacía si nunca se hizo con peso.
@@ -72,10 +82,6 @@ public class TrainingHistoryController {
         return progress.exerciseProgress(userId, exerciseId).stream()
                 .map(p -> new ExerciseProgressPointResponse(p.date(), p.estimatedMaxKg(), p.weightKg(), p.reps()))
                 .toList();
-    }
-
-    /** Punto de la gráfica de un ejercicio. */
-    public record ExerciseProgressPointResponse(LocalDate date, double estimatedMaxKg, double weightKg, int reps) {
     }
 
     @GetMapping("/records")

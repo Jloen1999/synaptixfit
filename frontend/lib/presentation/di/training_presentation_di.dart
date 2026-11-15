@@ -148,7 +148,7 @@ void registerTrainingPresentation(GetIt getIt) {
     ..registerFactory(() => ExerciseProgressBloc(get: getIt()))
     ..registerFactory(
       () => SessionDetailBloc(
-        getSession: getIt(),
+        getEntry: getIt(),
         getRoutine: getIt(),
         getHighlights: getIt(),
       ),

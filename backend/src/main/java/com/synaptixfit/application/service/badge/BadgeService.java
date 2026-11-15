@@ -4,6 +4,7 @@ import com.synaptixfit.application.port.input.badge.BadgeEvaluation;
 import com.synaptixfit.application.port.input.badge.ChangeBadgeVisibilityUseCase;
 import com.synaptixfit.application.port.input.badge.EvaluateBadgesUseCase;
 import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
+import com.synaptixfit.application.port.input.badge.PeekStreakUseCase;
 import com.synaptixfit.application.port.input.badge.GetBadgeCatalogUseCase;
 import com.synaptixfit.application.port.input.badge.ListMyBadgesUseCase;
 import com.synaptixfit.application.port.input.badge.ListUnnotifiedBadgesUseCase;
@@ -26,7 +27,6 @@ import com.synaptixfit.domain.port.output.badge.UserBadgeRepositoryPort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,7 +40,8 @@ import java.util.stream.Collectors;
 
 /**
  * Catálogo de insignias, insignias del usuario y motor de evaluación. Las insignias no otorgan XP
- * (tampoco lo hacían en la app antigua). La racha llega por el contrato {@link GetStreakUseCase}.
+ * (tampoco lo hacían en la app antigua). La racha llega por los contratos {@link GetStreakUseCase} (la evaluación, que la
+ * guarda) y {@link PeekStreakUseCase} (el catálogo, que solo la lee).
  */
 public class BadgeService implements GetBadgeCatalogUseCase, ListMyBadgesUseCase, EvaluateBadgesUseCase,
         ListUnnotifiedBadgesUseCase, MarkBadgesNotifiedUseCase, ChangeBadgeVisibilityUseCase {
@@ -49,20 +50,24 @@ public class BadgeService implements GetBadgeCatalogUseCase, ListMyBadgesUseCase
     private final UserBadgeRepositoryPort userBadges;
     private final UserActivityPort activity;
     private final GetStreakUseCase streaks;
+    private final PeekStreakUseCase peekStreaks;
     private final DomainEventPublisherPort events;
     private final Clock clock;
     private final ZoneId defaultZone;
     private final UsageFocusPort focus;
 
     public BadgeService(BadgeCatalogPort catalog, UserBadgeRepositoryPort userBadges, UserActivityPort activity,
-                        GetStreakUseCase streaks, DomainEventPublisherPort events, Clock clock, ZoneId defaultZone) {
-        this(catalog, userBadges, activity, streaks, events, clock, defaultZone, userId -> UsageFocus.BOTH);
+                        GetStreakUseCase streaks, PeekStreakUseCase peekStreaks, DomainEventPublisherPort events,
+                        Clock clock, ZoneId defaultZone) {
+        this(catalog, userBadges, activity, streaks, peekStreaks, events, clock, defaultZone,
+                userId -> UsageFocus.BOTH);
     }
 
     /** @param focus enfoque de uso: el catálogo no muestra insignias del ámbito que la persona no usa */
     public BadgeService(BadgeCatalogPort catalog, UserBadgeRepositoryPort userBadges, UserActivityPort activity,
-                        GetStreakUseCase streaks, DomainEventPublisherPort events, Clock clock, ZoneId defaultZone,
-                        UsageFocusPort focus) {
+                        GetStreakUseCase streaks, PeekStreakUseCase peekStreaks, DomainEventPublisherPort events,
+                        Clock clock, ZoneId defaultZone, UsageFocusPort focus) {
+        this.peekStreaks = java.util.Objects.requireNonNull(peekStreaks, "peekStreaks");
         this.focus = focus;
         this.catalog = catalog;
         this.userBadges = userBadges;
@@ -78,8 +83,7 @@ public class BadgeService implements GetBadgeCatalogUseCase, ListMyBadgesUseCase
         ZoneId z = UserZones.resolve(zone, defaultZone);
         Map<UUID, UserBadge> earned = earnedByBadge(userId);
         // El catálogo es una lectura: la racha se calcula sin guardarla (la guarda la evaluación), con sus pausas.
-        StreakStatus streak = streaks != null ? streaks.peekStreak(userId, z.getId())
-                : StreakStatus.compute(activity.activeDays(userId, z), LocalDateTime.ofInstant(clock.instant(), z));
+        StreakStatus streak = peekStreaks.peekStreak(userId, z.getId());
         Map<BadgeCriterion, Integer> metrics = metrics(userId, z, streak, earned.size());
         UsageFocus usage = focus.focusOf(userId);
         return catalog.findAll().stream()

@@ -24,11 +24,11 @@ import 'app_pill.dart';
 /// se pintan con `Ink`: la onda del toque se ve por encima. La foto es
 /// decorativa: el lector no la anuncia.
 ///
-/// [AppCoverLayout.bottom] (sesiones, ADR 0042): la foto a dos tonos ocupa la
-/// cabecera entera, con una franja arriba a la vista ([TokensSize.coverBanner])
-/// y el texto abajo a la izquierda sobre un degradado vertical de tres paradas
-/// hacia la superficie. Como la foto ya está en el rango seguro, el texto
-/// cumple AA en cualquier punto del degradado (`contrast_test`, peor zona).
+/// [AppCoverLayout.bottom] (sesiones, ADR 0042): la foto, con sus colores, va
+/// en una franja arriba ([TokensSize.coverBanner]) cuya parte baja se funde
+/// con la superficie; el texto va debajo, sobre la superficie lisa, así que
+/// cumple AA con cualquier foto. Antes iba a dos tonos bajo el texto y apenas
+/// se veía.
 class AppCoverCard extends StatelessWidget {
   const AppCoverCard({
     super.key,
@@ -142,58 +142,69 @@ class AppCoverCard extends StatelessWidget {
           );
   }
 
-  /// Foto arriba a la vista y texto abajo a la izquierda sobre el degradado.
+  /// Franja de foto arriba, con sus colores, que se funde con la superficie;
+  /// el texto va debajo, sobre la superficie lisa.
   Widget _bottomText(BuildContext context, String? url) {
     final surface = context.colors.surface;
-    final header = Stack(
-      children: [
-        Positioned.fill(child: _safePhoto(context, url, Alignment.center)),
-        Positioned.fill(
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  surface.withValues(alpha: 0),
-                  surface.withValues(alpha: TokensOpacity.coverScrimMid),
-                  surface.withValues(alpha: TokensOpacity.coverScrimMax),
-                ],
-                stops: const [0, TokensLayout.coverBannerFadeMid, 1],
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: padding.add(
-            const EdgeInsets.only(top: TokensSize.coverBanner),
-          ),
-          child: Align(
-            alignment: AlignmentDirectional.bottomStart,
-            child: child,
-          ),
-        ),
-      ],
+    final tinted = tint(context);
+    // Color de reserva: sin foto, mientras carga o si falla.
+    final fallback = LinearGradient(
+      begin: AlignmentDirectional.topStart,
+      end: AlignmentDirectional.bottomEnd,
+      colors: [tinted, surface],
     );
+    final resolved = padding.resolve(Directionality.of(context));
     final footer = this.footer;
     return AppCard(
       color: surface,
       padding: EdgeInsets.zero,
       onTap: onTap,
-      child: footer == null
-          ? header
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: TokensSize.coverBanner,
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                header,
-                Padding(
-                  padding: padding.resolve(Directionality.of(context)).copyWith(
-                    top: 0,
+                Ink(
+                  decoration: BoxDecoration(
+                    gradient: fallback,
+                    image: url == null
+                        ? null
+                        : DecorationImage(
+                            image: CachedNetworkImageProvider(url),
+                            fit: BoxFit.cover,
+                            onError: (_, _) {},
+                          ),
                   ),
-                  child: footer,
+                ),
+                // La parte de abajo de la foto se funde con la superficie: sin
+                // corte duro y el texto, debajo, sobre la superficie lisa.
+                Ink(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [surface.withValues(alpha: 0), surface],
+                      stops: const [TokensLayout.coverBannerFadeMid, 1],
+                    ),
+                  ),
                 ),
               ],
             ),
+          ),
+          Padding(
+            padding: resolved.copyWith(top: 0),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: child,
+            ),
+          ),
+          if (footer != null)
+            Padding(padding: resolved.copyWith(top: 0), child: footer),
+        ],
+      ),
     );
   }
 

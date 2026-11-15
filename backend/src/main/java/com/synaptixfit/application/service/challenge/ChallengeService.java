@@ -249,6 +249,7 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
             if (!original.rule().availableFor(focusOf(userId))) {
                 throw new ChallengeTypeOutsideFocusException();
             }
+            challenges.lockTemplateStarts(userId);
             Instant now = clock.instant();
             if (original.templateCode() != null && challenges.findActiveByOwner(userId, now).stream()
                     .anyMatch(c -> original.templateCode().equals(c.templateCode()))) {

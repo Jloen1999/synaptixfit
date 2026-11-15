@@ -385,6 +385,16 @@
   "challengesStreakStart": "Avanza hoy para empezar una racha",
   "challengesDetailCompleteNext": "Marcar como hecha la siguiente tarea",
   "challengesDetailGoTraining": "Ir a Entreno",
+  "challengesRuleGoFocus": "Concentrarme",
+  "@challengesRuleGoFocus": {"description": "Botón de un reto que se cuenta solo con Pomodoros: abre el Pomodoro"},
+  "challengesRuleGoAcademic": "Ir a Académico",
+  "@challengesRuleGoAcademic": {"description": "Botón de un reto que se cuenta con repasos o tests: abre la pestaña Académico"},
+  "challengesRuleGoRun": "Ir a Correr",
+  "@challengesRuleGoRun": {"description": "Botón de un reto que se cuenta con carreras: abre Entreno › Correr"},
+  "challengesRuleGoCalendar": "Ir al calendario",
+  "@challengesRuleGoCalendar": {"description": "Botón de un reto que se cuenta con semanas planificadas: abre la pestaña Calendario"},
+  "challengesRuleGoCheckIn": "¿Qué tal estás hoy?",
+  "@challengesRuleGoCheckIn": {"description": "Botón de un reto que se cuenta con el registro diario: lo abre"},
   "challengesDetailExtend": "Ampliar fecha",
   "challengesDetailNoTasksTitle": "Sin tareas todavía",
   "challengesDetailNoTasksHint": "Divide el reto en pasos pequeños.",
@@ -622,7 +632,7 @@
       }
     }
   },
-  "challengesRuleHours": "{count} h",
+  "challengesRuleHours": "{count, plural, =0{0 horas} =1{1 hora} other{{count} horas}}",
   "@challengesRuleHours": {
     "placeholders": {
       "count": {

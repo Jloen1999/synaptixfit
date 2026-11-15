@@ -32,6 +32,15 @@ abstract class TemplateFilter with _$TemplateFilter {
 
   const TemplateFilter._();
 
+  /// Cuántos filtros hay puestos (lo dice el botón «Filtrar»).
+  int get activeCount => [
+    place != null,
+    days != null,
+    time != null,
+    level != null,
+    forExams,
+  ].where((on) => on).length;
+
   bool get isEmpty =>
       place == null &&
       days == null &&

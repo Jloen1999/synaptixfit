@@ -926,5 +926,13 @@
         "type": "int"
       }
     }
-  }
+  },
+  "togetherStudyAlertFocusBody": "Fin de la concentración · ronda {round} de {rounds}",
+  "@togetherStudyAlertFocusBody": {"description": "Aviso del móvil al acabar una concentración de la sala", "placeholders": {"round": {"type": "int"}, "rounds": {"type": "int"}}},
+  "togetherStudyAlertBreakBody": "Fin del descanso: vuelve a concentrarte",
+  "@togetherStudyAlertBreakBody": {"description": "Aviso del móvil al acabar un descanso de la sala (sin número de ronda: lo dice el servidor al abrirla)"},
+  "togetherStudyBarLabel": "Estudiar juntos, {phase}: quedan {time}. Abrir la sala",
+  "@togetherStudyBarLabel": {"description": "Lector: barra de la sala sobre la navegación", "placeholders": {"phase": {"type": "String"}, "time": {"type": "String"}}},
+  "togetherStudyBarLabelNoClock": "Estudiar juntos, {phase}. Abrir la sala",
+  "@togetherStudyBarLabelNoClock": {"description": "Lector: barra de la sala sin cuenta atrás (esperando o leyendo la fase siguiente)", "placeholders": {"phase": {"type": "String"}}}
 }

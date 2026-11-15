@@ -2,7 +2,11 @@ package com.synaptixfit.application.service.badge;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.synaptixfit.domain.exception.badge.StreakPauseLimitReachedException;
@@ -38,6 +42,7 @@ class StreakServiceTest {
     private final Map<UUID, StreakPause> stored = new LinkedHashMap<>();
     private final Set<LocalDate> activeDays = new HashSet<>();
     private StreakService service;
+    private UserRepositoryPort users;
 
     @BeforeEach
     void setUp() {
@@ -53,7 +58,7 @@ class StreakServiceTest {
             public StreakPause save(StreakPause p) { stored.put(p.id(), p); return p; }
             public void delete(UUID id) { stored.remove(id); }
         };
-        UserRepositoryPort users = mock(UserRepositoryPort.class);
+        users = mock(UserRepositoryPort.class);
         when(users.findById(USER)).thenReturn(Optional.empty());
         service = new StreakService(activity, users, pauses, Clock.fixed(NOW, ZoneOffset.UTC), ZoneOffset.UTC);
     }
@@ -116,5 +121,18 @@ class StreakServiceTest {
 
         assertThatThrownBy(() -> service.pause(USER, null))
                 .isInstanceOf(StreakPauseLimitReachedException.class);
+    }
+
+    @Test
+    void peekingTheStreakCountsThePausesAndNeverSavesIt() {
+        int before = service.peekStreak(USER, "UTC").currentDays();
+        service.pause(USER, "UTC");
+        clearInvocations(users);
+
+        StreakStatus peeked = service.peekStreak(USER, "UTC");
+
+        assertThat(peeked.currentDays()).isEqualTo(before);
+        assertThat(peeked.pause()).isNotNull();
+        verify(users, never()).save(any());
     }
 }

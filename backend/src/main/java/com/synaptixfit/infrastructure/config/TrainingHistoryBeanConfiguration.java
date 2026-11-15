@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.config;
 
 import com.synaptixfit.application.port.input.training.GetExerciseProgressUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
+import com.synaptixfit.application.port.input.training.GetSessionHistoryEntryUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
 import com.synaptixfit.application.port.input.training.ListPersonalRecordsUseCase;
@@ -54,6 +55,11 @@ public class TrainingHistoryBeanConfiguration {
     @Bean
     GetSessionHighlightsUseCase getSessionHighlightsUseCase() {
         return tx.wrap(GetSessionHighlightsUseCase.class, sessionHistoryService());
+    }
+
+    @Bean
+    GetSessionHistoryEntryUseCase getSessionHistoryEntryUseCase() {
+        return tx.wrap(GetSessionHistoryEntryUseCase.class, sessionHistoryService());
     }
 
     @Bean

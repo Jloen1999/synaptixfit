@@ -59,6 +59,27 @@ class _DetailViewState extends State<_DetailView> {
   /// Tarjeta del día que toca: al abrir se desplaza hasta ella si no se ve.
   final _nextDayKey = GlobalKey();
 
+  /// Menú ⋮ de la barra: `PopupMenuButton` no acepta un `FocusNode`, así que
+  /// se busca el del botón que lleva dentro para devolverle el foco.
+  final _menuKey = GlobalKey();
+
+  void _focusMenu() {
+    // El botón crea su `Focus` con un nodo interno: se toma el de su primer
+    // hijo con `Focus.of`.
+    FocusNode? node;
+    void visit(Element element) {
+      if (node != null) return;
+      if (element.widget is Focus) {
+        element.visitChildElements((child) => node ??= Focus.of(child));
+        return;
+      }
+      element.visitChildElements(visit);
+    }
+
+    (_menuKey.currentContext as Element?)?.visitChildElements(visit);
+    node?.requestFocus();
+  }
+
   /// Abre la rutina en la semana del siguiente día y lo deja a la vista.
   void _chooseInitialWeek(Routine routine) {
     _weekChosen = true;
@@ -102,7 +123,11 @@ class _DetailViewState extends State<_DetailView> {
       case _MenuAction.together:
         await context.push(TrainingPaths.workoutTogetherInvite(routine.id));
       case _MenuAction.share:
-        await showRoutineShareSheet(context, routine);
+        // Al dejar de compartir la hoja se cierra sola: el foco vuelve al ⋮
+        // (de donde salió) en vez de perderse.
+        if (await showRoutineShareSheet(context, routine) && mounted) {
+          _focusMenu();
+        }
       case _MenuAction.duplicate:
         final name = await showTextPromptDialog(
           context,
@@ -192,6 +217,7 @@ class _DetailViewState extends State<_DetailView> {
             actions: [
               if (routine != null && routine.owned)
                 PopupMenuButton<_MenuAction>(
+                  key: _menuKey,
                   tooltip: l10n.trainingMoreActions,
                   enabled: !state.busy,
                   onSelected: (a) => _onMenu(routine, a),

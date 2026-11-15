@@ -56,15 +56,18 @@ class RoutineShareBloc extends Bloc<RoutineShareEvent, RoutineShareState> {
     Emitter<RoutineShareState> emit,
   ) async {
     if (state.busy) return;
-    emit(state.copyWith(busy: true, actionError: null));
+    emit(state.copyWith(running: RoutineShareAction.share, actionError: null));
     final result = await _share(state.routineId, message: event.message);
     emit(switch (result) {
       // El último enlace manda: es el que vence más tarde.
       Success(:final value) => state.copyWith(
-        busy: false,
+        running: null,
         sharedUntil: value.expiresAt,
       ),
-      Failure(:final error) => state.copyWith(busy: false, actionError: error),
+      Failure(:final error) => state.copyWith(
+        running: null,
+        actionError: error,
+      ),
     });
   }
 
@@ -73,15 +76,18 @@ class RoutineShareBloc extends Bloc<RoutineShareEvent, RoutineShareState> {
     Emitter<RoutineShareState> emit,
   ) async {
     if (state.busy) return;
-    emit(state.copyWith(busy: true, actionError: null));
+    emit(state.copyWith(running: RoutineShareAction.stop, actionError: null));
     final result = await _stop(state.routineId);
     emit(switch (result) {
       Success() => state.copyWith(
-        busy: false,
+        running: null,
         sharedUntil: null,
         stopped: true,
       ),
-      Failure(:final error) => state.copyWith(busy: false, actionError: error),
+      Failure(:final error) => state.copyWith(
+        running: null,
+        actionError: error,
+      ),
     });
     emit(state.copyWith(stopped: false));
   }

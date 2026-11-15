@@ -9,6 +9,7 @@ import 'package:synaptixfit/domain/enums/together_enums.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/social/together.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
+import 'package:synaptixfit/presentation/screens/shell/bloc/study_room_bar_bloc.dart';
 import 'package:synaptixfit/presentation/screens/social/together/challenge_detail/bloc/friend_challenge_detail_bloc.dart';
 import 'package:synaptixfit/presentation/screens/social/together/challenge_detail/page/friend_challenge_detail_page.dart';
 import 'package:synaptixfit/presentation/screens/social/together/hub/bloc/together_bloc.dart';
@@ -25,6 +26,9 @@ import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 class _MockSafety extends MockBloc<TogetherSafetyEvent, TogetherSafetyState>
     implements TogetherSafetyBloc {}
+
+class _MockBar extends MockBloc<StudyRoomBarEvent, StudyRoomBarState>
+    implements StudyRoomBarBloc {}
 
 class _MockRoom extends MockBloc<StudyRoomEvent, StudyRoomState>
     implements StudyRoomBloc {}
@@ -161,10 +165,16 @@ void main() {
 
     setUp(() {
       room = _MockRoom();
-      getIt.registerFactory<StudyRoomBloc>(() => room);
+      getIt
+        ..registerFactory<StudyRoomBloc>(() => room)
+        ..registerFactory<StudyRoomBarBloc>(_MockBar.new);
     });
 
-    tearDown(() => getIt.unregister<StudyRoomBloc>());
+    tearDown(() {
+      getIt
+        ..unregister<StudyRoomBloc>()
+        ..unregister<StudyRoomBarBloc>();
+    });
 
     void show(StudyRoomState state) => when(() => room.state).thenReturn(state);
 

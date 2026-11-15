@@ -54,6 +54,18 @@ abstract final class ChallengesExternalPaths {
 
   /// «Con amigos» (módulo social, ADR 0044), a pantalla completa.
   static const together = '/social/together';
+
+  /// Pomodoro (pantalla completa, con `push`).
+  static const pomodoro = '/planner/pomodoro';
+
+  /// Pestaña Académico (con `go`).
+  static const academic = '/academic';
+
+  /// Entreno › Correr (pestaña, con `go`).
+  static const run = '/training?section=run';
+
+  /// «¿Qué tal estás hoy?» (pantalla completa, con `push`).
+  static const checkIn = '/training/check-in';
 }
 
 /// Valores iniciales del formulario «Nuevo reto» recibidos por `extra`.

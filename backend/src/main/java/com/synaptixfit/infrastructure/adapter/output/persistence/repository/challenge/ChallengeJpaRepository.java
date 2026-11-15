@@ -18,7 +18,8 @@ public interface ChallengeJpaRepository extends JpaRepository<ChallengeEntity, U
 
     List<ChallengeEntity> findByUsuarioIdAndTipoAndSesionesObjetivoIsNotNull(UUID usuarioId, String tipo);
 
-    List<ChallengeEntity> findByUsuarioIdAndReglaMetricaIsNotNull(UUID usuarioId);
+    List<ChallengeEntity> findByUsuarioIdAndReglaMetricaIsNotNullAndFechaFinGreaterThanEqual(UUID usuarioId,
+                                                                                         Instant fechaFin);
 
     @Query("""
             select c from ChallengeEntity c

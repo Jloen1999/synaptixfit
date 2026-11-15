@@ -4,6 +4,7 @@ import com.synaptixfit.application.port.input.badge.ChangeBadgeVisibilityUseCase
 import com.synaptixfit.application.port.input.badge.EvaluateBadgesUseCase;
 import com.synaptixfit.application.port.input.badge.GetBadgeCatalogUseCase;
 import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
+import com.synaptixfit.application.port.input.badge.PeekStreakUseCase;
 import com.synaptixfit.application.port.input.badge.PauseStreakUseCase;
 import com.synaptixfit.application.port.input.badge.ResumeStreakUseCase;
 import com.synaptixfit.application.port.input.badge.ListMyBadgesUseCase;
@@ -63,7 +64,8 @@ public class BadgeBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     BadgeService badgeService() {
-        return new BadgeService(catalog, userBadges, activity, streakService(), events, clock, zone, focus);
+        return new BadgeService(catalog, userBadges, activity, streakService(), streakService(), events, clock,
+                zone, focus);
     }
 
     @Bean
@@ -99,6 +101,11 @@ public class BadgeBeanConfiguration {
     @Bean
     GetStreakUseCase getStreakUseCase() {
         return tx.wrap(GetStreakUseCase.class, streakService());
+    }
+
+    @Bean
+    PeekStreakUseCase peekStreakUseCase() {
+        return tx.wrap(PeekStreakUseCase.class, streakService());
     }
 
     @Bean

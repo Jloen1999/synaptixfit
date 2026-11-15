@@ -113,9 +113,13 @@ class ChallengeTemplateIT {
         activity(user, now.plus(2, ChronoUnit.HOURS), "MANUAL");
         jdbc.sql("INSERT INTO estado_diario_usuario (usuario_id, fecha) VALUES (:u, :d)")
                 .param("u", user).param("d", LocalDate.now()).update();
-        jdbc.sql("INSERT INTO planes_estudio (usuario_id, nombre, semana_inicio, semana_fin,"
-                        + " xp_planificacion_otorgado) VALUES (:u, 'Plan', :m, :s, true)")
+        // Creado hace diez días, pero la XP de planificar llegó ahora: cuenta por el momento de la XP.
+        jdbc.sql("INSERT INTO planes_estudio (usuario_id, nombre, semana_inicio, semana_fin, creado_en,"
+                        + " xp_planificacion_otorgado, xp_planificacion_en) VALUES (:u, 'Plan', :m, :s, :created, true,"
+                        + " :awarded)")
                 .param("u", user).param("m", LocalDate.of(2026, 11, 16)).param("s", LocalDate.of(2026, 11, 22))
+                .param("created", Timestamp.from(now.minus(10, ChronoUnit.DAYS)))
+                .param("awarded", Timestamp.from(now))
                 .update();
 
         List<ActivityFact> facts = references.activity(user,

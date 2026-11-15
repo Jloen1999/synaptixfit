@@ -47,6 +47,7 @@ public class RoutineShareLinkService implements CreateRoutineShareLinkUseCase, R
     @Override
     public Created createShareLink(UUID userId, UUID routineId) {
         Routine routine = owned(userId, routineId);
+        links.lockRoutine(routine.id());
         Instant now = clock.instant();
         if (links.findActiveByRoutine(routine.id(), now).size() >= RoutineShareLink.MAX_ACTIVE_PER_ROUTINE) {
             throw new RoutineShareLinkLimitException();

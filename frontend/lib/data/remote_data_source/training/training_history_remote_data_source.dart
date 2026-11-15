@@ -25,6 +25,14 @@ class TrainingHistoryRemoteDataSource {
     return parseTrainingPage(response.data!, SessionHistoryDto.fromJson);
   }
 
+  /// Una sesión como en el historial (`/history/{id}`), con su foto.
+  Future<SessionHistoryDto> historyEntry(String sessionId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/history/$sessionId',
+    );
+    return SessionHistoryDto.fromJson(response.data!);
+  }
+
   /// Mejor serie de la última sesión de cada ejercicio.
   Future<List<PersonalRecordDto>> lastPerformance() async {
     final response = await _dio.get<List<dynamic>>(

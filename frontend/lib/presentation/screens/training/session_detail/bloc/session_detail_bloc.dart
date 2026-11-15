@@ -7,7 +7,7 @@ import '../../../../../domain/models/training/routine.dart';
 import '../../../../../domain/models/training/session_history.dart';
 import '../../../../../domain/use_cases/training/get_routine_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_highlights_use_case.dart';
-import '../../../../../domain/use_cases/training/get_session_use_case.dart';
+import '../../../../../domain/use_cases/training/get_session_history_entry_use_case.dart';
 
 part 'session_detail_bloc.freezed.dart';
 part 'session_detail_event.dart';
@@ -18,19 +18,20 @@ part 'session_detail_state.dart';
 /// Corregir, desmarcar y eliminar los hace el historial al volver.
 class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   SessionDetailBloc({
-    required this._getSession,
+    required this._getEntry,
     required this._getRoutine,
     required this._getHighlights,
   }) : super(const SessionDetailState()) {
     on<SessionDetailStarted>(_onStarted);
   }
 
-  final GetSessionUseCaseContract _getSession;
+  final GetSessionHistoryEntryUseCaseContract _getEntry;
   final GetRoutineUseCaseContract _getRoutine;
   final GetSessionHighlightsUseCaseContract _getHighlights;
 
   /// Con [SessionDetailStarted.entry] (desde el historial) ya se tiene la
-  /// sesión; sin ella (enlace directo) se carga y no se sabe si es de hoy.
+  /// sesión; sin ella (enlace directo) se pide como en el historial, con la
+  /// foto que elige el servidor.
   Future<void> _onStarted(
     SessionDetailStarted event,
     Emitter<SessionDetailState> emit,
@@ -38,10 +39,10 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
     var entry = event.entry;
     emit(SessionDetailState(entry: entry));
     if (entry == null) {
-      final result = await _getSession(event.sessionId);
+      final result = await _getEntry(event.sessionId);
       switch (result) {
-        case Success(value: final session):
-          entry = SessionHistoryEntry(session: session);
+        case Success(value: final loaded):
+          entry = loaded;
         case Failure(:final error):
           emit(
             state.copyWith(status: SessionDetailStatus.failure, error: error),

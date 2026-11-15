@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/app/di/app_di.dart';
+import 'package:synaptixfit/domain/enums/challenge_rule_kind.dart';
 import 'package:synaptixfit/domain/enums/challenge_status.dart';
 import 'package:synaptixfit/domain/models/challenges/challenge.dart';
+import 'package:synaptixfit/domain/models/challenges/challenge_rule.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/auth/session/bloc/session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/challenges/challenge_detail/bloc/challenge_detail_bloc.dart';
@@ -116,6 +118,27 @@ void main() {
     expect(find.text('Añadir tareas'), findsOneWidget);
     expect(find.text('Marcar como hecho'), findsOneWidget);
     expect(find.text('Registrar progreso'), findsOneWidget);
+  });
+
+  testWidgets('se cuenta solo: «Ir a…» según lo que cuenta, sin tareas ni '
+      'progreso a mano', (tester) async {
+    show(
+      ChallengesFixtures.challenge().copyWith(
+        tracksRule: true,
+        rule: const ChallengeRule(
+          metric: ChallengeRuleMetric.focusMinutes,
+          unit: ChallengeRuleUnit.day,
+          perUnit: 25,
+          target: 5,
+        ),
+      ),
+    );
+    await pump(tester);
+
+    expect(find.text('Concentrarme'), findsOneWidget);
+    expect(find.text('Añadir tareas'), findsNothing);
+    expect(find.text('Marcar como hecho'), findsNothing);
+    expect(find.text('Aún no has registrado progreso manual.'), findsNothing);
   });
 
   testWidgets('vencido: solo se ofrece ampliar la fecha', (tester) async {

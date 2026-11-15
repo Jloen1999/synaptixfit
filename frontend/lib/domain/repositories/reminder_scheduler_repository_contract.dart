@@ -26,11 +26,14 @@ abstract interface class ReminderSchedulerRepositoryContract {
   /// Quita los avisos pendientes y los ya mostrados.
   Future<AppResult<Unit>> cancelAll();
 
-  /// Aviso de fin de fase del Pomodoro: uno solo, aparte de los recordatorios
-  /// (sustituirlos no lo quita).
+  /// Aviso de fin de fase de un temporizador: uno por hueco
+  /// ([TimerAlert.slot]), aparte de los recordatorios (sustituirlos no lo
+  /// quita).
   Future<AppResult<Unit>> scheduleTimerAlert(TimerAlert alert);
 
-  Future<AppResult<Unit>> cancelTimerAlert();
+  Future<AppResult<Unit>> cancelTimerAlert({
+    TimerAlertSlot slot = TimerAlertSlot.pomodoro,
+  });
 
   /// Notificación fija del Pomodoro en marcha (cuenta atrás en la barra).
   Future<AppResult<Unit>> showOngoingTimer(OngoingTimer timer);

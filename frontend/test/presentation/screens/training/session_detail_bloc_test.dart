@@ -7,12 +7,13 @@ import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/session_history.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_routine_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_highlights_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/training/get_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_session_history_entry_use_case.dart';
 import 'package:synaptixfit/presentation/screens/training/session_detail/bloc/session_detail_bloc.dart';
 
 import 'training_fixtures.dart';
 
-class _GetSession extends Mock implements GetSessionUseCaseContract {}
+class _GetSession extends Mock
+    implements GetSessionHistoryEntryUseCaseContract {}
 
 class _GetRoutine extends Mock implements GetRoutineUseCaseContract {}
 
@@ -29,7 +30,7 @@ void main() {
   const highlights = SessionHighlights(volumeKg: 1200, completedSets: 6);
 
   SessionDetailBloc build() => SessionDetailBloc(
-    getSession: getSession,
+    getEntry: getSession,
     getRoutine: getRoutine,
     getHighlights: getHighlights,
   );
@@ -80,7 +81,9 @@ void main() {
       when(
         () => getRoutine('r1'),
       ).thenAnswer((_) async => const Failure(AppError.network()));
-      when(() => getSession('s1')).thenAnswer((_) async => Success(session));
+      when(
+        () => getSession('s1'),
+      ).thenAnswer((_) async => Success(SessionHistoryEntry(session: session)));
     },
     build: build,
     act: (bloc) => bloc.add(const SessionDetailEvent.started('s1')),

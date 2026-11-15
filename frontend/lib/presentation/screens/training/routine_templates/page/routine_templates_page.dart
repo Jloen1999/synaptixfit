@@ -18,8 +18,9 @@ import '../../widgets/training_section_bar.dart';
 import '../bloc/routine_templates_bloc.dart';
 
 /// Plantillas de rutina listas para usar: se filtran por lugar, días, tiempo,
-/// nivel y exámenes, y una se convierte en rutina propia con un toque (ADR
-/// 0043). Si trae carreras, el aviso dice que están en Correr.
+/// nivel y exámenes (en una hoja, para que la lista se vea al entrar) y una se
+/// convierte en rutina propia con un toque (ADR 0043). Si trae carreras, el
+/// aviso dice que están en Correr.
 class RoutineTemplatesPage extends StatelessWidget {
   const RoutineTemplatesPage({super.key});
 
@@ -62,7 +63,8 @@ class _TemplatesView extends StatelessWidget {
           context.showActionSnack(
             l10n.trainingTemplatesCreatedWithRuns(routine.name),
             actionLabel: l10n.commonView,
-            onAction: () => router.go(TrainingPaths.section(TrainingSection.run)),
+            onAction: () =>
+                router.go(TrainingPaths.section(TrainingSection.run)),
           );
         } else {
           context.showSnack(l10n.trainingTemplatesCreated(routine.name));
@@ -132,7 +134,7 @@ class _TemplatesView extends StatelessWidget {
                           ),
                         )
                       else ...[
-                        _Filters(state: state),
+                        _FilterBar(state: state),
                         const SizedBox(height: TokensSpacing.m),
                         if (state.visible.isEmpty)
                           AppCard(
@@ -172,6 +174,107 @@ class _TemplatesView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// «Filtrar» (con cuántos hay puestos) y, si hay alguno, «Quitar filtros».
+/// Los filtros van en una hoja: la lista cambia detrás mientras se eligen.
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({required this.state});
+
+  final RoutineTemplatesState state;
+
+  Future<void> _open(BuildContext context) {
+    final bloc = context.read<RoutineTemplatesBloc>();
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (_) => BlocProvider.value(
+        value: bloc,
+        child: BlocBuilder<RoutineTemplatesBloc, RoutineTemplatesState>(
+          builder: (sheetContext, current) {
+            final l10n = sheetContext.localizations;
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                TokensSpacing.l,
+                0,
+                TokensSpacing.l,
+                TokensSpacing.l,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.trainingTemplatesFilter,
+                      style: sheetContext.textStyles.titleLarge,
+                    ),
+                  ),
+                  const SizedBox(height: TokensSpacing.m),
+                  _Filters(state: current),
+                  const SizedBox(height: TokensSpacing.m),
+                  // Al cambiar un filtro la lista queda tapada por la hoja: el
+                  // recuento se anuncia (WCAG 4.1.3).
+                  Semantics(
+                    liveRegion: true,
+                    child: current.visible.isEmpty
+                        ? AppSecondaryButton(
+                            label: l10n.trainingTemplatesClearFilters,
+                            icon: const Icon(AppIcons.clearFilters),
+                            onPressed: () =>
+                                sheetContext.read<RoutineTemplatesBloc>().add(
+                                  const RoutineTemplatesEvent.filterChanged(
+                                    TemplateFilter(),
+                                  ),
+                                ),
+                          )
+                        : AppPrimaryButton(
+                            label: l10n.trainingTemplatesShowResults(
+                              current.visible.length,
+                            ),
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final active = state.filter.activeCount;
+    return Wrap(
+      spacing: TokensSpacing.s,
+      runSpacing: TokensSpacing.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        AppSecondaryButton(
+          label: active == 0
+              ? l10n.trainingTemplatesFilter
+              : l10n.trainingTemplatesFilterActive(active),
+          icon: const Icon(AppIcons.filters),
+          onPressed: () => _open(context),
+        ),
+        // Sin resultados, «Quitar filtros» ya está en la tarjeta vacía: no se
+        // repite aquí (un camino por destino).
+        if (active > 0 && state.visible.isNotEmpty)
+          TextButton.icon(
+            icon: const Icon(AppIcons.clearFilters),
+            label: Text(l10n.trainingTemplatesClearFilters),
+            onPressed: () => context.read<RoutineTemplatesBloc>().add(
+              const RoutineTemplatesEvent.filterChanged(TemplateFilter()),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -267,15 +370,6 @@ class _Filters extends StatelessWidget {
             onSelected: (on) => set(f.copyWith(forExams: on)),
           ),
         ),
-        if (!f.isEmpty)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
-              icon: const Icon(AppIcons.clearFilters),
-              label: Text(l10n.trainingTemplatesClearFilters),
-              onPressed: () => set(const TemplateFilter()),
-            ),
-          ),
       ],
     );
   }
@@ -288,8 +382,6 @@ class _Filters extends StatelessWidget {
         TemplateTime.more => l10n.trainingTemplatesMoreThanMinutes(45),
       };
 }
-
-
 
 class _TemplateCard extends StatelessWidget {
   const _TemplateCard({
@@ -341,18 +433,6 @@ class _TemplateCard extends StatelessWidget {
                 // «≈» no se lee bien en voz alta.
                 semanticLabel: l10n.trainingEstimatedMinutesSpoken(t.minutes),
               ),
-              AppPill(
-                icon: Icons.calendar_view_week_rounded,
-                label: l10n.trainingWeeksCount(t.weeks),
-              ),
-              AppPill(
-                icon: templatePlaceIcon(t.place),
-                label: templatePlaceLabel(l10n, t.place),
-              ),
-              AppPill(
-                icon: Icons.signal_cellular_alt_rounded,
-                label: templateLevelLabel(l10n, t.level),
-              ),
               if (t.hasRuns)
                 AppPill(
                   icon: Icons.directions_run_rounded,
@@ -367,8 +447,21 @@ class _TemplateCard extends StatelessWidget {
                 ),
             ],
           ),
+          // Lugar, nivel y semanas en una línea de texto: la tarjeta lleva
+          // pocas pastillas (días, minutos y, si hay, carreras o exámenes).
+          const SizedBox(height: TokensSpacing.s),
+          Text(
+            [
+              templatePlaceLabel(l10n, t.place),
+              templateLevelLabel(l10n, t.level),
+              l10n.trainingWeeksCount(t.weeks),
+            ].join(' · '),
+            style: context.textStyles.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
           if (days.isNotEmpty) ...[
-            const SizedBox(height: TokensSpacing.s),
+            const SizedBox(height: TokensSpacing.xs),
             Text(
               days,
               style: context.textStyles.labelMedium?.copyWith(

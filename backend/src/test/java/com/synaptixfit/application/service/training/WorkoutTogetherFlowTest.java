@@ -105,6 +105,23 @@ class WorkoutTogetherFlowTest {
     }
 
     @Test
+    void ifTheOwnerChangedTheDayAfterCopyingItTheNewVersionIsCopied() {
+        UUID firstCopy = copy.copyForFriend(routine.id(), monday.id(), ana.id()).routineId();
+        Routine changed = routines.findById(routine.id()).orElseThrow();
+        changed.findDay(monday.id()).orElseThrow()
+                .addExercise(TrainingFakes.strength("Remo", "Dorsal ancho").toRef(),
+                        new ExerciseParameters(3, 10, 90, 40.0, null, null, null, null));
+        routines.save(changed);
+
+        CopyRoutineForFriendUseCase.Copy second = copy.copyForFriend(routine.id(), monday.id(), ana.id());
+
+        assertThat(second.routineId()).isNotEqualTo(firstCopy);
+        assertThat(routines.findById(second.routineId()).orElseThrow().findDay(second.dayId()).orElseThrow()
+                .exercises()).hasSize(3);
+        assertThat(routines.findById(firstCopy)).isPresent();
+    }
+
+    @Test
     void eachOneTrainsWithTheirOwnSessionAndSeesWhoDidEachExercise() {
         WorkoutTogetherView created = service.create(new CreateWorkoutTogetherUseCase.Command(host.id(),
                 routine.id(), null, Set.of(ana.id())));

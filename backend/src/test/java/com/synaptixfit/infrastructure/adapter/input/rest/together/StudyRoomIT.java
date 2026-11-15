@@ -121,7 +121,7 @@ class StudyRoomIT {
         OffsetDateTime earlier = OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(26);
         jdbc.sql("UPDATE salas_estudio SET inicio = :at WHERE id = :id")
                 .param("at", earlier).param("id", UUID.fromString(roomId)).update();
-        jdbc.sql("UPDATE salas_estudio_miembros SET actualizado_en = :at WHERE sala_id = :id")
+        jdbc.sql("UPDATE salas_estudio_miembros SET actualizado_en = :at, entro_en = :at WHERE sala_id = :id")
                 .param("at", earlier.minusMinutes(1)).param("id", UUID.fromString(roomId)).update();
         assertThat(roomsToCredit.roomsToCredit()).contains(UUID.fromString(roomId));
         assertThat(creditRounds.creditRounds(UUID.fromString(roomId))).isEqualTo(2);

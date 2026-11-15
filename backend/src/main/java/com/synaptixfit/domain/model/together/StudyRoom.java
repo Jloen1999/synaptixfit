@@ -68,11 +68,22 @@ public final class StudyRoom {
     private final TogetherMembers members;
     private final Map<UUID, UUID> subjects;
     private final Map<UUID, MemberReaction> reactions;
+    /** Cuándo entró cada persona la última vez (al crear o al unirse); sigue guardado después de salir. */
+    private final Map<UUID, Instant> enteredAt;
 
     @SuppressWarnings("java:S107")
     public StudyRoom(UUID id, UUID creatorId, StudyRoomLength length, int rounds, Instant createdAt, Instant startedAt,
                      int creditedRounds, TogetherMembers members, Map<UUID, UUID> subjects,
                      Map<UUID, MemberReaction> reactions) {
+        this(id, creatorId, length, rounds, createdAt, startedAt, creditedRounds, members, subjects, reactions,
+                Map.of());
+    }
+
+    /** @param enteredAt cuándo entró cada persona; sin dato, se toma el último cambio de quien está dentro */
+    @SuppressWarnings("java:S107")
+    public StudyRoom(UUID id, UUID creatorId, StudyRoomLength length, int rounds, Instant createdAt, Instant startedAt,
+                     int creditedRounds, TogetherMembers members, Map<UUID, UUID> subjects,
+                     Map<UUID, MemberReaction> reactions, Map<UUID, Instant> enteredAt) {
         this.id = Guard.notNull(id, "id");
         this.creatorId = Guard.notNull(creatorId, "creatorId");
         this.length = Guard.notNull(length, "length");
@@ -83,6 +94,7 @@ public final class StudyRoom {
         this.members = Guard.notNull(members, "members");
         this.subjects = new HashMap<>(subjects == null ? Map.of() : subjects);
         this.reactions = new HashMap<>(reactions == null ? Map.of() : reactions);
+        this.enteredAt = new HashMap<>(enteredAt == null ? Map.of() : enteredAt);
     }
 
     /** Crea la sala con quien la crea dentro (con su asignatura, si eligió una) y los amigos invitados. */
@@ -94,7 +106,7 @@ public final class StudyRoom {
         }
         return new StudyRoom(UUID.randomUUID(), creatorId, length, rounds, now, null, 0,
                 TogetherMembers.create(creatorId, friendIds == null ? Set.of() : friendIds, 1, MAX_FRIENDS, now),
-                subjects, Map.of());
+                subjects, Map.of(), Map.of(creatorId, now));
     }
 
     // ------------------------------------------------------------------ tiempo
@@ -175,6 +187,7 @@ public final class StudyRoom {
     public void join(UUID userId, Instant now) {
         ensureOpen(now);
         members.join(userId, now);
+        enteredAt.put(userId, now);
     }
 
     public void decline(UUID userId, Instant now) {
@@ -230,7 +243,9 @@ public final class StudyRoom {
     /**
      * Pomodoros que faltan por apuntar: por cada ronda terminada y aún sin contar, uno a cada persona que estaba
      * dentro al acabar, con los minutos que estuvo en esa ronda (desde que entró, si llegó tarde). Quien salió antes
-     * del final no suma esa ronda: por eso el servicio cuenta las rondas terminadas antes de cada entrada o salida.
+     * del final no suma esa ronda; quien salió después sí, aunque se cuente más tarde: así salir no tiene que apuntar
+     * nada y el programador lo hace al minuto. Antes de volver a entrar el servicio cuenta lo pendiente, porque entrar
+     * cambia la hora de entrada.
      */
     public List<Credit> creditsDue(Instant now) {
         List<Credit> credits = new ArrayList<>();
@@ -238,10 +253,11 @@ public final class StudyRoom {
             Instant start = roundStartsAt(round);
             Instant end = roundEndsAt(round);
             for (TogetherMember m : members.all()) {
-                if (!m.joined()) {
+                Instant entered = enteredAt.getOrDefault(m.userId(), m.joined() ? m.updatedAt() : null);
+                if (entered == null || !entered.isBefore(end) || !insideAt(m, end)) {
                     continue;
                 }
-                Instant from = m.updatedAt().isAfter(start) ? m.updatedAt() : start;
+                Instant from = entered.isAfter(start) ? entered : start;
                 long minutes = Duration.between(from, end).toMinutes();
                 if (minutes >= 1) {
                     credits.add(new Credit(m.userId(), round, (int) minutes, end, subjects.get(m.userId())));
@@ -249,6 +265,11 @@ public final class StudyRoom {
             }
         }
         return credits;
+    }
+
+    /** ¿Seguía dentro en {@code at}? Dentro ahora, o salió en ese momento o después. */
+    private static boolean insideAt(TogetherMember m, Instant at) {
+        return m.joined() || (m.status() == MemberStatus.LEFT && !m.updatedAt().isBefore(at));
     }
 
     /** Rondas que ya se han contado hasta {@code now} (lo que quedará en {@link #creditedRounds()}). */
@@ -273,4 +294,5 @@ public final class StudyRoom {
     public Optional<UUID> subjectOf(UUID userId) { return Optional.ofNullable(subjects.get(userId)); }
     public Map<UUID, UUID> subjects() { return Map.copyOf(subjects); }
     public Map<UUID, MemberReaction> reactions() { return Map.copyOf(reactions); }
+    public Map<UUID, Instant> enteredAt() { return Map.copyOf(enteredAt); }
 }
