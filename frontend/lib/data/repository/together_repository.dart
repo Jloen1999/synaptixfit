@@ -185,6 +185,80 @@ class TogetherRepository implements TogetherRepositoryContract {
       RepositoryErrorHandler.guard(() => _remote.startWorkout(id));
 
   @override
+  Future<AppResult<TogetherLimits>> limits() => RepositoryErrorHandler.guard(
+    () async => (await _remote.limits()).toDomain(),
+  );
+
+  @override
+  Future<AppResult<StudyRoom>> createStudyRoom({
+    required StudyRoomLength length,
+    required int rounds,
+    required List<String> friendIds,
+    String? subjectId,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.createStudyRoom(
+      length: length.apiValue,
+      rounds: rounds,
+      friendIds: friendIds,
+      subjectId: subjectId,
+    )).toDomain(),
+  );
+
+  @override
+  Future<AppResult<StudyRoom>> studyRoom(String id) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.studyRoom(id)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<StudyRoom>> joinStudyRoom(String id) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.joinStudyRoom(id)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<Unit>> declineStudyRoom(String id) =>
+      RepositoryErrorHandler.guard(() async {
+        await _remote.declineStudyRoom(id);
+        return unit;
+      });
+
+  @override
+  Future<AppResult<Unit>> leaveStudyRoom(String id) =>
+      RepositoryErrorHandler.guard(() async {
+        await _remote.leaveStudyRoom(id);
+        return unit;
+      });
+
+  @override
+  Future<AppResult<StudyRoom>> startStudyRoom(String id) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.startStudyRoom(id)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<StudyRoom>> chooseStudyRoomSubject(
+    String id, {
+    String? subjectId,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.chooseStudyRoomSubject(
+      id,
+      subjectId: subjectId,
+    )).toDomain(),
+  );
+
+  @override
+  Future<AppResult<StudyRoom>> reactInStudyRoom(
+    String id, {
+    required StudyRoomReaction reaction,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.reactInStudyRoom(
+      id,
+      reaction: reaction.apiValue,
+    )).toDomain(),
+  );
+
+  @override
   Future<AppResult<Unit>> reportUser(
     String userId, {
     required UserReportContext context,

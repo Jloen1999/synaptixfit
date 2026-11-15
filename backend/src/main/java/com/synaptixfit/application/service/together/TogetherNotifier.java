@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Avisos de «Con amigos» (ADR 0044): invitaciones y «Recordárselo». Van como avisos sociales, así que se aplican las
+ * Avisos de «Con amigos» (ADR 0044 y 0045): invitaciones y «Recordárselo». Van como avisos sociales, así que se aplican las
  * preferencias de quien los recibe ({@link CreateNotificationUseCase}); nunca llevan cifras ni datos de salud. Quien
  * tiene shadowban no avisa a nadie. {@code actionUrl} son rutas del cliente bajo {@code /social/together}.
  */
@@ -46,6 +46,11 @@ public final class TogetherNotifier {
                 "%s te invita a entrenar hoy: " + routineName.replace("%", "%%"),
                 HUB + "/workouts/" + workoutId, "Ver", "workout-together:" + workoutId,
                 Code.WORKOUT_TOGETHER_INVITED, routineName));
+    }
+
+    void studyRoomInvited(Collection<UUID> invitees, UUID actorId, UUID roomId) {
+        invitees.forEach(id -> send(id, actorId, "Estudiamos juntos", "%s te invita a estudiar juntos",
+                HUB + "/study/" + roomId, "Ver", "study-room:" + roomId, Code.STUDY_ROOM_INVITED, null));
     }
 
     void streakNudged(UUID friendId, UUID actorId, UUID streakId, String day) {

@@ -24,6 +24,26 @@ extension TogetherReactionLabel on TogetherReaction {
   }
 }
 
+/// Emoji y nombre de cada reacción fija de una sala de estudio (ADR 0045).
+extension StudyRoomReactionLabel on StudyRoomReaction {
+  String get emoji => switch (this) {
+    StudyRoomReaction.clap => '\u{1F44F}',
+    StudyRoomReaction.fire => '\u{1F525}',
+    StudyRoomReaction.muscle => '\u{1F4AA}',
+    StudyRoomReaction.coffee => '\u{2615}',
+  };
+
+  String label(BuildContext context) {
+    final l10n = context.localizations;
+    return switch (this) {
+      StudyRoomReaction.clap => l10n.togetherReactionClap,
+      StudyRoomReaction.fire => l10n.togetherReactionFire,
+      StudyRoomReaction.muscle => l10n.togetherReactionMuscle,
+      StudyRoomReaction.coffee => l10n.togetherReactionCoffee,
+    };
+  }
+}
+
 /// Nombre de cada modo de reto con amigos.
 extension FriendChallengeModeLabel on FriendChallengeMode {
   String label(BuildContext context) => switch (this) {

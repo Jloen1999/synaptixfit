@@ -11,16 +11,13 @@ part 'workout_invite_event.dart';
 part 'workout_invite_state.dart';
 
 /// «Entrenar con amigos» desde una rutina (ADR 0044): invita de 1 a 4 amigos a
-/// hacer hoy el siguiente día (o el elegido). Los amigos los elige
-/// `FriendPickerBloc`.
+/// hacer hoy el siguiente día (o el elegido). Los amigos (y su tope, del
+/// servidor) los elige `FriendPickerBloc`.
 class WorkoutInviteBloc extends Bloc<WorkoutInviteEvent, WorkoutInviteState> {
   WorkoutInviteBloc({required this._create})
     : super(const WorkoutInviteState()) {
     on<WorkoutInviteSubmitted>(_onSubmitted);
   }
-
-  /// Como mucho cuatro amigos (cinco personas entrenando a la vez).
-  static const maxFriends = 4;
 
   final CreateWorkoutTogetherUseCaseContract _create;
 

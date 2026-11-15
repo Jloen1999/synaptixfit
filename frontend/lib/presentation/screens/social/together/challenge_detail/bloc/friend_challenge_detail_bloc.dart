@@ -29,6 +29,7 @@ class FriendChallengeDetailBloc
     required this._removeReaction,
   }) : super(const FriendChallengeDetailState()) {
     on<FriendChallengeDetailStarted>(_onStarted);
+    on<FriendChallengeDetailRefreshed>(_onRefreshed);
     on<FriendChallengeDetailJoined>(_onJoined);
     on<FriendChallengeDetailDeclined>(_onDeclined);
     on<FriendChallengeDetailLeft>(_onLeft);
@@ -66,6 +67,23 @@ class FriendChallengeDetailBloc
         error: error,
       ),
     });
+  }
+
+  /// Lectura silenciosa: un fallo de red se avisa sin perder lo que se ve.
+  Future<void> _onRefreshed(
+    FriendChallengeDetailRefreshed event,
+    Emitter<FriendChallengeDetailState> emit,
+  ) async {
+    if (state.id == null || state.busy) return;
+    final result = await _get(_id);
+    emit(switch (result) {
+      Success(:final value) => state.copyWith(
+        status: FriendChallengeDetailStatus.ready,
+        challenge: value,
+      ),
+      Failure(:final error) => state.copyWith(actionError: error),
+    });
+    emit(state.copyWith(actionError: null));
   }
 
   Future<void> _onJoined(

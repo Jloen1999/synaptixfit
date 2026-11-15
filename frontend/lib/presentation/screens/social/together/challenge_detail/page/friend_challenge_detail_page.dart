@@ -95,9 +95,10 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                     onRetry: () =>
                         bloc.add(FriendChallengeDetailEvent.started(state.id!)),
                   ),
-                  FriendChallengeDetailStatus.ready => _Body(
-                    challenge: c!,
-                    busy: state.busy,
+                  FriendChallengeDetailStatus.ready => RefreshIndicator(
+                    onRefresh: () async =>
+                        bloc.add(const FriendChallengeDetailEvent.refreshed()),
+                    child: _Body(challenge: c!, busy: state.busy),
                   ),
                 },
               );
@@ -121,6 +122,7 @@ class _Body extends StatelessWidget {
     final joined = c.myStatus == TogetherMemberStatus.joined;
     final reached = c.groupTotal >= c.groupTarget;
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         TokensSpacing.m,
         TokensSpacing.s,

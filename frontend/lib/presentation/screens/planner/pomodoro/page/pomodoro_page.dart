@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
@@ -11,6 +12,7 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../planner_routes.dart';
 import '../../widgets/pomodoro_ring_painter.dart';
 import '../bloc/pomodoro_bloc.dart';
 
@@ -487,6 +489,18 @@ class _Controls extends StatelessWidget {
             focusNode: mainControl,
             onPressed: () => bloc.add(event),
           ),
+        // Antes de empezar, la otra forma de concentrarse: con amigos, en una
+        // sala con temporizador común (secundaria, ADR 0045).
+        if (state.untouched && !asking) ...[
+          const SizedBox(height: TokensSpacing.s),
+          TextButton.icon(
+            onPressed: () => context.push(
+              PlannerExternalPaths.studyWithFriends(subjectId: state.subjectId),
+            ),
+            icon: const Icon(AppIcons.friends),
+            label: Text(l10n.plannerPomodoroWithFriends),
+          ),
+        ],
         // Antes de empezar, solo «Empezar a concentrarme» (una acción).
         if (!state.untouched) ...[
           const SizedBox(height: TokensSpacing.s),

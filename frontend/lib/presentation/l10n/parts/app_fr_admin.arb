@@ -350,5 +350,6 @@
   "adminReportContextChallenge": "Signalée dans un défi entre amis",
   "adminReportContextStreak": "Signalée dans une série avec un ami",
   "adminReportContextWorkout": "Signalée lors d'un entraînement ensemble",
-  "adminReportContextProfile": "Signalée depuis son profil"
+  "adminReportContextProfile": "Signalée depuis son profil",
+  "adminReportContextStudyRoom": "Signalée en étudiant ensemble"
 }

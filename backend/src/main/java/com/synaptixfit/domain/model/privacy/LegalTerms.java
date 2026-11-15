@@ -8,9 +8,10 @@ public final class LegalTerms {
 
     /**
      * Fecha de la versión vigente (ISO). Cambiarla obliga a aceptar de nuevo. 2026-11-07: la política suma la
-     * ubicación exacta mientras se graba una carrera (ADR 0037).
+     * ubicación exacta mientras se graba una carrera (ADR 0037). 2026-11-15: enlaces de rutina y «Con amigos»
+     * (retos, rachas, entrenar y estudiar juntos, denuncias): otras personas ven parte de la actividad (ADR 0043-0045).
      */
-    public static final String CURRENT_VERSION = "2026-11-07";
+    public static final String CURRENT_VERSION = "2026-11-15";
 
     private LegalTerms() {
     }

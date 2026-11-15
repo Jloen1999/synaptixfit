@@ -27,7 +27,7 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 - "My cycle", only if you turn it on: period days, energy and discomfort you log and your notes.
 - Photos of paper notes: we read them to turn them into text and do not keep the photo. Only the note you decide to save is stored.
 - What you share in the community: posts, comments, shared notes, friendships and visible badges.
-- What you do «With friends», if you use it: the challenges, streaks and workouts with friends you take part in, the reactions you give and the people you report.
+- What you do «With friends», if you use it: the challenges, streaks, workouts and study rooms with friends you take part in (and, in each room, the subject you choose), the reactions you give and the people you report.
 - Reminders: your reminder preferences and, if you turn it on, the weekly summary email.
 - Technical data: the IP address and the type of browser or phone that reach the server, needed for the app to work and stay secure.
 
@@ -56,7 +56,8 @@ Cycle data is only visible to you: it is not shared with anyone, not even the ar
 - In a challenge with friends, they see whether you have added something and, only if you choose competition, your points. In a streak with a friend, they see whether you have done your part today. When training together, they see which exercises you have done. The app works this out from what you already do (reviews, Pomodoros and workouts); it never shows how you feel, your cycle, your sleep, your weight, the weights you lift or your effort, or where you are.
 - There is no chat: only fixed reactions. Only you see how many reactions your entries have.
 - If you train together using someone else's routine, a paused copy marked with their name is saved in your routines; you can delete it whenever you like.
-- You can leave a challenge or end a streak at any time. When you block someone or stop being friends, you stop sharing what you had in common.
+- In a «Studying together» room, the others see that you are in, whether you have left and your latest reaction. The subject you choose for your rounds is only visible to you. Each finished round is saved as one of your Pomodoros, just as if you studied alone. The room closes on its own when the rounds end or, if nobody starts it, after 4 hours; who was there and when is kept until you delete your account.
+- You can leave a challenge or a room, or end a streak, at any time. When you block someone or stop being friends, you stop sharing what you had in common.
 - If you report someone, we keep who reported, who was reported and where it happened, so the moderation team can review it. The reported person does not know who reported them.
 - If you share a routine by link, whoever opens it only sees the routine (name, days and exercises), never your name, your profile or your sessions. The link expires after 30 days and you can stop sharing it earlier.
 

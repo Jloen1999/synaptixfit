@@ -744,7 +744,7 @@
   "socialErrorFriendStreakNotFound": "Esa racha ya no existe.",
   "socialErrorWorkoutTogetherNotFound": "Ese entreno ya no está disponible.",
   "socialErrorTogetherNotFriends": "Solo puedes invitar a amigos mutuos.",
-  "socialErrorTogetherGroupSize": "Elige entre 1 y 24 amigos para un reto, o entre 1 y 4 para entrenar juntos.",
+  "socialErrorTogetherGroupSize": "Elige al menos un amigo y no más de los que caben.",
   "socialErrorTogetherInvalidState": "Eso ya no se puede hacer. Vuelve a cargar la pantalla.",
   "socialErrorFriendChallengeTemplateNotAllowed": "Ese reto no se puede hacer con amigos.",
   "socialErrorFriendStreakLimitReached": "Ya hay 5 rachas con amigos: termina una para empezar otra.",
@@ -802,5 +802,129 @@
     }
   },
   "togetherSummaryAloneTitle": "Entreno hecho",
-  "togetherStreakWithdrawn": "Propuesta retirada"
+  "togetherStreakWithdrawn": "Propuesta retirada",
+  "togetherStudyTitle": "Estudiar juntos",
+  "togetherStudyWithFriends": "Estudiar con amigos",
+  "togetherStudyIntro": "Un temporizador para todos; cada uno estudia lo suyo.",
+  "togetherStudyHelp": "Cada ronda terminada cuenta como un Pomodoro tuyo (racha y retos). Los demás no ven tu asignatura ni cómo estás. Si te vas, los demás siguen; cualquiera de dentro puede empezar.",
+  "togetherStudyLength": "Cada ronda",
+  "togetherStudyLengthOption": "{focus} + {rest} min",
+  "@togetherStudyLengthOption": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "rest": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherStudyRounds": "Rondas",
+  "togetherStudyInvited": "Sala creada e invitación enviada",
+  "togetherStudySection": "Estudiar juntos",
+  "togetherStudyEmpty": "Ninguna sala de estudio ahora.",
+  "togetherInvitedStudy": "{name} te invita a estudiar juntos",
+  "@togetherInvitedStudy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherStudyWaiting": "Esperando a que alguien la empiece",
+  "togetherStudyFocusRound": "Concentración · ronda {round} de {rounds}",
+  "@togetherStudyFocusRound": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "rounds": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherStudyBreakThen": "Descanso · luego ronda {next} de {rounds}",
+  "@togetherStudyBreakThen": {
+    "placeholders": {
+      "next": {
+        "type": "int"
+      },
+      "rounds": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherStudyPlan": "{rounds, plural, =0{Sin rondas} =1{1 ronda de {focus} min} other{{rounds} rondas de {focus} min con {rest} min de descanso}}",
+  "@togetherStudyPlan": {
+    "placeholders": {
+      "rounds": {
+        "type": "int"
+      },
+      "focus": {
+        "type": "int"
+      },
+      "rest": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherStudyMinutesLeft": "{count, plural, =0{Termina ya} =1{Queda 1 minuto} other{Quedan {count} minutos}}",
+  "@togetherStudyMinutesLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherStudyReactions": "Reacciones",
+  "togetherStudyReact": "Reacción: {reaction}",
+  "@togetherStudyReact": {
+    "placeholders": {
+      "reaction": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherReactionCoffee": "Café",
+  "togetherStudySubjectLabel": "Asignatura (solo la ves tú)",
+  "togetherStudyNoSubject": "Ninguna asignatura",
+  "togetherStudyInside": "En la sala",
+  "togetherStudyGone": "Se ha ido",
+  "togetherStudyLeave": "Salir de la sala",
+  "togetherStudyLeft": "Has salido de la sala",
+  "togetherStudyFinishedTitle": "Sala terminada",
+  "togetherStudyFinishedMessage": "Cada ronda ya cuenta como un Pomodoro tuyo.",
+  "togetherStudyExpiredTitle": "Nadie empezó la sala",
+  "togetherStudyExpiredMessage": "Las salas que nadie empieza se cierran solas.",
+  "togetherStudyBack": "Volver",
+  "socialNotifStudyRoomTitle": "Estudiamos juntos",
+  "socialNotifStudyRoomBody": "{name} te invita a estudiar juntos",
+  "@socialNotifStudyRoomBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialErrorStudyRoomNotFound": "Esa sala ya no está disponible.",
+  "togetherStudyStatusReaction": "{status} · {reaction}",
+  "@togetherStudyStatusReaction": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "reaction": {
+        "type": "String"
+      }
+    }
+  },
+  "togetherStudyGoneTitle": "Ya no estás en esta sala",
+  "togetherStudyInsideCount": "{count, plural, =0{Nadie dentro todavía} =1{1 persona dentro} other{{count} personas dentro}}",
+  "@togetherStudyInsideCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

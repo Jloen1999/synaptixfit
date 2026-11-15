@@ -11,6 +11,12 @@ public interface FriendChallengeRepositoryPort {
 
     Optional<FriendChallenge> findById(UUID id);
 
+    /**
+     * El reto bloqueado hasta el final de la transacción (ADR 0045): quien lo cambia lo lee así, porque guardar escribe
+     * a todas las personas y dos acciones a la vez (dos que aceptan, una que sale y otra que reacciona) se pisarían.
+     */
+    Optional<FriendChallenge> findByIdForUpdate(UUID id);
+
     FriendChallenge save(FriendChallenge challenge);
 
     /** Retos en los que {@code userId} está invitado o dentro y que terminaron después de {@code endedAfter}. */

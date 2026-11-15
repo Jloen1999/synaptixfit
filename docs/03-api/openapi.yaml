@@ -192,6 +192,56 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/SubmitCheckInResponse"
+  /api/v1/together/study-rooms/{roomId}/subject:
+    put:
+      tags:
+      - Social - Together
+      operationId: subject
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyRoomSubjectRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyRoomResponse"
+  /api/v1/together/study-rooms/{roomId}/reaction:
+    put:
+      tags:
+      - Social - Together
+      operationId: reaction
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyRoomReactionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyRoomResponse"
   /api/v1/together/challenges/{challengeId}/reactions:
     put:
       tags:
@@ -1532,6 +1582,92 @@ paths:
       responses:
         "204":
           description: No Content
+  /api/v1/together/study-rooms:
+    post:
+      tags:
+      - Social - Together
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudyRoomRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyRoomResponse"
+  /api/v1/together/study-rooms/{roomId}/start:
+    post:
+      tags:
+      - Social - Together
+      operationId: start_1
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyRoomResponse"
+  /api/v1/together/study-rooms/{roomId}/leave:
+    post:
+      tags:
+      - Social - Together
+      operationId: leave
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+  /api/v1/together/study-rooms/{roomId}/join:
+    post:
+      tags:
+      - Social - Together
+      operationId: join
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyRoomResponse"
+  /api/v1/together/study-rooms/{roomId}/decline:
+    post:
+      tags:
+      - Social - Together
+      operationId: decline
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
   /api/v1/together/streaks:
     post:
       tags:
@@ -1703,7 +1839,7 @@ paths:
     post:
       tags:
       - Academic - Quizzes
-      operationId: start_1
+      operationId: start_2
       requestBody:
         content:
           application/json:
@@ -1784,7 +1920,7 @@ paths:
     post:
       tags:
       - Academic - Teaching guide import
-      operationId: start_2
+      operationId: start_3
       requestBody:
         content:
           application/json:
@@ -1889,7 +2025,7 @@ paths:
     post:
       tags:
       - Academic - Subjects
-      operationId: create_1
+      operationId: create_2
       requestBody:
         content:
           application/json:
@@ -2450,7 +2586,7 @@ paths:
     post:
       tags:
       - Social - Posts
-      operationId: create_2
+      operationId: create_3
       requestBody:
         content:
           application/json:
@@ -2701,7 +2837,7 @@ paths:
     post:
       tags:
       - Routines
-      operationId: create_3
+      operationId: create_4
       requestBody:
         content:
           application/json:
@@ -2792,7 +2928,7 @@ paths:
     post:
       tags:
       - Routines
-      operationId: create_4
+      operationId: create_5
       parameters:
       - name: routineId
         in: path
@@ -3327,7 +3463,7 @@ paths:
     post:
       tags:
       - Planner - Deadlines
-      operationId: create_5
+      operationId: create_6
       requestBody:
         content:
           application/json:
@@ -3356,7 +3492,7 @@ paths:
     post:
       tags:
       - Planner - calendar feed
-      operationId: create_6
+      operationId: create_7
       responses:
         "201":
           description: Created
@@ -3407,7 +3543,7 @@ paths:
     post:
       tags:
       - Planner - Blocks
-      operationId: create_7
+      operationId: create_8
       requestBody:
         content:
           application/json:
@@ -3609,7 +3745,7 @@ paths:
     post:
       tags:
       - Academic - Notes
-      operationId: create_8
+      operationId: create_9
       requestBody:
         content:
           application/json:
@@ -3728,7 +3864,7 @@ paths:
     post:
       tags:
       - Challenges
-      operationId: create_9
+      operationId: create_10
       requestBody:
         content:
           application/json:
@@ -3898,7 +4034,7 @@ paths:
     post:
       tags:
       - Challenges
-      operationId: start_3
+      operationId: start_4
       parameters:
       - name: templateId
         in: path
@@ -4233,7 +4369,7 @@ paths:
     post:
       tags:
       - Admin - Exercises
-      operationId: create_10
+      operationId: create_11
       requestBody:
         content:
           application/json:
@@ -5557,6 +5693,37 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/WorkoutTogetherResponse"
+  /api/v1/together/study-rooms/{roomId}:
+    get:
+      tags:
+      - Social - Together
+      operationId: room
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyRoomResponse"
+  /api/v1/together/limits:
+    get:
+      tags:
+      - Social - Together
+      operationId: limits
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TogetherLimitsResponse"
   /api/v1/together/challenges/{challengeId}:
     get:
       tags:
@@ -7095,7 +7262,7 @@ paths:
     get:
       tags:
       - Catalog
-      operationId: subject
+      operationId: subject_1
       parameters:
       - name: subjectId
         in: path
@@ -8244,6 +8411,114 @@ components:
         xpAwarded:
           type: integer
           format: int32
+    StudyRoomSubjectRequest:
+      type: object
+      properties:
+        subjectId:
+          type: string
+          format: uuid
+    PersonResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        avatarUrl:
+          type: string
+    StudyRoomMember:
+      type: object
+      properties:
+        person:
+          $ref: "#/components/schemas/PersonResponse"
+        status:
+          type: string
+          enum:
+          - INVITED
+          - JOINED
+          - DECLINED
+          - LEFT
+        reaction:
+          type: string
+          enum:
+          - CLAP
+          - FIRE
+          - MUSCLE
+          - COFFEE
+        me:
+          type: boolean
+    StudyRoomResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        creator:
+          $ref: "#/components/schemas/PersonResponse"
+        length:
+          type: string
+          enum:
+          - SHORT
+          - LONG
+        focusMinutes:
+          type: integer
+          format: int32
+        breakMinutes:
+          type: integer
+          format: int32
+        rounds:
+          type: integer
+          format: int32
+        phase:
+          type: string
+          enum:
+          - WAITING
+          - FOCUS
+          - BREAK
+          - FINISHED
+          - EXPIRED
+        round:
+          type: integer
+          format: int32
+        phaseEndsAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        serverTime:
+          type: string
+          format: date-time
+        myStatus:
+          type: string
+          enum:
+          - INVITED
+          - JOINED
+          - DECLINED
+          - LEFT
+        mySubjectId:
+          type: string
+          format: uuid
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudyRoomMember"
+    StudyRoomReactionRequest:
+      type: object
+      properties:
+        reaction:
+          type: string
+          enum:
+          - CLAP
+          - FIRE
+          - MUSCLE
+          - COFFEE
+      required:
+      - reaction
     ReactionRequest:
       type: object
       properties:
@@ -10772,16 +11047,6 @@ components:
       required:
       - friendIds
       - routineId
-    PersonResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        fullName:
-          type: string
-        avatarUrl:
-          type: string
     WorkoutTogetherMember:
       type: object
       properties:
@@ -10865,6 +11130,34 @@ components:
         sessionId:
           type: string
           format: uuid
+    CreateStudyRoomRequest:
+      type: object
+      properties:
+        length:
+          type: string
+          enum:
+          - SHORT
+          - LONG
+        rounds:
+          type: integer
+          format: int32
+          maximum: 4
+          minimum: 1
+        friendIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 4
+          minItems: 0
+          uniqueItems: true
+        subjectId:
+          type: string
+          format: uuid
+      required:
+      - friendIds
+      - length
+      - rounds
     FriendStreakRequest:
       type: object
       properties:
@@ -12107,6 +12400,7 @@ components:
           - FRIEND_CHALLENGE
           - FRIEND_STREAK
           - WORKOUT_TOGETHER
+          - STUDY_ROOM
           - PROFILE
       required:
       - context
@@ -13496,6 +13790,7 @@ components:
           - FRIEND_STREAK_INVITED
           - WORKOUT_TOGETHER_INVITED
           - FRIEND_STREAK_NUDGE
+          - STUDY_ROOM_INVITED
         messageParams:
           type: object
           additionalProperties:
@@ -14805,6 +15100,46 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkoutTogetherResponse"
+        studyRooms:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudyRoomResponse"
+    StudyRoomLengthResponse:
+      type: object
+      properties:
+        length:
+          type: string
+          enum:
+          - SHORT
+          - LONG
+        focusMinutes:
+          type: integer
+          format: int32
+        breakMinutes:
+          type: integer
+          format: int32
+    TogetherLimitsResponse:
+      type: object
+      properties:
+        challengeFriends:
+          type: integer
+          format: int32
+        workoutFriends:
+          type: integer
+          format: int32
+        studyRoomFriends:
+          type: integer
+          format: int32
+        friendStreaks:
+          type: integer
+          format: int32
+        studyRoomRounds:
+          type: integer
+          format: int32
+        studyRoomLengths:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudyRoomLengthResponse"
     ChallengeTemplateResponse:
       type: object
       properties:

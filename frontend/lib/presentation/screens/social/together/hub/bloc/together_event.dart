@@ -35,4 +35,10 @@ sealed class TogetherEvent with _$TogetherEvent {
 
   const factory TogetherEvent.workoutDeclined(String id) =
       TogetherWorkoutDeclined;
+
+  const factory TogetherEvent.studyRoomJoined(String id) =
+      TogetherStudyRoomJoined;
+
+  const factory TogetherEvent.studyRoomDeclined(String id) =
+      TogetherStudyRoomDeclined;
 }

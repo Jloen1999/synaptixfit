@@ -76,6 +76,8 @@ class TogetherServicesTest {
     private final Map<UUID, List<StreakPause>> pauses = new HashMap<>();
     private final Map<UUID, ReminderOptions> options = new HashMap<>();
     private final List<CreateNotificationUseCase.Command> sent = new ArrayList<>();
+    /** Lecturas bloqueadas ({@code findByIdForUpdate}) de retos y entrenos, por id. */
+    private final List<UUID> locked = new ArrayList<>();
 
     private FriendStreakService streakService;
     private FriendChallengeService challengeService;
@@ -106,7 +108,9 @@ class TogetherServicesTest {
                 notifier, CLOCK, UTC);
         challengeService = new FriendChallengeService(challengePort(), reactionPort(), templatePort(), activityPort(),
                 userPort(), people, notifier, CLOCK, UTC);
-        cleanup = new TogetherCleanupService(streakPort(), challengePort(), workoutPort(), CLOCK, UTC);
+        StudyRoomService studyRooms = new StudyRoomService(new InMemoryStudyRooms(), null, null, people, notifier,
+                CLOCK, new com.synaptixfit.domain.model.planner.PlannerZone(UTC));
+        cleanup = new TogetherCleanupService(streakPort(), challengePort(), workoutPort(), studyRooms, CLOCK, UTC);
     }
 
     @Test
@@ -225,6 +229,65 @@ class TogetherServicesTest {
         assertThat(c.members().find(ana.id()).orElseThrow().status()).isEqualTo(MemberStatus.LEFT);
     }
 
+    // ------------------------------------------------------------------ lectura bloqueada (ADR 0045)
+
+    private FriendChallengeView challengeWithAna() {
+        return challengeService.create(new CreateFriendChallengeUseCase.Command(me.id(), reviews.id(), 7, null,
+                Set.of(ana.id())), "es");
+    }
+
+    @Test
+    void joiningAChallengeReadsItLocked() {
+        FriendChallengeView c = challengeWithAna();
+        locked.clear();
+        challengeService.join(ana.id(), c.id(), "es");
+        assertThat(locked).containsExactly(c.id());
+    }
+
+    @Test
+    void decliningAChallengeReadsItLocked() {
+        FriendChallengeView c = challengeWithAna();
+        locked.clear();
+        challengeService.decline(ana.id(), c.id());
+        assertThat(locked).containsExactly(c.id());
+    }
+
+    @Test
+    void leavingAChallengeReadsItLocked() {
+        FriendChallengeView c = challengeWithAna();
+        challengeService.join(ana.id(), c.id(), "es");
+        locked.clear();
+        challengeService.leave(ana.id(), c.id());
+        assertThat(locked).containsExactly(c.id());
+    }
+
+    @Test
+    void reactingAndRemovingAReactionReadTheChallengeLocked() {
+        FriendChallengeView c = challengeWithAna();
+        challengeService.join(ana.id(), c.id(), "es");
+        did(me, ActivityKind.REVIEW);
+        LocalDate today = LocalDate.ofInstant(CLOCK.instant(), UTC);
+        locked.clear();
+        challengeService.react(ana.id(), c.id(), me.id(), today, Reaction.FIRE);
+        assertThat(locked).containsExactly(c.id());
+        locked.clear();
+        challengeService.removeReaction(ana.id(), c.id(), me.id(), today);
+        assertThat(locked).containsExactly(c.id());
+    }
+
+    @Test
+    void endingAFriendshipReadsWhatIsSharedLocked() {
+        FriendChallengeView c = challengeWithAna();
+        challengeService.join(ana.id(), c.id(), "es");
+        WorkoutTogether w = WorkoutTogether.create(me.id(), UUID.randomUUID(), UUID.randomUUID(), Set.of(ana.id()),
+                LocalDate.ofInstant(CLOCK.instant(), UTC), CLOCK.instant());
+        workouts.put(w.id(), w);
+        locked.clear();
+        cleanup.leaveShared(me.id(), ana.id(), false);
+        assertThat(locked).contains(c.id(), w.id());
+        assertThat(w.members().find(ana.id()).orElseThrow().status()).isEqualTo(MemberStatus.DECLINED);
+    }
+
     // ------------------------------------------------------------------ dobles
 
     private User user(String name) {
@@ -282,6 +345,10 @@ class TogetherServicesTest {
     private FriendChallengeRepositoryPort challengePort() {
         return new FriendChallengeRepositoryPort() {
             public Optional<FriendChallenge> findById(UUID id) { return Optional.ofNullable(challenges.get(id)); }
+            public Optional<FriendChallenge> findByIdForUpdate(UUID id) {
+                locked.add(id);
+                return findById(id);
+            }
             public FriendChallenge save(FriendChallenge c) { challenges.put(c.id(), c); return c; }
             public List<FriendChallenge> findVisibleTo(UUID u, Instant after) {
                 return challenges.values().stream().filter(c -> c.canView(u) && c.endAt().isAfter(after)).toList();
@@ -308,6 +375,10 @@ class TogetherServicesTest {
     private WorkoutTogetherRepositoryPort workoutPort() {
         return new WorkoutTogetherRepositoryPort() {
             public Optional<WorkoutTogether> findById(UUID id) { return Optional.ofNullable(workouts.get(id)); }
+            public Optional<WorkoutTogether> findByIdForUpdate(UUID id) {
+                locked.add(id);
+                return findById(id);
+            }
             public WorkoutTogether save(WorkoutTogether w) { workouts.put(w.id(), w); return w; }
             public List<WorkoutTogether> findVisibleTo(UUID u, LocalDate from) {
                 return workouts.values().stream().filter(w -> w.canView(u)).toList();

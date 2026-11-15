@@ -4,8 +4,9 @@ import '../models/result/app_result.dart';
 import '../models/result/result.dart';
 import '../models/social/together.dart';
 
-/// «Con amigos» asíncrono (ADR 0044): retos con amigos, rachas con un amigo,
-/// «Entrenamos juntos» y denunciar a una persona.
+/// «Con amigos» (ADR 0044 y 0045): retos con amigos, rachas con un amigo,
+/// «Entrenamos juntos», «Estudiamos juntos», sus topes y denunciar a una
+/// persona.
 abstract interface class TogetherRepositoryContract {
   Future<AppResult<TogetherOverview>> overview();
 
@@ -68,6 +69,38 @@ abstract interface class TogetherRepositoryContract {
 
   /// Empieza (o retoma) mi sesión y devuelve su id.
   Future<AppResult<String>> startWorkout(String id);
+
+  /// Topes de amigos y rondas que manda el servidor.
+  Future<AppResult<TogetherLimits>> limits();
+
+  Future<AppResult<StudyRoom>> createStudyRoom({
+    required StudyRoomLength length,
+    required int rounds,
+    required List<String> friendIds,
+    String? subjectId,
+  });
+
+  Future<AppResult<StudyRoom>> studyRoom(String id);
+
+  /// Acepta la invitación o vuelve tras salir («Deshacer»).
+  Future<AppResult<StudyRoom>> joinStudyRoom(String id);
+
+  Future<AppResult<Unit>> declineStudyRoom(String id);
+
+  Future<AppResult<Unit>> leaveStudyRoom(String id);
+
+  Future<AppResult<StudyRoom>> startStudyRoom(String id);
+
+  /// Mi asignatura para las rondas (`null`: ninguna).
+  Future<AppResult<StudyRoom>> chooseStudyRoomSubject(
+    String id, {
+    String? subjectId,
+  });
+
+  Future<AppResult<StudyRoom>> reactInStudyRoom(
+    String id, {
+    required StudyRoomReaction reaction,
+  });
 
   Future<AppResult<Unit>> reportUser(
     String userId, {

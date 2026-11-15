@@ -148,6 +148,9 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
         sections.put("workoutsTogetherCreated", rows("entrenos_juntos t", "t.anfitrion_id = :id", "t.creado_en"));
         sections.put("workoutsTogether", rows("entrenos_juntos_miembros t", "t.usuario_id = :id",
                 "t.actualizado_en"));
+        // Estudiamos juntos (ADR 0045): las salas que creó y su sitio en cada una (con su asignatura y su reacción).
+        sections.put("studyRoomsCreated", rows("salas_estudio t", "t.creador_id = :id", "t.creado_en"));
+        sections.put("studyRooms", rows("salas_estudio_miembros t", "t.usuario_id = :id", "t.actualizado_en"));
         sections.put("userReportsFiled", rows("denuncias_usuario t", "t.denunciante_id = :id", "t.creado_en"));
         sections.put("notifications", rows("notificaciones t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("notificationPreferences", single("preferencias_notificacion"));

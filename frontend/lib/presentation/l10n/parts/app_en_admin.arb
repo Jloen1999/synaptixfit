@@ -350,5 +350,6 @@
   "adminReportContextChallenge": "Reported in a challenge with friends",
   "adminReportContextStreak": "Reported in a streak with a friend",
   "adminReportContextWorkout": "Reported while training together",
-  "adminReportContextProfile": "Reported from their profile"
+  "adminReportContextProfile": "Reported from their profile",
+  "adminReportContextStudyRoom": "Reported while studying together"
 }

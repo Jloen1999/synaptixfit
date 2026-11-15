@@ -1,6 +1,18 @@
 package com.synaptixfit.infrastructure.config;
 
 import com.synaptixfit.application.port.input.notification.CreateNotificationUseCase;
+import com.synaptixfit.application.port.input.planner.RecordFocusSessionUseCase;
+import com.synaptixfit.application.port.input.together.ChooseStudyRoomSubjectUseCase;
+import com.synaptixfit.application.port.input.together.CreateStudyRoomUseCase;
+import com.synaptixfit.application.port.input.together.CreditStudyRoomRoundsUseCase;
+import com.synaptixfit.application.port.input.together.DeclineStudyRoomUseCase;
+import com.synaptixfit.application.port.input.together.FindStudyRoomsToCreditUseCase;
+import com.synaptixfit.application.port.input.together.GetStudyRoomUseCase;
+import com.synaptixfit.application.port.input.together.GetTogetherLimitsUseCase;
+import com.synaptixfit.application.port.input.together.JoinStudyRoomUseCase;
+import com.synaptixfit.application.port.input.together.LeaveStudyRoomUseCase;
+import com.synaptixfit.application.port.input.together.ReactStudyRoomUseCase;
+import com.synaptixfit.application.port.input.together.StartStudyRoomUseCase;
 import com.synaptixfit.application.port.input.together.AcceptFriendStreakUseCase;
 import com.synaptixfit.application.port.input.together.CreateFriendChallengeUseCase;
 import com.synaptixfit.application.port.input.together.CreateWorkoutTogetherUseCase;
@@ -27,19 +39,24 @@ import com.synaptixfit.application.port.input.training.CopyRoutineForFriendUseCa
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
 import com.synaptixfit.application.service.together.FriendChallengeService;
 import com.synaptixfit.application.service.together.FriendStreakService;
+import com.synaptixfit.application.service.together.StudyRoomService;
 import com.synaptixfit.application.service.together.TogetherCleanupService;
+import com.synaptixfit.application.service.together.TogetherLimitsService;
 import com.synaptixfit.application.service.together.TogetherNotifier;
 import com.synaptixfit.application.service.together.TogetherOverviewService;
 import com.synaptixfit.application.service.together.TogetherPeople;
 import com.synaptixfit.application.service.together.WorkoutTogetherService;
+import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.port.output.badge.StreakPauseRepositoryPort;
 import com.synaptixfit.domain.port.output.challenge.ChallengeReferencePort;
 import com.synaptixfit.domain.port.output.challenge.ChallengeTemplateRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.ReminderOptionsRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.social.FriendshipRepositoryPort;
 import com.synaptixfit.domain.port.output.together.FriendChallengeReactionPort;
 import com.synaptixfit.domain.port.output.together.FriendChallengeRepositoryPort;
 import com.synaptixfit.domain.port.output.together.FriendStreakRepositoryPort;
+import com.synaptixfit.domain.port.output.together.StudyRoomRepositoryPort;
 import com.synaptixfit.domain.port.output.together.WorkoutTogetherRepositoryPort;
 import com.synaptixfit.domain.port.output.training.RoutineRepositoryPort;
 import com.synaptixfit.domain.port.output.training.TrainingSessionRepositoryPort;
@@ -51,7 +68,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Composición de «Con amigos» asíncrono (ADR 0044): retos con amigos, rachas con un amigo y «Entrenamos juntos».
+ * Composición de «Con amigos» (ADR 0044 y 0045): retos con amigos, rachas con un amigo, «Entrenamos juntos» y
+ * «Estudiamos juntos» (cuyas rondas se apuntan con el registro de Pomodoro de siempre, {@link RecordFocusSessionUseCase}).
  * Lee lo hecho con el mismo puerto que los retos que se cuentan solos ({@link ChallengeReferencePort}) y usa la
  * zona de la gamificación para decidir qué día es hoy.
  */
@@ -63,6 +81,9 @@ public class TogetherBeanConfiguration {
     private final FriendChallengeReactionPort reactions;
     private final FriendStreakRepositoryPort streaks;
     private final WorkoutTogetherRepositoryPort workouts;
+    private final StudyRoomRepositoryPort studyRooms;
+    private final SubjectDirectoryPort subjects;
+    private final RecordFocusSessionUseCase recordFocus;
     private final ChallengeTemplateRepositoryPort templates;
     private final ChallengeReferencePort activity;
     private final StreakPauseRepositoryPort pauses;
@@ -76,23 +97,30 @@ public class TogetherBeanConfiguration {
     private final CreateNotificationUseCase notifications;
     private final Clock clock;
     private final ZoneId zone;
+    private final PlannerZone plannerZone;
 
     @SuppressWarnings("java:S107")
     public TogetherBeanConfiguration(TransactionalUseCaseFactory tx, FriendChallengeRepositoryPort challenges,
                                      FriendChallengeReactionPort reactions, FriendStreakRepositoryPort streaks,
-                                     WorkoutTogetherRepositoryPort workouts, ChallengeTemplateRepositoryPort templates,
+                                     WorkoutTogetherRepositoryPort workouts, StudyRoomRepositoryPort studyRooms,
+                                     SubjectDirectoryPort subjects, RecordFocusSessionUseCase recordFocus,
+                                     ChallengeTemplateRepositoryPort templates,
                                      ChallengeReferencePort activity, StreakPauseRepositoryPort pauses,
                                      ReminderOptionsRepositoryPort reminderOptions,
                                      FriendshipRepositoryPort friendships, UserRepositoryPort users,
                                      RoutineRepositoryPort routines, TrainingSessionRepositoryPort sessions,
                                      CopyRoutineForFriendUseCase copyRoutine, StartTrainingSessionUseCase startSession,
                                      CreateNotificationUseCase notifications, Clock clock,
-                                     @Value("${synaptixfit.gamification.zone:Europe/Madrid}") String zone) {
+                                     @Value("${synaptixfit.gamification.zone:Europe/Madrid}") String zone,
+                                     @Value("${synaptixfit.planner.zone:Europe/Madrid}") String plannerZone) {
         this.tx = tx;
         this.challenges = challenges;
         this.reactions = reactions;
         this.streaks = streaks;
         this.workouts = workouts;
+        this.studyRooms = studyRooms;
+        this.subjects = subjects;
+        this.recordFocus = recordFocus;
         this.templates = templates;
         this.activity = activity;
         this.pauses = pauses;
@@ -106,6 +134,7 @@ public class TogetherBeanConfiguration {
         this.notifications = notifications;
         this.clock = clock;
         this.zone = ZoneId.of(zone);
+        this.plannerZone = PlannerZone.of(plannerZone);
     }
 
     private TogetherPeople people() {
@@ -133,16 +162,26 @@ public class TogetherBeanConfiguration {
                 notifier(), clock, zone);
     }
 
+    @Bean(autowireCandidate = false)
+    StudyRoomService studyRoomService() {
+        return new StudyRoomService(studyRooms, subjects, recordFocus, people(), notifier(), clock, plannerZone);
+    }
+
     @Bean
     ListTogetherUseCase listTogetherUseCase() {
         return tx.wrap(ListTogetherUseCase.class, new TogetherOverviewService(friendChallengeService(),
-                friendStreakService(), workoutTogetherService(), people()));
+                friendStreakService(), workoutTogetherService(), studyRoomService(), people()));
+    }
+
+    @Bean
+    GetTogetherLimitsUseCase getTogetherLimitsUseCase() {
+        return new TogetherLimitsService();
     }
 
     @Bean
     LeaveSharedWithUserUseCase leaveSharedWithUserUseCase() {
         return tx.wrap(LeaveSharedWithUserUseCase.class,
-                new TogetherCleanupService(streaks, challenges, workouts, clock, zone));
+                new TogetherCleanupService(streaks, challenges, workouts, studyRoomService(), clock, zone));
     }
 
     // ---------------------------------------------------------------- retos con amigos
@@ -249,5 +288,57 @@ public class TogetherBeanConfiguration {
     @Bean
     StartWorkoutTogetherUseCase startWorkoutTogetherUseCase() {
         return tx.wrap(StartWorkoutTogetherUseCase.class, workoutTogetherService());
+    }
+
+    // ---------------------------------------------------------------- estudiar juntos
+
+    @Bean
+    CreateStudyRoomUseCase createStudyRoomUseCase() {
+        return tx.wrap(CreateStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    GetStudyRoomUseCase getStudyRoomUseCase() {
+        return tx.wrap(GetStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    JoinStudyRoomUseCase joinStudyRoomUseCase() {
+        return tx.wrap(JoinStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    DeclineStudyRoomUseCase declineStudyRoomUseCase() {
+        return tx.wrap(DeclineStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    LeaveStudyRoomUseCase leaveStudyRoomUseCase() {
+        return tx.wrap(LeaveStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    StartStudyRoomUseCase startStudyRoomUseCase() {
+        return tx.wrap(StartStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    ChooseStudyRoomSubjectUseCase chooseStudyRoomSubjectUseCase() {
+        return tx.wrap(ChooseStudyRoomSubjectUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    ReactStudyRoomUseCase reactStudyRoomUseCase() {
+        return tx.wrap(ReactStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    FindStudyRoomsToCreditUseCase findStudyRoomsToCreditUseCase() {
+        return tx.wrap(FindStudyRoomsToCreditUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    CreditStudyRoomRoundsUseCase creditStudyRoomRoundsUseCase() {
+        return tx.wrap(CreditStudyRoomRoundsUseCase.class, studyRoomService());
     }
 }

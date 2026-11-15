@@ -108,6 +108,14 @@ class DataChangeInterceptor extends Interceptor {
       DataTopic.planner,
     },
     '/api/v1/social': {DataTopic.social},
+    // Estudiamos juntos (ADR 0045), antes que /together: entrar o salir de la
+    // sala apunta las rondas terminadas como Pomodoros (racha, retos, XP).
+    '/api/v1/together/study-rooms': {
+      DataTopic.social,
+      DataTopic.planner,
+      DataTopic.challenges,
+      DataTopic.gamification,
+    },
     // Con amigos (ADR 0044): empezar a entrenar juntos crea una sesión y puede
     // copiar la rutina.
     '/api/v1/together': {DataTopic.social, DataTopic.training},

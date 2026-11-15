@@ -14,6 +14,7 @@ enum NotificationMessageCode {
   friendChallengeInvited('FRIEND_CHALLENGE_INVITED'),
   friendStreakInvited('FRIEND_STREAK_INVITED'),
   workoutTogetherInvited('WORKOUT_TOGETHER_INVITED'),
+  studyRoomInvited('STUDY_ROOM_INVITED'),
   friendStreakNudge('FRIEND_STREAK_NUDGE');
 
   const NotificationMessageCode(this.apiValue);

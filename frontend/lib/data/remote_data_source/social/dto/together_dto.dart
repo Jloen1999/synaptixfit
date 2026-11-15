@@ -248,6 +248,123 @@ abstract class WorkoutTogetherDto with _$WorkoutTogetherDto {
   );
 }
 
+/// `StudyRoomResponse.StudyRoomMember`.
+@freezed
+abstract class StudyRoomMemberDto with _$StudyRoomMemberDto {
+  const factory StudyRoomMemberDto({
+    required TogetherPersonDto person,
+    String? status,
+    String? reaction,
+    @Default(false) bool me,
+  }) = _StudyRoomMemberDto;
+
+  const StudyRoomMemberDto._();
+
+  factory StudyRoomMemberDto.fromJson(Map<String, dynamic> json) =>
+      _$StudyRoomMemberDtoFromJson(json);
+
+  StudyRoomMember toDomain() => StudyRoomMember(
+    person: person.toDomain(),
+    status: TogetherMemberStatus.fromApi(status),
+    reaction: StudyRoomReaction.fromApi(reaction),
+    me: me,
+  );
+}
+
+/// `StudyRoomResponse` (ADR 0045). Los instantes llegan en UTC; se pasan a la
+/// hora local del móvil.
+@freezed
+abstract class StudyRoomDto with _$StudyRoomDto {
+  const factory StudyRoomDto({
+    required String id,
+    required TogetherPersonDto creator,
+    String? length,
+    @Default(25) int focusMinutes,
+    @Default(5) int breakMinutes,
+    @Default(1) int rounds,
+    String? phase,
+    @Default(0) int round,
+    DateTime? phaseEndsAt,
+    DateTime? startedAt,
+    DateTime? endsAt,
+    required DateTime serverTime,
+    String? myStatus,
+    String? mySubjectId,
+    @Default(<StudyRoomMemberDto>[]) List<StudyRoomMemberDto> members,
+  }) = _StudyRoomDto;
+
+  const StudyRoomDto._();
+
+  factory StudyRoomDto.fromJson(Map<String, dynamic> json) =>
+      _$StudyRoomDtoFromJson(json);
+
+  StudyRoom toDomain() => StudyRoom(
+    id: id,
+    creator: creator.toDomain(),
+    length: StudyRoomLength.fromApi(length),
+    focusMinutes: focusMinutes,
+    breakMinutes: breakMinutes,
+    rounds: rounds,
+    phase: StudyRoomPhase.fromApi(phase),
+    round: round,
+    phaseEndsAt: phaseEndsAt?.toLocal(),
+    startedAt: startedAt?.toLocal(),
+    endsAt: endsAt?.toLocal(),
+    serverTime: serverTime.toLocal(),
+    myStatus: TogetherMemberStatus.fromApi(myStatus),
+    mySubjectId: mySubjectId,
+    members: [for (final m in members) m.toDomain()],
+  );
+}
+
+/// `TogetherLimitsResponse.StudyRoomLengthResponse`.
+@freezed
+abstract class StudyRoomLengthDto with _$StudyRoomLengthDto {
+  const factory StudyRoomLengthDto({
+    String? length,
+    required int focusMinutes,
+    required int breakMinutes,
+  }) = _StudyRoomLengthDto;
+
+  const StudyRoomLengthDto._();
+
+  factory StudyRoomLengthDto.fromJson(Map<String, dynamic> json) =>
+      _$StudyRoomLengthDtoFromJson(json);
+
+  StudyRoomLengthOption toDomain() => StudyRoomLengthOption(
+    length: StudyRoomLength.fromApi(length),
+    focusMinutes: focusMinutes,
+    breakMinutes: breakMinutes,
+  );
+}
+
+/// `TogetherLimitsResponse` (ADR 0045).
+@freezed
+abstract class TogetherLimitsDto with _$TogetherLimitsDto {
+  const factory TogetherLimitsDto({
+    required int challengeFriends,
+    required int workoutFriends,
+    required int studyRoomFriends,
+    required int friendStreaks,
+    required int studyRoomRounds,
+    @Default(<StudyRoomLengthDto>[]) List<StudyRoomLengthDto> studyRoomLengths,
+  }) = _TogetherLimitsDto;
+
+  const TogetherLimitsDto._();
+
+  factory TogetherLimitsDto.fromJson(Map<String, dynamic> json) =>
+      _$TogetherLimitsDtoFromJson(json);
+
+  TogetherLimits toDomain() => TogetherLimits(
+    challengeFriends: challengeFriends,
+    workoutFriends: workoutFriends,
+    studyRoomFriends: studyRoomFriends,
+    friendStreaks: friendStreaks,
+    studyRoomRounds: studyRoomRounds,
+    studyRoomLengths: [for (final l in studyRoomLengths) l.toDomain()],
+  );
+}
+
 /// `TogetherOverviewResponse`.
 @freezed
 abstract class TogetherOverviewDto with _$TogetherOverviewDto {
@@ -255,6 +372,7 @@ abstract class TogetherOverviewDto with _$TogetherOverviewDto {
     @Default(<FriendChallengeDto>[]) List<FriendChallengeDto> challenges,
     @Default(<FriendStreakDto>[]) List<FriendStreakDto> streaks,
     @Default(<WorkoutTogetherDto>[]) List<WorkoutTogetherDto> workouts,
+    @Default(<StudyRoomDto>[]) List<StudyRoomDto> studyRooms,
   }) = _TogetherOverviewDto;
 
   const TogetherOverviewDto._();
@@ -266,5 +384,6 @@ abstract class TogetherOverviewDto with _$TogetherOverviewDto {
     challenges: [for (final c in challenges) c.toDomain()],
     streaks: [for (final s in streaks) s.toDomain()],
     workouts: [for (final w in workouts) w.toDomain()],
+    studyRooms: [for (final r in studyRooms) r.toDomain()],
   );
 }

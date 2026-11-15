@@ -57,6 +57,8 @@ class WorkoutTogetherFlowTest {
     private final Map<UUID, Friendship> friendships = new HashMap<>();
     private final Map<UUID, WorkoutTogether> workouts = new HashMap<>();
     private final List<CreateNotificationUseCase.Command> sent = new ArrayList<>();
+    /** Lecturas bloqueadas ({@code findByIdForUpdate}) de entrenos, por id. */
+    private final List<UUID> locked = new ArrayList<>();
     private RoutineFriendCopyService copy;
     private WorkoutTogetherService service;
     private User host;
@@ -150,6 +152,46 @@ class WorkoutTogetherFlowTest {
                 .isInstanceOf(WorkoutTogetherNotFoundException.class);
     }
 
+    // ------------------------------------------------------------------ lectura bloqueada (ADR 0045)
+
+    private WorkoutTogetherView invite() {
+        return service.create(new CreateWorkoutTogetherUseCase.Command(host.id(), routine.id(), monday.id(),
+                Set.of(ana.id())));
+    }
+
+    @Test
+    void joiningReadsTheWorkoutLocked() {
+        WorkoutTogetherView w = invite();
+        locked.clear();
+        service.join(ana.id(), w.id());
+        assertThat(locked).containsExactly(w.id());
+    }
+
+    @Test
+    void decliningReadsTheWorkoutLocked() {
+        WorkoutTogetherView w = invite();
+        locked.clear();
+        service.decline(ana.id(), w.id());
+        assertThat(locked).containsExactly(w.id());
+    }
+
+    @Test
+    void leavingReadsTheWorkoutLocked() {
+        WorkoutTogetherView w = invite();
+        service.join(ana.id(), w.id());
+        locked.clear();
+        service.leave(ana.id(), w.id());
+        assertThat(locked).containsExactly(w.id());
+    }
+
+    @Test
+    void startingReadsTheWorkoutLocked() {
+        WorkoutTogetherView w = invite();
+        locked.clear();
+        service.start(ana.id(), w.id());
+        assertThat(locked).containsExactly(w.id());
+    }
+
     private User user(String name) {
         User u = User.builder().id(UUID.randomUUID()).email(UUID.randomUUID() + "@example.com").fullName(name)
                 .passwordHash("h").privacy(Visibility.FRIENDS).createdAt(NOW).build();
@@ -187,6 +229,10 @@ class WorkoutTogetherFlowTest {
     private WorkoutTogetherRepositoryPort workoutPort() {
         return new WorkoutTogetherRepositoryPort() {
             public Optional<WorkoutTogether> findById(UUID id) { return Optional.ofNullable(workouts.get(id)); }
+            public Optional<WorkoutTogether> findByIdForUpdate(UUID id) {
+                locked.add(id);
+                return findById(id);
+            }
             public WorkoutTogether save(WorkoutTogether w) { workouts.put(w.id(), w); return w; }
             public List<WorkoutTogether> findVisibleTo(UUID u, LocalDate from) {
                 return workouts.values().stream().filter(w -> w.canView(u)).toList();

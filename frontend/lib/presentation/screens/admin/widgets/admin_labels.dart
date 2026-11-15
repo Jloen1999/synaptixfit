@@ -211,11 +211,12 @@ extension AdminMeasurementTypeLabel on AdminMeasurementType {
   };
 }
 
-/// Dónde se denunció a una persona (ADR 0044), en palabras.
+/// Dónde se denunció a una persona (ADR 0044 y 0045), en palabras.
 String adminUserReportContext(AppLocalizations l10n, String context) =>
     switch (context) {
       'FRIEND_CHALLENGE' => l10n.adminReportContextChallenge,
       'FRIEND_STREAK' => l10n.adminReportContextStreak,
       'WORKOUT_TOGETHER' => l10n.adminReportContextWorkout,
+      'STUDY_ROOM' => l10n.adminReportContextStudyRoom,
       _ => l10n.adminReportContextProfile,
     };

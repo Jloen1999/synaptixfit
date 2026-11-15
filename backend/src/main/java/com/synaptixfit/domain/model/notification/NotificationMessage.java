@@ -27,7 +27,8 @@ public record NotificationMessage(Code code, Map<String, String> params) {
         FRIEND_CHALLENGE_INVITED,
         FRIEND_STREAK_INVITED,
         WORKOUT_TOGETHER_INVITED,
-        FRIEND_STREAK_NUDGE
+        FRIEND_STREAK_NUDGE,
+        STUDY_ROOM_INVITED
     }
 
     public NotificationMessage {

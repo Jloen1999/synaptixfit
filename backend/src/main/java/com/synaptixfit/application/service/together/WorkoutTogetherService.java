@@ -105,7 +105,7 @@ public class WorkoutTogetherService implements CreateWorkoutTogetherUseCase, Get
     @Override
     public WorkoutTogetherView join(UUID userId, UUID workoutId) {
         // Como en los retos: volver tras salir solo si sigue siendo amigo y sin bloqueos con nadie de dentro.
-        WorkoutTogether workout = workouts.findById(workoutId)
+        WorkoutTogether workout = workouts.findByIdForUpdate(workoutId)
                 .filter(w -> w.members().find(userId).isPresent())
                 .filter(w -> people.canJoin(userId, w.hostId(), w.members().joinedIds()))
                 .orElseThrow(() -> new WorkoutTogetherNotFoundException(workoutId));
@@ -115,14 +115,14 @@ public class WorkoutTogetherService implements CreateWorkoutTogetherUseCase, Get
 
     @Override
     public void decline(UUID userId, UUID workoutId) {
-        WorkoutTogether workout = visible(userId, workoutId);
+        WorkoutTogether workout = visibleForUpdate(userId, workoutId);
         workout.decline(userId, clock.instant());
         workouts.save(workout);
     }
 
     @Override
     public void leave(UUID userId, UUID workoutId) {
-        WorkoutTogether workout = visible(userId, workoutId);
+        WorkoutTogether workout = visibleForUpdate(userId, workoutId);
         if (workout.leave(userId, clock.instant())) {
             workouts.save(workout);
         }
@@ -134,7 +134,8 @@ public class WorkoutTogetherService implements CreateWorkoutTogetherUseCase, Get
      */
     @Override
     public UUID start(UUID userId, UUID workoutId) {
-        WorkoutTogether workout = visible(userId, workoutId);
+        // Bloqueado también para que dos «Empezar» seguidos no creen dos sesiones.
+        WorkoutTogether workout = visibleForUpdate(userId, workoutId);
         LocalDate today = today();
         Optional<UUID> existing = workout.sessionOf(userId).filter(id -> sessions.findById(id).isPresent());
         if (existing.isPresent()) {
@@ -215,6 +216,13 @@ public class WorkoutTogetherService implements CreateWorkoutTogetherUseCase, Get
 
     private WorkoutTogether visible(UUID userId, UUID workoutId) {
         return workouts.findById(workoutId)
+                .filter(w -> w.canView(userId))
+                .orElseThrow(() -> new WorkoutTogetherNotFoundException(workoutId));
+    }
+
+    /** Como {@link #visible}, pero bloqueado: para las acciones que lo cambian (ADR 0045). */
+    private WorkoutTogether visibleForUpdate(UUID userId, UUID workoutId) {
+        return workouts.findByIdForUpdate(workoutId)
                 .filter(w -> w.canView(userId))
                 .orElseThrow(() -> new WorkoutTogetherNotFoundException(workoutId));
     }

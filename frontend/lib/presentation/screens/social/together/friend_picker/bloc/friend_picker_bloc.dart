@@ -2,19 +2,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../../../domain/enums/friendship_list_kind.dart';
+import '../../../../../../domain/enums/together_enums.dart';
 import '../../../../../../domain/errors/app_error.dart';
 import '../../../../../../domain/models/result/result.dart';
 import '../../../../../../domain/models/social/social_user.dart';
+import '../../../../../../domain/models/social/together.dart';
 import '../../../../../../domain/use_cases/social/get_friendships_use_case.dart';
+import '../../../../../../domain/use_cases/social/together/get_together_limits_use_case.dart';
 
 part 'friend_picker_bloc.freezed.dart';
 part 'friend_picker_event.dart';
 part 'friend_picker_state.dart';
 
-/// Lista de amigos mutuos para invitar (ADR 0044), con un máximo de elegidos.
-/// Carga como mucho [maxPages] páginas: nadie invita a más de 25.
+/// Lista de amigos mutuos para invitar (ADR 0044). El máximo de elegidos lo
+/// manda el servidor (`GetTogetherLimitsUseCase`, ADR 0045) según a qué se
+/// invita; una racha es con un solo amigo. Carga como mucho [maxPages] páginas:
+/// nadie invita a más de 25.
 class FriendPickerBloc extends Bloc<FriendPickerEvent, FriendPickerState> {
-  FriendPickerBloc({required this._friendships})
+  FriendPickerBloc({required this._friendships, required this._limits})
     : super(const FriendPickerState()) {
     on<FriendPickerStarted>(_onStarted);
     on<FriendPickerToggled>(_onToggled);
@@ -24,6 +29,7 @@ class FriendPickerBloc extends Bloc<FriendPickerEvent, FriendPickerState> {
   static const _pageSize = 50;
 
   final GetFriendshipsUseCaseContract _friendships;
+  final GetTogetherLimitsUseCaseContract _limits;
 
   Future<void> _onStarted(
     FriendPickerStarted event,
@@ -32,10 +38,22 @@ class FriendPickerBloc extends Bloc<FriendPickerEvent, FriendPickerState> {
     emit(
       state.copyWith(
         status: FriendPickerStatus.loading,
-        max: event.max,
+        kind: event.kind,
         error: null,
       ),
     );
+    TogetherLimits? limits;
+    if (event.kind != TogetherInviteKind.streak) {
+      switch (await _limits()) {
+        case Success(:final value):
+          limits = value;
+        case Failure(:final error):
+          emit(
+            state.copyWith(status: FriendPickerStatus.failure, error: error),
+          );
+          return;
+      }
+    }
     final friends = <SocialUser>[];
     for (var page = 0; page < maxPages; page++) {
       final result = await _friendships(
@@ -54,7 +72,14 @@ class FriendPickerBloc extends Bloc<FriendPickerEvent, FriendPickerState> {
           return;
       }
     }
-    emit(state.copyWith(status: FriendPickerStatus.ready, friends: friends));
+    emit(
+      state.copyWith(
+        status: FriendPickerStatus.ready,
+        friends: friends,
+        limits: limits,
+        max: limits?.friendsFor(event.kind) ?? 1,
+      ),
+    );
   }
 
   void _onToggled(FriendPickerToggled event, Emitter<FriendPickerState> emit) {

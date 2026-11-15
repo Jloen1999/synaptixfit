@@ -88,6 +88,12 @@ NotificationTexts notificationTexts(AppLocalizations l10n, AppNotification n) {
       description: l10n.socialNotifStreakNudgeBody(name),
       action: l10n.socialNotifActionTogether,
     ),
+    // Estudiamos juntos (ADR 0045).
+    NotificationMessageCode.studyRoomInvited => (
+      title: l10n.socialNotifStudyRoomTitle,
+      description: l10n.socialNotifStudyRoomBody(name),
+      action: l10n.socialNotifActionTogether,
+    ),
   };
 }
 

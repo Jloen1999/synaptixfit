@@ -48,6 +48,16 @@ public class FriendChallengeJdbcAdapter implements FriendChallengeRepositoryPort
     }
 
     @Override
+    public Optional<FriendChallenge> findByIdForUpdate(UUID id) {
+        // Bloquea la fila del reto y después lo lee entero (SELECT … FOR UPDATE, en database_portability.md).
+        return jdbc.sql("SELECT id FROM retos_amigos WHERE id = :id FOR UPDATE")
+                .param("id", id)
+                .query(UUID.class)
+                .optional()
+                .flatMap(this::findById);
+    }
+
+    @Override
     public List<FriendChallenge> findVisibleTo(UUID userId, Instant endedAfter) {
         List<UUID> ids = jdbc.sql("SELECT r.id FROM retos_amigos r JOIN retos_amigos_miembros m ON m.reto_id = r.id"
                         + " WHERE m.usuario_id = :user AND m.estado IN (:statuses) AND r.fin > :after"

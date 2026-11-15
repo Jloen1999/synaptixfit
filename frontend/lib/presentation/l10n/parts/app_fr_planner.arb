@@ -380,5 +380,6 @@
   "plannerDeleteDeadline": "Supprimer",
   "plannerOpensDeadlineForm": "Ouvre le formulaire de rendu",
   "plannerSubjectArchived": "Matière archivée",
-  "plannerDeadlinesSwipeHint": "Fais glisser un rendu vers la gauche pour le supprimer."
+  "plannerDeadlinesSwipeHint": "Fais glisser un rendu vers la gauche pour le supprimer.",
+  "plannerPomodoroWithFriends": "Étudier avec des amis"
 }

@@ -2,7 +2,8 @@ part of 'friend_picker_bloc.dart';
 
 @freezed
 sealed class FriendPickerEvent with _$FriendPickerEvent {
-  const factory FriendPickerEvent.started({required int max}) =
+  /// Empieza a elegir amigos para [kind] (decide el tope).
+  const factory FriendPickerEvent.started({required TogetherInviteKind kind}) =
       FriendPickerStarted;
 
   const factory FriendPickerEvent.toggled(String userId) = FriendPickerToggled;

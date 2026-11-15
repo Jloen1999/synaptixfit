@@ -38,5 +38,6 @@ public final class EmbeddedPostgresSupport {
         registry.add("synaptixfit.mail.resend-api-key", () -> "");
         registry.add("synaptixfit.mail.weekly-cron", () -> "-");
         registry.add("synaptixfit.planner.auto-attend-cron", () -> "-");
+        registry.add("synaptixfit.together.study-room-cron", () -> "-");
     }
 }

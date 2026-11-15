@@ -155,7 +155,8 @@ class FriendPickerList extends StatelessWidget {
           FriendPickerStatus.loading => const AppLoadingView(),
           FriendPickerStatus.failure => AppErrorView(
             error: state.error!,
-            onRetry: () => bloc.add(FriendPickerEvent.started(max: state.max)),
+            onRetry: () =>
+                bloc.add(FriendPickerEvent.started(kind: state.kind)),
           ),
           FriendPickerStatus.ready when state.friends.isEmpty =>
             AppEmptyState.compact(
@@ -212,8 +213,8 @@ Future<String?> showFriendPickerSheet(
   showDragHandle: true,
   isScrollControlled: true,
   builder: (_) => BlocProvider(
-    create: (_) =>
-        getIt<FriendPickerBloc>()..add(const FriendPickerEvent.started(max: 1)),
+    create: (_) => getIt<FriendPickerBloc>()
+      ..add(const FriendPickerEvent.started(kind: TogetherInviteKind.streak)),
     child: _FriendPickerSheet(title: title, confirmLabel: confirmLabel),
   ),
 );

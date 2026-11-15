@@ -4,8 +4,8 @@ import '../api/api_client.dart';
 import '../challenges/dto/challenge_dto.dart';
 import 'dto/together_dto.dart';
 
-/// Endpoints de «Con amigos» (`/api/v1/together`, ADR 0044) y la denuncia de
-/// una persona (`/api/v1/social/users/{id}/report`).
+/// Endpoints de «Con amigos» (`/api/v1/together`, ADR 0044 y 0045) y la
+/// denuncia de una persona (`/api/v1/social/users/{id}/report`).
 class TogetherRemoteDataSource {
   TogetherRemoteDataSource(ApiClient client) : _dio = client.dio;
 
@@ -150,6 +150,76 @@ class TogetherRemoteDataSource {
       '$_base/workouts/$id/start',
     );
     return r.data!['sessionId'] as String;
+  }
+
+  Future<TogetherLimitsDto> limits() async {
+    final r = await _dio.get<Map<String, dynamic>>('$_base/limits');
+    return TogetherLimitsDto.fromJson(r.data!);
+  }
+
+  Future<StudyRoomDto> createStudyRoom({
+    required String length,
+    required int rounds,
+    required List<String> friendIds,
+    String? subjectId,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '$_base/study-rooms',
+      data: {
+        'length': length,
+        'rounds': rounds,
+        'friendIds': friendIds,
+        'subjectId': ?subjectId,
+      },
+    );
+    return StudyRoomDto.fromJson(r.data!);
+  }
+
+  Future<StudyRoomDto> studyRoom(String id) async {
+    final r = await _dio.get<Map<String, dynamic>>('$_base/study-rooms/$id');
+    return StudyRoomDto.fromJson(r.data!);
+  }
+
+  Future<StudyRoomDto> joinStudyRoom(String id) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '$_base/study-rooms/$id/join',
+    );
+    return StudyRoomDto.fromJson(r.data!);
+  }
+
+  Future<void> declineStudyRoom(String id) =>
+      _dio.post<void>('$_base/study-rooms/$id/decline');
+
+  Future<void> leaveStudyRoom(String id) =>
+      _dio.post<void>('$_base/study-rooms/$id/leave');
+
+  Future<StudyRoomDto> startStudyRoom(String id) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '$_base/study-rooms/$id/start',
+    );
+    return StudyRoomDto.fromJson(r.data!);
+  }
+
+  Future<StudyRoomDto> chooseStudyRoomSubject(
+    String id, {
+    String? subjectId,
+  }) async {
+    final r = await _dio.put<Map<String, dynamic>>(
+      '$_base/study-rooms/$id/subject',
+      data: {'subjectId': subjectId},
+    );
+    return StudyRoomDto.fromJson(r.data!);
+  }
+
+  Future<StudyRoomDto> reactInStudyRoom(
+    String id, {
+    required String reaction,
+  }) async {
+    final r = await _dio.put<Map<String, dynamic>>(
+      '$_base/study-rooms/$id/reaction',
+      data: {'reaction': reaction},
+    );
+    return StudyRoomDto.fromJson(r.data!);
   }
 
   Future<void> reportUser(String userId, {required String context}) =>

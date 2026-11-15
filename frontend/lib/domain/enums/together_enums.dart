@@ -1,4 +1,4 @@
-/// Enums de «Con amigos» (ADR 0044). Los valores los decide el servidor; el
+/// Enums de «Con amigos» (ADR 0044 y 0045). Los valores los decide el servidor; el
 /// cliente solo elige el texto y el icono de cada uno.
 library;
 
@@ -82,9 +82,66 @@ enum UserReportContext {
   friendChallenge('FRIEND_CHALLENGE'),
   friendStreak('FRIEND_STREAK'),
   workoutTogether('WORKOUT_TOGETHER'),
+  studyRoom('STUDY_ROOM'),
   profile('PROFILE');
 
   const UserReportContext(this.apiValue);
 
   final String apiValue;
 }
+
+/// En qué punto está una sala de «Estudiamos juntos» (ADR 0045). Lo calcula el
+/// servidor desde la hora de inicio.
+enum StudyRoomPhase {
+  waiting('WAITING'),
+  focus('FOCUS'),
+  rest('BREAK'),
+  finished('FINISHED'),
+  expired('EXPIRED');
+
+  const StudyRoomPhase(this.apiValue);
+
+  final String apiValue;
+
+  static StudyRoomPhase fromApi(String? value) =>
+      values.firstWhere((p) => p.apiValue == value, orElse: () => expired);
+
+  /// Terminada o caducada sin empezar: ya no se puede entrar ni reaccionar.
+  bool get over => this == finished || this == expired;
+}
+
+/// Duración de cada ronda: 25 + 5 o 50 + 10 minutos.
+enum StudyRoomLength {
+  short('SHORT'),
+  long('LONG');
+
+  const StudyRoomLength(this.apiValue);
+
+  final String apiValue;
+
+  static StudyRoomLength fromApi(String? value) =>
+      values.firstWhere((l) => l.apiValue == value, orElse: () => short);
+}
+
+/// Reacciones fijas de una sala (sin chat).
+enum StudyRoomReaction {
+  clap('CLAP'),
+  fire('FIRE'),
+  muscle('MUSCLE'),
+  coffee('COFFEE');
+
+  const StudyRoomReaction(this.apiValue);
+
+  final String apiValue;
+
+  static StudyRoomReaction? fromApi(String? value) {
+    for (final r in values) {
+      if (r.apiValue == value) return r;
+    }
+    return null;
+  }
+}
+
+/// A qué se invita a amigos: decide el tope del selector, que manda el
+/// servidor (`/together/limits`). [streak] elige a un solo amigo.
+enum TogetherInviteKind { challenge, workout, studyRoom, streak }

@@ -8,10 +8,12 @@ import '../../../../../../domain/models/social/together.dart';
 import '../../../../../../domain/use_cases/social/together/accept_friend_streak_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/decline_friend_challenge_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/decline_friend_streak_use_case.dart';
+import '../../../../../../domain/use_cases/social/together/decline_study_room_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/decline_workout_together_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/end_friend_streak_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/get_together_overview_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/join_friend_challenge_use_case.dart';
+import '../../../../../../domain/use_cases/social/together/join_study_room_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/join_workout_together_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/nudge_friend_streak_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/propose_friend_streak_use_case.dart';
@@ -20,8 +22,8 @@ part 'together_bloc.freezed.dart';
 part 'together_event.dart';
 part 'together_state.dart';
 
-/// Pantalla «Con amigos» (ADR 0044): invitaciones, retos, rachas y entrenos de
-/// hoy. Cada acción va al servidor y después se vuelve a leer todo (lo que se
+/// Pantalla «Con amigos» (ADR 0044 y 0045): invitaciones, retos, rachas,
+/// entrenos de hoy y salas de estudio. Cada acción va al servidor y después se vuelve a leer todo (lo que se
 /// ve lo calcula siempre el servidor).
 class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
   TogetherBloc({
@@ -35,6 +37,8 @@ class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
     required this._nudgeStreak,
     required this._joinWorkout,
     required this._declineWorkout,
+    required this._joinStudyRoom,
+    required this._declineStudyRoom,
   }) : super(const TogetherState()) {
     on<TogetherStarted>(_onStarted);
     on<TogetherRefreshed>(_onRefreshed);
@@ -104,6 +108,17 @@ class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
         TogetherMessage.declined,
       ),
     );
+    on<TogetherStudyRoomJoined>(
+      (e, emit) => _act(emit, e.id, () => _joinStudyRoom(e.id), null),
+    );
+    on<TogetherStudyRoomDeclined>(
+      (e, emit) => _act(
+        emit,
+        e.id,
+        () => _declineStudyRoom(e.id),
+        TogetherMessage.declined,
+      ),
+    );
   }
 
   final GetTogetherOverviewUseCaseContract _overview;
@@ -116,6 +131,8 @@ class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
   final NudgeFriendStreakUseCaseContract _nudgeStreak;
   final JoinWorkoutTogetherUseCaseContract _joinWorkout;
   final DeclineWorkoutTogetherUseCaseContract _declineWorkout;
+  final JoinStudyRoomUseCaseContract _joinStudyRoom;
+  final DeclineStudyRoomUseCaseContract _declineStudyRoom;
 
   Future<void> _onStarted(
     TogetherStarted event,

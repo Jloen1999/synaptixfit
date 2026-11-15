@@ -46,6 +46,16 @@ public class WorkoutTogetherJdbcAdapter implements WorkoutTogetherRepositoryPort
     }
 
     @Override
+    public Optional<WorkoutTogether> findByIdForUpdate(UUID id) {
+        // Bloquea la fila del entreno y después lo lee entero (SELECT … FOR UPDATE, en database_portability.md).
+        return jdbc.sql("SELECT id FROM entrenos_juntos WHERE id = :id FOR UPDATE")
+                .param("id", id)
+                .query(UUID.class)
+                .optional()
+                .flatMap(this::findById);
+    }
+
+    @Override
     public List<WorkoutTogether> findVisibleTo(UUID userId, LocalDate from) {
         return jdbc.sql("SELECT w.id FROM entrenos_juntos w JOIN entrenos_juntos_miembros m ON m.entreno_id = w.id"
                         + " WHERE m.usuario_id = :user AND m.estado IN (:statuses) AND w.fecha >= :from"

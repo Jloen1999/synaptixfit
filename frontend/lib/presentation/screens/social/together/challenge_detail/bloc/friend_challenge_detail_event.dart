@@ -6,6 +6,10 @@ sealed class FriendChallengeDetailEvent with _$FriendChallengeDetailEvent {
       FriendChallengeDetailStarted;
 
   /// Aceptar la invitación, o «Deshacer» tras salir.
+  /// Deslizar para refrescar: vuelve a leer sin pantalla de carga.
+  const factory FriendChallengeDetailEvent.refreshed() =
+      FriendChallengeDetailRefreshed;
+
   const factory FriendChallengeDetailEvent.joined() =
       FriendChallengeDetailJoined;
 

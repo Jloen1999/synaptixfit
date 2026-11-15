@@ -836,5 +836,6 @@
   "plannerDeleteDeadline": "Eliminar",
   "plannerOpensDeadlineForm": "Abre el formulario de entrega",
   "plannerSubjectArchived": "Asignatura archivada",
-  "plannerDeadlinesSwipeHint": "Desliza una entrega a la izquierda para eliminarla."
+  "plannerDeadlinesSwipeHint": "Desliza una entrega a la izquierda para eliminarla.",
+  "plannerPomodoroWithFriends": "Estudiar con amigos"
 }

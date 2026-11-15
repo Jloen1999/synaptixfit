@@ -84,6 +84,13 @@ abstract final class PlannerExternalPaths {
   /// Ajustes › Avisos (Perfil, pantalla completa): la antelación de los avisos
   /// es global, no de cada evento.
   static const notificationSettings = '/profile/settings/notifications';
+
+  /// «Estudiar con amigos» (Con amigos, ADR 0045), con la asignatura del
+  /// Pomodoro si había una.
+  static String studyWithFriends({String? subjectId}) => Uri(
+    path: '/social/together/study/new',
+    queryParameters: {'subject': ?subjectId},
+  ).toString();
 }
 
 /// Pestaña Calendario (conserva la barra inferior). Se abre con `go`. La

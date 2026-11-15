@@ -24,6 +24,7 @@ String? socialErrorMessage(
   'FRIEND_CHALLENGE_NOT_FOUND' => l10n.socialErrorFriendChallengeNotFound,
   'FRIEND_STREAK_NOT_FOUND' => l10n.socialErrorFriendStreakNotFound,
   'WORKOUT_TOGETHER_NOT_FOUND' => l10n.socialErrorWorkoutTogetherNotFound,
+  'STUDY_ROOM_NOT_FOUND' => l10n.socialErrorStudyRoomNotFound,
   'TOGETHER_NOT_FRIENDS' => l10n.socialErrorTogetherNotFriends,
   'TOGETHER_GROUP_SIZE' => l10n.socialErrorTogetherGroupSize,
   'TOGETHER_INVALID_STATE' => l10n.socialErrorTogetherInvalidState,

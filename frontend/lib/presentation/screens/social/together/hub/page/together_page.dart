@@ -15,8 +15,9 @@ import '../../widgets/together_labels.dart';
 import '../../widgets/together_widgets.dart';
 import '../bloc/together_bloc.dart';
 
-/// «Con amigos» (ADR 0044): invitaciones arriba, luego retos, rachas y entrenos
-/// de hoy. Solo amigos mutuos; nunca se comparte cómo está cada uno.
+/// «Con amigos» (ADR 0044 y 0045): invitaciones arriba, luego lo que pasa ahora
+/// (salas de estudio), retos, rachas y entrenos de hoy. Solo amigos mutuos;
+/// nunca se comparte cómo está cada uno.
 class TogetherPage extends StatelessWidget {
   const TogetherPage({super.key});
 
@@ -92,6 +93,12 @@ class _Body extends StatelessWidget {
     bloc.add(const TogetherEvent.refreshed());
   }
 
+  Future<void> _newStudyRoom(BuildContext context) async {
+    final bloc = context.read<TogetherBloc>();
+    await context.push(SocialPaths.togetherNewStudyRoom);
+    bloc.add(const TogetherEvent.refreshed());
+  }
+
   Future<void> _proposeStreak(BuildContext context) async {
     final l10n = context.localizations;
     final bloc = context.read<TogetherBloc>();
@@ -110,14 +117,19 @@ class _Body extends StatelessWidget {
     final invitedChallenges = o.challenges.where((c) => c.invitation).toList();
     final invitedStreaks = o.streaks.where((s) => s.invitation).toList();
     final invitedWorkouts = o.workouts.where((w) => w.invitation).toList();
+    final invitedRooms = o.studyRooms.where((r) => r.invitation).toList();
     final hasInvitations =
         invitedChallenges.isNotEmpty ||
         invitedStreaks.isNotEmpty ||
-        invitedWorkouts.isNotEmpty;
+        invitedWorkouts.isNotEmpty ||
+        invitedRooms.isNotEmpty;
     final challenges = o.challenges.where((c) => !c.invitation).toList();
     final streaks = o.streaks.where((s) => !s.invitation).toList();
     final workouts = o.workouts.where((w) => !w.invitation).toList();
+    final rooms = o.studyRooms.where((r) => !r.invitation).toList();
     return ListView(
+      // Deslizar para refrescar también con poco contenido.
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         TokensSpacing.m,
         TokensSpacing.s,
@@ -156,6 +168,12 @@ class _Body extends StatelessWidget {
                   label: l10n.togetherStreakPropose,
                   icon: const Icon(AppIcons.streak),
                   onPressed: () => _proposeStreak(context),
+                ),
+                const SizedBox(height: TokensSpacing.s),
+                AppSecondaryButton(
+                  label: l10n.togetherStudyWithFriends,
+                  icon: const Icon(AppIcons.focusTimer),
+                  onPressed: () => _newStudyRoom(context),
                 ),
               ] else ...[
                 if (hasInvitations) ...[
@@ -206,7 +224,32 @@ class _Body extends StatelessWidget {
                         TogetherEvent.workoutDeclined(w.id),
                       ),
                     ),
+                  for (final r in invitedRooms)
+                    _InvitationCard(
+                      text: l10n.togetherInvitedStudy(
+                        togetherName(context, r.creator.name),
+                      ),
+                      busy: state.busyId == r.id,
+                      onOpen: () =>
+                          context.push(SocialPaths.togetherStudyRoom(r.id)),
+                      onJoin: () => context.read<TogetherBloc>().add(
+                        TogetherEvent.studyRoomJoined(r.id),
+                      ),
+                      onDecline: () => context.read<TogetherBloc>().add(
+                        TogetherEvent.studyRoomDeclined(r.id),
+                      ),
+                    ),
                 ],
+                const SizedBox(height: TokensSpacing.m),
+                AppSectionHeader(
+                  title: l10n.togetherStudySection,
+                  actionLabel: l10n.togetherStudyWithFriends,
+                  onAction: () => _newStudyRoom(context),
+                ),
+                if (rooms.isEmpty)
+                  _EmptyLine(text: l10n.togetherStudyEmpty)
+                else
+                  for (final r in rooms) _StudyRoomTile(room: r),
                 const SizedBox(height: TokensSpacing.m),
                 AppSectionHeader(
                   title: l10n.togetherChallengesSection,
@@ -451,6 +494,51 @@ class _StreakTile extends StatelessWidget {
       streak.status == FriendStreakStatus.active
           ? TogetherEvent.streakEnded(streak.id)
           : TogetherEvent.streakWithdrawn(streak.id),
+    );
+  }
+}
+
+/// Sala de estudio en marcha o esperando: en qué fase está y quién está dentro.
+class _StudyRoomTile extends StatelessWidget {
+  const _StudyRoomTile({required this.room});
+
+  final StudyRoom room;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final r = room;
+    final bloc = context.read<TogetherBloc>();
+    final phase = switch (r.phase) {
+      StudyRoomPhase.waiting => l10n.togetherStudyWaiting,
+      StudyRoomPhase.focus => l10n.togetherStudyFocusRound(r.round, r.rounds),
+      _ => l10n.togetherStudyBreakThen(r.round + 1, r.rounds),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+      child: AppCard(
+        onTap: () async {
+          await context.push(SocialPaths.togetherStudyRoom(r.id));
+          bloc.add(const TogetherEvent.refreshed());
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(phase, style: context.textStyles.titleMedium),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              l10n.togetherStudyInsideCount(r.inside.length),
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+            if (r.inside.isNotEmpty) ...[
+              const SizedBox(height: TokensSpacing.xs),
+              TogetherAvatars(people: [for (final m in r.inside) m.person]),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

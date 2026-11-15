@@ -27,7 +27,7 @@ Esta política explica qué datos tuyos usa SynaptixFit, para qué, con quién s
 - «Mi ciclo», solo si lo activas: días de regla, energía y molestias que apuntes y tus notas.
 - Fotos de apuntes en papel: las leemos para pasarlas a texto y no guardamos la foto. Solo se guarda el apunte que tú decidas guardar.
 - Lo que compartes en la comunidad: publicaciones, comentarios, apuntes compartidos, amistades e insignias visibles.
-- Lo que haces «Con amigos», si lo usas: los retos, rachas y entrenos con amigos en los que estás, las reacciones que pones y las personas que denuncias.
+- Lo que haces «Con amigos», si lo usas: los retos, rachas, entrenos y salas de estudio con amigos en los que estás (y, en cada sala, la asignatura que eliges), las reacciones que pones y las personas que denuncias.
 - Avisos: tus preferencias de recordatorios y, si lo activas, el resumen semanal por correo.
 - Datos técnicos: la dirección IP y el tipo de navegador o móvil que llegan al servidor, necesarios para que la app funcione y sea segura.
 
@@ -54,9 +54,10 @@ Los datos del ciclo solo los ves tú: no se comparten con nadie, tampoco con la 
 
 - «Con amigos» es opcional y solo funciona entre amigos mutuos (los dos habéis aceptado la amistad). Nadie más lo ve.
 - En un reto con amigos, ellos ven si has sumado y, solo si elegís competición, tus puntos. En una racha con un amigo, ve si hoy has hecho tu parte. Al entrenar juntos, ven qué ejercicios llevas hechos. Lo cuenta la app con lo que ya haces (repasos, Pomodoros y entrenos); nunca enseña cómo te encuentras, tu ciclo, tu sueño, tu peso, tus pesos o tu esfuerzo, ni dónde estás.
+- En una sala de «Estudiamos juntos» los demás ven que estás dentro, si te has ido y tu última reacción. La asignatura que eliges para tus rondas solo la ves tú. Cada ronda terminada se guarda como un Pomodoro tuyo, igual que si estudiaras solo. La sala se cierra sola al terminar las rondas o, si nadie la empieza, a las 4 horas; queda guardado quién estuvo y cuándo hasta que borres tu cuenta.
 - No hay chat: solo reacciones fijas. Cuántas reacciones tiene lo tuyo solo lo ves tú.
 - Si entrenas juntos con la rutina de otra persona, se guarda una copia en pausa en tus rutinas, marcada con su nombre; puedes eliminarla cuando quieras.
-- Puedes salir de un reto o terminar una racha en cualquier momento. Al bloquear a alguien o dejar de ser amigos, dejáis de compartir lo que teníais en común.
+- Puedes salir de un reto o de una sala, o terminar una racha, en cualquier momento. Al bloquear a alguien o dejar de ser amigos, dejáis de compartir lo que teníais en común.
 - Si denuncias a alguien, guardamos quién denuncia, a quién y dónde pasó, para que lo revise el equipo de moderación. La persona denunciada no sabe quién la ha denunciado.
 - Si compartes una rutina por enlace, quien lo abre solo ve la rutina (nombre, días y ejercicios), nunca tu nombre, tu perfil ni tus sesiones. El enlace caduca a los 30 días y puedes dejar de compartirlo antes.
 

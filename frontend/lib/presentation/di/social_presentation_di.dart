@@ -11,6 +11,8 @@ import '../screens/social/together/friend_picker/bloc/friend_picker_bloc.dart';
 import '../screens/social/together/hub/bloc/together_bloc.dart';
 import '../screens/social/together/live/bloc/workout_together_live_bloc.dart';
 import '../screens/social/together/safety/bloc/together_safety_bloc.dart';
+import '../screens/social/together/study_invite/bloc/study_invite_bloc.dart';
+import '../screens/social/together/study_room/bloc/study_room_bloc.dart';
 import '../screens/social/together/workout_detail/bloc/workout_together_bloc.dart';
 import '../screens/social/together/workout_invite/bloc/workout_invite_bloc.dart';
 import '../screens/social/user_profile/bloc/user_profile_bloc.dart';
@@ -92,10 +94,14 @@ void registerSocialPresentation(GetIt getIt) {
         nudgeStreak: getIt(),
         joinWorkout: getIt(),
         declineWorkout: getIt(),
+        joinStudyRoom: getIt(),
+        declineStudyRoom: getIt(),
       ),
     )
     ..registerFactory(() => TogetherSafetyBloc(block: getIt(), report: getIt()))
-    ..registerFactory(() => FriendPickerBloc(friendships: getIt()))
+    ..registerFactory(
+      () => FriendPickerBloc(friendships: getIt(), limits: getIt()),
+    )
     ..registerFactory(
       () => FriendChallengeFormBloc(templates: getIt(), create: getIt()),
     )
@@ -119,5 +125,19 @@ void registerSocialPresentation(GetIt getIt) {
         start: getIt(),
       ),
     )
-    ..registerFactory(() => WorkoutTogetherLiveBloc(find: getIt()));
+    ..registerFactory(() => WorkoutTogetherLiveBloc(find: getIt()))
+    // Estudiamos juntos (ADR 0045).
+    ..registerFactory(() => StudyInviteBloc(create: getIt()))
+    ..registerFactory(
+      () => StudyRoomBloc(
+        get: getIt(),
+        join: getIt(),
+        decline: getIt(),
+        leave: getIt(),
+        start: getIt(),
+        chooseSubject: getIt(),
+        react: getIt(),
+        subjects: getIt(),
+      ),
+    );
 }

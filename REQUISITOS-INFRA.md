@@ -68,6 +68,7 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | `MAIL_FROM` | `SynaptixFit <no-reply@notifications.jloenit.dev>` | no | remitente; dominio verificado en Resend (`notifications.jloenit.dev`, región eu-west-1) |
 | `WEEKLY_EMAIL_CRON` | `0 0 19-23 * * SUN` | no | opcional: cuándo sale el resumen semanal por correo (zona del planificador). Cada hora de 19 a 23 reintenta solo a quien no lo recibió; `-` lo desactiva |
 | `CLASS_AUTO_ATTEND_CRON` | `0 */10 * * * *` | no | opcional: cada cuánto se dan por asistidas las clases que acaban de terminar (ADR 0029); `-` lo desactiva |
+| `STUDY_ROOM_CRON` | `0 * * * * *` | no | opcional: cada cuánto se apuntan como Pomodoro las rondas de sala terminadas de «Estudiamos juntos» (ADR 0045); `-` lo desactiva |
 | `APP_PUBLIC_URL` | `https://synaptixfit.jloenit.dev` | no | **obligatoria en producción**: base de los enlaces de los correos; sin ella apuntan a `http://localhost:5173` |
 | `LEGAL_CONTROLLER_NAME` | *(nombre del responsable)* | no | **necesaria antes de publicar en Google Play**: responsable de los datos que muestran `/privacidad`, `/condiciones` y `/eliminar-cuenta` (ADR 0034); vacía, dice «pendiente de indicar» |
 | `LEGAL_CONTACT_EMAIL` | *(correo de privacidad)* | no | **necesaria antes de publicar en Google Play**: correo para ejercer los derechos RGPD, en esas mismas páginas |

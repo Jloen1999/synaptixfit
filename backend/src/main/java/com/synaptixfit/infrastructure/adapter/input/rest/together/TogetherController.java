@@ -8,6 +8,7 @@ import com.synaptixfit.application.port.input.together.DeclineFriendStreakUseCas
 import com.synaptixfit.application.port.input.together.DeclineWorkoutTogetherUseCase;
 import com.synaptixfit.application.port.input.together.EndFriendStreakUseCase;
 import com.synaptixfit.application.port.input.together.FindWorkoutTogetherBySessionUseCase;
+import com.synaptixfit.application.port.input.together.GetTogetherLimitsUseCase;
 import com.synaptixfit.application.port.input.together.GetFriendChallengeUseCase;
 import com.synaptixfit.application.port.input.together.GetWorkoutTogetherUseCase;
 import com.synaptixfit.application.port.input.together.JoinFriendChallengeUseCase;
@@ -30,6 +31,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.FriendChal
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.FriendStreakRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.FriendStreakResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.ReactionRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.TogetherLimitsResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.TogetherOverviewResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.WorkoutTogetherResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.WorkoutTogetherStartResponse;
@@ -54,7 +56,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * «Con amigos» asíncrono (ADR 0044): retos privados entre amigos con su tablón de reacciones fijas, rachas con un
- * amigo y «Entrenamos juntos». Solo entre amigos mutuos; lo ajeno se trata como inexistente (404).
+ * amigo, «Entrenamos juntos» y los topes de todo (ADR 0045). Solo entre amigos mutuos; lo ajeno se trata como
+ * inexistente (404).
  */
 @Tag(name = "Social - Together")
 @RestController
@@ -62,6 +65,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TogetherController {
 
     private final ListTogetherUseCase overview;
+    private final GetTogetherLimitsUseCase limits;
     private final ListFriendChallengeTemplatesUseCase templates;
     private final CreateFriendChallengeUseCase createChallenge;
     private final GetFriendChallengeUseCase getChallenge;
@@ -84,7 +88,8 @@ public class TogetherController {
     private final StartWorkoutTogetherUseCase startWorkout;
 
     @SuppressWarnings("java:S107")
-    public TogetherController(ListTogetherUseCase overview, ListFriendChallengeTemplatesUseCase templates,
+    public TogetherController(ListTogetherUseCase overview, GetTogetherLimitsUseCase limits,
+                              ListFriendChallengeTemplatesUseCase templates,
                               CreateFriendChallengeUseCase createChallenge, GetFriendChallengeUseCase getChallenge,
                               JoinFriendChallengeUseCase joinChallenge, DeclineFriendChallengeUseCase declineChallenge,
                               LeaveFriendChallengeUseCase leaveChallenge, ReactFriendChallengeUseCase react,
@@ -97,6 +102,7 @@ public class TogetherController {
                               JoinWorkoutTogetherUseCase joinWorkout, DeclineWorkoutTogetherUseCase declineWorkout,
                               LeaveWorkoutTogetherUseCase leaveWorkout, StartWorkoutTogetherUseCase startWorkout) {
         this.overview = overview;
+        this.limits = limits;
         this.templates = templates;
         this.createChallenge = createChallenge;
         this.getChallenge = getChallenge;
@@ -122,6 +128,12 @@ public class TogetherController {
     @GetMapping
     public TogetherOverviewResponse overview(@CurrentUserId UUID userId) {
         return TogetherOverviewResponse.from(overview.overview(userId, RequestLanguage.code()));
+    }
+
+    /** Topes para los selectores del cliente (amigos por reto, entreno o sala; rachas; rondas). */
+    @GetMapping("/limits")
+    public TogetherLimitsResponse limits() {
+        return TogetherLimitsResponse.from(limits.limits());
     }
 
     // ------------------------------------------------------------------ retos

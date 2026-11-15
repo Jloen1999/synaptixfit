@@ -120,7 +120,7 @@ public class FriendChallengeService implements ListFriendChallengeTemplatesUseCa
     public FriendChallengeView join(UUID userId, UUID challengeId, String language) {
         // Quien salió ya no lo ve, pero puede volver («Deshacer»): basta con haber estado y seguir siendo amigo. Tras
         // un bloqueo o dejar de ser amigos no se vuelve, y se responde como si no existiera.
-        FriendChallenge challenge = challenges.findById(challengeId)
+        FriendChallenge challenge = challenges.findByIdForUpdate(challengeId)
                 .filter(c -> c.members().find(userId).isPresent())
                 .filter(c -> people.canJoin(userId, c.creatorId(), c.members().joinedIds()))
                 .orElseThrow(() -> new FriendChallengeNotFoundException(challengeId));
@@ -131,14 +131,14 @@ public class FriendChallengeService implements ListFriendChallengeTemplatesUseCa
 
     @Override
     public void decline(UUID userId, UUID challengeId) {
-        FriendChallenge challenge = visible(userId, challengeId);
+        FriendChallenge challenge = visibleForUpdate(userId, challengeId);
         challenge.decline(userId, clock.instant());
         challenges.save(challenge);
     }
 
     @Override
     public void leave(UUID userId, UUID challengeId) {
-        FriendChallenge challenge = visible(userId, challengeId);
+        FriendChallenge challenge = visibleForUpdate(userId, challengeId);
         if (challenge.leave(userId, clock.instant())) {
             challenges.save(challenge);
         }
@@ -160,7 +160,7 @@ public class FriendChallengeService implements ListFriendChallengeTemplatesUseCa
 
     @Override
     public void removeReaction(UUID userId, UUID challengeId, UUID recipientId, LocalDate day) {
-        FriendChallenge challenge = visible(userId, challengeId);
+        FriendChallenge challenge = visibleForUpdate(userId, challengeId);
         reactions.remove(challenge.id(), recipientId, day, userId);
     }
 
@@ -176,7 +176,8 @@ public class FriendChallengeService implements ListFriendChallengeTemplatesUseCa
 
     /** Solo quien está dentro reacciona, y a otra persona que está dentro, un día del reto que ya ha llegado. */
     private FriendChallenge boardOf(UUID userId, UUID challengeId, UUID recipientId, LocalDate day) {
-        FriendChallenge challenge = visible(userId, challengeId);
+        // Bloqueado: que nadie salga del reto mientras se comprueba que los dos siguen dentro.
+        FriendChallenge challenge = visibleForUpdate(userId, challengeId);
         boolean bothIn = challenge.members().joinedIds().contains(userId)
                 && challenge.members().joinedIds().contains(recipientId);
         LocalDate first = LocalDate.ofInstant(challenge.startAt(), zone);
@@ -260,6 +261,13 @@ public class FriendChallengeService implements ListFriendChallengeTemplatesUseCa
 
     private FriendChallenge visible(UUID userId, UUID challengeId) {
         return challenges.findById(challengeId)
+                .filter(c -> c.canView(userId))
+                .orElseThrow(() -> new FriendChallengeNotFoundException(challengeId));
+    }
+
+    /** Como {@link #visible}, pero bloqueado: para las acciones que lo cambian (ADR 0045). */
+    private FriendChallenge visibleForUpdate(UUID userId, UUID challengeId) {
+        return challenges.findByIdForUpdate(challengeId)
                 .filter(c -> c.canView(userId))
                 .orElseThrow(() -> new FriendChallengeNotFoundException(challengeId));
     }

@@ -128,6 +128,20 @@ void main() {
       );
     });
 
+    test('salir de una sala de estudio refresca el Pomodoro y los retos', () {
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'POST',
+          '/api/v1/together/study-rooms/r/leave',
+        ),
+        containsAll([
+          DataTopic.social,
+          DataTopic.planner,
+          DataTopic.challenges,
+        ]),
+      );
+    });
+
     test('aceptar la política no refresca ninguna pantalla', () {
       expect(
         DataChangeInterceptor.topicsFor('PUT', '/api/v1/me/legal-acceptance'),

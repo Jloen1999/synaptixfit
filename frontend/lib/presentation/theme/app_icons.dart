@@ -95,6 +95,10 @@ abstract final class AppIcons {
   static const IconData community = Icons.forum_outlined;
   static const IconData sharedNotes = Icons.groups_outlined;
   static const IconData focusTimer = Icons.timer_outlined;
+
+  /// Fases del temporizador: concentración y descanso.
+  static const IconData focusPhase = Icons.psychology_rounded;
+  static const IconData breakPhase = Icons.free_breakfast_rounded;
   static const IconData howTo = Icons.ondemand_video_rounded;
   static const IconData help = Icons.help_outline_rounded;
 

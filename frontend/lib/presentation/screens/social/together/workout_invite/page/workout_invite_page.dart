@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../../app/di/app_di.dart';
+import '../../../../../../domain/enums/together_enums.dart';
 import '../../../../../extensions/context_extensions.dart';
 import '../../../../../mixins/errors_message_mixin.dart';
 import '../../../../../theme/tokens.g.dart';
@@ -29,9 +30,7 @@ class WorkoutInvitePage extends StatelessWidget {
         BlocProvider(
           create: (_) => getIt<FriendPickerBloc>()
             ..add(
-              const FriendPickerEvent.started(
-                max: WorkoutInviteBloc.maxFriends,
-              ),
+              const FriendPickerEvent.started(kind: TogetherInviteKind.workout),
             ),
         ),
       ],

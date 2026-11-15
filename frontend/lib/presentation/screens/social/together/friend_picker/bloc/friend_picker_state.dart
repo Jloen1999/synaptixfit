@@ -8,6 +8,10 @@ abstract class FriendPickerState with _$FriendPickerState {
     @Default(FriendPickerStatus.loading) FriendPickerStatus status,
     @Default(<SocialUser>[]) List<SocialUser> friends,
     @Default(<String>[]) List<String> selected,
+    @Default(TogetherInviteKind.streak) TogetherInviteKind kind,
+
+    /// Topes del servidor (nulos al elegir para una racha).
+    TogetherLimits? limits,
     @Default(1) int max,
     AppError? error,
   }) = _FriendPickerState;

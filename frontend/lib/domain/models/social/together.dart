@@ -143,6 +143,97 @@ abstract class WorkoutTogetherMember with _$WorkoutTogetherMember {
   }) = _WorkoutTogetherMember;
 }
 
+/// Sala de «Estudiamos juntos» (ADR 0045). La fase, la ronda y cuándo termina
+/// la fase las calcula el servidor; [serverTime] sirve para corregir el reloj
+/// del móvil al pintar la cuenta atrás. [mySubjectId] es solo la asignatura
+/// propia: la de los demás nunca llega.
+@freezed
+abstract class StudyRoom with _$StudyRoom {
+  const factory StudyRoom({
+    required String id,
+    required TogetherPerson creator,
+    required StudyRoomLength length,
+    @Default(25) int focusMinutes,
+    @Default(5) int breakMinutes,
+    @Default(1) int rounds,
+    required StudyRoomPhase phase,
+    @Default(0) int round,
+    DateTime? phaseEndsAt,
+    DateTime? startedAt,
+    DateTime? endsAt,
+    required DateTime serverTime,
+    required TogetherMemberStatus myStatus,
+    String? mySubjectId,
+    @Default(<StudyRoomMember>[]) List<StudyRoomMember> members,
+  }) = _StudyRoom;
+
+  const StudyRoom._();
+
+  bool get invitation => myStatus == TogetherMemberStatus.invited;
+
+  bool get joined => myStatus == TogetherMemberStatus.joined;
+
+  /// Personas dentro ahora mismo (yo incluida si estoy).
+  List<StudyRoomMember> get inside => [
+    for (final m in members)
+      if (m.status == TogetherMemberStatus.joined) m,
+  ];
+
+  /// Reacción que puse yo (si sigue viéndose).
+  StudyRoomReaction? get myReaction =>
+      members.where((m) => m.me).firstOrNull?.reaction;
+}
+
+/// Persona de una sala: dentro, invitada o se ha ido, con su última reacción
+/// si es reciente.
+@freezed
+abstract class StudyRoomMember with _$StudyRoomMember {
+  const factory StudyRoomMember({
+    required TogetherPerson person,
+    required TogetherMemberStatus status,
+    StudyRoomReaction? reaction,
+
+    /// Soy yo.
+    @Default(false) bool me,
+  }) = _StudyRoomMember;
+}
+
+/// Una duración de ronda de sala (la manda el servidor): minutos de
+/// concentración y del descanso que le sigue.
+@freezed
+abstract class StudyRoomLengthOption with _$StudyRoomLengthOption {
+  const factory StudyRoomLengthOption({
+    required StudyRoomLength length,
+    required int focusMinutes,
+    required int breakMinutes,
+  }) = _StudyRoomLengthOption;
+}
+
+/// Topes de «Con amigos» que manda el servidor (ADR 0045): el cliente no los
+/// repite (tampoco las duraciones de ronda).
+@freezed
+abstract class TogetherLimits with _$TogetherLimits {
+  const factory TogetherLimits({
+    required int challengeFriends,
+    required int workoutFriends,
+    required int studyRoomFriends,
+    required int friendStreaks,
+    required int studyRoomRounds,
+    @Default(<StudyRoomLengthOption>[])
+    List<StudyRoomLengthOption> studyRoomLengths,
+  }) = _TogetherLimits;
+
+  const TogetherLimits._();
+
+  /// Cuántos amigos se pueden elegir para [kind] (una racha es con uno).
+  int friendsFor(TogetherInviteKind kind) => switch (kind) {
+    TogetherInviteKind.challenge => challengeFriends,
+    TogetherInviteKind.workout => workoutFriends,
+    TogetherInviteKind.studyRoom => studyRoomFriends,
+    TogetherInviteKind.streak => 1,
+  };
+}
+
 /// Pantalla «Con amigos»: invitaciones y lo que está en marcha.
 @freezed
 abstract class TogetherOverview with _$TogetherOverview {
@@ -150,9 +241,14 @@ abstract class TogetherOverview with _$TogetherOverview {
     @Default(<FriendChallenge>[]) List<FriendChallenge> challenges,
     @Default(<FriendStreak>[]) List<FriendStreak> streaks,
     @Default(<WorkoutTogether>[]) List<WorkoutTogether> workouts,
+    @Default(<StudyRoom>[]) List<StudyRoom> studyRooms,
   }) = _TogetherOverview;
 
   const TogetherOverview._();
 
-  bool get isEmpty => challenges.isEmpty && streaks.isEmpty && workouts.isEmpty;
+  bool get isEmpty =>
+      challenges.isEmpty &&
+      streaks.isEmpty &&
+      workouts.isEmpty &&
+      studyRooms.isEmpty;
 }

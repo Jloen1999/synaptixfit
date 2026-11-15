@@ -42,10 +42,12 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM seguimiento_ciclo WHERE usuario_id = :id",
             "DELETE FROM pausas_racha WHERE usuario_id = :id",
             // Con amigos (ADR 0044): lo compartido con amigos sale de la persona; lo que creó y sigue usando
-            // otra gente (un reto o un entreno sin ella) se queda sin sus datos.
+            // otra gente (un reto, un entreno o una sala sin ella) se queda sin sus datos.
             "DELETE FROM reacciones_reto_amigos WHERE autor_id = :id OR destinatario_id = :id",
             "DELETE FROM retos_amigos_miembros WHERE usuario_id = :id",
             "DELETE FROM entrenos_juntos_miembros WHERE usuario_id = :id",
+            // Estudiamos juntos (ADR 0045): su sitio en cada sala (con su asignatura y su reacción).
+            "DELETE FROM salas_estudio_miembros WHERE usuario_id = :id",
             "DELETE FROM rachas_amigo WHERE solicitante_id = :id OR receptor_id = :id",
             "DELETE FROM denuncias_usuario WHERE denunciante_id = :id OR denunciado_id = :id",
             "DELETE FROM notas_ejercicio WHERE usuario_id = :id",

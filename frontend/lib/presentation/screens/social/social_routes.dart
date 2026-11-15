@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/enums/friendship_list_kind.dart';
+import '../../../domain/enums/together_enums.dart';
 import 'feed/page/feed_page.dart';
 import 'friends/page/friends_page.dart';
 import 'notifications/page/notifications_page.dart';
@@ -8,6 +9,8 @@ import 'post_detail/page/post_detail_page.dart';
 import 'together/challenge_detail/page/friend_challenge_detail_page.dart';
 import 'together/challenge_form/page/friend_challenge_form_page.dart';
 import 'together/hub/page/together_page.dart';
+import 'together/study_invite/page/study_invite_page.dart';
+import 'together/study_room/page/study_room_page.dart';
 import 'together/workout_detail/page/workout_together_page.dart';
 import 'together/workout_invite/page/workout_invite_page.dart';
 import 'user_profile/page/user_profile_page.dart';
@@ -36,6 +39,13 @@ abstract final class SocialPaths {
       '/social/together/challenges/$id';
 
   static String togetherWorkout(String id) => '/social/together/workouts/$id';
+
+  /// «Estudiar con amigos» (ADR 0045): `length` (SHORT/LONG) y `subject`
+  /// opcionales, los que trae el Pomodoro.
+  static const togetherNewStudyRoom = '/social/together/study/new';
+  static const togetherStudyRoomPattern = '/social/together/study/:id';
+
+  static String togetherStudyRoom(String id) => '/social/together/study/$id';
 
   static String post(String postId) => '/social/posts/$postId';
 
@@ -136,5 +146,19 @@ List<RouteBase> socialRoutes() => [
     path: SocialPaths.togetherWorkoutPattern,
     builder: (_, state) =>
         WorkoutTogetherPage(workoutId: state.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: SocialPaths.togetherNewStudyRoom,
+    builder: (_, state) => StudyInvitePage(
+      length: switch (state.uri.queryParameters['length']) {
+        final String value => StudyRoomLength.fromApi(value),
+        null => null,
+      },
+      subjectId: state.uri.queryParameters['subject'],
+    ),
+  ),
+  GoRoute(
+    path: SocialPaths.togetherStudyRoomPattern,
+    builder: (_, state) => StudyRoomPage(roomId: state.pathParameters['id']!),
   ),
 ];

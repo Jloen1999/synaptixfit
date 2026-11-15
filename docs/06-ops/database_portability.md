@@ -59,6 +59,8 @@ Todo está en `backend/src/main/java/com/synaptixfit/infrastructure/adapter/outp
 | `UPDATE … FROM …` (pasar los vínculos de bloque antiguos a `horarios_academicos.hito_id`) | Migración `V1012` | Migración de datos de una sola vez | `UPDATE horarios_academicos b JOIN hitos_de_reto h ON … SET …` |
 | `translate(lower(col), 'áà…', 'aa…') LIKE :p` (buscar sin tildes) | `SqlLike.containsFolded`, en `AcademicSearchJdbcAdapter` y `NotePersistenceAdapter.findShared` (ADR 0036) | Comparar sin tildes en el servidor: las listas van paginadas | MySQL compara sin tildes con su intercalación por defecto (`utf8mb4_0900_ai_ci`): `lower(col) LIKE :p` basta |
 | `cb.like(…, '\\')` (Criteria API) | `adapter/catalog/AcademicCatalogPersistenceAdapter.java:152` | Hibernate genera el escape según el dialecto | Probar; si falla, usar `'!'` como en `SqlLike` |
+| `SELECT … FOR UPDATE` (bloquear la sala antes de cambiarla) | `findByIdForUpdate` de `StudyRoomJdbcAdapter`, `FriendChallengeJdbcAdapter` y `WorkoutTogetherJdbcAdapter` (ADR 0045) | Que dos personas a la vez no se pisen al guardar una sala, un reto o un entreno con amigos | Igual en MySQL/MariaDB; en SQL Server, `WITH (UPDLOCK)` |
+| Nombre del CHECK sin nombre (`denuncias_usuario_contexto_check`) | Migración `V1065` | Ampliar los contextos de denuncia | En otro motor, buscar el nombre de la restricción en su catálogo |
 
 ## 3. Checklist para cambiar a MySQL 8
 

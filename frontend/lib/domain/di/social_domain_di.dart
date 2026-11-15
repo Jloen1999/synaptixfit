@@ -42,6 +42,15 @@ import '../use_cases/social/together/decline_workout_together_use_case.dart';
 import '../use_cases/social/together/leave_workout_together_use_case.dart';
 import '../use_cases/social/together/start_workout_together_use_case.dart';
 import '../use_cases/social/together/report_user_use_case.dart';
+import '../use_cases/social/together/get_together_limits_use_case.dart';
+import '../use_cases/social/together/create_study_room_use_case.dart';
+import '../use_cases/social/together/get_study_room_use_case.dart';
+import '../use_cases/social/together/join_study_room_use_case.dart';
+import '../use_cases/social/together/decline_study_room_use_case.dart';
+import '../use_cases/social/together/leave_study_room_use_case.dart';
+import '../use_cases/social/together/start_study_room_use_case.dart';
+import '../use_cases/social/together/choose_study_room_subject_use_case.dart';
+import '../use_cases/social/together/react_in_study_room_use_case.dart';
 import '../use_cases/notifications/get_notifications_use_case.dart';
 import '../use_cases/notifications/get_unread_notifications_count_use_case.dart';
 import '../use_cases/notifications/mark_notification_read_use_case.dart';
@@ -189,6 +198,33 @@ void registerSocialDomain(GetIt getIt) {
     )
     ..registerLazySingleton<StartWorkoutTogetherUseCaseContract>(
       () => StartWorkoutTogetherUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetTogetherLimitsUseCaseContract>(
+      () => GetTogetherLimitsUseCase(getIt()),
+    )
+    ..registerLazySingleton<CreateStudyRoomUseCaseContract>(
+      () => CreateStudyRoomUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetStudyRoomUseCaseContract>(
+      () => GetStudyRoomUseCase(getIt()),
+    )
+    ..registerLazySingleton<JoinStudyRoomUseCaseContract>(
+      () => JoinStudyRoomUseCase(getIt()),
+    )
+    ..registerLazySingleton<DeclineStudyRoomUseCaseContract>(
+      () => DeclineStudyRoomUseCase(getIt()),
+    )
+    ..registerLazySingleton<LeaveStudyRoomUseCaseContract>(
+      () => LeaveStudyRoomUseCase(getIt()),
+    )
+    ..registerLazySingleton<StartStudyRoomUseCaseContract>(
+      () => StartStudyRoomUseCase(getIt()),
+    )
+    ..registerLazySingleton<ChooseStudyRoomSubjectUseCaseContract>(
+      () => ChooseStudyRoomSubjectUseCase(getIt()),
+    )
+    ..registerLazySingleton<ReactInStudyRoomUseCaseContract>(
+      () => ReactInStudyRoomUseCase(getIt()),
     )
     ..registerLazySingleton<ReportUserUseCaseContract>(
       () => ReportUserUseCase(getIt()),

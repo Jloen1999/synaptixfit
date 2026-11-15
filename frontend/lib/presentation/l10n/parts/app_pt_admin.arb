@@ -350,5 +350,6 @@
   "adminReportContextChallenge": "Denunciada num desafio com amigos",
   "adminReportContextStreak": "Denunciada numa sequência com um amigo",
   "adminReportContextWorkout": "Denunciada ao treinar juntos",
-  "adminReportContextProfile": "Denunciada a partir do perfil"
+  "adminReportContextProfile": "Denunciada a partir do perfil",
+  "adminReportContextStudyRoom": "Denunciada ao estudar juntos"
 }

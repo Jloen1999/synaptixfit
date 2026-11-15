@@ -21,9 +21,6 @@ import '../bloc/friend_challenge_form_bloc.dart';
 class FriendChallengeFormPage extends StatelessWidget {
   const FriendChallengeFormPage({super.key});
 
-  /// Amigos que se pueden invitar a un reto (25 personas con quien lo crea).
-  static const maxFriends = 24;
-
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -34,9 +31,12 @@ class FriendChallengeFormPage extends StatelessWidget {
                 ..add(const FriendChallengeFormEvent.started()),
         ),
         BlocProvider(
-          create: (_) =>
-              getIt<FriendPickerBloc>()
-                ..add(const FriendPickerEvent.started(max: maxFriends)),
+          create: (_) => getIt<FriendPickerBloc>()
+            ..add(
+              const FriendPickerEvent.started(
+                kind: TogetherInviteKind.challenge,
+              ),
+            ),
         ),
       ],
       child: const _FormView(),
