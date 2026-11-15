@@ -11,4 +11,7 @@ class DataChangeRepository implements DataChangeRepositoryContract {
 
   @override
   Stream<Set<DataTopic>> watch() => _interceptor.changes;
+
+  @override
+  void publish(Set<DataTopic> topics) => _interceptor.publish(topics);
 }

@@ -112,11 +112,31 @@ abstract class WorkoutTogether with _$WorkoutTogether {
     int? myMinutes,
     @Default(<WorkoutSlot>[]) List<WorkoutSlot> exercises,
     @Default(<WorkoutTogetherMember>[]) List<WorkoutTogetherMember> members,
+
+    /// Hora de inicio común: nula hasta que alguien pulsa «Empezar» (ADR 0047).
+    DateTime? startedAt,
+
+    /// Quién pulsó «Empezar».
+    TogetherPerson? startedBy,
+
+    /// Pausa del grupo en curso y quién la puso.
+    DateTime? pausedAt,
+    TogetherPerson? pausedBy,
   }) = _WorkoutTogether;
 
   const WorkoutTogether._();
 
   bool get invitation => myStatus == TogetherMemberStatus.invited;
+
+  /// Alguien ya pulsó «Empezar»: va a la vez para todos (ADR 0047).
+  bool get started => startedAt != null;
+
+  bool get paused => pausedAt != null;
+
+  bool get joined => myStatus == TogetherMemberStatus.joined;
+
+  /// Mi id (el de la persona marcada como yo), si sigo viéndolo.
+  String? get myId => members.where((m) => m.me).firstOrNull?.person.id;
 }
 
 /// Un ejercicio del día, por su posición.

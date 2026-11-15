@@ -66,6 +66,7 @@ un toque y nunca datos de bienestar.
 - En la sesión en vivo, un panel plegable enseña por ejercicio quién lo tiene **hecho / por hacer** (por hueco, con
   las series de trabajo planificadas). **Consulta cada 12 s** (15 s en el detalle) mientras la pantalla está abierta,
   sin WebSocket; un fallo de red no cambia nada.
+- **Actualizado en el ADR 0047:** empezar y pausar van a la vez para todo el grupo y los cambios llegan en directo por SSE; la consulta periódica queda de respaldo.
 - Al terminar, una **tarjeta conjunta** (en el resumen de la sesión y en el detalle): quiénes, mis minutos y cuántos
   ejercicios. Nunca pesos, repeticiones ni esfuerzo de los demás.
 

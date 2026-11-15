@@ -14,6 +14,10 @@ abstract class WorkoutTogetherState with _$WorkoutTogetherState {
     /// Sesión que hay que abrir (efecto de un solo uso).
     String? openSession,
 
+    /// La sesión se abre sola porque empezó otra persona (se anuncia al
+    /// lector; efecto de un solo uso junto a [openSession]).
+    @Default(false) bool startedByOther,
+
     /// Ha dicho que no a la invitación: la pantalla se cierra.
     @Default(false) bool closed,
 

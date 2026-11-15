@@ -19,6 +19,15 @@ class FakeDataChanges implements DataChangeRepositoryContract {
 
   void emit(Set<DataTopic> topics) => _controller.add(topics);
 
+  /// Lo que se ha anunciado desde fuera (el canal en directo, ADR 0047).
+  final published = <Set<DataTopic>>[];
+
+  @override
+  void publish(Set<DataTopic> topics) {
+    published.add(topics);
+    _controller.add(topics);
+  }
+
   Future<void> close() => _controller.close();
 }
 

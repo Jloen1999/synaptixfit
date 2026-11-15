@@ -63,6 +63,9 @@ dependencies:
   geolocator: ^14.0.1
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
+  # Canal en directo en la web (ADR 0047): fetch con ReadableStream. Ya venía
+  # como dependencia de otros paquetes; se declara porque data/ lo importa.
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

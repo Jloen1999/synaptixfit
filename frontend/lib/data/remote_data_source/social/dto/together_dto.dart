@@ -225,6 +225,10 @@ abstract class WorkoutTogetherDto with _$WorkoutTogetherDto {
     @Default(<WorkoutSlotDto>[]) List<WorkoutSlotDto> exercises,
     @Default(<WorkoutTogetherMemberDto>[])
     List<WorkoutTogetherMemberDto> members,
+    DateTime? startedAt,
+    TogetherPersonDto? startedBy,
+    DateTime? pausedAt,
+    TogetherPersonDto? pausedBy,
   }) = _WorkoutTogetherDto;
 
   const WorkoutTogetherDto._();
@@ -245,6 +249,10 @@ abstract class WorkoutTogetherDto with _$WorkoutTogetherDto {
     myMinutes: myMinutes,
     exercises: [for (final s in exercises) s.toDomain()],
     members: [for (final m in members) m.toDomain()],
+    startedAt: startedAt?.toLocal(),
+    startedBy: startedBy?.toDomain(),
+    pausedAt: pausedAt?.toLocal(),
+    pausedBy: pausedBy?.toDomain(),
   );
 }
 

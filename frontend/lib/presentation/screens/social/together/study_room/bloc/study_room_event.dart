@@ -5,7 +5,10 @@ sealed class StudyRoomEvent with _$StudyRoomEvent {
   const factory StudyRoomEvent.started(String id) = StudyRoomStarted;
 
   /// Consulta periódica (y al acabar la cuenta atrás de una fase).
-  const factory StudyRoomEvent.polled() = StudyRoomPolled;
+  /// Volver a leer: consulta de respaldo o, con [live], aviso del canal en
+  /// directo o la propia pantalla (ADR 0047), que se lee siempre.
+  const factory StudyRoomEvent.polled({@Default(false) bool live}) =
+      StudyRoomPolled;
 
   /// «Unirme» (o «Deshacer» tras salir).
   const factory StudyRoomEvent.joined() = StudyRoomJoined;

@@ -64,7 +64,6 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                 context.showSnack(errorMessage(context, error));
                 return;
               }
-              final navigator = Navigator.of(context);
               switch (state.effect!) {
                 case FriendChallengeDetailEffect.declined:
                   context.showSnack(l10n.togetherDeclined);
@@ -74,11 +73,8 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                     l10n.togetherLeftChallenge,
                     onUndo: () =>
                         bloc.add(const FriendChallengeDetailEvent.joined()),
-                    onCommit: () {
-                      if (navigator.mounted && navigator.canPop()) {
-                        navigator.pop();
-                      }
-                    },
+                    onCommit: () =>
+                        context.leaveAfterUndo(SocialPaths.together),
                   );
               }
             },

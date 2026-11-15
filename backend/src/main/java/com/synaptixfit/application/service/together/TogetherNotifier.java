@@ -5,17 +5,21 @@ import com.synaptixfit.domain.model.notification.NotificationMessage;
 import com.synaptixfit.domain.model.notification.NotificationMessage.Code;
 import com.synaptixfit.domain.model.notification.NotificationPriority;
 import com.synaptixfit.domain.model.notification.NotificationType;
+import com.synaptixfit.domain.model.together.TogetherLiveChange;
 import com.synaptixfit.domain.model.user.User;
+import com.synaptixfit.domain.port.output.together.TogetherLivePort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Avisos de «Con amigos» (ADR 0044 y 0045): invitaciones y «Recordárselo». Van como avisos sociales, así que se aplican las
  * preferencias de quien los recibe ({@link CreateNotificationUseCase}); nunca llevan cifras ni datos de salud. Quien
  * tiene shadowban no avisa a nadie. {@code actionUrl} son rutas del cliente bajo {@code /social/together}.
+ * Además, los avisos en directo sin datos ({@link TogetherLivePort}, ADR 0047) para quien tenga la app abierta.
  */
 public final class TogetherNotifier {
 
@@ -23,10 +27,19 @@ public final class TogetherNotifier {
 
     private final CreateNotificationUseCase notifications;
     private final UserRepositoryPort users;
+    private final TogetherLivePort live;
 
-    public TogetherNotifier(CreateNotificationUseCase notifications, UserRepositoryPort users) {
+    public TogetherNotifier(CreateNotificationUseCase notifications, UserRepositoryPort users, TogetherLivePort live) {
         this.notifications = notifications;
         this.users = users;
+        this.live = live;
+    }
+
+    /** Aviso en directo (ADR 0047): «cambió esta sala o este entreno», sin datos. Llega solo si se confirma. */
+    void changed(TogetherLiveChange.Topic topic, UUID id, Set<UUID> recipients) {
+        if (!recipients.isEmpty()) {
+            live.publish(new TogetherLiveChange(recipients, topic, id));
+        }
     }
 
     void challengeInvited(Collection<UUID> invitees, UUID actorId, UUID challengeId, String title) {

@@ -1,6 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-
 part 'streak.freezed.dart';
 
 /// Racha diaria de actividad del usuario.

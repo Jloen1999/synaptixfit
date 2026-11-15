@@ -23,7 +23,10 @@ class _Notes
   bool failSave = false;
 
   @override
-  Future<AppResult<ExerciseNote?>> call(String exerciseId, [String? text]) async {
+  Future<AppResult<ExerciseNote?>> call(
+    String exerciseId, [
+    String? text,
+  ]) async {
     if (text == null) return Success(stored);
     if (failSave) return const Failure(AppError.network());
     stored = text.isEmpty

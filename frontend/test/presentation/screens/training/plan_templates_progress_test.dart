@@ -204,10 +204,9 @@ void main() {
         all.where(const TemplateFilter(time: TemplateTime.upTo45).matches),
         [_home2, _exam, _run],
       );
-      expect(
-        all.where(const TemplateFilter(time: TemplateTime.more).matches),
-        [_gym3],
-      );
+      expect(all.where(const TemplateFilter(time: TemplateTime.more).matches), [
+        _gym3,
+      ]);
       expect(
         all.where(
           const TemplateFilter(level: TemplateLevel.intermediate).matches,
@@ -230,31 +229,37 @@ void main() {
         isA<RoutineTemplatesState>()
             .having((s) => s.created, 'creada', _routine)
             .having((s) => s.createdWithRuns, 'con carreras', isTrue),
-        isA<RoutineTemplatesState>()
-            .having((s) => s.createdWithRuns, 'consumido', isFalse),
+        isA<RoutineTemplatesState>().having(
+          (s) => s.createdWithRuns,
+          'consumido',
+          isFalse,
+        ),
       ],
     );
 
-    test('una plantilla de un servidor anterior deduce el lugar de «en casa»', () {
-      const old = RoutineTemplateDto(
-        id: 'x',
-        code: 'casa_2',
-        name: 'En casa',
-        atHome: true,
-      );
-      expect(old.toDomain().place, TemplatePlace.home);
-      const fresh = RoutineTemplateDto(
-        id: 'y',
-        code: 'parque_3',
-        name: 'Parque',
-        place: 'OUTDOOR',
-        level: 'INTERMEDIATE',
-        runDays: [TemplateRunDayDto(dayNumber: 2, workoutCode: 'EASY_30')],
-      );
-      expect(fresh.toDomain().place, TemplatePlace.outdoor);
-      expect(fresh.toDomain().level, TemplateLevel.intermediate);
-      expect(fresh.toDomain().runDays.single.workoutCode, 'EASY_30');
-    });
+    test(
+      'una plantilla de un servidor anterior deduce el lugar de «en casa»',
+      () {
+        const old = RoutineTemplateDto(
+          id: 'x',
+          code: 'casa_2',
+          name: 'En casa',
+          atHome: true,
+        );
+        expect(old.toDomain().place, TemplatePlace.home);
+        const fresh = RoutineTemplateDto(
+          id: 'y',
+          code: 'parque_3',
+          name: 'Parque',
+          place: 'OUTDOOR',
+          level: 'INTERMEDIATE',
+          runDays: [TemplateRunDayDto(dayNumber: 2, workoutCode: 'EASY_30')],
+        );
+        expect(fresh.toDomain().place, TemplatePlace.outdoor);
+        expect(fresh.toDomain().level, TemplateLevel.intermediate);
+        expect(fresh.toDomain().runDays.single.workoutCode, 'EASY_30');
+      },
+    );
 
     late _Use use;
     blocTest<RoutineTemplatesBloc, RoutineTemplatesState>(
@@ -266,8 +271,16 @@ void main() {
       act: (bloc) => bloc.add(const RoutineTemplatesEvent.used('t1')),
       expect: () => [
         isA<RoutineTemplatesState>().having((s) => s.usingId, 'ocupado', 't1'),
-        isA<RoutineTemplatesState>().having((s) => s.created, 'creada', _routine),
-        isA<RoutineTemplatesState>().having((s) => s.created, 'consumida', null),
+        isA<RoutineTemplatesState>().having(
+          (s) => s.created,
+          'creada',
+          _routine,
+        ),
+        isA<RoutineTemplatesState>().having(
+          (s) => s.created,
+          'consumida',
+          null,
+        ),
       ],
       verify: (_) => expect(use.used, ['t1']),
     );

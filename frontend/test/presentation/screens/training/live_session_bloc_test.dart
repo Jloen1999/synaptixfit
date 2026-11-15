@@ -1055,4 +1055,69 @@ void main() {
       },
     );
   });
+
+  // Entreno juntos a la vez (ADR 0047): la pausa del grupo llega del servidor.
+  group('pausa del grupo', () {
+    final pausedAt = startedAt.add(const Duration(minutes: 4));
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'otra persona pausa: se adopta la pausa del servidor sin volver a '
+      'mandarla, con quién la puso, y el cronómetro de la serie se congela',
+      setUp: () => when(() => getSession('s1')).thenAnswer(
+        (_) async => Success(
+          TrainingFixtures.session(
+            startedAt: startedAt,
+          ).copyWith(pausedAt: pausedAt),
+        ),
+      ),
+      build: build,
+      seed: () => ready().copyWith(
+        timerExerciseId: 'p1',
+        timerSet: 1,
+        timerSince: startedAt.add(const Duration(minutes: 3)),
+      ),
+      act: (bloc) =>
+          bloc.add(const LiveSessionEvent.groupPauseChanged(pausedBy: 'Ana')),
+      verify: (bloc) {
+        expect(bloc.state.paused, isTrue);
+        expect(bloc.state.session!.pausedAt, pausedAt);
+        expect(bloc.state.groupPausedBy, 'Ana');
+        expect(bloc.state.timerSince, isNull);
+        expect(bloc.state.timerBanked, 60);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'otra persona reanuda: se sigue con las pausas que contó el servidor',
+      setUp: () => when(() => getSession('s1')).thenAnswer(
+        (_) async => Success(
+          TrainingFixtures.session(
+            startedAt: startedAt,
+          ).copyWith(pausedSeconds: 60),
+        ),
+      ),
+      build: build,
+      seed: () => ready(
+        session: TrainingFixtures.session(
+          startedAt: startedAt,
+        ).copyWith(pausedAt: pausedAt),
+      ).copyWith(groupPausedBy: 'Ana'),
+      act: (bloc) => bloc.add(const LiveSessionEvent.groupPauseChanged()),
+      verify: (bloc) {
+        expect(bloc.state.paused, isFalse);
+        expect(bloc.state.session!.pausedSeconds, 60);
+        expect(bloc.state.groupPausedBy, isNull);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'con una reanudación sin llegar (sin conexión) manda lo del teléfono',
+      build: build,
+      seed: () => ready().copyWith(resumePendingAt: now),
+      act: (bloc) =>
+          bloc.add(const LiveSessionEvent.groupPauseChanged(pausedBy: 'Ana')),
+      expect: () => const <LiveSessionState>[],
+      verify: (_) => verifyNever(() => getSession(any())),
+    );
+  });
 }

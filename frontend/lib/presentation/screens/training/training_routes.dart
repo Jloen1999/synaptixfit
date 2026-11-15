@@ -57,8 +57,8 @@ abstract final class TrainingPaths {
   static String sessionCompleted(String sessionId) =>
       '${session(sessionId)}/completed';
 
-  /// Detalle de solo lectura de una sesión terminada (`extra`:
-  /// `SessionHistoryEntry` opcional). Devuelve una `SessionDetailAction`.
+  /// Detalle de una sesión terminada (`extra`: `SessionHistoryEntry`
+  /// opcional). Corregir, reabrir y eliminar se hacen en él (ADR 0046).
   static String sessionDetail(String sessionId) =>
       '${session(sessionId)}/detail';
 

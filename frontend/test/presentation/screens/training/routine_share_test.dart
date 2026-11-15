@@ -60,7 +60,10 @@ class _Share implements ShareRoutineLinkUseCaseContract {
   }) async {
     messages.add(message);
     return Success(
-      RoutineShareLink(url: 'https://app/#/training/shared/t', expiresAt: _until),
+      RoutineShareLink(
+        url: 'https://app/#/training/shared/t',
+        expiresAt: _until,
+      ),
     );
   }
 }
@@ -200,7 +203,8 @@ void main() {
 
     blocTest<SharedRoutineBloc, SharedRoutineState>(
       'un enlace caducado deja el error para explicarlo',
-      build: () => SharedRoutineBloc(preview: _Preview(gone: true), copy: _Copy()),
+      build: () =>
+          SharedRoutineBloc(preview: _Preview(gone: true), copy: _Copy()),
       act: (bloc) => bloc.add(const SharedRoutineEvent.started('tok')),
       verify: (bloc) {
         expect(bloc.state.status, SharedRoutineStatus.failure);

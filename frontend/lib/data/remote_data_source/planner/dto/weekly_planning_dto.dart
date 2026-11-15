@@ -7,7 +7,6 @@ import 'planner_json.dart';
 part 'weekly_planning_dto.freezed.dart';
 part 'weekly_planning_dto.g.dart';
 
-
 @freezed
 abstract class WeeklyLoadDto with _$WeeklyLoadDto {
   const factory WeeklyLoadDto({

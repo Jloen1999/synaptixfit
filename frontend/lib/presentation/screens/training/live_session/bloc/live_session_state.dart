@@ -12,6 +12,9 @@ abstract class LiveSessionState with _$LiveSessionState {
 
     /// Ejercicios planificados del día (vacío en sesión libre).
     @Default(<PlannedExercise>[]) List<PlannedExercise> exercises,
+
+    /// Entreno juntos: quién puso la pausa en curso si no fui yo (ADR 0047).
+    String? groupPausedBy,
     String? routineName,
     int? dayNumber,
     String? dayName,

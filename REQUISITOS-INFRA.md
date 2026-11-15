@@ -24,6 +24,23 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | OCR | La imagen del backend incluye Tesseract (≈ 60 MB) para leer fotos de apuntes (ADR 0040). Cada lectura es un proceso aparte de 100-200 MB **fuera** de la JVM: una a la vez (`SYNAPTIXFIT_OCR_MAX_CONCURRENT=1`), con un hilo (`OMP_THREAD_LIMIT=1`) y tope de 256 MB (`SYNAPTIXFIT_OCR_MEMORY_LIMIT_MB`, con `prlimit`). Por eso el contenedor tiene `mem_limit: 1000m` y la JVM `MaxRAMPercentage=55` (≈ 550 MB de heap, como antes con 700m/75 %): quedan ≈ 450 MB para la memoria de la JVM fuera del heap y la lectura. En el VPS (4 GB, ≈ 2 GB libres) supone ≈ 300 MB más que antes |
 | Dominio | `https://synaptixfit.jloenit.dev` (web y API en el mismo origen), Cloudflare proxied + certificado de origen `*.jloenit.dev` en Traefik |
 
+### Canal en directo de «Con amigos» (SSE, ADR 0047)
+
+* `GET /api/v1/together/stream` (`text/event-stream`, autenticado) queda abierto mientras la app está en primer
+  plano: como mucho 15 min por conexión (el móvil abre otra), un latido cada 25 s y 3 conexiones por persona.
+  Solo lleva avisos sin datos; el móvil vuelve a leer por la API de siempre.
+* **Una sola instancia del backend:** las conexiones abiertas viven en la memoria del proceso
+  (`TogetherStreamHub`). Si algún día hay dos réplicas, un aviso solo llegaría a quien esté conectado a la misma;
+  haría falta un bus común (p. ej. `LISTEN/NOTIFY` de PostgreSQL o Redis). Hoy no se escala en horizontal.
+* **nginx del cliente** (`frontend/nginx/default.conf.template`): bloque propio para esa ruta con
+  `proxy_buffering off`, `proxy_cache off`, `gzip off` y `proxy_read_timeout 120s` (mayor que el latido); el
+  backend además responde `X-Accel-Buffering: no`. Sin `limit_req`: ninguna de las zonas de límite que ya había
+  la cubre, y el móvil reconecta con espera creciente (de 2 s a 1 min).
+* **Traefik y Cloudflare** reenvían el flujo sin guardarlo; Cloudflare corta una conexión sin tráfico a los
+  100 s y el latido de 25 s lo evita. No hace falta tocar nada en ellos.
+* **Memoria:** cada conexión abierta es una petición asíncrona de Tomcat (hilos virtuales activados), sin hilo
+  propio mientras espera: con decenas de personas a la vez el coste es despreciable.
+
 ### Rutas con credenciales y salida a Internet
 
 * **Calendario suscrito** (`/api/v1/planner/calendar-feed/<token>.ics`, ADR 0020): el token de la ruta es una

@@ -84,9 +84,7 @@ abstract class TrainingSession with _$TrainingSession {
 
   /// Series de calentamiento de un ejercicio planificado, ordenadas.
   List<SessionSet> warmupSetsFor(String? plannedExerciseId) =>
-      warmupSets
-          .where((s) => s.plannedExerciseId == plannedExerciseId)
-          .toList()
+      warmupSets.where((s) => s.plannedExerciseId == plannedExerciseId).toList()
         ..sort((a, b) => a.setNumber.compareTo(b.setNumber));
 }
 

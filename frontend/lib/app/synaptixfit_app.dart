@@ -66,6 +66,7 @@ class _SynaptixFitAppState extends State<SynaptixFitApp> {
         break;
     }
   }
+
   late final AppearanceBloc _appearance = getIt<AppearanceBloc>(
     param1: widget.initialAppearance,
   )..add(const AppearanceEvent.started());

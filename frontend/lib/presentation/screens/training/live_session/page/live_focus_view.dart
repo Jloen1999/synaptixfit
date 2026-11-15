@@ -1678,17 +1678,23 @@ class _NextPanel extends StatelessWidget {
               ),
               const SizedBox(width: TokensSpacing.xs),
               Expanded(
-                child: Text(
-                  l10n.trainingPausedBanner,
-                  style: context.textStyles.titleSmall,
-                ),
+                // Entreno juntos: «En pausa · la ha puesto Ana» (ADR 0047).
+                child: Text(switch (s.groupPausedBy) {
+                  final String name => l10n.togetherPausedBy(name),
+                  null => l10n.trainingPausedBanner,
+                }, style: context.textStyles.titleSmall),
               ),
               // Con una serie por hacer, «Reanudar» ya es el botón principal.
+              // Con la pausa del grupo, reanudar es para todos y se dice.
               if (set == null)
                 TextButton(
                   onPressed: () =>
                       bloc.add(const LiveSessionEvent.resumeRequested()),
-                  child: Text(l10n.trainingResume),
+                  child: Text(
+                    s.groupPausedBy != null
+                        ? l10n.togetherResumeForAll
+                        : l10n.trainingResume,
+                  ),
                 ),
             ],
           ),

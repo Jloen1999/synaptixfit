@@ -4,10 +4,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Tabla {@code sesiones_registradas}. */
+/**
+ * Tabla {@code sesiones_registradas}. Con bloqueo optimista ({@code version}, V1069): en un entreno juntos otra persona
+ * puede pausar o reanudar esta sesión (ADR 0047) y una escritura con la sesión leída antes no debe pisarla; el caso
+ * de uso se repite solo ({@code TransactionalUseCaseFactory}).
+ */
 @Entity
 @Table(name = "sesiones_registradas")
 public class TrainingSessionEntity {
@@ -15,6 +20,9 @@ public class TrainingSessionEntity {
     @Id
     @Column(name = "id")
     private UUID id;
+    @Version
+    @Column(name = "version")
+    private long version;
     @Column(name = "usuario_id")
     private UUID usuarioId;
     @Column(name = "rutina_id")

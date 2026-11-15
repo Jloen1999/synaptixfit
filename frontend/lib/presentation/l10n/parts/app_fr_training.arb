@@ -208,7 +208,7 @@
   "trainingSetsLabel": "Séries",
   "trainingMinutes": "{minutes} min",
   "trainingKcal": "{kcal} kcal",
-  "trainingBackToRoutines": "Retour aux routines",
+  "trainingBackToRoutines": "Retour à l’onglet Sport",
   "trainingNoSessionsTitle": "Pas encore de séances",
   "trainingNoSessionsMessage": "Quand tu t’entraîneras, tes séances apparaîtront ici.",
   "trainingSessionFree": "Séance libre",

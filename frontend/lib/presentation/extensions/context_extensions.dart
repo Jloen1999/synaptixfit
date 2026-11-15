@@ -40,13 +40,19 @@ extension AppContext on BuildContext {
   /// Desde Flutter 3.29 un aviso con acción queda fijo si no se indica
   /// `persist: false`; con lector de pantalla sigue sin cerrarse solo
   /// (WCAG 2.2.1), lo decide el `ScaffoldMessenger`.
+  ///
+  /// Con [replaceCurrent] falso no quita el aviso que haya: se pone en cola. Es
+  /// para lo que no hizo la persona (un amigo que empieza, ADR 0047): taparía un
+  /// «Deshacer» abierto y lo confirmaría sin que ella lo decidiera.
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showActionSnack(
     String message, {
     required String actionLabel,
     required VoidCallback onAction,
     Duration? duration,
+    bool replaceCurrent = true,
   }) {
-    final messenger = ScaffoldMessenger.of(this)..hideCurrentSnackBar();
+    final messenger = ScaffoldMessenger.of(this);
+    if (replaceCurrent) messenger.hideCurrentSnackBar();
     return messenger.showSnackBar(
       SnackBar(
         content: Text(message),

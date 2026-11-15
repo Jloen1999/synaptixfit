@@ -260,7 +260,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     // Inicio resume todos los módulos: cualquier cambio le afecta.
     watchDataChanges(
       _watchChanges,
-      topics: DataTopic.values.toSet(),
+      topics: DataTopic.values.toSet().difference(DataTopic.live),
       onChanged: const HomeDashboardEvent.refreshed(),
     );
     if (state.status != HomeDashboardStatus.loading) {

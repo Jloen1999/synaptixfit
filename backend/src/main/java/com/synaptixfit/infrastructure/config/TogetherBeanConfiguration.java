@@ -35,7 +35,12 @@ import com.synaptixfit.application.port.input.together.ProposeFriendStreakUseCas
 import com.synaptixfit.application.port.input.together.ReactFriendChallengeUseCase;
 import com.synaptixfit.application.port.input.together.RemoveFriendChallengeReactionUseCase;
 import com.synaptixfit.application.port.input.together.StartWorkoutTogetherUseCase;
+import com.synaptixfit.application.port.input.together.NotifyWorkoutTogetherProgressUseCase;
+import com.synaptixfit.application.port.input.together.PauseWorkoutTogetherUseCase;
+import com.synaptixfit.application.port.input.together.ResumeWorkoutTogetherUseCase;
 import com.synaptixfit.application.port.input.training.CopyRoutineForFriendUseCase;
+import com.synaptixfit.application.port.input.training.PauseTrainingSessionUseCase;
+import com.synaptixfit.application.port.input.training.ResumeTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
 import com.synaptixfit.application.service.together.FriendChallengeService;
 import com.synaptixfit.application.service.together.FriendStreakService;
@@ -57,6 +62,7 @@ import com.synaptixfit.domain.port.output.together.FriendChallengeReactionPort;
 import com.synaptixfit.domain.port.output.together.FriendChallengeRepositoryPort;
 import com.synaptixfit.domain.port.output.together.FriendStreakRepositoryPort;
 import com.synaptixfit.domain.port.output.together.StudyRoomRepositoryPort;
+import com.synaptixfit.domain.port.output.together.TogetherLivePort;
 import com.synaptixfit.domain.port.output.together.WorkoutTogetherRepositoryPort;
 import com.synaptixfit.domain.port.output.training.RoutineRepositoryPort;
 import com.synaptixfit.domain.port.output.training.TrainingSessionRepositoryPort;
@@ -94,7 +100,10 @@ public class TogetherBeanConfiguration {
     private final TrainingSessionRepositoryPort sessions;
     private final CopyRoutineForFriendUseCase copyRoutine;
     private final StartTrainingSessionUseCase startSession;
+    private final PauseTrainingSessionUseCase pauseSession;
+    private final ResumeTrainingSessionUseCase resumeSession;
     private final CreateNotificationUseCase notifications;
+    private final TogetherLivePort live;
     private final Clock clock;
     private final ZoneId zone;
     private final PlannerZone plannerZone;
@@ -110,7 +119,9 @@ public class TogetherBeanConfiguration {
                                      FriendshipRepositoryPort friendships, UserRepositoryPort users,
                                      RoutineRepositoryPort routines, TrainingSessionRepositoryPort sessions,
                                      CopyRoutineForFriendUseCase copyRoutine, StartTrainingSessionUseCase startSession,
-                                     CreateNotificationUseCase notifications, Clock clock,
+                                     PauseTrainingSessionUseCase pauseSession,
+                                     ResumeTrainingSessionUseCase resumeSession,
+                                     CreateNotificationUseCase notifications, TogetherLivePort live, Clock clock,
                                      @Value("${synaptixfit.gamification.zone:Europe/Madrid}") String zone,
                                      @Value("${synaptixfit.planner.zone:Europe/Madrid}") String plannerZone) {
         this.tx = tx;
@@ -131,7 +142,10 @@ public class TogetherBeanConfiguration {
         this.sessions = sessions;
         this.copyRoutine = copyRoutine;
         this.startSession = startSession;
+        this.pauseSession = pauseSession;
+        this.resumeSession = resumeSession;
         this.notifications = notifications;
+        this.live = live;
         this.clock = clock;
         this.zone = ZoneId.of(zone);
         this.plannerZone = PlannerZone.of(plannerZone);
@@ -142,7 +156,7 @@ public class TogetherBeanConfiguration {
     }
 
     private TogetherNotifier notifier() {
-        return new TogetherNotifier(notifications, users);
+        return new TogetherNotifier(notifications, users, live);
     }
 
     @Bean(autowireCandidate = false)
@@ -158,8 +172,8 @@ public class TogetherBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     WorkoutTogetherService workoutTogetherService() {
-        return new WorkoutTogetherService(workouts, routines, sessions, copyRoutine, startSession, people(),
-                notifier(), clock, zone);
+        return new WorkoutTogetherService(workouts, routines, sessions, copyRoutine, startSession, pauseSession,
+                resumeSession, people(), notifier(), clock, zone);
     }
 
     @Bean(autowireCandidate = false)
@@ -288,6 +302,21 @@ public class TogetherBeanConfiguration {
     @Bean
     StartWorkoutTogetherUseCase startWorkoutTogetherUseCase() {
         return tx.wrap(StartWorkoutTogetherUseCase.class, workoutTogetherService());
+    }
+
+    @Bean
+    PauseWorkoutTogetherUseCase pauseWorkoutTogetherUseCase() {
+        return tx.wrap(PauseWorkoutTogetherUseCase.class, workoutTogetherService());
+    }
+
+    @Bean
+    ResumeWorkoutTogetherUseCase resumeWorkoutTogetherUseCase() {
+        return tx.wrap(ResumeWorkoutTogetherUseCase.class, workoutTogetherService());
+    }
+
+    @Bean
+    NotifyWorkoutTogetherProgressUseCase notifyWorkoutTogetherProgressUseCase() {
+        return tx.wrap(NotifyWorkoutTogetherProgressUseCase.class, workoutTogetherService());
     }
 
     // ---------------------------------------------------------------- estudiar juntos

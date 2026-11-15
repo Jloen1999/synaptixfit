@@ -122,6 +122,15 @@ class DataChangeInterceptor extends Interceptor {
     '/api/v1/notifications': {DataTopic.social},
   };
 
+  /// Cambios que no hizo esta app (el canal en directo, ADR 0047): se agrupan
+  /// con los propios para no refrescar dos veces seguidas.
+  void publish(Set<DataTopic> topics) {
+    if (topics.isEmpty) return;
+    _pending.addAll(topics);
+    _timer?.cancel();
+    _timer = Timer(debounce, _flush);
+  }
+
   /// Áreas que cambia una petición, o vacío si no cambia ninguna.
   static Set<DataTopic> topicsFor(String method, String path) {
     if (!_mutating.contains(method.toUpperCase())) return const {};

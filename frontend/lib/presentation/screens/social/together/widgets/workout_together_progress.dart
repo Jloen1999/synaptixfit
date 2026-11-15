@@ -175,55 +175,95 @@ class WorkoutTogetherSummary extends StatelessWidget {
   }
 }
 
-/// Panel de «Entrenamos juntos» dentro de la sesión en vivo (ADR 0044). Si la
-/// sesión no es de entrenar juntos no ocupa nada. Pregunta cada pocos
-/// segundos mientras está abierto; no toca la sesión ni sus borradores.
-class WorkoutTogetherPanel extends StatelessWidget {
-  const WorkoutTogetherPanel({super.key, required this.sessionId});
+/// Entreno juntos dentro de la sesión en vivo (ADR 0044 y 0047): lee el
+/// entreno de la sesión con [WorkoutTogetherLiveBloc] (en directo y, de
+/// respaldo, cada poco) y lo da a [WorkoutTogetherPanel]. Cuando la pausa del
+/// grupo cambia, avisa a la sesión ([onGroupPauseChanged]), que la adopta y la
+/// anuncia al lector. No toca la sesión ni sus borradores.
+class WorkoutTogetherLiveScope extends StatelessWidget {
+  const WorkoutTogetherLiveScope({
+    super.key,
+    required this.sessionId,
+    required this.onGroupPauseChanged,
+    required this.child,
+  });
 
   final String sessionId;
 
+  /// [pausedBy]: nombre de quien puso la pausa si no fui yo; nulo si fui yo o
+  /// si el grupo ya no está en pausa.
+  final void Function(BuildContext context, String? pausedBy)
+  onGroupPauseChanged;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) {
-    final l10n = context.localizations;
     return BlocProvider(
       create: (_) =>
           getIt<WorkoutTogetherLiveBloc>()
             ..add(WorkoutTogetherLiveEvent.started(sessionId)),
-      child: BlocBuilder<WorkoutTogetherLiveBloc, WorkoutTogetherLiveState>(
-        builder: (context, state) {
-          final w = state.workout;
-          if (w == null) return const SizedBox.shrink();
-          final others = [
-            for (final m in w.members)
-              if (!m.me && m.status == TogetherMemberStatus.joined)
-                togetherName(context, m.person.name),
-          ];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: TokensSpacing.m),
-            child: AppCard(
-              padding: EdgeInsets.zero,
-              child: ExpansionTile(
-                leading: const Icon(AppIcons.friends),
-                title: Text(
-                  others.isEmpty
-                      ? l10n.togetherWaitingFriends
-                      : l10n.togetherTrainingWith(others.join(', ')),
-                ),
-                childrenPadding: const EdgeInsets.fromLTRB(
-                  TokensSpacing.m,
-                  0,
-                  TokensSpacing.m,
-                  TokensSpacing.m,
-                ),
-                children: [
-                  WorkoutTogetherProgress(workout: w, othersOnly: true),
-                ],
-              ),
-            ),
+      child: BlocListener<WorkoutTogetherLiveBloc, WorkoutTogetherLiveState>(
+        // Solo cambios de verdad: la primera lectura no es una pausa nueva.
+        listenWhen: (p, c) =>
+            p.workout != null &&
+            c.workout != null &&
+            (p.workout!.pausedAt != c.workout!.pausedAt ||
+                p.workout!.pausedBy?.id != c.workout!.pausedBy?.id),
+        listener: (context, state) {
+          final w = state.workout!;
+          final by = w.pausedBy;
+          final other = w.paused && by != null && by.id != w.myId;
+          onGroupPauseChanged(
+            context,
+            other ? togetherName(context, by.name) : null,
           );
         },
+        child: child,
       ),
+    );
+  }
+}
+
+/// Panel plegable de la sesión en vivo: con quién entreno y quién lleva cada
+/// ejercicio. Lee el bloc de [WorkoutTogetherLiveScope]; si la sesión no es de
+/// entrenar juntos no pinta nada.
+class WorkoutTogetherPanel extends StatelessWidget {
+  const WorkoutTogetherPanel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return BlocBuilder<WorkoutTogetherLiveBloc, WorkoutTogetherLiveState>(
+      builder: (context, state) {
+        final w = state.workout;
+        if (w == null) return const SizedBox.shrink();
+        final others = [
+          for (final m in w.members)
+            if (!m.me && m.status == TogetherMemberStatus.joined)
+              togetherName(context, m.person.name),
+        ];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: TokensSpacing.m),
+          child: AppCard(
+            padding: EdgeInsets.zero,
+            child: ExpansionTile(
+              leading: const Icon(AppIcons.friends),
+              title: Text(
+                others.isEmpty
+                    ? l10n.togetherWaitingFriends
+                    : l10n.togetherTrainingWith(others.join(', ')),
+              ),
+              childrenPadding: const EdgeInsets.fromLTRB(
+                TokensSpacing.m,
+                0,
+                TokensSpacing.m,
+                TokensSpacing.m,
+              ),
+              children: [WorkoutTogetherProgress(workout: w, othersOnly: true)],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -208,7 +208,7 @@
   "trainingSetsLabel": "Sets",
   "trainingMinutes": "{minutes} min",
   "trainingKcal": "{kcal} kcal",
-  "trainingBackToRoutines": "Back to routines",
+  "trainingBackToRoutines": "Back to Training",
   "trainingNoSessionsTitle": "No sessions yet",
   "trainingNoSessionsMessage": "When you train, you'll see your sessions here.",
   "trainingSessionFree": "Free session",

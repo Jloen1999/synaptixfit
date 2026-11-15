@@ -207,11 +207,14 @@ void main() {
       expect: () => [const LegalAcceptanceState()],
     );
 
-    test('aceptar solo envía la versión recibida: no consulta la vigente', () async {
-      await AcceptLegalTermsUseCase(legal)('2026-11-04');
-      expect(legal.acceptedCalls, ['2026-11-04']);
-      expect(legal.acceptanceReads, 0);
-    });
+    test(
+      'aceptar solo envía la versión recibida: no consulta la vigente',
+      () async {
+        await AcceptLegalTermsUseCase(legal)('2026-11-04');
+        expect(legal.acceptedCalls, ['2026-11-04']);
+        expect(legal.acceptanceReads, 0);
+      },
+    );
   });
 
   group('Registro con correo', () {
@@ -385,7 +388,8 @@ void main() {
               blocks: [
                 LegalBlock(
                   type: LegalBlockType.paragraph,
-                  text: 'Escribe a privacidad@example.com o entra en https://synaptixfit.jloenit.dev.',
+                  text:
+                      'Escribe a privacidad@example.com o entra en https://synaptixfit.jloenit.dev.',
                 ),
                 LegalBlock(type: LegalBlockType.bullet, text: 'Exportar.'),
               ],

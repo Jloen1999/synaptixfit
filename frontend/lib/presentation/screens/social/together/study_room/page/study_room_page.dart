@@ -128,7 +128,7 @@ class _RoomViewState extends State<_RoomView> with ErrorsMessageMixin {
       child: TogetherSafetyListener(
         // Si el bloqueo me saca a mí, la siguiente lectura dice que ya no estoy
         // y la pantalla lo enseña («Ya no estás en esta sala»).
-        onBlocked: (_) => bloc.add(const StudyRoomEvent.polled()),
+        onBlocked: (_) => bloc.add(const StudyRoomEvent.polled(live: true)),
         child: BlocConsumer<StudyRoomBloc, StudyRoomState>(
           listenWhen: (p, c) =>
               (c.closed && !p.closed) ||
@@ -138,13 +138,14 @@ class _RoomViewState extends State<_RoomView> with ErrorsMessageMixin {
             if (state.actionError case final error?) {
               context.showSnack(errorMessage(context, error));
             } else if (state.left) {
-              final navigator = Navigator.of(context);
               context.showUndoSnack(
                 l10n.togetherStudyLeft,
                 onUndo: () => bloc.add(const StudyRoomEvent.leaveUndone()),
                 onCommit: () {
+                  // Se sale aunque la persona ya no esté en la pantalla; solo
+                  // se navega si sigue en ella.
                   bloc.add(const StudyRoomEvent.leaveCommitted());
-                  if (navigator.mounted && navigator.canPop()) navigator.pop();
+                  context.leaveAfterUndo(SocialPaths.together);
                 },
               );
             } else if (state.closed) {
@@ -407,7 +408,9 @@ class _StudyRoomClockState extends State<StudyRoomClock> {
         remaining == Duration.zero &&
         _askedFor != room.phaseEndsAt) {
       _askedFor = room.phaseEndsAt;
-      context.read<StudyRoomBloc>().add(const StudyRoomEvent.polled());
+      context.read<StudyRoomBloc>().add(
+        const StudyRoomEvent.polled(live: true),
+      );
     }
     setState(() {});
   }

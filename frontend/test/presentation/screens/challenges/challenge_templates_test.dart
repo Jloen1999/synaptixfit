@@ -88,9 +88,8 @@ void main() {
         status: ChallengeTemplatesStatus.ready,
         templates: [_template],
       ),
-      act: (bloc) => bloc.add(
-        const ChallengeTemplatesEvent.startRequested('tp1'),
-      ),
+      act: (bloc) =>
+          bloc.add(const ChallengeTemplatesEvent.startRequested('tp1')),
       expect: () => [
         isA<ChallengeTemplatesState>().having(
           (s) => s.startingId,
@@ -110,17 +109,14 @@ void main() {
 
     blocTest<ChallengeTemplatesBloc, ChallengeTemplatesState>(
       'si ya hay uno en marcha avisa del error y no cambia la lista',
-      build: () => ChallengeTemplatesBloc(
-        list: _List(),
-        start: _Start(fail: true),
-      ),
+      build: () =>
+          ChallengeTemplatesBloc(list: _List(), start: _Start(fail: true)),
       seed: () => const ChallengeTemplatesState(
         status: ChallengeTemplatesStatus.ready,
         templates: [_template],
       ),
-      act: (bloc) => bloc.add(
-        const ChallengeTemplatesEvent.startRequested('tp1'),
-      ),
+      act: (bloc) =>
+          bloc.add(const ChallengeTemplatesEvent.startRequested('tp1')),
       verify: (bloc) {
         expect(bloc.state.startingId, isNull);
         expect(bloc.state.templates.single.running, isFalse);

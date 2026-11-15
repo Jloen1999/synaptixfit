@@ -69,6 +69,14 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
   /// Reanuda la sesión (y el cronómetro de la serie, si había uno).
   const factory LiveSessionEvent.resumeRequested() = LiveSessionResumeRequested;
 
+  /// Entreno juntos (ADR 0047): la pausa del grupo cambió en el servidor (otra
+  /// persona pausó o reanudó, y el servidor ya hizo lo mismo con esta sesión).
+  /// Se lee la sesión y se adopta su pausa sin volver a mandarla.
+  /// [pausedBy] es el nombre de quien la puso si no fui yo (nulo si fui yo o si
+  /// no hay pausa).
+  const factory LiveSessionEvent.groupPauseChanged({String? pausedBy}) =
+      LiveSessionGroupPauseChanged;
+
   /// «Usar hoy»: hace [swap] en lugar del ejercicio del hueco solo en esta
   /// sesión; nulo, vuelve al de la rutina.
   const factory LiveSessionEvent.exerciseSwapped(

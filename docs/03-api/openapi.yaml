@@ -5731,6 +5731,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/StudyRoomResponse"
+  /api/v1/together/stream:
+    get:
+      tags:
+      - Social - Together
+      operationId: stream
+      responses:
+        "200":
+          description: OK
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/SseEmitter"
   /api/v1/together/limits:
     get:
       tags:
@@ -11132,6 +11144,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkoutTogetherMember"
+        startedAt:
+          type: string
+          format: date-time
+        startedBy:
+          $ref: "#/components/schemas/PersonResponse"
+        pausedAt:
+          type: string
+          format: date-time
+        pausedBy:
+          $ref: "#/components/schemas/PersonResponse"
     WorkoutTogetherSlot:
       type: object
       properties:
@@ -15123,6 +15145,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StudyRoomResponse"
+    SseEmitter:
+      type: object
+      properties:
+        timeout:
+          type: integer
+          format: int64
     StudyRoomLengthResponse:
       type: object
       properties:

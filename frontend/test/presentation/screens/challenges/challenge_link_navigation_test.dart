@@ -92,9 +92,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('la tarea ligada a una entrega abre esa entrega', (
-    tester,
-  ) async {
+  testWidgets('la tarea ligada a una entrega abre esa entrega', (tester) async {
     final task = ChallengesFixtures.milestone('m1').copyWith(
       link: const ChallengeLink(
         type: ChallengeLinkType.delivery,
@@ -102,10 +100,7 @@ void main() {
       ),
       completedByLink: true,
     );
-    await pump(
-      tester,
-      ChallengesFixtures.challenge(milestones: [task]),
-    );
+    await pump(tester, ChallengesFixtures.challenge(milestones: [task]));
 
     await tester.tap(find.text('Ver en el calendario').first);
     await tester.pumpAndSettle();
@@ -119,10 +114,7 @@ void main() {
     await pump(
       tester,
       ChallengesFixtures.challenge().copyWith(
-        link: const ChallengeLink(
-          type: ChallengeLinkType.exam,
-          entityId: 'e7',
-        ),
+        link: const ChallengeLink(type: ChallengeLinkType.exam, entityId: 'e7'),
         completedByLink: true,
       ),
     );

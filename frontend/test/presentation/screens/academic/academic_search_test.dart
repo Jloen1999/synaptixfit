@@ -109,9 +109,9 @@ void main() {
         ),
       );
       expect(find.text('Asignaturas'), findsOneWidget);
-      final rich = tester.widgetList<RichText>(find.byType(RichText)).where(
-        (r) => r.text.toPlainText() == 'Física Cuántica',
-      );
+      final rich = tester
+          .widgetList<RichText>(find.byType(RichText))
+          .where((r) => r.text.toPlainText() == 'Física Cuántica');
       expect(rich, isNotEmpty);
       final spans = (rich.first.text as TextSpan).children!;
       expect((spans.first as TextSpan).children![1].toPlainText(), 'Física');

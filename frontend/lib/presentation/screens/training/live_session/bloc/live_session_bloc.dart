@@ -133,6 +133,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     on<LiveSessionSetTimerStarted>(_onSetTimerStarted);
     on<LiveSessionPauseRequested>(_onPause);
     on<LiveSessionResumeRequested>(_onResume);
+    on<LiveSessionGroupPauseChanged>(_onGroupPauseChanged);
     on<LiveSessionExerciseSwapped>(_onExerciseSwapped);
   }
 
@@ -823,6 +824,73 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     unawaited(_persistDraft());
   }
 
+  /// Una pausa o reanudación propia va camino del servidor: mientras tanto no
+  /// se adopta la del grupo, que aún no la incluye.
+  bool _pauseInFlight = false;
+
+  /// Entreno juntos (ADR 0047): adopta la pausa que el servidor ya puso o quitó
+  /// en esta sesión porque lo hizo otra persona del grupo. No llama a pausar
+  /// ni reanudar (ya está hecho). Sin conexión manda lo del teléfono: con una
+  /// reanudación sin llegar no se toca nada.
+  Future<void> _onGroupPauseChanged(
+    LiveSessionGroupPauseChanged event,
+    Emitter<LiveSessionState> emit,
+  ) async {
+    final id = state.sessionId;
+    if (id == null || state.session == null || state.completed) return;
+    if (_pauseInFlight || state.resumePendingAt != null) return;
+    final server = (await _getSession(id)).valueOrNull;
+    final current = state.session;
+    if (server == null || current == null || state.completed) return;
+    if (_pauseInFlight || state.resumePendingAt != null) return;
+    if (server.isCompleted) return;
+    final pausedBy = server.isPaused ? event.pausedBy : null;
+    if (server.isPaused == current.isPaused) {
+      if (pausedBy != state.groupPausedBy) {
+        emit(state.copyWith(groupPausedBy: pausedBy));
+      }
+      return;
+    }
+    final now = _clock();
+    if (server.isPaused) {
+      // Como la pausa propia: el cronómetro de la serie se congela.
+      final at = server.pausedAt ?? now;
+      final since = state.timerSince;
+      emit(
+        state.copyWith(
+          groupPausedBy: pausedBy,
+          session: current.copyWith(
+            pausedAt: at,
+            pausedSeconds: math.max(
+              current.pausedSeconds,
+              server.pausedSeconds,
+            ),
+          ),
+          timerSince: null,
+          timerBanked: since == null
+              ? state.timerBanked
+              : state.timerBanked + math.max(0, at.difference(since).inSeconds),
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          groupPausedBy: null,
+          session: current.copyWith(
+            pausedAt: null,
+            pausedSeconds: math.max(
+              server.pausedSeconds,
+              current.pausedSeconds,
+            ),
+          ),
+          countedUntil: now,
+          timerSince: state.timerSet != null ? now : null,
+        ),
+      );
+    }
+    await _persistDraft();
+  }
+
   /// Pausa al momento (también sin conexión: al terminar, el servidor nunca
   /// guarda más tiempo del que manda el cliente) y lo confirma con el servidor.
   Future<void> _onPause(
@@ -838,6 +906,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final since = state.timerSince;
     emit(
       state.copyWith(
+        groupPausedBy: null,
         session: session.copyWith(pausedAt: now),
         timerSince: null,
         timerBanked: since == null
@@ -846,10 +915,12 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       ),
     );
     await _persistDraft();
+    _pauseInFlight = true;
     // Una reanudación que no llegó va antes: si no, esta pausa se juntaría con
     // la anterior en el servidor.
     await _retryResume(emit);
     final result = await _pauseSession(id);
+    _pauseInFlight = false;
     if (result case Success(value: final server)) {
       final current = state.session;
       if (current != null && current.isPaused) {
@@ -886,6 +957,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final now = _clock();
     emit(
       state.copyWith(
+        groupPausedBy: null,
         session: session.copyWith(
           pausedAt: null,
           pausedSeconds:
@@ -899,7 +971,9 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     await _persistDraft();
     // Si ya había una reanudación sin llegar, vale la primera: lo que va de
     // una a otra se entrenó (el servidor no supo de la pausa intermedia).
+    _pauseInFlight = true;
     await _sendResume(emit, id, state.resumePendingAt ?? now);
+    _pauseInFlight = false;
   }
 
   /// Avisa al servidor de que se reanudó en [at]. Sin conexión, lo deja

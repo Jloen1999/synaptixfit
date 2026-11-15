@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../../../domain/enums/data_topic.dart';
 import '../../../../../../domain/enums/together_enums.dart';
 import '../../../../../../domain/errors/app_error.dart';
 import '../../../../../../domain/models/planner/planner_options.dart';
@@ -17,14 +18,20 @@ import '../../../../../../domain/use_cases/social/together/join_study_room_use_c
 import '../../../../../../domain/use_cases/social/together/leave_study_room_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/react_in_study_room_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/start_study_room_use_case.dart';
+import '../../../../../../domain/use_cases/social/together_live/is_together_live_connected_use_case.dart';
+import '../../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
+import '../../../../../mixins/data_change_refresh_mixin.dart';
 import '../../../../../mixins/deferred_commit_mixin.dart';
+import '../../../../../mixins/live_poll_mixin.dart';
 
 part 'study_room_bloc.freezed.dart';
 part 'study_room_event.dart';
 part 'study_room_state.dart';
 
 /// Sala de «Estudiamos juntos» (ADR 0045). Mientras la pantalla está abierta
-/// vuelve a leer cada [pollInterval] (sin WebSocket) y guarda la diferencia
+/// vuelve a leer en cuanto el canal en directo avisa ([DataTopic.studyRoom],
+/// ADR 0047) y, de respaldo, cada [pollInterval] (más despacio con el canal
+/// conectado), y guarda la diferencia
 /// entre el reloj del servidor y el del móvil ([StudyRoomState.clockOffset])
 /// para que la cuenta atrás sea la misma en todos los móviles. La fase la
 /// decide el servidor: al acabar la cuenta atrás la pantalla pide leer otra vez.
@@ -32,7 +39,10 @@ part 'study_room_state.dart';
 /// ([DeferredCommitMixin]): deshacer no toca el servidor y no se pierden los
 /// minutos de la ronda en curso.
 class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
-    with DeferredCommitMixin<StudyRoomState> {
+    with
+        DeferredCommitMixin<StudyRoomState>,
+        DataChangeRefreshMixin,
+        LivePollMixin {
   StudyRoomBloc({
     required this._get,
     required this._join,
@@ -42,6 +52,8 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
     required this._chooseSubject,
     required this._react,
     required this._subjects,
+    this._watchChanges,
+    this.liveConnected,
     this.pollInterval = const Duration(seconds: 12),
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
@@ -66,6 +78,9 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
   final ChooseStudyRoomSubjectUseCaseContract _chooseSubject;
   final ReactInStudyRoomUseCaseContract _react;
   final GetPlannerSubjectsUseCaseContract _subjects;
+  final WatchDataChangesUseCaseContract? _watchChanges;
+  @override
+  final IsTogetherLiveConnectedUseCaseContract? liveConnected;
   final Duration pollInterval;
   final DateTime Function() _now;
   Timer? _timer;
@@ -80,7 +95,12 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
       error == const AppError.business('STUDY_ROOM_NOT_FOUND');
 
   /// Estado con la sala recién leída y el desfase de reloj de esa lectura.
-  StudyRoomState _with(StudyRoom room) => state.copyWith(
+  StudyRoomState _with(StudyRoom room) {
+    markRead(_now());
+    return _withRoom(room);
+  }
+
+  StudyRoomState _withRoom(StudyRoom room) => state.copyWith(
     status: StudyRoomStatus.ready,
     room: room,
     clockOffset: room.serverTime.difference(_now()),
@@ -117,6 +137,14 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
       pollInterval,
       (_) => add(const StudyRoomEvent.polled()),
     );
+    final watch = _watchChanges;
+    if (watch != null) {
+      watchDataChanges(
+        watch,
+        topics: const {DataTopic.studyRoom},
+        onChanged: const StudyRoomEvent.polled(live: true),
+      );
+    }
   }
 
   /// Lectura silenciosa: un fallo de red no cambia lo que se ve. Con la sala
@@ -126,6 +154,7 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
     Emitter<StudyRoomState> emit,
   ) async {
     if (state.id == null || state.busy) return;
+    if (!event.live && skipPoll(_now())) return;
     final result = await _get(_id);
     switch (result) {
       case Success(:final value):

@@ -19,7 +19,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Implementa {@link WorkoutTogetherRepositoryPort} sobre {@code entrenos_juntos} y {@code entrenos_juntos_miembros}
- * (V1064, ADR 0044). La sesión de cada persona va en su fila de miembro.
+ * (V1064, ADR 0044). La sesión de cada persona va en su fila de miembro; la hora de inicio común y la pausa del grupo,
+ * en la del entreno (V1068, ADR 0047).
  */
 @Component
 public class WorkoutTogetherJdbcAdapter implements WorkoutTogetherRepositoryPort {
@@ -30,17 +31,21 @@ public class WorkoutTogetherJdbcAdapter implements WorkoutTogetherRepositoryPort
         this.jdbc = jdbc;
     }
 
-    private record Head(UUID id, UUID hostId, UUID routineId, UUID dayId, LocalDate date, Instant createdAt) {
+    private record Head(UUID id, UUID hostId, UUID routineId, UUID dayId, LocalDate date, Instant createdAt,
+                        Instant startedAt, UUID startedBy, Instant pausedAt, UUID pausedBy) {
     }
 
     @Override
     public Optional<WorkoutTogether> findById(UUID id) {
-        return jdbc.sql("SELECT id, anfitrion_id, rutina_id, dia_rutina_id, fecha, creado_en FROM entrenos_juntos"
-                        + " WHERE id = :id")
+        return jdbc.sql("SELECT id, anfitrion_id, rutina_id, dia_rutina_id, fecha, creado_en, empezado_en,"
+                        + " empezado_por, pausado_en, pausado_por FROM entrenos_juntos WHERE id = :id")
                 .param("id", id)
                 .query((rs, n) -> new Head(rs.getObject("id", UUID.class), rs.getObject("anfitrion_id", UUID.class),
                         rs.getObject("rutina_id", UUID.class), rs.getObject("dia_rutina_id", UUID.class),
-                        JdbcValues.date(rs, "fecha"), JdbcValues.instant(rs, "creado_en")))
+                        JdbcValues.date(rs, "fecha"), JdbcValues.instant(rs, "creado_en"),
+                        JdbcValues.instant(rs, "empezado_en"), rs.getObject("empezado_por", UUID.class),
+                        JdbcValues.instant(rs, "pausado_en"),
+                        rs.getObject("pausado_por", UUID.class)))
                 .optional()
                 .map(this::toDomain);
     }
@@ -90,6 +95,14 @@ public class WorkoutTogetherJdbcAdapter implements WorkoutTogetherRepositoryPort
                     .param("created", JdbcValues.param(w.createdAt()))
                     .update();
         }
+        jdbc.sql("UPDATE entrenos_juntos SET empezado_en = :started, empezado_por = :startedBy,"
+                        + " pausado_en = :paused, pausado_por = :pausedBy WHERE id = :id")
+                .param("started", JdbcValues.param(w.startedAt()))
+                .param("startedBy", w.startedBy())
+                .param("paused", JdbcValues.param(w.pausedAt()))
+                .param("pausedBy", w.pausedBy())
+                .param("id", w.id())
+                .update();
         for (TogetherMember m : w.members().all()) {
             UUID session = w.sessionOf(m.userId()).orElse(null);
             int updated = jdbc.sql("UPDATE entrenos_juntos_miembros SET estado = :status, sesion_id = :session,"
@@ -132,6 +145,6 @@ public class WorkoutTogetherJdbcAdapter implements WorkoutTogetherRepositoryPort
                 .list()
                 .forEach(members::add);
         return new WorkoutTogether(h.id(), h.hostId(), h.routineId(), h.dayId(), h.date(), h.createdAt(),
-                new TogetherMembers(members), sessions);
+                new TogetherMembers(members), sessions, h.startedAt(), h.startedBy(), h.pausedAt(), h.pausedBy());
     }
 }

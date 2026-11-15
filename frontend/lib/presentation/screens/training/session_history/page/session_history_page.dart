@@ -16,7 +16,6 @@ import '../../widgets/personal_record_row.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
-import '../../session_detail/page/session_detail_page.dart';
 import '../../activity_history/page/activity_history_view.dart';
 import '../bloc/session_history_bloc.dart';
 
@@ -307,29 +306,12 @@ class _SessionCard extends StatelessWidget {
       if (s.rpe != null) l10n.trainingRpeValue(s.rpe!),
     ];
     final subtitle = figures.join(' · ');
-    // Una sesión terminada se abre en su detalle de solo lectura (no en la
-    // sesión en vivo); lo que se pida allí lo hace este historial al volver.
+    // Una sesión terminada se abre en su detalle (no en la sesión en vivo);
+    // corregir, reabrir y eliminar se hacen allí (ADR 0046) y al volver se
+    // lee otra vez.
     Future<void> openDetail() async {
-      final action = await context.push<SessionDetailAction>(
-        TrainingPaths.sessionDetail(s.id),
-        extra: entry,
-      );
-      switch (action) {
-        case SessionDetailCorrect(:final minutes, :final rpe):
-          bloc.add(
-            SessionHistoryEvent.correctRequested(
-              s.id,
-              minutes: minutes,
-              rpe: rpe,
-            ),
-          );
-        case SessionDetailUnmark():
-          bloc.add(SessionHistoryEvent.unmarkRequested(s.id));
-        case SessionDetailDelete():
-          bloc.add(SessionHistoryEvent.deleteRequested(s.id));
-        case null:
-          break;
-      }
+      await context.push<void>(TrainingPaths.sessionDetail(s.id), extra: entry);
+      if (!bloc.isClosed) bloc.add(const SessionHistoryEvent.refreshed());
     }
 
     // Foto del día entrenado de fondo y el texto abajo (ADR 0042): toda la

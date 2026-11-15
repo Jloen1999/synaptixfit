@@ -30,6 +30,7 @@ consulta periódica.
 - Cada respuesta lleva `serverTime`. El móvil guarda la diferencia con su reloj y pinta la cuenta atrás cada segundo
   con su reloj corregido; consulta cada **12 s** solo mientras la pantalla está abierta y, al llegar a cero, pide la
   fase siguiente al servidor (no la deduce). Sin WebSocket.
+- **Actualizado en el ADR 0047:** entrar, salir, empezar y reaccionar llegan en directo por SSE; la consulta de 12 s queda de respaldo (cada minuto con el canal conectado).
 - **Nadie gobierna la sala:** cualquiera que esté dentro pulsa «Empezar», una sola vez; después va sola, sin pausas
   (pausar a uno pararía a todos). Por eso, si quien la creó se va, todo sigue igual para los demás: no hay anfitrión
   que heredar. `creador_id` solo sirve para la regla de bloqueo de la C1 (`leavingWhenSeparated`).

@@ -7,4 +7,18 @@ sealed class SessionDetailEvent with _$SessionDetailEvent {
     String sessionId, {
     SessionHistoryEntry? entry,
   }) = SessionDetailStarted;
+
+  /// Corregir esfuerzo y duración.
+  const factory SessionDetailEvent.correctRequested({
+    required int minutes,
+    required int rpe,
+  }) = SessionDetailCorrectRequested;
+
+  /// «Reabrir y seguir» (solo la terminada hoy).
+  const factory SessionDetailEvent.reopenRequested() =
+      SessionDetailReopenRequested;
+
+  /// Eliminar (ya confirmado).
+  const factory SessionDetailEvent.deleteRequested() =
+      SessionDetailDeleteRequested;
 }

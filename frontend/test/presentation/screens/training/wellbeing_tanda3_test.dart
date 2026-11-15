@@ -222,8 +222,7 @@ void main() {
         getAdaptation: adaptation,
         submit: submit,
         watchDataChanges: _NoDataChanges(),
-      )
-        ..add(const QuickCheckInEvent.started());
+      )..add(const QuickCheckInEvent.started());
       await bloc.stream.firstWhere((s) => !s.loading);
       expect(bloc.state.asking, isTrue);
 

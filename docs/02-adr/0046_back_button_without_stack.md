@@ -19,4 +19,4 @@
 ## Consecuencias
 
 - **Positivas:** ninguna pantalla se queda sin salida; un solo sitio decide cómo se vuelve; `back_button_routes_test.dart` recorre la tabla de rutas entera (cada barra de cada página lleva la flecha) y abre en frío los casos principales.
-- **Negativas:** el padre se escribe a mano en cada pantalla. El «atrás» del sistema de Android sin pila sigue cerrando la app. El detalle de una sesión abierto sin pila oculta «Corregir / Reabrir / Eliminar», porque esas acciones las ejecuta el historial al volver.
+- **Negativas:** el padre se escribe a mano en cada pantalla. El «atrás» del sistema de Android sin pila sigue cerrando la app. El detalle de una sesión abierto sin pila oculta «Corregir / Reabrir / Eliminar», porque esas acciones las ejecuta el historial al volver. Las dos cosas se resolvieron en el ADR 0047 (sección 4).

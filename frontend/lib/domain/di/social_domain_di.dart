@@ -21,6 +21,8 @@ import '../use_cases/social/reject_friend_request_use_case.dart';
 import '../use_cases/social/block_user_use_case.dart';
 import '../use_cases/social/remove_friendship_use_case.dart';
 import '../use_cases/social/together/get_together_overview_use_case.dart';
+import '../use_cases/social/together_live/is_together_live_connected_use_case.dart';
+import '../use_cases/social/together_live/watch_together_live_use_case.dart';
 import '../use_cases/social/together/get_friend_challenge_templates_use_case.dart';
 import '../use_cases/social/together/create_friend_challenge_use_case.dart';
 import '../use_cases/social/together/get_friend_challenge_use_case.dart';
@@ -138,6 +140,13 @@ void registerSocialDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetTogetherOverviewUseCaseContract>(
       () => GetTogetherOverviewUseCase(getIt()),
+    )
+    // Canal en directo de «Con amigos» (ADR 0047).
+    ..registerLazySingleton<WatchTogetherLiveUseCaseContract>(
+      () => WatchTogetherLiveUseCase(getIt()),
+    )
+    ..registerLazySingleton<IsTogetherLiveConnectedUseCaseContract>(
+      () => IsTogetherLiveConnectedUseCase(getIt()),
     )
     ..registerLazySingleton<GetFriendChallengeTemplatesUseCaseContract>(
       () => GetFriendChallengeTemplatesUseCase(getIt()),

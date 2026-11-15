@@ -20,6 +20,7 @@ import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.together.MemberStatus;
 import com.synaptixfit.domain.model.together.StudyRoom;
 import com.synaptixfit.domain.model.together.StudyRoomReaction;
+import com.synaptixfit.domain.model.together.TogetherLiveChange;
 import com.synaptixfit.domain.model.together.TogetherMember;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.together.StudyRoomRepositoryPort;
@@ -30,13 +31,15 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 /**
  * «Estudiamos juntos» (ADR 0045): crear la sala, aceptar, decir que no, salir, empezar, elegir asignatura y
  * reaccionar. Cada ronda terminada se apunta a cada persona de dentro con {@link RecordFocusSessionUseCase}, el
  * mismo registro que el Pomodoro de siempre: suma racha, retos, «Estudia y muévete» y lo de «Con amigos», con la XP
- * normal y su tope diario (sin XP extra por estar en grupo).
+ * normal y su tope diario (sin XP extra por estar en grupo). Entrar, salir, empezar y reaccionar se avisan en directo a
+ * quien esté en la sala (ADR 0047); el cambio de fase no, porque lo calcula cada móvil con la hora del servidor.
  */
 public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUseCase, JoinStudyRoomUseCase,
         DeclineStudyRoomUseCase, LeaveStudyRoomUseCase, StartStudyRoomUseCase, ChooseStudyRoomSubjectUseCase,
@@ -77,6 +80,7 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
         people.ensureFriends(command.userId(), room.members().invitedIds());
         StudyRoom saved = rooms.save(room);
         notifier.studyRoomInvited(saved.members().invitedIds(), command.userId(), saved.id());
+        notifier.changed(TogetherLiveChange.Topic.TOGETHER, saved.id(), audience(saved, command.userId()));
         return view(saved, command.userId(), people.lookup(), now);
     }
 
@@ -96,14 +100,16 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
         Instant now = clock.instant();
         credit(room, now);
         room.join(userId, now);
-        return view(rooms.save(room), userId, people.lookup(), now);
+        StudyRoom saved = rooms.save(room);
+        changed(saved, userId);
+        return view(saved, userId, people.lookup(), now);
     }
 
     @Override
     public void decline(UUID userId, UUID roomId) {
         StudyRoom room = visibleForUpdate(userId, roomId);
         room.decline(userId, clock.instant());
-        rooms.save(room);
+        changed(rooms.save(room), userId);
     }
 
     @Override
@@ -113,7 +119,7 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
         // Salir no apunta nada: las rondas que terminaron con la persona dentro las apunta el programador al minuto
         // (StudyRoom.creditsDue la sigue contando). Así un fallo al apuntar un Pomodoro nunca impide salir.
         if (room.leave(userId, now)) {
-            rooms.save(room);
+            changed(rooms.save(room), userId);
         }
     }
 
@@ -122,7 +128,9 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
         StudyRoom room = visibleForUpdate(userId, roomId);
         Instant now = clock.instant();
         room.start(userId, now);
-        return view(rooms.save(room), userId, people.lookup(), now);
+        StudyRoom saved = rooms.save(room);
+        changed(saved, userId);
+        return view(saved, userId, people.lookup(), now);
     }
 
     @Override
@@ -138,7 +146,9 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
         StudyRoom room = visibleForUpdate(userId, roomId);
         Instant now = clock.instant();
         room.react(userId, reaction, now);
-        return view(rooms.save(room), userId, people.lookup(), now);
+        StudyRoom saved = rooms.save(room);
+        changed(saved, userId);
+        return view(saved, userId, people.lookup(), now);
     }
 
     @Override
@@ -176,10 +186,21 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
                     .ifPresent(leaving -> {
                         // Como al salir a mano: lo terminado lo apunta el programador; bloquear nunca falla por ello.
                         if (room.leave(leaving, now)) {
-                            rooms.save(room);
+                            changed(rooms.save(room), leaving);
                         }
                     });
         }
+    }
+
+    /** Aviso en directo a quien esté en la sala (o invitado) y a quien actuó (ADR 0047). */
+    private void changed(StudyRoom room, UUID actorId) {
+        notifier.changed(TogetherLiveChange.Topic.STUDY_ROOM, room.id(), audience(room, actorId));
+    }
+
+    private static Set<UUID> audience(StudyRoom room, UUID actorId) {
+        Set<UUID> result = new TreeSet<>(room.members().visibleIds());
+        result.add(actorId);
+        return result;
     }
 
     /**

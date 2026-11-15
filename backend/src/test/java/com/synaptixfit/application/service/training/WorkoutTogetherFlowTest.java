@@ -15,6 +15,7 @@ import com.synaptixfit.domain.exception.together.WorkoutTogetherNotFoundExceptio
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.social.Friendship;
 import com.synaptixfit.domain.model.together.MemberStatus;
+import com.synaptixfit.domain.model.together.TogetherLiveChange;
 import com.synaptixfit.domain.model.together.WorkoutTogether;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.Routine;
@@ -57,6 +58,10 @@ class WorkoutTogetherFlowTest {
     private final Map<UUID, Friendship> friendships = new HashMap<>();
     private final Map<UUID, WorkoutTogether> workouts = new HashMap<>();
     private final List<CreateNotificationUseCase.Command> sent = new ArrayList<>();
+    /** Avisos en directo (ADR 0047). */
+    private final List<TogetherLiveChange> live = new ArrayList<>();
+    /** Pausas pedidas al caso de uso de la sesión (ADR 0030), por sesión. */
+    private final List<UUID> pausedCalls = new ArrayList<>();
     /** Lecturas bloqueadas ({@code findByIdForUpdate}) de entrenos, por id. */
     private final List<UUID> locked = new ArrayList<>();
     private RoutineFriendCopyService copy;
@@ -84,11 +89,14 @@ class WorkoutTogetherFlowTest {
         copy = new RoutineFriendCopyService(routines, userPort(), CLOCK);
         TogetherPeople people = new TogetherPeople(friendshipPort(), userPort());
         service = new WorkoutTogetherService(workoutPort(), routines, sessions, copy,
-                (userId, routineId, dayId) -> sessions.save(TrainingSession.start(userId, routineId, dayId, NOW)),
+                (userId, routineId, dayId, at) -> sessions.findInProgressForDay(userId, dayId)
+                        .orElseGet(() -> sessions.save(TrainingSession.start(userId, routineId, dayId,
+                                at == null ? NOW : at))),
+                this::pauseSession, this::resumeSession,
                 people, new TogetherNotifier(c -> {
                     sent.add(c);
                     return Optional.empty();
-                }, userPort()), CLOCK, ZoneOffset.UTC);
+                }, userPort(), live::add), CLOCK, ZoneOffset.UTC);
     }
 
     @Test
@@ -148,6 +156,167 @@ class WorkoutTogetherFlowTest {
         assertThat(her.doneSlots()).containsExactly(0);
         assertThat(service.bySession(ana.id(), anaSession)).isPresent();
         assertThat(service.bySession(host.id(), anaSession)).isEmpty();
+    }
+
+    // ------------------------------------------------------------------ a la vez (ADR 0047)
+
+    @Test
+    void whenOneStartsEveryoneInsideGetsTheirSessionAtTheSameTime() {
+        WorkoutTogetherView w = invite();
+        service.join(ana.id(), w.id());
+        live.clear();
+
+        UUID anaSession = service.start(ana.id(), w.id());
+
+        WorkoutTogether saved = workouts.get(w.id());
+        assertThat(saved.startedAt()).isEqualTo(NOW);
+        UUID hostSession = saved.sessionOf(host.id()).orElseThrow();
+        assertThat(sessions.findById(hostSession).orElseThrow().startedAt()).isEqualTo(NOW);
+        assertThat(sessions.findById(anaSession).orElseThrow().startedAt()).isEqualTo(NOW);
+        assertThat(sessions.findById(hostSession).orElseThrow().routineId()).isEqualTo(routine.id());
+        // Un segundo «Empezar», del otro, no crea nada ni cambia la hora.
+        assertThat(service.start(host.id(), w.id())).isEqualTo(hostSession);
+        assertThat(sessions.store).hasSize(2);
+        assertThat(live).hasSize(2).allSatisfy(c -> {
+            assertThat(c.topic()).isEqualTo(TogetherLiveChange.Topic.WORKOUT);
+            assertThat(c.recipients()).containsExactlyInAnyOrder(host.id(), ana.id());
+        });
+        assertThat(service.get(host.id(), w.id()).startedAt()).isEqualTo(NOW);
+        assertThat(service.get(host.id(), w.id()).startedBy().id()).isEqualTo(ana.id());
+    }
+
+    @Test
+    void anInvitedFriendWhoHasNotAcceptedIsNotStartedAndJoinsLaterFromThatMoment() {
+        WorkoutTogetherView w = invite();
+        UUID hostSession = service.start(host.id(), w.id());
+        assertThat(workouts.get(w.id()).sessionOf(ana.id())).isEmpty();
+
+        WorkoutTogetherView joined = service.join(ana.id(), w.id());
+
+        assertThat(joined.mySessionId()).isNotNull().isNotEqualTo(hostSession);
+        assertThat(sessions.findById(joined.mySessionId()).orElseThrow().startedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void whenOnePausesEveryoneIsPausedAndWhenOneResumesEveryoneGoesOn() {
+        WorkoutTogetherView w = invite();
+        service.join(ana.id(), w.id());
+        UUID anaSession = service.start(ana.id(), w.id());
+        UUID hostSession = workouts.get(w.id()).sessionOf(host.id()).orElseThrow();
+        live.clear();
+
+        pauseSession(ana.id(), anaSession);
+
+        assertThat(sessions.findById(anaSession).orElseThrow().isPaused()).isTrue();
+        assertThat(sessions.findById(hostSession).orElseThrow().isPaused()).isTrue();
+        WorkoutTogetherView seen = service.get(host.id(), w.id());
+        assertThat(seen.pausedBy().id()).isEqualTo(ana.id());
+        assertThat(seen.pausedAt()).isEqualTo(NOW);
+        assertThat(live).singleElement().satisfies(c -> assertThat(c.recipients())
+                .containsExactlyInAnyOrder(host.id(), ana.id()));
+        // Pausar otra vez (el rebote de la sesión del anfitrión o un doble toque) no hace nada.
+        int calls = pausedCalls.size();
+        service.pauseFromSession(host.id(), hostSession, NOW);
+        assertThat(pausedCalls).hasSize(calls);
+
+        resumeSession(host.id(), hostSession);
+
+        assertThat(sessions.findById(anaSession).orElseThrow().isPaused()).isFalse();
+        assertThat(sessions.findById(hostSession).orElseThrow().isPaused()).isFalse();
+        assertThat(service.get(ana.id(), w.id()).pausedBy()).isNull();
+    }
+
+    @Test
+    void finishingIsEachOnesAndAFinishedSessionIsNotPaused() {
+        WorkoutTogetherView w = invite();
+        service.join(ana.id(), w.id());
+        UUID anaSession = service.start(ana.id(), w.id());
+        UUID hostSession = workouts.get(w.id()).sessionOf(host.id()).orElseThrow();
+        TrainingSession hostOne = sessions.findById(hostSession).orElseThrow();
+        hostOne.complete(600, 7, 10, 0, NOW.plusSeconds(600));
+        sessions.save(hostOne);
+
+        pauseSession(ana.id(), anaSession);
+
+        assertThat(sessions.findById(anaSession).orElseThrow().isPaused()).isTrue();
+        assertThat(sessions.findById(hostSession).orElseThrow().isCompleted()).isTrue();
+        assertThat(sessions.findById(hostSession).orElseThrow().isPaused()).isFalse();
+    }
+
+    @Test
+    void anotherOpenSessionIsPausedNotFinishedWhenTheGroupStarts() {
+        TrainingSession other = sessions.save(TrainingSession.start(ana.id(), null, null, NOW.minusSeconds(600)));
+        WorkoutTogetherView w = invite();
+        service.join(ana.id(), w.id());
+
+        service.start(host.id(), w.id());
+
+        UUID anaSession = workouts.get(w.id()).sessionOf(ana.id()).orElseThrow();
+        assertThat(anaSession).isNotEqualTo(other.id());
+        assertThat(sessions.findById(other.id()).orElseThrow().isPaused()).isTrue();
+        assertThat(sessions.findById(other.id()).orElseThrow().isCompleted()).isFalse();
+    }
+
+    @Test
+    void aSessionOfAnotherWorkoutTogetherIsNotPausedWhenTheGroupStarts() {
+        WorkoutTogetherView first = invite();
+        service.join(ana.id(), first.id());
+        UUID anaFirst = service.start(ana.id(), first.id());
+        Routine other = routines.save(Routine.create(host.id(), "Otra", null, Visibility.PRIVATE,
+                TrainingGoal.HYPERTROPHY, null, null, List.of(RoutineWeek.create(1, null, WeekType.LOAD,
+                        List.of(copyOf(thursday)))), NOW));
+        WorkoutTogetherView second = service.create(new CreateWorkoutTogetherUseCase.Command(host.id(), other.id(),
+                null, Set.of(ana.id())));
+        service.join(ana.id(), second.id());
+
+        service.start(host.id(), second.id());
+
+        assertThat(sessions.findById(anaFirst).orElseThrow().isPaused()).isFalse();
+    }
+
+    private static RoutineDay copyOf(RoutineDay day) {
+        RoutineDay copy = RoutineDay.create(day.number(), day.name());
+        day.exercises().forEach(e -> copy.addExercise(e.exercise(), e.parameters()));
+        return copy;
+    }
+
+    @Test
+    void progressIsAnnouncedOnlyForSessionsOfAWorkoutTogether() {
+        WorkoutTogetherView w = invite();
+        UUID hostSession = service.start(host.id(), w.id());
+        live.clear();
+        service.sessionProgressed(host.id(), hostSession);
+        service.sessionProgressed(host.id(), UUID.randomUUID());
+        assertThat(live).singleElement().satisfies(c -> assertThat(c.recipients())
+                .containsExactlyInAnyOrder(host.id(), ana.id()));
+    }
+
+    /** Doble de {@code PauseTrainingSessionUseCase}: pausa y, como el oyente del evento, avisa al grupo (ADR 0047). */
+    private TrainingSession pauseSession(UUID userId, UUID sessionId) {
+        pausedCalls.add(sessionId);
+        TrainingSession s = sessions.findById(sessionId).orElseThrow();
+        boolean changed = !s.isPaused();
+        s.pause(NOW);
+        sessions.save(s);
+        if (changed) {
+            service.pauseFromSession(userId, sessionId, NOW);
+        }
+        return s;
+    }
+
+    private TrainingSession resumeSession(UUID userId, UUID sessionId, Instant at) {
+        TrainingSession s = sessions.findById(sessionId).orElseThrow();
+        boolean changed = s.isPaused();
+        s.resume(at, NOW);
+        sessions.save(s);
+        if (changed) {
+            service.resumeFromSession(userId, sessionId, at);
+        }
+        return s;
+    }
+
+    private void resumeSession(UUID userId, UUID sessionId) {
+        resumeSession(userId, sessionId, NOW);
     }
 
     @Test

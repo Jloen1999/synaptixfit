@@ -19,6 +19,10 @@ import java.util.UUID;
  * mutuos para hacerlo hoy, cada uno en su móvil con su sesión normal. Solo vale el día en que se crea; después queda
  * como recuerdo (la tarjeta conjunta). Guarda la sesión de cada persona para enseñar, por ejercicio, quién lo tiene
  * hecho; nunca pesos, repeticiones ni esfuerzo.
+ *
+ * <p>A la vez (ADR 0047): empezar y pausar son del grupo. {@code startedAt} es la hora de inicio común (la de la
+ * sesión de cada persona que estaba dentro) y {@code pausedAt}/{@code pausedBy} la pausa en curso y quién la puso.
+ * Las series, los pesos y «Terminar» siguen siendo de cada uno.
  */
 public final class WorkoutTogether {
 
@@ -35,9 +39,20 @@ public final class WorkoutTogether {
     private final Instant createdAt;
     private final TogetherMembers members;
     private final Map<UUID, UUID> sessions;
+    private Instant startedAt;
+    private UUID startedBy;
+    private Instant pausedAt;
+    private UUID pausedBy;
 
     public WorkoutTogether(UUID id, UUID hostId, UUID routineId, UUID dayId, LocalDate date, Instant createdAt,
                            TogetherMembers members, Map<UUID, UUID> sessions) {
+        this(id, hostId, routineId, dayId, date, createdAt, members, sessions, null, null, null, null);
+    }
+
+    @SuppressWarnings("java:S107")
+    public WorkoutTogether(UUID id, UUID hostId, UUID routineId, UUID dayId, LocalDate date, Instant createdAt,
+                           TogetherMembers members, Map<UUID, UUID> sessions, Instant startedAt, UUID startedBy,
+                           Instant pausedAt, UUID pausedBy) {
         this.id = Guard.notNull(id, "id");
         this.hostId = Guard.notNull(hostId, "hostId");
         this.routineId = Guard.notNull(routineId, "routineId");
@@ -46,6 +61,11 @@ public final class WorkoutTogether {
         this.createdAt = Guard.notNull(createdAt, "createdAt");
         this.members = Guard.notNull(members, "members");
         this.sessions = new HashMap<>(sessions == null ? Map.of() : sessions);
+        this.startedAt = startedAt;
+        this.startedBy = startedAt == null ? null : startedBy;
+        // Una pausa sin haber empezado no tiene sentido: se ignora (no debería existir).
+        this.pausedAt = startedAt == null ? null : pausedAt;
+        this.pausedBy = this.pausedAt == null ? null : pausedBy;
     }
 
     public static WorkoutTogether create(UUID hostId, UUID routineId, UUID dayId, Set<UUID> friendIds,
@@ -84,6 +104,74 @@ public final class WorkoutTogether {
         sessions.put(userId, Guard.notNull(sessionId, "sessionId"));
     }
 
+    /**
+     * Empieza el entreno para todo el grupo (ADR 0047). Lo puede pulsar cualquiera de dentro; solo vale hoy y una
+     * vez: devuelve {@code false} si ya había empezado (el segundo «Empezar» no cambia la hora común).
+     */
+    public boolean start(UUID userId, LocalDate today, Instant now) {
+        ensureToday(today);
+        if (!members.find(userId).map(TogetherMember::joined).orElse(false)) {
+            throw new TogetherInvalidStateException("Join before starting");
+        }
+        if (startedAt != null) {
+            return false;
+        }
+        startedAt = Guard.notNull(now, "now");
+        startedBy = userId;
+        return true;
+    }
+
+    public boolean isStarted() {
+        return startedAt != null;
+    }
+
+    /**
+     * Pone en pausa al grupo. Cualquiera de dentro puede hacerlo; {@code false} si no había empezado o ya estaba en
+     * pausa (así la pausa de cada sesión, que se propaga al resto, no rebota).
+     */
+    public boolean pause(UUID userId, Instant at) {
+        if (startedAt == null || pausedAt != null || !members.find(userId).map(TogetherMember::joined).orElse(false)) {
+            return false;
+        }
+        pausedAt = at.isBefore(startedAt) ? startedAt : at;
+        pausedBy = userId;
+        return true;
+    }
+
+    /** Quita la pausa del grupo; {@code false} si no estaba en pausa. */
+    public boolean resume(UUID userId) {
+        if (pausedAt == null || !members.find(userId).map(TogetherMember::joined).orElse(false)) {
+            return false;
+        }
+        pausedAt = null;
+        pausedBy = null;
+        return true;
+    }
+
+    public boolean isPaused() {
+        return pausedAt != null;
+    }
+
+    /** Las sesiones de las personas que siguen dentro, menos la de {@code exceptUserId}. */
+    public Map<UUID, UUID> joinedSessionsExcept(UUID exceptUserId) {
+        Map<UUID, UUID> result = new HashMap<>();
+        for (UUID member : members.joinedIds()) {
+            if (!member.equals(exceptUserId) && sessions.containsKey(member)) {
+                result.put(member, sessions.get(member));
+            }
+        }
+        return result;
+    }
+
+    /** Quién se entera de un cambio: las personas invitadas o dentro y, además, quien actuó (sus otros móviles). */
+    public Set<UUID> audience(UUID actorId) {
+        Set<UUID> result = new TreeSet<>(members.visibleIds());
+        if (actorId != null) {
+            result.add(actorId);
+        }
+        return result;
+    }
+
     public Optional<UUID> sessionOf(UUID userId) {
         return Optional.ofNullable(sessions.get(userId));
     }
@@ -120,4 +208,8 @@ public final class WorkoutTogether {
     public Instant createdAt() { return createdAt; }
     public TogetherMembers members() { return members; }
     public Map<UUID, UUID> sessions() { return Map.copyOf(sessions); }
+    public Instant startedAt() { return startedAt; }
+    public UUID startedBy() { return startedBy; }
+    public Instant pausedAt() { return pausedAt; }
+    public UUID pausedBy() { return pausedBy; }
 }

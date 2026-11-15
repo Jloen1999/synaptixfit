@@ -12,6 +12,7 @@ import '../use_cases/auth/reset_password_use_case.dart';
 import '../use_cases/account/get_account_use_case.dart';
 import '../use_cases/account/update_account_use_case.dart';
 import '../use_cases/account/change_password_use_case.dart';
+import '../use_cases/sync/publish_data_changes_use_case.dart';
 import '../use_cases/sync/watch_data_changes_use_case.dart';
 import 'home_domain_di.dart';
 import 'academic_domain_di.dart';
@@ -63,6 +64,9 @@ void registerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<WatchDataChangesUseCaseContract>(
       () => WatchDataChangesUseCase(getIt()),
+    )
+    ..registerLazySingleton<PublishDataChangesUseCaseContract>(
+      () => PublishDataChangesUseCase(getIt()),
     );
 
   registerHomeDomain(getIt);

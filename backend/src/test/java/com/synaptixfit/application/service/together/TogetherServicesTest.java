@@ -103,7 +103,7 @@ class TogetherServicesTest {
         TogetherNotifier notifier = new TogetherNotifier(c -> {
             sent.add(c);
             return Optional.empty();
-        }, userPort());
+        }, userPort(), change -> { });
         streakService = new FriendStreakService(streakPort(), activityPort(), pausePort(), optionsPort(), people,
                 notifier, CLOCK, UTC);
         challengeService = new FriendChallengeService(challengePort(), reactionPort(), templatePort(), activityPort(),

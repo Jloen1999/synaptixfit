@@ -10,6 +10,7 @@ import '../bloc/achievements_bloc.dart';
 import 'achievement_dialog.dart';
 import 'focus_timer_bar.dart';
 import 'reminders_host.dart';
+import 'together_live_host.dart';
 
 /// Envuelve el armazón de pestañas con [AchievementsBloc]: pasa la cuenta
 /// recargada a la sesión global y muestra la celebración de logros.
@@ -33,7 +34,9 @@ class AchievementsHost extends StatelessWidget {
       // Los recordatorios locales viven con el armazón, igual que los logros.
       // La aceptación de la política es una pantalla aparte (router).
       child: _AchievementsListener(
-        child: RemindersHost(child: FocusTimerHost(child: child)),
+        child: RemindersHost(
+          child: FocusTimerHost(child: TogetherLiveHost(child: child)),
+        ),
       ),
     );
   }

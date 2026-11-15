@@ -81,10 +81,7 @@ void main() {
       initialLocation: '/',
       routes: [
         GoRoute(path: '/', builder: (_, _) => const Text('perfil')),
-        GoRoute(
-          path: '/account',
-          builder: (_, _) => const EditAccountPage(),
-        ),
+        GoRoute(path: '/account', builder: (_, _) => const EditAccountPage()),
       ],
     );
     await tester.pumpWidget(

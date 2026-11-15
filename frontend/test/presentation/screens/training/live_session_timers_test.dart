@@ -95,9 +95,7 @@ void main() {
         ).copyWith(pausedAt: current),
       ),
     );
-    when(
-      () => resume(any(), resumedAt: any(named: 'resumedAt')),
-    ).thenAnswer(
+    when(() => resume(any(), resumedAt: any(named: 'resumedAt'))).thenAnswer(
       (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
     );
   });
@@ -215,9 +213,7 @@ void main() {
 
       bloc.add(const LiveSessionEvent.resumeRequested());
       await settle();
-      verify(
-        () => resume('s1', resumedAt: any(named: 'resumedAt')),
-      ).called(1);
+      verify(() => resume('s1', resumedAt: any(named: 'resumedAt'))).called(1);
       current = current.add(const Duration(seconds: 10));
       bloc.add(const LiveSessionEvent.ticked());
       await settle();
@@ -288,9 +284,7 @@ void main() {
     );
     await settle();
     expect(bloc.state.paused, isFalse);
-    verify(
-        () => resume('s1', resumedAt: any(named: 'resumedAt')),
-      ).called(1);
+    verify(() => resume('s1', resumedAt: any(named: 'resumedAt'))).called(1);
     await bloc.close();
   });
 
@@ -466,35 +460,38 @@ void main() {
       },
     );
 
-    test('sin conexión, el calentamiento pendiente va a su propia lista', () async {
-      when(
-        () => recordSet(any(), any()),
-      ).thenAnswer((_) async => const Failure(AppError.network()));
-      final bloc = build()..emit(ready());
-      bloc
-        ..add(
-          const LiveSessionEvent.setRecorded(
-            SetRecord(plannedExerciseId: 'p1', setNumber: 1, warmup: true),
-          ),
-        )
-        ..add(
-          const LiveSessionEvent.setRecorded(
-            SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
-          ),
-        );
-      await settle();
-      await settle();
-      expect(bloc.state.session!.warmupSetsFor('p1'), hasLength(1));
-      expect(bloc.state.session!.setsFor('p1'), hasLength(1));
-      // Borrar el calentamiento pendiente no toca la serie de trabajo.
-      final warm = bloc.state.session!.warmupSetsFor('p1').single;
-      bloc.add(LiveSessionEvent.setDeleted(warm.id));
-      await settle();
-      expect(bloc.state.session!.warmupSetsFor('p1'), isEmpty);
-      expect(bloc.state.session!.setsFor('p1'), hasLength(1));
-      expect(bloc.state.pendingSets.single.warmup, isFalse);
-      await bloc.close();
-    });
+    test(
+      'sin conexión, el calentamiento pendiente va a su propia lista',
+      () async {
+        when(
+          () => recordSet(any(), any()),
+        ).thenAnswer((_) async => const Failure(AppError.network()));
+        final bloc = build()..emit(ready());
+        bloc
+          ..add(
+            const LiveSessionEvent.setRecorded(
+              SetRecord(plannedExerciseId: 'p1', setNumber: 1, warmup: true),
+            ),
+          )
+          ..add(
+            const LiveSessionEvent.setRecorded(
+              SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+            ),
+          );
+        await settle();
+        await settle();
+        expect(bloc.state.session!.warmupSetsFor('p1'), hasLength(1));
+        expect(bloc.state.session!.setsFor('p1'), hasLength(1));
+        // Borrar el calentamiento pendiente no toca la serie de trabajo.
+        final warm = bloc.state.session!.warmupSetsFor('p1').single;
+        bloc.add(LiveSessionEvent.setDeleted(warm.id));
+        await settle();
+        expect(bloc.state.session!.warmupSetsFor('p1'), isEmpty);
+        expect(bloc.state.session!.setsFor('p1'), hasLength(1));
+        expect(bloc.state.pendingSets.single.warmup, isFalse);
+        await bloc.close();
+      },
+    );
 
     test('en la sesión libre también se cronometra cada serie', () async {
       final bloc = build()..emit(ready().copyWith(exercises: const []));
@@ -502,7 +499,9 @@ void main() {
       await settle();
       current = current.add(const Duration(seconds: 35));
       bloc.add(
-        const LiveSessionEvent.setRecorded(SetRecord(setNumber: 1, repsDone: 8)),
+        const LiveSessionEvent.setRecorded(
+          SetRecord(setNumber: 1, repsDone: 8),
+        ),
       );
       await settle();
       expect(recorded().activeSeconds, 35);

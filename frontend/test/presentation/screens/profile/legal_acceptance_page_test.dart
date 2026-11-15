@@ -10,7 +10,8 @@ import 'package:synaptixfit/presentation/screens/profile/legal/bloc/legal_accept
 import 'package:synaptixfit/presentation/screens/profile/legal/page/legal_acceptance_page.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
-class _MockLegalBloc extends MockBloc<LegalAcceptanceEvent, LegalAcceptanceState>
+class _MockLegalBloc
+    extends MockBloc<LegalAcceptanceEvent, LegalAcceptanceState>
     implements LegalAcceptanceBloc {}
 
 class _MockSessionBloc extends MockBloc<SessionEvent, SessionState>
@@ -80,8 +81,10 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pump();
     expect(find.byType(LegalAcceptancePage), findsOneWidget);
-    expect(find.text('Hemos actualizado la política y las condiciones'),
-        findsOneWidget);
+    expect(
+      find.text('Hemos actualizado la política y las condiciones'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('sin marcar la casilla explica junto a ella por qué no sigue', (
@@ -107,9 +110,7 @@ void main() {
     await tester.ensureVisible(find.text('Cerrar sesión'));
     await tester.tap(find.text('Cerrar sesión'));
     await tester.pump();
-    verify(
-      () => session.add(const SessionEvent.logoutRequested()),
-    ).called(1);
+    verify(() => session.add(const SessionEvent.logoutRequested())).called(1);
   });
 
   group('accesibilidad', () {

@@ -15,6 +15,8 @@ import com.synaptixfit.application.port.input.training.ResumeTrainingSessionUseC
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.UnmarkTrainingSessionUseCase;
 import com.synaptixfit.domain.event.training.TrainingSessionCompletionChanged;
+import com.synaptixfit.domain.event.training.TrainingSessionPauseChanged;
+import com.synaptixfit.domain.event.training.TrainingSessionProgressed;
 import com.synaptixfit.domain.event.training.TrainingSessionCorrected;
 import com.synaptixfit.domain.exception.training.RoutineExerciseNotFoundException;
 import com.synaptixfit.domain.exception.training.RoutineNotFoundException;
@@ -120,8 +122,10 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
     }
 
     @Override
-    public TrainingSession start(UUID userId, UUID routineId, UUID dayId) {
-        Instant now = clock.instant();
+    public TrainingSession start(UUID userId, UUID routineId, UUID dayId, Instant startedAt) {
+        Instant clockNow = clock.instant();
+        // Una hora de inicio dada (entreno juntos, ADR 0047) nunca puede ser futura.
+        Instant now = startedAt == null || startedAt.isAfter(clockNow) ? clockNow : startedAt;
         if (routineId == null) {
             if (dayId != null) {
                 throw new SessionDayMismatchException();
@@ -157,20 +161,39 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
     public TrainingSession recordSet(RecordSessionSetUseCase.Command c) {
         TrainingSession session = owned(c.userId(), c.sessionId());
         applySet(session, c);
-        return sessions.save(session);
+        TrainingSession saved = sessions.save(session);
+        events.publish(new TrainingSessionProgressed(c.userId(), saved.id(), clock.instant()));
+        return saved;
     }
 
+    /**
+     * Pausa la sesión (idempotente). Si cambia, publica {@link TrainingSessionPauseChanged} <em>antes</em> de guardar:
+     * en un entreno juntos el oyente bloquea primero el entreno del grupo y después pausa las demás sesiones, así dos
+     * personas que pausan a la vez esperan una a la otra en el mismo orden y no se bloquean entre sí (ADR 0047).
+     */
     @Override
     public TrainingSession pause(UUID userId, UUID sessionId) {
         TrainingSession session = owned(userId, sessionId);
+        boolean wasPaused = session.isPaused();
         session.pause(clock.instant());
+        if (!wasPaused && session.isPaused()) {
+            events.publish(new TrainingSessionPauseChanged(userId, sessionId, true, session.pausedAt(),
+                    clock.instant()));
+        }
         return sessions.save(session);
     }
 
+    /** Reanuda la sesión (idempotente); como {@link #pause}, avisa antes de guardar si cambia. */
     @Override
     public TrainingSession resume(UUID userId, UUID sessionId, Instant resumedAt) {
         TrainingSession session = owned(userId, sessionId);
-        session.resume(resumedAt, clock.instant());
+        boolean wasPaused = session.isPaused();
+        Instant now = clock.instant();
+        session.resume(resumedAt, now);
+        if (wasPaused && !session.isPaused()) {
+            events.publish(new TrainingSessionPauseChanged(userId, sessionId, false,
+                    resumedAt == null || resumedAt.isAfter(now) ? now : resumedAt, now));
+        }
         return sessions.save(session);
     }
 
@@ -178,7 +201,9 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
     public TrainingSession deleteSet(UUID userId, UUID sessionId, UUID setId) {
         TrainingSession session = owned(userId, sessionId);
         session.removeSet(setId);
-        return sessions.save(session);
+        TrainingSession saved = sessions.save(session);
+        events.publish(new TrainingSessionProgressed(userId, saved.id(), clock.instant()));
+        return saved;
     }
 
     @Override

@@ -3,13 +3,16 @@ import 'package:get_it/get_it.dart';
 import '../../domain/repositories/friendship_repository_contract.dart';
 import '../../domain/repositories/notification_repository_contract.dart';
 import '../../domain/repositories/social_repository_contract.dart';
+import '../../domain/repositories/together_live_repository_contract.dart';
 import '../../domain/repositories/together_repository_contract.dart';
 import '../remote_data_source/social/notification_remote_data_source.dart';
 import '../remote_data_source/social/social_remote_data_source.dart';
+import '../remote_data_source/social/live/together_live_remote_data_source.dart';
 import '../remote_data_source/social/together_remote_data_source.dart';
 import '../repository/friendship_repository.dart';
 import '../repository/notification_repository.dart';
 import '../repository/social_repository.dart';
+import '../repository/together_live_repository.dart';
 import '../repository/together_repository.dart';
 
 /// Data sources y repositorios del módulo social.
@@ -20,6 +23,14 @@ void registerSocialData(GetIt getIt) {
     ..registerLazySingleton(() => TogetherRemoteDataSource(getIt()))
     ..registerLazySingleton<TogetherRepositoryContract>(
       () => TogetherRepository(getIt()),
+    )
+    // Canal en directo (ADR 0047): una sola instancia, que sabe si está
+    // conectado.
+    ..registerLazySingleton(
+      () => TogetherLiveRemoteDataSource(getIt(), getIt()),
+    )
+    ..registerLazySingleton<TogetherLiveRepositoryContract>(
+      () => TogetherLiveRepository(getIt()),
     )
     ..registerLazySingleton<SocialRepositoryContract>(
       () => SocialRepository(getIt()),

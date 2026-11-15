@@ -20,6 +20,7 @@ import 'package:synaptixfit/presentation/screens/social/together/study_room/page
 import 'package:synaptixfit/presentation/screens/social/together/workout_detail/bloc/workout_together_bloc.dart';
 import 'package:synaptixfit/presentation/screens/social/together/workout_detail/page/workout_together_page.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
+import 'package:synaptixfit/presentation/widgets/widgets.dart';
 
 /// Pantallas de «Con amigos» (ADR 0044 y 0045) con blocs simulados: lo que se
 /// ve en cada estado, la acción principal y lo que mandan los botones.
@@ -186,7 +187,7 @@ void main() {
       await pump(tester, const StudyRoomPage(roomId: 'r1'));
 
       expect(find.text('Esperando a que alguien la empiece'), findsOneWidget);
-      expect(find.byType(FilledButton), findsOneWidget);
+      expect(find.byType(AppPrimaryButton), findsOneWidget);
       await tester.tap(find.text('Empezar'));
       verify(() => room.add(const StudyRoomEvent.startRequested())).called(1);
       await unmount(tester);
@@ -383,6 +384,34 @@ void main() {
       await tester.ensureVisible(find.text('Salir del entreno'));
       await tester.tap(find.text('Salir del entreno'));
       verify(() => workout.add(const WorkoutTogetherEvent.left())).called(1);
+    });
+
+    // A la vez (ADR 0047): antes de empezar se dice que es para todos.
+    testWidgets('esperando: «Empezar» es para todos a la vez', (tester) async {
+      show(_workout(TogetherMemberStatus.joined));
+      await pump(tester, const WorkoutTogetherPage(workoutId: 'w1'));
+
+      expect(
+        find.text('Cuando alguien empiece, empezáis todos a la vez.'),
+        findsOneWidget,
+      );
+      expect(find.byType(AppPrimaryButton), findsOneWidget);
+    });
+
+    testWidgets('en marcha: lo dice y ofrece seguir entrenando', (
+      tester,
+    ) async {
+      show(
+        _workout(TogetherMemberStatus.joined).copyWith(
+          startedAt: DateTime(2026, 11, 16, 18),
+          startedBy: _ana,
+          mySessionId: 's-me',
+        ),
+      );
+      await pump(tester, const WorkoutTogetherPage(workoutId: 'w1'));
+
+      expect(find.text('Ya está en marcha.'), findsOneWidget);
+      expect(find.text('Seguir entrenando'), findsOneWidget);
     });
   });
 

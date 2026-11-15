@@ -364,5 +364,14 @@
   "togetherStudyAlertFocusBody": "Focus over · round {round} of {rounds}",
   "togetherStudyAlertBreakBody": "Break over: back to focus",
   "togetherStudyBarLabel": "Study together, {phase}: {time} left. Open the room",
-  "togetherStudyBarLabelNoClock": "Study together, {phase}. Open the room"
+  "togetherStudyBarLabelNoClock": "Study together, {phase}. Open the room",
+  "togetherFriendStarted": "{name} has started training",
+  "togetherGo": "Join",
+  "togetherPausedBy": "Paused · by {name}",
+  "togetherWaitingStart": "When someone starts, you all start at once.",
+  "togetherRunning": "Already under way.",
+  "togetherStartedAnnounce": "{name} has started. Opening your session.",
+  "togetherPausedByAnnounce": "{name} has paused the session.",
+  "togetherResumedAnnounce": "You are training again: the pause is over.",
+  "togetherResumeForAll": "Resume for everyone"
 }

@@ -96,6 +96,11 @@ public final class TogetherMembers {
         return members.stream().filter(TogetherMember::joined).map(TogetherMember::userId).toList();
     }
 
+    /** Las personas invitadas o dentro: las que ven el detalle y reciben sus avisos en directo (ADR 0047). */
+    public List<UUID> visibleIds() {
+        return members.stream().filter(m -> m.status().canView()).map(TogetherMember::userId).toList();
+    }
+
     public List<UUID> invitedIds() {
         return members.stream().filter(m -> m.status() == MemberStatus.INVITED).map(TogetherMember::userId).toList();
     }

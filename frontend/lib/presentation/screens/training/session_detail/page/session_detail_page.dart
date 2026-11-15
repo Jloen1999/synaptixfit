@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
@@ -15,38 +16,16 @@ import '../../widgets/personal_record_row.dart';
 import '../../widgets/set_fields.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_dialogs.dart';
+import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
 import '../bloc/session_detail_bloc.dart';
+import '../../training_effect.dart';
 import '../../training_routes.dart';
 
-/// Lo que se pidió hacer con la sesión desde su detalle; lo ejecuta el
-/// historial al volver (así su lista y los récords se ponen al día).
-sealed class SessionDetailAction {
-  const SessionDetailAction();
-}
-
-/// Corregir esfuerzo y duración.
-final class SessionDetailCorrect extends SessionDetailAction {
-  const SessionDetailCorrect({required this.minutes, required this.rpe});
-
-  final int minutes;
-  final int rpe;
-}
-
-/// «Reabrir y seguir» (solo la terminada hoy): vuelve a abrirla con sus
-/// series para seguir o corregir; el servidor la desmarca.
-final class SessionDetailUnmark extends SessionDetailAction {
-  const SessionDetailUnmark();
-}
-
-/// Eliminar: la borra para siempre con sus series.
-final class SessionDetailDelete extends SessionDetailAction {
-  const SessionDetailDelete();
-}
-
-/// Detalle de solo lectura de una sesión terminada (tocarla en el historial
-/// ya no reabre la sesión en vivo): cifras, récords y series por ejercicio, con
-/// «Corregir» (o «Reabrir y seguir» si es de hoy) y «Eliminar». Son dos cosas
+/// Detalle de una sesión terminada (tocarla en el historial no reabre la
+/// sesión en vivo): cifras, récords y series por ejercicio, con «Corregir» (o
+/// «Reabrir y seguir» si es de hoy) y «Eliminar», siempre a la vista: las hace
+/// [SessionDetailBloc], también abierta sin pila (ADR 0046). Son dos cosas
 /// distintas y la etiqueta lo dice: reabrir conserva las series y vuelve a la
 /// sesión; eliminar la borra para siempre.
 class SessionDetailPage extends StatelessWidget {
@@ -85,7 +64,7 @@ class _DetailView extends StatelessWidget {
 
   Future<void> _correct(BuildContext context, SessionHistoryEntry e) async {
     final l10n = context.localizations;
-    final navigator = Navigator.of(context);
+    final bloc = context.read<SessionDetailBloc>();
     final figures = await showSessionFiguresDialog(
       context,
       confirmLabel: l10n.commonSave,
@@ -94,32 +73,69 @@ class _DetailView extends StatelessWidget {
       initialRpe: e.session.rpe ?? 6,
     );
     if (figures == null) return;
-    navigator.pop(
-      SessionDetailCorrect(minutes: figures.minutes, rpe: figures.rpe),
+    bloc.add(
+      SessionDetailEvent.correctRequested(
+        minutes: figures.minutes,
+        rpe: figures.rpe,
+      ),
     );
   }
 
   /// Reabrir no pierde nada (terminarla otra vez la vuelve a contar): no
   /// pregunta.
-  void _reopen(BuildContext context) =>
-      Navigator.of(context).pop(const SessionDetailUnmark());
+  void _reopen(BuildContext context) => context.read<SessionDetailBloc>().add(
+    const SessionDetailEvent.reopenRequested(),
+  );
 
   Future<void> _delete(BuildContext context, SessionHistoryEntry e) async {
     final l10n = context.localizations;
-    final navigator = Navigator.of(context);
+    final bloc = context.read<SessionDetailBloc>();
     final ok = await showConfirmDialog(
       context,
       title: l10n.trainingDeleteSessionTitle,
       message: l10n.trainingDeleteSessionMessage,
       confirmLabel: l10n.trainingDeleteSession,
     );
-    if (ok) navigator.pop(const SessionDetailDelete());
+    if (ok) bloc.add(const SessionDetailEvent.deleteRequested());
+  }
+
+  /// Entra en la sesión reabierta. Con el historial debajo se cierra el detalle
+  /// (el historial lee otra vez al volver) y la sesión se abre encima; sin
+  /// pila, la sesión ocupa el lugar del detalle.
+  void _openReopened(BuildContext context, String sessionId) {
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      router
+        ..pop()
+        ..push<void>(TrainingPaths.session(sessionId));
+    } else {
+      router.pushReplacement<void>(TrainingPaths.session(sessionId));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return BlocBuilder<SessionDetailBloc, SessionDetailState>(
+    return BlocConsumer<SessionDetailBloc, SessionDetailState>(
+      listenWhen: (p, c) =>
+          (c.effect != null && c.effect != p.effect) ||
+          (c.reopened != null && c.reopened != p.reopened) ||
+          (c.deleted && !p.deleted),
+      listener: (context, state) {
+        if (state.effect case final effect?) {
+          const TrainingEffectHandler().handle(context, effect);
+        } else if (state.reopened case final id?) {
+          _openReopened(context, id);
+        } else if (state.deleted) {
+          context.showSnack(
+            TrainingEffectHandler.messageText(
+              context.localizations,
+              TrainingMessage.sessionDeleted,
+            ),
+          );
+          context.popOrGo(TrainingPaths.history);
+        }
+      },
       builder: (context, state) {
         final entry = state.entry;
         final session = entry?.session;
@@ -149,13 +165,11 @@ class _DetailView extends StatelessWidget {
             ),
             SessionDetailStatus.ready => _Content(state: state, date: date),
           },
-          // Las acciones las ejecuta el historial al volver: abierta sin
-          // pila (enlace, recarga en web) no hay quien las haga y se ocultan.
+          // Las acciones las hace el bloc: se ven también abierta sin pila.
           bottomNavigationBar:
               state.status == SessionDetailStatus.ready &&
                   entry != null &&
-                  entry.session.isCompleted &&
-                  Navigator.canPop(context)
+                  entry.session.isCompleted
               ? SafeArea(
                   top: false,
                   child: Padding(
@@ -172,20 +186,28 @@ class _DetailView extends StatelessWidget {
                           entry.unmarkable
                               ? AppSecondaryButton(
                                   label: l10n.trainingReopenSession,
-                                  icon: const Icon(Icons.play_arrow_rounded),
-                                  onPressed: () => _reopen(context),
+                                  icon: const Icon(AppIcons.start),
+                                  loading: state.busy,
+                                  onPressed: state.busy
+                                      ? null
+                                      : () => _reopen(context),
                                 )
                               : AppSecondaryButton(
                                   label: l10n.trainingCorrectSession,
                                   icon: const Icon(AppIcons.edit),
-                                  onPressed: () => _correct(context, entry),
+                                  loading: state.busy,
+                                  onPressed: state.busy
+                                      ? null
+                                      : () => _correct(context, entry),
                                 ),
                           // Eliminar borra para siempre: en tono de error.
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: context.colors.error,
                             ),
-                            onPressed: () => _delete(context, entry),
+                            onPressed: state.busy
+                                ? null
+                                : () => _delete(context, entry),
                             icon: const Icon(AppIcons.delete),
                             label: Text(l10n.trainingDeleteSession),
                           ),

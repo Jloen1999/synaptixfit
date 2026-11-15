@@ -67,13 +67,10 @@ void main() {
 
     blocTest<ProgressOverviewBloc, ProgressOverviewState>(
       'pausar pinta la racha del servidor y avisa una vez',
-      setUp: () => when(
-        () => pause(),
-      ).thenAnswer((_) async => Success(paused)),
+      setUp: () => when(() => pause()).thenAnswer((_) async => Success(paused)),
       build: build,
       seed: () => ProgressOverviewState.loaded(testOverview),
-      act: (bloc) =>
-          bloc.add(const ProgressOverviewEvent.streakPaused()),
+      act: (bloc) => bloc.add(const ProgressOverviewEvent.streakPaused()),
       expect: () => [
         ProgressOverviewState.loaded(testOverview, updatingStreak: true),
         ProgressOverviewState.loaded(
@@ -86,15 +83,12 @@ void main() {
     blocTest<ProgressOverviewBloc, ProgressOverviewState>(
       'sin días de pausa se dice el error y la racha no cambia',
       setUp: () => when(() => pause()).thenAnswer(
-        (_) async => const Failure(
-          AppError.business('STREAK_PAUSE_LIMIT_REACHED'),
-        ),
+        (_) async =>
+            const Failure(AppError.business('STREAK_PAUSE_LIMIT_REACHED')),
       ),
       build: build,
       seed: () => ProgressOverviewState.loaded(testOverview),
-      act: (bloc) => bloc.add(
-        const ProgressOverviewEvent.streakPaused(),
-      ),
+      act: (bloc) => bloc.add(const ProgressOverviewEvent.streakPaused()),
       expect: () => [
         ProgressOverviewState.loaded(testOverview, updatingStreak: true),
         ProgressOverviewState.loaded(

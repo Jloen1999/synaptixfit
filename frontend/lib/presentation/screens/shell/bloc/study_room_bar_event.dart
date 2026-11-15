@@ -15,6 +15,9 @@ sealed class StudyRoomBarEvent with _$StudyRoomBarEvent {
 
   const factory StudyRoomBarEvent.ticked() = StudyRoomBarTicked;
 
+  /// El canal en directo avisa de que una sala cambió (ADR 0047).
+  const factory StudyRoomBarEvent.liveChanged() = StudyRoomBarLiveChanged;
+
   /// Al cerrar sesión: fuera la barra y el aviso.
   const factory StudyRoomBarEvent.signedOut() = StudyRoomBarSignedOut;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../../../domain/enums/data_topic.dart';
 import '../../../../../../domain/errors/app_error.dart';
 import '../../../../../../domain/models/result/app_result.dart';
 import '../../../../../../domain/models/result/result.dart';
@@ -17,6 +18,8 @@ import '../../../../../../domain/use_cases/social/together/join_study_room_use_c
 import '../../../../../../domain/use_cases/social/together/join_workout_together_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/nudge_friend_streak_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/propose_friend_streak_use_case.dart';
+import '../../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
+import '../../../../../mixins/data_change_refresh_mixin.dart';
 
 part 'together_bloc.freezed.dart';
 part 'together_event.dart';
@@ -24,8 +27,10 @@ part 'together_state.dart';
 
 /// Pantalla «Con amigos» (ADR 0044 y 0045): invitaciones, retos, rachas,
 /// entrenos de hoy y salas de estudio. Cada acción va al servidor y después se vuelve a leer todo (lo que se
-/// ve lo calcula siempre el servidor).
-class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
+/// ve lo calcula siempre el servidor). Con el canal en directo (ADR 0047) se
+/// vuelve a leer en cuanto una invitación, una sala o un entreno cambian.
+class TogetherBloc extends Bloc<TogetherEvent, TogetherState>
+    with DataChangeRefreshMixin {
   TogetherBloc({
     required this._overview,
     required this._joinChallenge,
@@ -39,6 +44,7 @@ class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
     required this._declineWorkout,
     required this._joinStudyRoom,
     required this._declineStudyRoom,
+    this._watchChanges,
   }) : super(const TogetherState()) {
     on<TogetherStarted>(_onStarted);
     on<TogetherRefreshed>(_onRefreshed);
@@ -122,6 +128,7 @@ class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
   }
 
   final GetTogetherOverviewUseCaseContract _overview;
+  final WatchDataChangesUseCaseContract? _watchChanges;
   final JoinFriendChallengeUseCaseContract _joinChallenge;
   final DeclineFriendChallengeUseCaseContract _declineChallenge;
   final ProposeFriendStreakUseCaseContract _proposeStreak;
@@ -139,6 +146,18 @@ class TogetherBloc extends Bloc<TogetherEvent, TogetherState> {
     Emitter<TogetherState> emit,
   ) async {
     emit(state.copyWith(status: TogetherStatus.loading, error: null));
+    final watch = _watchChanges;
+    if (watch != null) {
+      watchDataChanges(
+        watch,
+        topics: const {
+          DataTopic.social,
+          DataTopic.studyRoom,
+          DataTopic.workoutTogether,
+        },
+        onChanged: const TogetherEvent.refreshed(),
+      );
+    }
     await _load(emit);
   }
 

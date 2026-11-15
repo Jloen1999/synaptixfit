@@ -364,5 +364,14 @@
   "togetherStudyAlertFocusBody": "Fim da concentração · ronda {round} de {rounds}",
   "togetherStudyAlertBreakBody": "Fim da pausa: volta a concentrar-te",
   "togetherStudyBarLabel": "Estudar juntos, {phase}: faltam {time}. Abrir a sala",
-  "togetherStudyBarLabelNoClock": "Estudar juntos, {phase}. Abrir a sala"
+  "togetherStudyBarLabelNoClock": "Estudar juntos, {phase}. Abrir a sala",
+  "togetherFriendStarted": "{name} começou a treinar",
+  "togetherGo": "Entrar",
+  "togetherPausedBy": "Em pausa · por {name}",
+  "togetherWaitingStart": "Quando alguém começar, começam todos ao mesmo tempo.",
+  "togetherRunning": "Já está em curso.",
+  "togetherStartedAnnounce": "{name} começou. A abrir a tua sessão.",
+  "togetherPausedByAnnounce": "{name} pôs a sessão em pausa.",
+  "togetherResumedAnnounce": "Continuam a treinar: a pausa terminou.",
+  "togetherResumeForAll": "Retomar para todos"
 }

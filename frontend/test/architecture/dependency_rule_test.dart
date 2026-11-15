@@ -18,6 +18,8 @@ const _rules = <String, List<String>>{
     'package:flutter_local_notifications',
     'package:timezone',
     'package:permission_handler',
+    // El canal en directo de la web (ADR 0047) solo vive en data/.
+    'package:web/',
   ],
   'lib/data': ['/presentation/'],
   'lib/presentation': [
@@ -28,6 +30,7 @@ const _rules = <String, List<String>>{
     'package:timezone',
     'package:shared_preferences',
     'package:permission_handler',
+    'package:web/',
   ],
   // Las piezas compartidas no conocen ninguna pantalla.
   'lib/presentation/widgets': ['/screens/'],

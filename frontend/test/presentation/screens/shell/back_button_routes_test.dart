@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc_test/bloc_test.dart';
@@ -323,6 +324,77 @@ void main() {
         expect(find.text('Padre $parentPath'), findsOneWidget);
       });
     }
+
+    // El «atrás» del sistema (Android) sin pila iba a cerrar la app: ahora va
+    // al padre, como la flecha (ADR 0046, cierre en el ADR 0047).
+    for (final (name, routes, location, parent) in cases.take(3)) {
+      testWidgets('atrás del sistema: $name', (tester) async {
+        final parentPath = Uri.parse(parent).path;
+        final r = await open(
+          tester,
+          routes().where((x) => x is! GoRoute || x.path != parentPath).toList(),
+          location,
+          [parentPath],
+        );
+
+        final handled = await tester.binding.handlePopRoute();
+        await _settle(tester);
+
+        expect(handled, isTrue);
+        expect(at(r), parent);
+        expect(find.text('Padre $parentPath'), findsOneWidget);
+      });
+    }
+
+    testWidgets('atrás del sistema con un diálogo encima: cierra el diálogo', (
+      tester,
+    ) async {
+      final (_, routes, location, parent) = cases.first;
+      final parentPath = Uri.parse(parent).path;
+      final r = await open(
+        tester,
+        routes().where((x) => x is! GoRoute || x.path != parentPath).toList(),
+        location,
+        [parentPath],
+      );
+      final context = tester.element(find.byTooltip('Volver'));
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (_) => const AlertDialog(content: Text('Diálogo')),
+        ),
+      );
+      await _settle(tester);
+      expect(find.text('Diálogo'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+
+      expect(find.text('Diálogo'), findsNothing);
+      expect(at(r), location);
+    });
+
+    testWidgets('atrás del sistema con pila: vuelve a la de debajo', (
+      tester,
+    ) async {
+      final (_, routes, location, parent) = cases.first;
+      final parentPath = Uri.parse(parent).path;
+      final r = await open(
+        tester,
+        routes().where((x) => x is! GoRoute || x.path != parentPath).toList(),
+        parentPath,
+        [parentPath],
+      );
+      unawaited(r.push<void>(location));
+      await _settle(tester);
+      expect(r.state.uri.toString(), location);
+
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+
+      expect(at(r), parentPath);
+      expect(find.text('Padre $parentPath'), findsOneWidget);
+    });
 
     testWidgets('admin: un usuario vuelve al panel y el panel, al perfil', (
       tester,

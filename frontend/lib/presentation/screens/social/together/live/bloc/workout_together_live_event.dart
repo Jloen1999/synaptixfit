@@ -8,5 +8,9 @@ sealed class WorkoutTogetherLiveEvent with _$WorkoutTogetherLiveEvent {
     @Default(true) bool poll,
   }) = WorkoutTogetherLiveStarted;
 
-  const factory WorkoutTogetherLiveEvent.polled() = WorkoutTogetherLivePolled;
+  /// Volver a leer. Con [live] lo pide el canal en directo (ADR 0047) y se lee
+  /// siempre; sin él es la consulta de respaldo, que con el canal conectado se
+  /// salta si se leyó hace poco.
+  const factory WorkoutTogetherLiveEvent.polled({@Default(false) bool live}) =
+      WorkoutTogetherLivePolled;
 }

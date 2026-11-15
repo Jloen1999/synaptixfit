@@ -47,7 +47,14 @@ class LiveSessionPage extends StatelessWidget {
     return BlocProvider(
       create: (_) =>
           getIt<LiveSessionBloc>()..add(LiveSessionEvent.started(sessionId)),
-      child: const _LiveView(),
+      // Entreno juntos (ADR 0047): la pausa del grupo llega del servidor.
+      child: WorkoutTogetherLiveScope(
+        sessionId: sessionId,
+        onGroupPauseChanged: (context, pausedBy) => context
+            .read<LiveSessionBloc>()
+            .add(LiveSessionEvent.groupPauseChanged(pausedBy: pausedBy)),
+        child: const _LiveView(),
+      ),
     );
   }
 }
@@ -481,6 +488,22 @@ class _LiveViewState extends State<_LiveView> {
             context.showSnack(context.localizations.trainingRestOver);
           },
         ),
+        // Entreno juntos (ADR 0047): la pausa o la reanudación que puso otra
+        // persona se dice al lector una vez, cuando la sesión ya la ha adoptado.
+        BlocListener<LiveSessionBloc, LiveSessionState>(
+          listenWhen: (p, c) =>
+              (c.groupPausedBy != null && p.groupPausedBy == null) ||
+              (p.groupPausedBy != null && p.paused && !c.paused),
+          listener: (context, state) => SemanticsService.sendAnnouncement(
+            View.of(context),
+            state.groupPausedBy != null
+                ? context.localizations.togetherPausedByAnnounce(
+                    state.groupPausedBy!,
+                  )
+                : context.localizations.togetherResumedAnnounce,
+            Directionality.of(context),
+          ),
+        ),
         // La cuenta atrás no es región viva (hablaría cada segundo): se
         // anuncia al empezar el descanso y cuando quedan 10 s.
         BlocListener<LiveSessionBloc, LiveSessionState>(
@@ -635,7 +658,7 @@ class _LiveViewState extends State<_LiveView> {
                             unawaited(_warmup(state, e, set, existing)),
                         header: [
                           // Entrenar con amigos (ADR 0044): solo se ve si lo es.
-                          WorkoutTogetherPanel(sessionId: state.session!.id),
+                          const WorkoutTogetherPanel(),
                           // Sin conexión: las series se guardan en el teléfono.
                           if (state.pendingSets.isNotEmpty) ...[
                             AppInlineMessage(
@@ -1026,7 +1049,7 @@ class _ExerciseList extends StatelessWidget {
                   ),
                 ),
               // Entrenar con amigos (ADR 0044): solo se ve si lo es.
-              WorkoutTogetherPanel(sessionId: session.id),
+              const WorkoutTogetherPanel(),
               // Sin conexión: las series se guardan en el teléfono.
               if (state.pendingSets.isNotEmpty) ...[
                 AppInlineMessage(

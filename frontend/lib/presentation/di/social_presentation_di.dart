@@ -16,6 +16,7 @@ import '../screens/social/together/study_room/bloc/study_room_bloc.dart';
 import '../screens/social/together/workout_detail/bloc/workout_together_bloc.dart';
 import '../screens/social/together/workout_invite/bloc/workout_invite_bloc.dart';
 import '../screens/shell/bloc/study_room_bar_bloc.dart';
+import '../screens/shell/bloc/together_live_bloc.dart';
 import '../screens/social/user_profile/bloc/user_profile_bloc.dart';
 
 /// Blocs del módulo social.
@@ -97,6 +98,7 @@ void registerSocialPresentation(GetIt getIt) {
         declineWorkout: getIt(),
         joinStudyRoom: getIt(),
         declineStudyRoom: getIt(),
+        watchChanges: getIt(),
       ),
     )
     ..registerFactory(() => TogetherSafetyBloc(block: getIt(), report: getIt()))
@@ -124,9 +126,17 @@ void registerSocialPresentation(GetIt getIt) {
         decline: getIt(),
         leave: getIt(),
         start: getIt(),
+        watchChanges: getIt(),
+        liveConnected: getIt(),
       ),
     )
-    ..registerFactory(() => WorkoutTogetherLiveBloc(find: getIt()))
+    ..registerFactory(
+      () => WorkoutTogetherLiveBloc(
+        find: getIt(),
+        watchChanges: getIt(),
+        liveConnected: getIt(),
+      ),
+    )
     // Estudiamos juntos (ADR 0045).
     ..registerFactory(() => StudyInviteBloc(create: getIt()))
     ..registerFactory(
@@ -139,6 +149,8 @@ void registerSocialPresentation(GetIt getIt) {
         chooseSubject: getIt(),
         react: getIt(),
         subjects: getIt(),
+        watchChanges: getIt(),
+        liveConnected: getIt(),
       ),
     )
     // Una sola instancia: la barra de la sala y su aviso siguen al salir de la
@@ -148,6 +160,17 @@ void registerSocialPresentation(GetIt getIt) {
         get: getIt(),
         scheduleAlert: getIt(),
         cancelAlert: getIt(),
+        watchChanges: getIt(),
+        liveConnected: getIt(),
+      ),
+    )
+    // Canal en directo (ADR 0047): uno por armazón; se cierra con él.
+    ..registerFactory(
+      () => TogetherLiveBloc(
+        watch: getIt(),
+        publish: getIt(),
+        getWorkout: getIt(),
+        overview: getIt(),
       ),
     );
 }

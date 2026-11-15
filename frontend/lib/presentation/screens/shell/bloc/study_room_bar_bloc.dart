@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../domain/enums/data_topic.dart';
 import '../../../../domain/enums/together_enums.dart';
 import '../../../../domain/errors/app_error.dart';
 import '../../../../domain/models/reminders/timer_alert.dart';
@@ -11,6 +12,10 @@ import '../../../../domain/models/social/together.dart';
 import '../../../../domain/use_cases/reminders/cancel_timer_alert_use_case.dart';
 import '../../../../domain/use_cases/reminders/schedule_timer_alert_use_case.dart';
 import '../../../../domain/use_cases/social/together/get_study_room_use_case.dart';
+import '../../../../domain/use_cases/social/together_live/is_together_live_connected_use_case.dart';
+import '../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
+import '../../../mixins/data_change_refresh_mixin.dart';
+import '../../../mixins/live_poll_mixin.dart';
 
 part 'study_room_bar_bloc.freezed.dart';
 part 'study_room_bar_event.dart';
@@ -43,12 +48,16 @@ class StudyRoomAlertTexts {
 /// corregido; al llegar a cero pide la sala **una vez** (no deduce la fase
 /// siguiente) y vuelve a programar el aviso. El aviso de fin de fase va en su
 /// propio hueco ([TimerAlertSlot.studyRoom]): llega con la app en segundo plano
-/// o cerrada y no pisa el del Pomodoro.
-class StudyRoomBarBloc extends Bloc<StudyRoomBarEvent, StudyRoomBarState> {
+/// o cerrada y no pisa el del Pomodoro. Con el canal en directo (ADR 0047), un
+/// cambio de la sala (alguien empezó, entró o salió) se lee al momento.
+class StudyRoomBarBloc extends Bloc<StudyRoomBarEvent, StudyRoomBarState>
+    with DataChangeRefreshMixin {
   StudyRoomBarBloc({
     required this._get,
     this._scheduleAlert,
     this._cancelAlert,
+    WatchDataChangesUseCaseContract? watchChanges,
+    this._liveConnected,
     DateTime Function()? now,
     this.retryAfter = const Duration(seconds: 12),
   }) : _now = now ?? DateTime.now,
@@ -56,8 +65,18 @@ class StudyRoomBarBloc extends Bloc<StudyRoomBarEvent, StudyRoomBarState> {
     on<StudyRoomBarSeen>(_onSeen);
     on<StudyRoomBarCleared>(_onCleared);
     on<StudyRoomBarTicked>(_onTicked);
+    on<StudyRoomBarLiveChanged>(_onLiveChanged);
     on<StudyRoomBarSignedOut>((_, emit) => _clear(emit));
+    if (watchChanges != null) {
+      watchDataChanges(
+        watchChanges,
+        topics: const {DataTopic.studyRoom},
+        onChanged: const StudyRoomBarEvent.liveChanged(),
+      );
+    }
   }
+
+  final IsTogetherLiveConnectedUseCaseContract? _liveConnected;
 
   final GetStudyRoomUseCaseContract _get;
   final ScheduleTimerAlertUseCaseContract? _scheduleAlert;
@@ -104,7 +123,14 @@ class StudyRoomBarBloc extends Bloc<StudyRoomBarEvent, StudyRoomBarState> {
     );
     // Esperando a que alguien la empiece no hay cuenta atrás: se pregunta cada
     // [retryAfter], como la pantalla, para enterarse de que ya empezó.
-    _askAgainAt = timed ? null : _now().add(retryAfter);
+    // Con el canal conectado, el cambio llega solo: la pregunta es de respaldo.
+    _askAgainAt = timed
+        ? null
+        : _now().add(
+            (_liveConnected?.call() ?? false)
+                ? LivePollMixin.slowPoll
+                : retryAfter,
+          );
     _schedule(room, endsAt);
     _ticker ??= Timer.periodic(
       const Duration(seconds: 1),
@@ -147,6 +173,28 @@ class StudyRoomBarBloc extends Bloc<StudyRoomBarEvent, StudyRoomBarState> {
     _scheduledFor = null;
     final cancel = _cancelAlert;
     if (cancel != null) unawaited(cancel(slot: TimerAlertSlot.studyRoom));
+  }
+
+  /// El canal en directo avisa de un cambio en una sala: si es la mía, se lee.
+  Future<void> _onLiveChanged(
+    StudyRoomBarLiveChanged event,
+    Emitter<StudyRoomBarState> emit,
+  ) async {
+    final id = state.roomId;
+    if (id == null || _asking) return;
+    _asking = true;
+    final result = await _get(id);
+    _asking = false;
+    if (state.roomId != id) return;
+    switch (result) {
+      case Success(:final value):
+        _apply(value, value.serverTime.difference(_now()), emit);
+      case Failure(:final error)
+          when error == const AppError.business('STUDY_ROOM_NOT_FOUND'):
+        _clear(emit);
+      case Failure():
+        break;
+    }
   }
 
   void _onCleared(StudyRoomBarCleared event, Emitter<StudyRoomBarState> emit) {

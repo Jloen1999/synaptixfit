@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -16,8 +17,11 @@ import '../../widgets/together_widgets.dart';
 import '../../widgets/workout_together_progress.dart';
 import '../bloc/workout_together_bloc.dart';
 
-/// «Entrenamos juntos» (ADR 0044): quién está, quién lleva cada ejercicio y,
-/// al terminar, la tarjeta conjunta. «Empezar» abre la sesión de siempre.
+/// «Entrenamos juntos» (ADR 0044 y 0047): pantalla de espera con quién está
+/// dentro y un único «Empezar» que puede pulsar cualquiera y empieza para
+/// todos; si lo pulsa otra persona, se entra sola en la sesión en vivo de
+/// siempre. Después, quién lleva cada ejercicio y, al terminar, la tarjeta
+/// conjunta.
 class WorkoutTogetherPage extends StatelessWidget {
   const WorkoutTogetherPage({super.key, required this.workoutId});
 
@@ -51,7 +55,7 @@ class _WorkoutView extends StatelessWidget with ErrorsMessageMixin {
         if (bloc.state.workout?.host.id == blockedId) {
           Navigator.of(context).maybePop();
         } else {
-          bloc.add(const WorkoutTogetherEvent.polled());
+          bloc.add(const WorkoutTogetherEvent.polled(live: true));
         }
       },
       child: BlocConsumer<WorkoutTogetherBloc, WorkoutTogetherState>(
@@ -64,15 +68,26 @@ class _WorkoutView extends StatelessWidget with ErrorsMessageMixin {
           if (state.actionError case final error?) {
             context.showSnack(errorMessage(context, error));
           } else if (state.openSession case final sessionId?) {
+            // Empezó otra persona: se dice al lector una vez y se entra.
             context.push(SocialExternalPaths.trainingSession(sessionId));
+            // Se dice cuando la sesión ya está en pantalla: antes, el cambio de
+            // pantalla cortaría el anuncio.
+            if (state.startedByOther) {
+              final view = View.of(context);
+              final direction = Directionality.of(context);
+              final message = l10n.togetherStartedAnnounce(
+                togetherName(context, state.workout?.startedBy?.name ?? ''),
+              );
+              Future<void>.delayed(
+                const Duration(milliseconds: 800),
+                () => SemanticsService.sendAnnouncement(view, message, direction),
+              );
+            }
           } else if (state.left) {
-            final navigator = Navigator.of(context);
             context.showUndoSnack(
               l10n.togetherWorkoutLeft,
               onUndo: () => bloc.add(const WorkoutTogetherEvent.joined()),
-              onCommit: () {
-                if (navigator.mounted && navigator.canPop()) navigator.pop();
-              },
+              onCommit: () => context.leaveAfterUndo(SocialPaths.together),
             );
           } else if (state.closed) {
             context.showSnack(l10n.togetherDeclined);
@@ -145,6 +160,17 @@ class _Body extends StatelessWidget {
                       ),
                 style: context.textStyles.bodyLarge,
               ),
+              // A la vez (ADR 0047): antes de empezar se explica que es para
+              // todos; después, que ya está en marcha.
+              if (w.today && (joined || w.invitation) && !finished) ...[
+                const SizedBox(height: TokensSpacing.xs),
+                Text(
+                  w.started ? l10n.togetherRunning : l10n.togetherWaitingStart,
+                  style: context.textStyles.bodyMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
               const SizedBox(height: TokensSpacing.m),
               if (finished && w.myMinutes != null)
                 WorkoutTogetherSummary(workout: w)

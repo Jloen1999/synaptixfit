@@ -23,6 +23,7 @@ import com.synaptixfit.domain.model.together.MemberStatus;
 import com.synaptixfit.domain.model.together.StudyRoom;
 import com.synaptixfit.domain.model.together.StudyRoomLength;
 import com.synaptixfit.domain.model.together.StudyRoomReaction;
+import com.synaptixfit.domain.model.together.TogetherLiveChange;
 import com.synaptixfit.domain.model.together.WorkoutTogether;
 import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
@@ -64,6 +65,8 @@ class StudyRoomServiceTest {
     private final Map<UUID, Set<UUID>> ownSubjects = new HashMap<>();
     private final List<RecordFocusSessionUseCase.Command> recorded = new ArrayList<>();
     private final List<CreateNotificationUseCase.Command> sent = new ArrayList<>();
+    /** Avisos en directo (ADR 0047). */
+    private final List<TogetherLiveChange> live = new ArrayList<>();
     private final InMemoryStudyRooms rooms = new InMemoryStudyRooms();
 
     private StudyRoomService service;
@@ -83,7 +86,7 @@ class StudyRoomServiceTest {
         TogetherNotifier notifier = new TogetherNotifier(c -> {
             sent.add(c);
             return Optional.empty();
-        }, userPort());
+        }, userPort(), live::add);
         RecordFocusSessionUseCase record = c -> {
             recorded.add(c);
             return new RecordFocusSessionUseCase.Result(null, null);
@@ -117,6 +120,33 @@ class StudyRoomServiceTest {
             assertThat(c.message().code()).isEqualTo(NotificationMessage.Code.STUDY_ROOM_INVITED);
             assertThat(c.actionUrl()).isEqualTo("/social/together/study/" + room.id());
         });
+    }
+
+    @Test
+    void enteringStartingReactingAndLeavingAreAnnouncedLiveOnlyToThoseInside() {
+        User stranger = user("Desconocida");
+        StudyRoomView room = create(null, ana, luis);
+        assertThat(live).singleElement().satisfies(c -> {
+            assertThat(c.topic()).isEqualTo(TogetherLiveChange.Topic.TOGETHER);
+            assertThat(c.recipients()).containsExactlyInAnyOrder(me.id(), ana.id(), luis.id());
+        });
+        live.clear();
+        service.join(ana.id(), room.id());
+        service.start(ana.id(), room.id());
+        service.react(me.id(), room.id(), StudyRoomReaction.CLAP);
+        service.decline(luis.id(), room.id());
+        service.leave(ana.id(), room.id());
+        assertThat(live).hasSize(5).allSatisfy(c -> {
+            assertThat(c.topic()).isEqualTo(TogetherLiveChange.Topic.STUDY_ROOM);
+            assertThat(c.id()).isEqualTo(room.id());
+            assertThat(c.recipients()).doesNotContain(stranger.id());
+        });
+        // Quien dice que no o sale también se entera (sus otros móviles); después, ya no.
+        assertThat(live.get(3).recipients()).contains(luis.id());
+        assertThat(live.get(4).recipients()).containsExactlyInAnyOrder(me.id(), ana.id());
+        live.clear();
+        service.react(me.id(), room.id(), StudyRoomReaction.FIRE);
+        assertThat(live).singleElement().satisfies(c -> assertThat(c.recipients()).containsExactly(me.id()));
     }
 
     @Test

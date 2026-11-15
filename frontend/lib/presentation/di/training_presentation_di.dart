@@ -151,6 +151,10 @@ void registerTrainingPresentation(GetIt getIt) {
         getEntry: getIt(),
         getRoutine: getIt(),
         getHighlights: getIt(),
+        correct: getIt(),
+        unmark: getIt(),
+        delete: getIt(),
+        getAccount: getIt(),
       ),
     )
     ..registerFactory(

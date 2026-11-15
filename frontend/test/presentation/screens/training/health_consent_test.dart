@@ -144,7 +144,10 @@ void main() {
       expect(find.byType(HealthConsentSheet), findsOneWidget);
       await tester.tap(find.text('Dar permiso y seguir'));
       await tester.pump();
-      expect(find.text('Marca la casilla para dar tu permiso.'), findsOneWidget);
+      expect(
+        find.text('Marca la casilla para dar tu permiso.'),
+        findsOneWidget,
+      );
       expect(fake.given, isFalse);
 
       await tester.tap(find.byType(CheckboxListTile));
