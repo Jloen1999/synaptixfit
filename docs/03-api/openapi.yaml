@@ -192,6 +192,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/SubmitCheckInResponse"
+  /api/v1/together/study-rooms/{roomId}/times:
+    put:
+      tags:
+      - Social - Together
+      operationId: times
+      parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyRoomTimesRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyRoomResponse"
   /api/v1/together/study-rooms/{roomId}/subject:
     put:
       tags:
@@ -8513,12 +8538,18 @@ components:
         xpAwarded:
           type: integer
           format: int32
-    StudyRoomSubjectRequest:
+    StudyRoomTimesRequest:
       type: object
       properties:
-        subjectId:
-          type: string
-          format: uuid
+        focusMinutes:
+          type: integer
+          format: int32
+        breakMinutes:
+          type: integer
+          format: int32
+      required:
+      - breakMinutes
+      - focusMinutes
     PersonResponse:
       type: object
       properties:
@@ -8558,11 +8589,6 @@ components:
           format: uuid
         creator:
           $ref: "#/components/schemas/PersonResponse"
-        length:
-          type: string
-          enum:
-          - SHORT
-          - LONG
         focusMinutes:
           type: integer
           format: int32
@@ -8609,6 +8635,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StudyRoomMember"
+    StudyRoomSubjectRequest:
+      type: object
+      properties:
+        subjectId:
+          type: string
+          format: uuid
     StudyRoomReactionRequest:
       type: object
       properties:
@@ -11245,11 +11277,14 @@ components:
     CreateStudyRoomRequest:
       type: object
       properties:
+        focusMinutes:
+          type: integer
+          format: int32
+        breakMinutes:
+          type: integer
+          format: int32
         length:
           type: string
-          enum:
-          - SHORT
-          - LONG
         rounds:
           type: integer
           format: int32
@@ -11268,7 +11303,6 @@ components:
           format: uuid
       required:
       - friendIds
-      - length
       - rounds
     FriendStreakRequest:
       type: object
@@ -15224,14 +15258,18 @@ components:
         timeout:
           type: integer
           format: int64
-    StudyRoomLengthResponse:
+    RangeResponse:
       type: object
       properties:
-        length:
-          type: string
-          enum:
-          - SHORT
-          - LONG
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+    StudyRoomPresetResponse:
+      type: object
+      properties:
         focusMinutes:
           type: integer
           format: int32
@@ -15256,10 +15294,14 @@ components:
         studyRoomRounds:
           type: integer
           format: int32
-        studyRoomLengths:
+        studyRoomFocusMinutes:
+          $ref: "#/components/schemas/RangeResponse"
+        studyRoomBreakMinutes:
+          $ref: "#/components/schemas/RangeResponse"
+        studyRoomPresets:
           type: array
           items:
-            $ref: "#/components/schemas/StudyRoomLengthResponse"
+            $ref: "#/components/schemas/StudyRoomPresetResponse"
     ChallengeTemplateResponse:
       type: object
       properties:
@@ -16111,6 +16153,18 @@ components:
           type: integer
           format: int32
         maxFocusMinutes:
+          type: integer
+          format: int32
+        minShortBreakMinutes:
+          type: integer
+          format: int32
+        maxShortBreakMinutes:
+          type: integer
+          format: int32
+        minLongBreakMinutes:
+          type: integer
+          format: int32
+        maxLongBreakMinutes:
           type: integer
           format: int32
     PageResponseDeadlineResponse:

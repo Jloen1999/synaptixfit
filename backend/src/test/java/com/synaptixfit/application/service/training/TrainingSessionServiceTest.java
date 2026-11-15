@@ -186,6 +186,9 @@ class TrainingSessionServiceTest {
         assertThat(result.session().calories()).isCloseTo(expectedKcal, org.assertj.core.data.Offset.offset(0.1));
         assertThat(routine.day(day1.id()).status()).isEqualTo(ProgressStatus.COMPLETED);
         assertThat(routine.weeks().getFirst().status()).isEqualTo(ProgressStatus.IN_PROGRESS);
+        // La duración real queda recordada con el instante de la sesión (ADR 0048).
+        assertThat(routine.plannedExercise(plannedId).recentDurations()).singleElement()
+                .satisfies(d -> assertThat(d.seconds()).isEqualTo(600));
         assertThat(routine.plannedExercise(plannedId).realDurationSeconds()).isEqualTo(600);
         assertThat(events).singleElement().isInstanceOfSatisfying(TrainingSessionCompletionChanged.class, e -> {
             assertThat(e.completed()).isTrue();

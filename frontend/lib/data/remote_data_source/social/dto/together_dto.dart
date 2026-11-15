@@ -286,7 +286,6 @@ abstract class StudyRoomDto with _$StudyRoomDto {
   const factory StudyRoomDto({
     required String id,
     required TogetherPersonDto creator,
-    String? length,
     @Default(25) int focusMinutes,
     @Default(5) int breakMinutes,
     @Default(1) int rounds,
@@ -309,7 +308,6 @@ abstract class StudyRoomDto with _$StudyRoomDto {
   StudyRoom toDomain() => StudyRoom(
     id: id,
     creator: creator.toDomain(),
-    length: StudyRoomLength.fromApi(length),
     focusMinutes: focusMinutes,
     breakMinutes: breakMinutes,
     rounds: rounds,
@@ -325,25 +323,35 @@ abstract class StudyRoomDto with _$StudyRoomDto {
   );
 }
 
-/// `TogetherLimitsResponse.StudyRoomLengthResponse`.
+/// `TogetherLimitsResponse.StudyRoomPresetResponse`.
 @freezed
-abstract class StudyRoomLengthDto with _$StudyRoomLengthDto {
-  const factory StudyRoomLengthDto({
-    String? length,
+abstract class StudyRoomPresetDto with _$StudyRoomPresetDto {
+  const factory StudyRoomPresetDto({
     required int focusMinutes,
     required int breakMinutes,
-  }) = _StudyRoomLengthDto;
+  }) = _StudyRoomPresetDto;
 
-  const StudyRoomLengthDto._();
+  const StudyRoomPresetDto._();
 
-  factory StudyRoomLengthDto.fromJson(Map<String, dynamic> json) =>
-      _$StudyRoomLengthDtoFromJson(json);
+  factory StudyRoomPresetDto.fromJson(Map<String, dynamic> json) =>
+      _$StudyRoomPresetDtoFromJson(json);
 
-  StudyRoomLengthOption toDomain() => StudyRoomLengthOption(
-    length: StudyRoomLength.fromApi(length),
-    focusMinutes: focusMinutes,
-    breakMinutes: breakMinutes,
-  );
+  StudyRoomTimes toDomain() =>
+      StudyRoomTimes(focusMinutes: focusMinutes, breakMinutes: breakMinutes);
+}
+
+/// `TogetherLimitsResponse.RangeResponse`.
+@freezed
+abstract class MinutesRangeDto with _$MinutesRangeDto {
+  const factory MinutesRangeDto({required int min, required int max}) =
+      _MinutesRangeDto;
+
+  const MinutesRangeDto._();
+
+  factory MinutesRangeDto.fromJson(Map<String, dynamic> json) =>
+      _$MinutesRangeDtoFromJson(json);
+
+  MinutesRange toDomain() => MinutesRange(min: min, max: max);
 }
 
 /// `TogetherLimitsResponse` (ADR 0045).
@@ -355,7 +363,9 @@ abstract class TogetherLimitsDto with _$TogetherLimitsDto {
     required int studyRoomFriends,
     required int friendStreaks,
     required int studyRoomRounds,
-    @Default(<StudyRoomLengthDto>[]) List<StudyRoomLengthDto> studyRoomLengths,
+    MinutesRangeDto? studyRoomFocusMinutes,
+    MinutesRangeDto? studyRoomBreakMinutes,
+    @Default(<StudyRoomPresetDto>[]) List<StudyRoomPresetDto> studyRoomPresets,
   }) = _TogetherLimitsDto;
 
   const TogetherLimitsDto._();
@@ -369,7 +379,14 @@ abstract class TogetherLimitsDto with _$TogetherLimitsDto {
     studyRoomFriends: studyRoomFriends,
     friendStreaks: friendStreaks,
     studyRoomRounds: studyRoomRounds,
-    studyRoomLengths: [for (final l in studyRoomLengths) l.toDomain()],
+    // Un servidor anterior al ADR 0053 no los manda: valen los que tenía.
+    studyRoomFocusMinutes:
+        studyRoomFocusMinutes?.toDomain() ??
+        const MinutesRange(min: 15, max: 90),
+    studyRoomBreakMinutes:
+        studyRoomBreakMinutes?.toDomain() ??
+        const MinutesRange(min: 1, max: 30),
+    studyRoomPresets: [for (final p in studyRoomPresets) p.toDomain()],
   );
 }
 

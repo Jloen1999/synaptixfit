@@ -8,6 +8,7 @@ import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/planner/active_focus_timer.dart';
 import 'package:synaptixfit/domain/models/planner/focus.dart';
 import 'package:synaptixfit/domain/models/planner/planner_options.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/reminders/timer_alert.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/cancel_timer_alert_use_case.dart';
@@ -16,6 +17,8 @@ import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/clear_active_focus_timer_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_focus_plan_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/load_active_focus_timer_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/load_focus_break_choice_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/save_focus_break_choice_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_focus_stats_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/record_focus_session_use_case.dart';
@@ -49,6 +52,14 @@ class _Subjects extends Mock implements GetPlannerSubjectsUseCaseContract {}
 
 class _SetCompletion extends Mock
     implements SetBlockCompletionUseCaseContract {}
+
+/// Elección de descansos guardada en el teléfono (en memoria).
+class _BreakStore implements LoadFocusBreakChoiceUseCaseContract {
+  FocusBreakChoice saved = const FocusBreakChoice();
+
+  @override
+  Future<AppResult<FocusBreakChoice>> call() async => Success(saved);
+}
 
 void main() {
   setUpAll(registerPlannerFallbacks);
@@ -412,6 +423,10 @@ void main() {
       limitedByFatigue: true,
       minFocusMinutes: 15,
       maxFocusMinutes: 90,
+      minShortBreakMinutes: 1,
+      maxShortBreakMinutes: 30,
+      minLongBreakMinutes: 5,
+      maxLongBreakMinutes: 60,
     );
 
     setUp(
@@ -784,4 +799,102 @@ void main() {
       ),
     );
   });
+
+  group('descansos a elegir (ADR 0053)', () {
+    const plan = FocusPlan(
+      focusMinutes: 52,
+      shortBreakMinutes: 17,
+      longBreakMinutes: 30,
+      cyclesBeforeLongBreak: 3,
+      minFocusMinutes: 15,
+      maxFocusMinutes: 90,
+      minShortBreakMinutes: 1,
+      maxShortBreakMinutes: 30,
+      minLongBreakMinutes: 5,
+      maxLongBreakMinutes: 60,
+    );
+
+    setUp(
+      () => when(() => getPlan()).thenAnswer((_) async => const Success(plan)),
+    );
+
+    PomodoroBloc withStore(_BreakStore store) => PomodoroBloc(
+      recordSession: record,
+      getStats: getStats,
+      getAccount: getAccount,
+      getPlan: getPlan,
+      loadBreakChoice: store,
+      saveBreakChoice: _SaveAdapter(store),
+      now: () => clock,
+      ticker: () => ticks.stream,
+    );
+
+    test('sin elección, los recomendados de hoy', () async {
+      final bloc = withStore(_BreakStore())..add(const PomodoroEvent.started());
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      expect(bloc.config.shortBreakMinutes, 17);
+      expect(bloc.config.longBreakMinutes, 30);
+      await bloc.close();
+    });
+
+    test(
+      'el descanso elegido vale ya, se recuerda y se usa al volver',
+      () async {
+        final store = _BreakStore();
+        final bloc = withStore(store)..add(const PomodoroEvent.started());
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        bloc.add(
+          const PomodoroEvent.breaksChosen(
+            FocusBreakChoice(shortBreakMinutes: 10),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        expect(bloc.config.shortBreakMinutes, 10);
+        // El largo sigue siendo el recomendado.
+        expect(bloc.config.longBreakMinutes, 30);
+        expect(store.saved, const FocusBreakChoice(shortBreakMinutes: 10));
+        // Saltar al descanso: dura lo elegido.
+        bloc
+          ..add(const PomodoroEvent.startPressed())
+          ..add(const PomodoroEvent.skipPressed());
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        expect(bloc.state.phase, FocusPhase.shortBreak);
+        expect(bloc.state.totalSeconds, 10 * 60);
+        await bloc.close();
+
+        // Otro día (bloc nuevo): se recuerda la elección.
+        final again = withStore(store)..add(const PomodoroEvent.started());
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        expect(again.config.shortBreakMinutes, 10);
+        expect(again.state.breakChoice.shortBreakMinutes, 10);
+        await again.close();
+      },
+    );
+
+    test('una elección fuera de los límites del servidor se ajusta', () async {
+      final store = _BreakStore()
+        ..saved = const FocusBreakChoice(
+          shortBreakMinutes: 45,
+          longBreakMinutes: 2,
+        );
+      final bloc = withStore(store)..add(const PomodoroEvent.started());
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      expect(bloc.config.shortBreakMinutes, plan.maxShortBreakMinutes);
+      expect(bloc.config.longBreakMinutes, plan.minLongBreakMinutes);
+      await bloc.close();
+    });
+  });
+}
+
+/// Guarda en [_BreakStore] con la firma del caso de uso de guardar.
+class _SaveAdapter implements SaveFocusBreakChoiceUseCaseContract {
+  _SaveAdapter(this.store);
+
+  final _BreakStore store;
+
+  @override
+  Future<AppResult<Unit>> call(FocusBreakChoice choice) async {
+    store.saved = choice;
+    return const Success(unit);
+  }
 }

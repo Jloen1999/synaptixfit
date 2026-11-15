@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +18,7 @@ import '../../../auth/session/bloc/session_bloc.dart';
 import '../../planner_routes.dart';
 import '../../widgets/pomodoro_ring_painter.dart';
 import '../bloc/pomodoro_bloc.dart';
+import 'pomodoro_breaks_sheet.dart';
 
 /// Temporizador Pomodoro (`/planner/pomodoro`). Con [subjectId]/[blockId] las
 /// fases cuentan para esa asignatura o bloque; [title] dice qué se estudia.
@@ -291,9 +295,15 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                       minutes: config.focusMinutes,
                       min: config.minFocusMinutes,
                       max: config.maxFocusMinutes,
-                      breakMinutes: config.shortBreakMinutes,
                       limitedByFatigue: state.plan?.limitedByFatigue ?? false,
                     ),
+                  ],
+                  // Los descansos se eligen antes de empezar cada fase
+                  // (ADR 0053); «Pasar al descanso» y «Saltar» siguen igual.
+                  if (state.status == PomodoroStatus.idle &&
+                      state.plan != null) ...[
+                    const SizedBox(height: TokensSpacing.s),
+                    _BreaksRow(plan: state.plan!, config: config),
                   ],
                   const SizedBox(height: TokensSpacing.l),
                   _Controls(state: state, mainControl: mainControl),
@@ -498,7 +508,14 @@ class _Controls extends StatelessWidget {
           const SizedBox(height: TokensSpacing.s),
           TextButton.icon(
             onPressed: () => context.push(
-              PlannerExternalPaths.studyWithFriends(subjectId: state.subjectId),
+              PlannerExternalPaths.studyWithFriends(
+                subjectId: state.subjectId,
+                focusMinutes: context.read<PomodoroBloc>().config.focusMinutes,
+                breakMinutes: context
+                    .read<PomodoroBloc>()
+                    .config
+                    .shortBreakMinutes,
+              ),
             ),
             icon: const Icon(AppIcons.friends),
             label: Text(l10n.plannerPomodoroWithFriends),
@@ -672,14 +689,12 @@ class _DurationAdjuster extends StatelessWidget {
     required this.minutes,
     required this.min,
     required this.max,
-    required this.breakMinutes,
     required this.limitedByFatigue,
   });
 
   final int minutes;
   final int min;
   final int max;
-  final int breakMinutes;
   final bool limitedByFatigue;
 
   static const _step = 5;
@@ -702,11 +717,72 @@ class _DurationAdjuster extends StatelessWidget {
         const SizedBox(height: TokensSpacing.xs),
         Text(
           limitedByFatigue
-              ? l10n.plannerPomodoroPlanFatigue(breakMinutes)
-              : l10n.plannerPomodoroPlanHint(breakMinutes),
+              ? l10n.plannerPomodoroFocusFatigue
+              : l10n.plannerPomodoroFocusRecommended,
           textAlign: TextAlign.center,
           style: context.textStyles.bodySmall?.copyWith(
             color: context.colors.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// «Descansos: 10 min · largo 30 min» con «Cambiar», que abre la hoja para
+/// elegirlos (ADR 0053). La elección se recuerda en el teléfono.
+class _BreaksRow extends StatelessWidget {
+  const _BreaksRow({required this.plan, required this.config});
+
+  final FocusPlan plan;
+  final PomodoroConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final bloc = context.read<PomodoroBloc>();
+    return Row(
+      children: [
+        Icon(
+          AppIcons.breakPhase,
+          size: TokensSize.iconS,
+          color: context.colors.onSurfaceVariant,
+        ),
+        const SizedBox(width: TokensSpacing.xs),
+        Expanded(
+          child: Text(
+            l10n.plannerPomodoroBreaksSummary(
+              config.shortBreakMinutes,
+              config.longBreakMinutes,
+            ),
+            style: context.textStyles.bodyMedium,
+          ),
+        ),
+        TextButton(
+          onPressed: () async {
+            final choice = await showPomodoroBreaksSheet(
+              context,
+              plan: plan,
+              shortBreakMinutes: config.shortBreakMinutes,
+              longBreakMinutes: config.longBreakMinutes,
+            );
+            if (choice == null || bloc.isClosed || !context.mounted) return;
+            bloc.add(PomodoroEvent.breaksChosen(choice));
+            // El resumen cambia en silencio: se dice con los minutos nuevos.
+            unawaited(
+              SemanticsService.sendAnnouncement(
+                View.of(context),
+                l10n.plannerPomodoroBreaksSaved(
+                  choice.shortFor(plan),
+                  choice.longFor(plan),
+                ),
+                Directionality.of(context),
+              ),
+            );
+          },
+          child: Text(
+            l10n.plannerPomodoroBreaksChange,
+            semanticsLabel: l10n.plannerPomodoroBreaksChangeSpoken,
           ),
         ),
       ],

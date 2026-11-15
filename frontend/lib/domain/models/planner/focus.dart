@@ -75,5 +75,32 @@ abstract class FocusPlan with _$FocusPlan {
     /// Límites para ajustar el bloque a mano.
     required int minFocusMinutes,
     required int maxFocusMinutes,
+
+    /// Límites para elegir a mano el descanso corto y el largo (ADR 0053).
+    required int minShortBreakMinutes,
+    required int maxShortBreakMinutes,
+    required int minLongBreakMinutes,
+    required int maxLongBreakMinutes,
   }) = _FocusPlan;
+}
+
+/// Descansos del Pomodoro que eligió la persona la última vez (ADR 0053). Nulo
+/// = el recomendado del día ([FocusPlan]), que puede cambiar cada día.
+@freezed
+abstract class FocusBreakChoice with _$FocusBreakChoice {
+  const factory FocusBreakChoice({
+    int? shortBreakMinutes,
+    int? longBreakMinutes,
+  }) = _FocusBreakChoice;
+
+  const FocusBreakChoice._();
+
+  /// Descanso corto que vale hoy: el elegido, dentro de los límites del
+  /// [plan]; si no se eligió, el recomendado.
+  int shortFor(FocusPlan plan) => (shortBreakMinutes ?? plan.shortBreakMinutes)
+      .clamp(plan.minShortBreakMinutes, plan.maxShortBreakMinutes);
+
+  /// Descanso largo que vale hoy (ver [shortFor]).
+  int longFor(FocusPlan plan) => (longBreakMinutes ?? plan.longBreakMinutes)
+      .clamp(plan.minLongBreakMinutes, plan.maxLongBreakMinutes);
 }

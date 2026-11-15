@@ -309,12 +309,14 @@ class _LiveViewState extends State<_LiveView> {
     Directionality.of(context),
   );
 
-  /// Tras marcar la serie [set] de [e]: si arranca su descanso, «Deshacer» va
-  /// en el propio panel del descanso (siempre a la vista); si no, en el aviso.
+  /// Tras marcar la serie [set] de [e]: si arranca su descanso, no hay
+  /// «Deshacer» (ADR 0053: el panel del descanso va al grano; si se marcó sin
+  /// querer, se quita con el ✓ verde de la fila); si no, va en el aviso.
   /// Deshacer la desmarca (también si aún no ha subido).
   void _offerUndo(PlannedExercise e, int set) {
     if (e.parameters.restSeconds > 0) {
-      // Sin aviso flotante: lo dice al lector una sola vez.
+      // Sin aviso flotante: el panel ya dice «Serie N hecha»; se dice al
+      // lector una sola vez.
       _announceLogged(set);
       return;
     }
@@ -545,9 +547,9 @@ class _LiveViewState extends State<_LiveView> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 actions: [
-                  // En curso el tiempo va bajo la barra con su explicación
-                  // (`LiveClockSummary`), igual en la sesión libre y en la de
-                  // rutina; aquí solo el total al terminar.
+                  // En curso, el reloj de las series y los minutos de entreno
+                  // van bajo la barra (`LiveClockSummary`), igual en la sesión
+                  // libre y en la de rutina; aquí solo el total al terminar.
                   if (state.status == LiveStatus.ready && state.completed)
                     Semantics(
                       label: l10n.trainingTotalTime(

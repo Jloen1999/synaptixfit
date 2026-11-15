@@ -2,8 +2,8 @@ package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.togeth
 
 import com.synaptixfit.domain.model.together.MemberStatus;
 import com.synaptixfit.domain.model.together.StudyRoom;
-import com.synaptixfit.domain.model.together.StudyRoomLength;
 import com.synaptixfit.domain.model.together.StudyRoomReaction;
+import com.synaptixfit.domain.model.together.StudyRoomTimes;
 import com.synaptixfit.domain.model.together.TogetherMember;
 import com.synaptixfit.domain.model.together.TogetherMembers;
 import com.synaptixfit.domain.port.output.together.StudyRoomRepositoryPort;
@@ -19,8 +19,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
 /**
- * Implementa {@link StudyRoomRepositoryPort} sobre {@code salas_estudio} y {@code salas_estudio_miembros} (V1065,
- * ADR 0045). La asignatura, la última reacción y la hora en que entró cada persona van en su fila de miembro.
+ * Implementa {@link StudyRoomRepositoryPort} sobre {@code salas_estudio} y {@code salas_estudio_miembros} (V1065 y
+ * V1071, ADR 0045 y 0053). La asignatura, la última reacción y la hora en que entró cada persona van en su fila de miembro.
  */
 @Component
 public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
@@ -31,17 +31,18 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
         this.jdbc = jdbc;
     }
 
-    private record Head(UUID id, UUID creatorId, StudyRoomLength length, int rounds, Instant startedAt,
+    private record Head(UUID id, UUID creatorId, StudyRoomTimes times, int rounds, Instant startedAt,
                         int creditedRounds, Instant createdAt) {
     }
 
     @Override
     public Optional<StudyRoom> findById(UUID id) {
-        return jdbc.sql("SELECT id, creador_id, duracion, rondas, inicio, rondas_contadas, creado_en"
+        return jdbc.sql("SELECT id, creador_id, minutos_concentracion, minutos_descanso, rondas, inicio, rondas_contadas, creado_en"
                         + " FROM salas_estudio WHERE id = :id")
                 .param("id", id)
                 .query((rs, n) -> new Head(rs.getObject("id", UUID.class), rs.getObject("creador_id", UUID.class),
-                        StudyRoomLength.valueOf(rs.getString("duracion")), rs.getInt("rondas"),
+                        new StudyRoomTimes(rs.getInt("minutos_concentracion"), rs.getInt("minutos_descanso")),
+                        rs.getInt("rondas"),
                         JdbcValues.instant(rs, "inicio"), rs.getInt("rondas_contadas"),
                         JdbcValues.instant(rs, "creado_en")))
                 .optional()
@@ -93,6 +94,15 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
     public StudyRoom save(StudyRoom room) {
         boolean exists = jdbc.sql("SELECT count(*) FROM salas_estudio WHERE id = :id").param("id", room.id())
                 .query(Long.class).single() > 0;
+        if (exists) {
+            // Los minutos solo cambian mientras espera; la hora de inicio se pone una vez y no se pisa.
+            jdbc.sql("UPDATE salas_estudio SET minutos_concentracion = :focus, minutos_descanso = :break"
+                            + " WHERE id = :id AND inicio IS NULL")
+                    .param("focus", room.times().focusMinutes())
+                    .param("break", room.times().breakMinutes())
+                    .param("id", room.id())
+                    .update();
+        }
         if (exists && room.startedAt() != null) {
             jdbc.sql("UPDATE salas_estudio SET inicio = :started WHERE id = :id AND inicio IS NULL")
                     .param("started", JdbcValues.param(room.startedAt()))
@@ -100,11 +110,13 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
                     .update();
         }
         if (!exists) {
-            jdbc.sql("INSERT INTO salas_estudio (id, creador_id, duracion, rondas, inicio, rondas_contadas, creado_en)"
-                            + " VALUES (:id, :creator, :length, :rounds, :started, :credited, :created)")
+            jdbc.sql("INSERT INTO salas_estudio (id, creador_id, minutos_concentracion, minutos_descanso, rondas, inicio,"
+                            + " rondas_contadas, creado_en)"
+                            + " VALUES (:id, :creator, :focus, :break, :rounds, :started, :credited, :created)")
                     .param("id", room.id())
                     .param("creator", room.creatorId())
-                    .param("length", room.length().name())
+                    .param("focus", room.times().focusMinutes())
+                    .param("break", room.times().breakMinutes())
                     .param("rounds", room.rounds())
                     .param("started", JdbcValues.param(room.startedAt()))
                     .param("credited", room.creditedRounds())
@@ -176,7 +188,7 @@ public class StudyRoomJdbcAdapter implements StudyRoomRepositoryPort {
                 })
                 .list()
                 .forEach(members::add);
-        return new StudyRoom(h.id(), h.creatorId(), h.length(), h.rounds(), h.createdAt(), h.startedAt(),
+        return new StudyRoom(h.id(), h.creatorId(), h.times(), h.rounds(), h.createdAt(), h.startedAt(),
                 h.creditedRounds(), new TogetherMembers(members), subjects, reactions, entered);
     }
 }

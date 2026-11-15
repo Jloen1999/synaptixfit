@@ -24,7 +24,6 @@ StudyRoom _room({
 }) => StudyRoom(
   id: 'r1',
   creator: const TogetherPerson(id: 'ana', name: 'Ana'),
-  length: StudyRoomLength.short,
   phase: phase,
   round: round,
   rounds: 2,

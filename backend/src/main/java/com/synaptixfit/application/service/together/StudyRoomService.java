@@ -1,6 +1,7 @@
 package com.synaptixfit.application.service.together;
 
 import com.synaptixfit.application.port.input.planner.RecordFocusSessionUseCase;
+import com.synaptixfit.application.port.input.together.ChangeStudyRoomTimesUseCase;
 import com.synaptixfit.application.port.input.together.ChooseStudyRoomSubjectUseCase;
 import com.synaptixfit.application.port.input.together.CreateStudyRoomUseCase;
 import com.synaptixfit.application.port.input.together.CreditStudyRoomRoundsUseCase;
@@ -20,6 +21,7 @@ import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.together.MemberStatus;
 import com.synaptixfit.domain.model.together.StudyRoom;
 import com.synaptixfit.domain.model.together.StudyRoomReaction;
+import com.synaptixfit.domain.model.together.StudyRoomTimes;
 import com.synaptixfit.domain.model.together.TogetherLiveChange;
 import com.synaptixfit.domain.model.together.TogetherMember;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
@@ -35,15 +37,17 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 /**
- * «Estudiamos juntos» (ADR 0045): crear la sala, aceptar, decir que no, salir, empezar, elegir asignatura y
- * reaccionar. Cada ronda terminada se apunta a cada persona de dentro con {@link RecordFocusSessionUseCase}, el
+ * «Estudiamos juntos» (ADR 0045 y 0053): crear la sala, aceptar, decir que no, salir, cambiar los minutos antes de
+ * empezar, empezar, elegir asignatura y reaccionar. Cada ronda terminada se apunta a cada persona de dentro con {@link RecordFocusSessionUseCase}, el
  * mismo registro que el Pomodoro de siempre: suma racha, retos, «Estudia y muévete» y lo de «Con amigos», con la XP
- * normal y su tope diario (sin XP extra por estar en grupo). Entrar, salir, empezar y reaccionar se avisan en directo a
+ * normal y su tope diario (sin XP extra por estar en grupo). Entrar, salir, cambiar los minutos, empezar y reaccionar
+ * se avisan en directo a
  * quien esté en la sala (ADR 0047); el cambio de fase no, porque lo calcula cada móvil con la hora del servidor.
  */
 public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUseCase, JoinStudyRoomUseCase,
         DeclineStudyRoomUseCase, LeaveStudyRoomUseCase, StartStudyRoomUseCase, ChooseStudyRoomSubjectUseCase,
-        ReactStudyRoomUseCase, FindStudyRoomsToCreditUseCase, CreditStudyRoomRoundsUseCase {
+        ReactStudyRoomUseCase, FindStudyRoomsToCreditUseCase, CreditStudyRoomRoundsUseCase,
+        ChangeStudyRoomTimesUseCase {
 
     /** Una sala vive como mucho 4 h esperando y unas 4 h en marcha: más allá no hay nada que enseñar ni contar. */
     static final Duration LOOK_BACK = Duration.ofHours(12);
@@ -75,7 +79,7 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
         ensureOwnSubject(command.userId(), command.subjectId());
         Instant now = clock.instant();
         StudyRoom room = StudyRoom.create(command.userId(), command.friendIds() == null ? Set.of()
-                : command.friendIds(), Guard.notNull(command.length(), "length"), command.rounds(),
+                : command.friendIds(), Guard.notNull(command.times(), "times"), command.rounds(),
                 command.subjectId(), now);
         people.ensureFriends(command.userId(), room.members().invitedIds());
         StudyRoom saved = rooms.save(room);
@@ -128,6 +132,16 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
         StudyRoom room = visibleForUpdate(userId, roomId);
         Instant now = clock.instant();
         room.start(userId, now);
+        StudyRoom saved = rooms.save(room);
+        changed(saved, userId);
+        return view(saved, userId, people.lookup(), now);
+    }
+
+    @Override
+    public StudyRoomView changeTimes(UUID userId, UUID roomId, StudyRoomTimes times) {
+        StudyRoom room = visibleForUpdate(userId, roomId);
+        Instant now = clock.instant();
+        room.changeTimes(userId, times, now);
         StudyRoom saved = rooms.save(room);
         changed(saved, userId);
         return view(saved, userId, people.lookup(), now);
@@ -273,8 +287,8 @@ public class StudyRoomService implements CreateStudyRoomUseCase, GetStudyRoomUse
                         m.userId().equals(viewerId)))
                 .toList();
         MemberStatus myStatus = room.members().find(viewerId).map(TogetherMember::status).orElse(MemberStatus.LEFT);
-        return new StudyRoomView(room.id(), lookup.of(room.creatorId()), room.length(), room.length().focusMinutes(),
-                room.length().breakMinutes(), room.rounds(), moment.phase(), moment.round(), moment.endsAt(),
+        return new StudyRoomView(room.id(), lookup.of(room.creatorId()), room.times().focusMinutes(),
+                room.times().breakMinutes(), room.rounds(), moment.phase(), moment.round(), moment.endsAt(),
                 room.startedAt(), room.endsAt(), now, myStatus, room.subjectOf(viewerId).orElse(null), members);
     }
 

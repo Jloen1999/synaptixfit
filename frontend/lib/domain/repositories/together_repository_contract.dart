@@ -74,7 +74,7 @@ abstract interface class TogetherRepositoryContract {
   Future<AppResult<TogetherLimits>> limits();
 
   Future<AppResult<StudyRoom>> createStudyRoom({
-    required StudyRoomLength length,
+    required StudyRoomTimes times,
     required int rounds,
     required List<String> friendIds,
     String? subjectId,
@@ -90,6 +90,12 @@ abstract interface class TogetherRepositoryContract {
   Future<AppResult<Unit>> leaveStudyRoom(String id);
 
   Future<AppResult<StudyRoom>> startStudyRoom(String id);
+
+  /// Cambia los minutos antes de empezar (cualquiera de dentro, ADR 0053).
+  Future<AppResult<StudyRoom>> changeStudyRoomTimes(
+    String id,
+    StudyRoomTimes times,
+  );
 
   /// Mi asignatura para las rondas (`null`: ninguna).
   Future<AppResult<StudyRoom>> chooseStudyRoomSubject(

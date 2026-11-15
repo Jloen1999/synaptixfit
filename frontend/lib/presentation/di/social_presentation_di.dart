@@ -149,6 +149,8 @@ void registerSocialPresentation(GetIt getIt) {
         chooseSubject: getIt(),
         react: getIt(),
         subjects: getIt(),
+        changeTimes: getIt(),
+        limits: getIt(),
         watchChanges: getIt(),
         liveConnected: getIt(),
       ),

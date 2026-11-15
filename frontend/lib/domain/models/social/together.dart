@@ -172,7 +172,6 @@ abstract class StudyRoom with _$StudyRoom {
   const factory StudyRoom({
     required String id,
     required TogetherPerson creator,
-    required StudyRoomLength length,
     @Default(25) int focusMinutes,
     @Default(5) int breakMinutes,
     @Default(1) int rounds,
@@ -202,6 +201,14 @@ abstract class StudyRoom with _$StudyRoom {
   /// Reacción que puse yo (si sigue viéndose).
   StudyRoomReaction? get myReaction =>
       members.where((m) => m.me).firstOrNull?.reaction;
+
+  /// Minutos de cada ronda.
+  StudyRoomTimes get times =>
+      StudyRoomTimes(focusMinutes: focusMinutes, breakMinutes: breakMinutes);
+
+  /// Se pueden cambiar los minutos: estoy dentro y aún no ha empezado (ADR
+  /// 0053; el servidor lo vuelve a comprobar).
+  bool get canChangeTimes => joined && phase == StudyRoomPhase.waiting;
 }
 
 /// Persona de una sala: dentro, invitada o se ha ido, con su última reacción
@@ -218,19 +225,30 @@ abstract class StudyRoomMember with _$StudyRoomMember {
   }) = _StudyRoomMember;
 }
 
-/// Una duración de ronda de sala (la manda el servidor): minutos de
-/// concentración y del descanso que le sigue.
+/// Minutos de una ronda de sala: concentración y el descanso que le sigue
+/// (ADR 0053). Los atajos (25 + 5, 50 + 10) y los límites los manda el
+/// servidor en [TogetherLimits].
 @freezed
-abstract class StudyRoomLengthOption with _$StudyRoomLengthOption {
-  const factory StudyRoomLengthOption({
-    required StudyRoomLength length,
+abstract class StudyRoomTimes with _$StudyRoomTimes {
+  const factory StudyRoomTimes({
     required int focusMinutes,
     required int breakMinutes,
-  }) = _StudyRoomLengthOption;
+  }) = _StudyRoomTimes;
 }
 
-/// Topes de «Con amigos» que manda el servidor (ADR 0045): el cliente no los
-/// repite (tampoco las duraciones de ronda).
+/// Valores permitidos, ambos incluidos.
+@freezed
+abstract class MinutesRange with _$MinutesRange {
+  const factory MinutesRange({required int min, required int max}) =
+      _MinutesRange;
+
+  const MinutesRange._();
+
+  int clamp(int value) => value.clamp(min, max);
+}
+
+/// Topes de «Con amigos» que manda el servidor (ADR 0045 y 0053): el cliente
+/// no los repite (tampoco los minutos de una ronda ni sus atajos).
 @freezed
 abstract class TogetherLimits with _$TogetherLimits {
   const factory TogetherLimits({
@@ -239,8 +257,9 @@ abstract class TogetherLimits with _$TogetherLimits {
     required int studyRoomFriends,
     required int friendStreaks,
     required int studyRoomRounds,
-    @Default(<StudyRoomLengthOption>[])
-    List<StudyRoomLengthOption> studyRoomLengths,
+    required MinutesRange studyRoomFocusMinutes,
+    required MinutesRange studyRoomBreakMinutes,
+    @Default(<StudyRoomTimes>[]) List<StudyRoomTimes> studyRoomPresets,
   }) = _TogetherLimits;
 
   const TogetherLimits._();

@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.config;
 
 import com.synaptixfit.application.port.input.notification.CreateNotificationUseCase;
 import com.synaptixfit.application.port.input.planner.RecordFocusSessionUseCase;
+import com.synaptixfit.application.port.input.together.ChangeStudyRoomTimesUseCase;
 import com.synaptixfit.application.port.input.together.ChooseStudyRoomSubjectUseCase;
 import com.synaptixfit.application.port.input.together.CreateStudyRoomUseCase;
 import com.synaptixfit.application.port.input.together.CreditStudyRoomRoundsUseCase;
@@ -349,6 +350,11 @@ public class TogetherBeanConfiguration {
     @Bean
     StartStudyRoomUseCase startStudyRoomUseCase() {
         return tx.wrap(StartStudyRoomUseCase.class, studyRoomService());
+    }
+
+    @Bean
+    ChangeStudyRoomTimesUseCase changeStudyRoomTimesUseCase() {
+        return tx.wrap(ChangeStudyRoomTimesUseCase.class, studyRoomService());
     }
 
     @Bean

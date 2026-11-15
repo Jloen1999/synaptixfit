@@ -87,11 +87,18 @@ class StudyRoomIT {
         String subjectId = JsonPath.read(subject, "$.id");
         assertThat(call(post("/api/v1/together/study-rooms"), me, "{\"length\":\"SHORT\",\"rounds\":2,"
                 + "\"friendIds\":[\"" + stranger.id() + "\"]}", 422)).contains("TOGETHER_NOT_FRIENDS");
-        String created = call(post("/api/v1/together/study-rooms"), me, "{\"length\":\"SHORT\",\"rounds\":2,"
-                + "\"friendIds\":[\"" + ana.id() + "\"],\"subjectId\":\"" + subjectId + "\"}", 201);
+        // Minutos fuera de los límites (ADR 0053): 400 con el campo.
+        call(post("/api/v1/together/study-rooms"), me, "{\"focusMinutes\":10,\"breakMinutes\":5,\"rounds\":2,"
+                + "\"friendIds\":[\"" + ana.id() + "\"]}", 400);
+        // Solo uno de los dos minutos: no se adivina el otro.
+        call(post("/api/v1/together/study-rooms"), me, "{\"focusMinutes\":40,\"rounds\":2,"
+                + "\"friendIds\":[\"" + ana.id() + "\"]}", 400);
+        String created = call(post("/api/v1/together/study-rooms"), me, "{\"focusMinutes\":40,\"breakMinutes\":8,"
+                + "\"rounds\":2,\"friendIds\":[\"" + ana.id() + "\"],\"subjectId\":\"" + subjectId + "\"}", 201);
         String roomId = JsonPath.read(created, "$.id");
         assertThat((String) JsonPath.read(created, "$.phase")).isEqualTo("WAITING");
-        assertThat((Integer) JsonPath.read(created, "$.focusMinutes")).isEqualTo(25);
+        assertThat((Integer) JsonPath.read(created, "$.focusMinutes")).isEqualTo(40);
+        assertThat((Integer) JsonPath.read(created, "$.breakMinutes")).isEqualTo(8);
         assertThat((String) JsonPath.read(created, "$.serverTime")).isNotBlank();
         call(get("/api/v1/together/study-rooms/" + roomId), stranger, null, 404);
 
@@ -100,7 +107,11 @@ class StudyRoomIT {
         String limits = call(get("/api/v1/together/limits"), ana, null, 200);
         assertThat((Integer) JsonPath.read(limits, "$.studyRoomFriends")).isEqualTo(4);
         assertThat((Integer) JsonPath.read(limits, "$.challengeFriends")).isEqualTo(24);
-        List<Integer> breaks = JsonPath.read(limits, "$.studyRoomLengths[?(@.length == 'LONG')].breakMinutes");
+        assertThat((Integer) JsonPath.read(limits, "$.studyRoomFocusMinutes.min")).isEqualTo(15);
+        assertThat((Integer) JsonPath.read(limits, "$.studyRoomFocusMinutes.max")).isEqualTo(90);
+        assertThat((Integer) JsonPath.read(limits, "$.studyRoomBreakMinutes.min")).isEqualTo(1);
+        assertThat((Integer) JsonPath.read(limits, "$.studyRoomBreakMinutes.max")).isEqualTo(30);
+        List<Integer> breaks = JsonPath.read(limits, "$.studyRoomPresets[?(@.focusMinutes == 50)].breakMinutes");
         assertThat(breaks).containsExactly(10);
         // La asignatura de los demás nunca sale.
         assertThat(overview).doesNotContain(subjectId);
@@ -108,9 +119,19 @@ class StudyRoomIT {
         call(post("/api/v1/together/study-rooms/" + roomId + "/start"), ana, null, 409);
         String joined = call(post("/api/v1/together/study-rooms/" + roomId + "/join"), ana, null, 200);
         assertThat(joined).doesNotContain(subjectId);
+        // Antes de empezar, cualquiera de dentro cambia los minutos (V1071 los guarda).
+        String retimed = call(put("/api/v1/together/study-rooms/" + roomId + "/times"), ana,
+                "{\"focusMinutes\":25,\"breakMinutes\":5}", 200);
+        assertThat((Integer) JsonPath.read(retimed, "$.focusMinutes")).isEqualTo(25);
+        assertThat(jdbc.sql("SELECT minutos_descanso FROM salas_estudio WHERE id = :id")
+                .param("id", UUID.fromString(roomId)).query(Integer.class).single()).isEqualTo(5);
+        call(put("/api/v1/together/study-rooms/" + roomId + "/times"), ana,
+                "{\"focusMinutes\":25,\"breakMinutes\":45}", 400);
         String started = call(post("/api/v1/together/study-rooms/" + roomId + "/start"), ana, null, 200);
         assertThat((String) JsonPath.read(started, "$.phase")).isEqualTo("FOCUS");
         assertThat((Integer) JsonPath.read(started, "$.round")).isEqualTo(1);
+        call(put("/api/v1/together/study-rooms/" + roomId + "/times"), ana,
+                "{\"focusMinutes\":50,\"breakMinutes\":10}", 409);
         call(put("/api/v1/together/study-rooms/" + roomId + "/reaction"), ana, "{\"reaction\":\"COFFEE\"}", 200);
         String mine = call(get("/api/v1/together/study-rooms/" + roomId), me, null, 200);
         assertThat((String) JsonPath.read(mine, "$.mySubjectId")).isEqualTo(subjectId);

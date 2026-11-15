@@ -475,22 +475,6 @@
       }
     }
   },
-  "plannerPomodoroPlanHint": "Recomendado para hoy, con pausas de {minutes} min",
-  "@plannerPomodoroPlanHint": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "plannerPomodoroPlanFatigue": "Hoy, concentración más corta por tu carga física; pausas de {minutes} min",
-  "@plannerPomodoroPlanFatigue": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
   "plannerFocusOnBlock": "Concentrarme",
   "plannerRepeatWeekly": "Repetir cada semana",
   "plannerRepeatWeeklyHint": "El mismo día y a la misma hora",
@@ -838,5 +822,52 @@
   "plannerSubjectArchived": "Asignatura archivada",
   "plannerDeadlinesSwipeHint": "Desliza una entrega a la izquierda para eliminarla.",
   "plannerPomodoroWithFriends": "Estudiar con amigos",
-  "plannerShortcutDeadlines": "Entregas"
+  "plannerShortcutDeadlines": "Entregas",
+  "plannerPomodoroFocusRecommended": "Recomendado para hoy",
+  "plannerPomodoroFocusFatigue": "Hoy, concentración más corta por tu carga física",
+  "plannerPomodoroBreaksSummary": "Descansos: {short} min · largo {long} min",
+  "@plannerPomodoroBreaksSummary": {
+    "placeholders": {
+      "short": {
+        "type": "int"
+      },
+      "long": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroBreaksChange": "Cambiar",
+  "plannerPomodoroBreaksChangeSpoken": "Cambiar los descansos",
+  "plannerPomodoroBreaksTitle": "Descansos",
+  "plannerPomodoroShortBreakLabel": "Descanso corto",
+  "plannerPomodoroShortBreakMinutes": "Minutos de descanso",
+  "plannerPomodoroLongBreakLabel": "Descanso largo, cada {cycles} concentraciones",
+  "@plannerPomodoroLongBreakLabel": {
+    "placeholders": {
+      "cycles": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroLongBreakMinutes": "Minutos del descanso largo",
+  "plannerPomodoroMinutesRecommended": "{minutes} min · Recomendado",
+  "@plannerPomodoroMinutesRecommended": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroBreaksRemembered": "Se usarán también la próxima vez.",
+  "plannerPomodoroBreaksSaved": "Descansos: {short} min y largo de {long} min",
+  "@plannerPomodoroBreaksSaved": {
+    "placeholders": {
+      "short": {
+        "type": "int"
+      },
+      "long": {
+        "type": "int"
+      }
+    }
+  }
 }

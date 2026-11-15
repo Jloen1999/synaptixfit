@@ -40,6 +40,8 @@ import '../use_cases/planner/delete_deadline_use_case.dart';
 import '../use_cases/planner/set_deadline_completion_use_case.dart';
 import '../use_cases/planner/record_focus_session_use_case.dart';
 import '../use_cases/planner/get_focus_plan_use_case.dart';
+import '../use_cases/planner/load_focus_break_choice_use_case.dart';
+import '../use_cases/planner/save_focus_break_choice_use_case.dart';
 import '../use_cases/planner/get_focus_stats_use_case.dart';
 
 /// Casos de uso del módulo planner.
@@ -53,6 +55,12 @@ void registerPlannerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<ClearActiveFocusTimerUseCaseContract>(
       () => ClearActiveFocusTimerUseCase(getIt()),
+    )
+    ..registerLazySingleton<LoadFocusBreakChoiceUseCaseContract>(
+      () => LoadFocusBreakChoiceUseCase(getIt()),
+    )
+    ..registerLazySingleton<SaveFocusBreakChoiceUseCaseContract>(
+      () => SaveFocusBreakChoiceUseCase(getIt()),
     )
     ..registerLazySingleton<GetWeekBlocksUseCaseContract>(
       () => GetWeekBlocksUseCase(getIt()),

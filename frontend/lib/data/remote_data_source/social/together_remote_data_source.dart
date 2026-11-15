@@ -158,7 +158,8 @@ class TogetherRemoteDataSource {
   }
 
   Future<StudyRoomDto> createStudyRoom({
-    required String length,
+    required int focusMinutes,
+    required int breakMinutes,
     required int rounds,
     required List<String> friendIds,
     String? subjectId,
@@ -166,7 +167,8 @@ class TogetherRemoteDataSource {
     final r = await _dio.post<Map<String, dynamic>>(
       '$_base/study-rooms',
       data: {
-        'length': length,
+        'focusMinutes': focusMinutes,
+        'breakMinutes': breakMinutes,
         'rounds': rounds,
         'friendIds': friendIds,
         'subjectId': ?subjectId,
@@ -196,6 +198,18 @@ class TogetherRemoteDataSource {
   Future<StudyRoomDto> startStudyRoom(String id) async {
     final r = await _dio.post<Map<String, dynamic>>(
       '$_base/study-rooms/$id/start',
+    );
+    return StudyRoomDto.fromJson(r.data!);
+  }
+
+  Future<StudyRoomDto> changeStudyRoomTimes(
+    String id, {
+    required int focusMinutes,
+    required int breakMinutes,
+  }) async {
+    final r = await _dio.put<Map<String, dynamic>>(
+      '$_base/study-rooms/$id/times',
+      data: {'focusMinutes': focusMinutes, 'breakMinutes': breakMinutes},
     );
     return StudyRoomDto.fromJson(r.data!);
   }

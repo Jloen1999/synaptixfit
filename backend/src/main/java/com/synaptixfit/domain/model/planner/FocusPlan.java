@@ -33,6 +33,17 @@ public record FocusPlan(int focusMinutes, int shortBreakMinutes, int longBreakMi
     public static final int MAX_FOCUS_MINUTES = 90;
 
     /**
+     * Límites para elegir a mano el descanso entre bloques (ADR 0053): de un respiro de 1 min a media hora, como en
+     * la sala de estudio ({@code StudyRoomTimes}).
+     */
+    public static final int MIN_SHORT_BREAK_MINUTES = 1;
+    public static final int MAX_SHORT_BREAK_MINUTES = 30;
+
+    /** Límites del descanso largo: nunca más corto que un descanso normal mínimo ni más de una hora. */
+    public static final int MIN_LONG_BREAK_MINUTES = 5;
+    public static final int MAX_LONG_BREAK_MINUTES = 60;
+
+    /**
      * @param maxStudyMinutes tope de minutos por bloque de hoy según la regulación cruzada (entre
      *                        25 y 90)
      */

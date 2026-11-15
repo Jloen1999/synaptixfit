@@ -7,7 +7,11 @@ import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/social/together.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_planner_subjects_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/social/together/change_study_room_times_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/together/choose_study_room_subject_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/social/together/create_study_room_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/social/together/get_together_limits_use_case.dart';
+import 'package:synaptixfit/presentation/screens/social/together/study_invite/bloc/study_invite_bloc.dart';
 import 'package:synaptixfit/domain/use_cases/social/together/decline_study_room_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/together/get_study_room_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/together/join_study_room_use_case.dart';
@@ -27,7 +31,6 @@ StudyRoom _room({
 }) => StudyRoom(
   id: 'r1',
   creator: const TogetherPerson(id: 'ana', name: 'Ana'),
-  length: StudyRoomLength.short,
   phase: phase,
   round: 1,
   rounds: 2,
@@ -104,19 +107,77 @@ class _Subjects implements GetPlannerSubjectsUseCaseContract {
       const Success([SubjectOption(id: 's1', name: 'Álgebra')]);
 }
 
-StudyRoomBloc _bloc(_Get get, {_Subject? subject, _Leave? leave}) =>
-    StudyRoomBloc(
-      get: get,
-      join: _Join(),
-      decline: _Decline(),
-      leave: leave ?? _Leave(),
-      start: _Start(),
-      chooseSubject: subject ?? _Subject(),
-      react: _React(),
-      subjects: _Subjects(),
-      pollInterval: const Duration(milliseconds: 5),
-      now: () => _deviceNow,
+class _ChangeTimes implements ChangeStudyRoomTimesUseCaseContract {
+  _ChangeTimes(this.get);
+
+  /// La sala del servidor: tras cambiar, las lecturas traen los minutos nuevos.
+  final _Get get;
+  StudyRoomTimes? sent;
+
+  @override
+  Future<AppResult<StudyRoom>> call(String id, StudyRoomTimes times) async {
+    sent = times;
+    get.room = get.room.copyWith(
+      focusMinutes: times.focusMinutes,
+      breakMinutes: times.breakMinutes,
     );
+    return Success(get.room);
+  }
+}
+
+class _Limits implements GetTogetherLimitsUseCaseContract {
+  @override
+  Future<AppResult<TogetherLimits>> call() async => const Success(
+    TogetherLimits(
+      challengeFriends: 24,
+      workoutFriends: 4,
+      studyRoomFriends: 4,
+      friendStreaks: 5,
+      studyRoomRounds: 4,
+      studyRoomFocusMinutes: MinutesRange(min: 15, max: 90),
+      studyRoomBreakMinutes: MinutesRange(min: 1, max: 30),
+      studyRoomPresets: [
+        StudyRoomTimes(focusMinutes: 25, breakMinutes: 5),
+        StudyRoomTimes(focusMinutes: 50, breakMinutes: 10),
+      ],
+    ),
+  );
+}
+
+class _Create implements CreateStudyRoomUseCaseContract {
+  StudyRoomTimes? times;
+
+  @override
+  Future<AppResult<StudyRoom>> call({
+    required StudyRoomTimes times,
+    required int rounds,
+    required List<String> friendIds,
+    String? subjectId,
+  }) async {
+    this.times = times;
+    return Success(_room(phase: StudyRoomPhase.waiting));
+  }
+}
+
+StudyRoomBloc _bloc(
+  _Get get, {
+  _Subject? subject,
+  _Leave? leave,
+  _ChangeTimes? changeTimes,
+}) => StudyRoomBloc(
+  get: get,
+  join: _Join(),
+  decline: _Decline(),
+  leave: leave ?? _Leave(),
+  start: _Start(),
+  chooseSubject: subject ?? _Subject(),
+  react: _React(),
+  subjects: _Subjects(),
+  changeTimes: changeTimes,
+  limits: _Limits(),
+  pollInterval: const Duration(milliseconds: 5),
+  now: () => _deviceNow,
+);
 
 void main() {
   group('Estudiamos juntos (ADR 0045)', () {
@@ -125,7 +186,6 @@ void main() {
       final room = StudyRoomDto.fromJson({
         'id': 'r1',
         'creator': {'id': 'ana', 'fullName': 'Ana'},
-        'length': 'LONG',
         'focusMinutes': 50,
         'breakMinutes': 10,
         'rounds': 3,
@@ -151,7 +211,10 @@ void main() {
         ],
       }).toDomain();
       expect(room.phase, StudyRoomPhase.rest);
-      expect(room.length, StudyRoomLength.long);
+      expect(
+        room.times,
+        const StudyRoomTimes(focusMinutes: 50, breakMinutes: 10),
+      );
       expect(room.mySubjectId, 's1');
       expect(room.members.first.reaction, StudyRoomReaction.coffee);
       expect(room.members.last.reaction, isNull);
@@ -162,22 +225,109 @@ void main() {
       );
     });
 
-    test('los topes y las duraciones de ronda llegan del servidor', () {
+    test('antes de empezar, quien está dentro cambia los minutos (ADR '
+        '0053)', () async {
+      final get = _Get(_room(phase: StudyRoomPhase.waiting));
+      final change = _ChangeTimes(get);
+      final bloc = _bloc(get, changeTimes: change)
+        ..add(const StudyRoomEvent.started('r1'));
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      expect(bloc.state.room!.canChangeTimes, isTrue);
+      // Los topes llegan para la hoja «Cambiar tiempos».
+      expect(bloc.state.limits!.studyRoomPresets, hasLength(2));
+      bloc.add(
+        const StudyRoomEvent.timesChanged(
+          StudyRoomTimes(focusMinutes: 40, breakMinutes: 8),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      expect(
+        change.sent,
+        const StudyRoomTimes(focusMinutes: 40, breakMinutes: 8),
+      );
+      expect(bloc.state.room!.focusMinutes, 40);
+      // Los mismos minutos no se vuelven a mandar.
+      change.sent = null;
+      bloc.add(
+        const StudyRoomEvent.timesChanged(
+          StudyRoomTimes(focusMinutes: 40, breakMinutes: 8),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      expect(change.sent, isNull);
+      await bloc.close();
+    });
+
+    test('una sala empezada ya no deja cambiar los minutos', () {
+      expect(_room().canChangeTimes, isFalse);
+      expect(
+        _room(
+          phase: StudyRoomPhase.waiting,
+        ).copyWith(myStatus: TogetherMemberStatus.invited).canChangeTimes,
+        isFalse,
+      );
+    });
+
+    test(
+      '«Estudiar con amigos» crea la sala con los minutos elegidos',
+      () async {
+        final create = _Create();
+        final bloc = StudyInviteBloc(create: create)
+          ..add(
+            const StudyInviteEvent.started(
+              times: StudyRoomTimes(focusMinutes: 52, breakMinutes: 17),
+            ),
+          );
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.times.focusMinutes, 52);
+        bloc
+          ..add(
+            const StudyInviteEvent.timesChosen(
+              StudyRoomTimes(focusMinutes: 30, breakMinutes: 6),
+            ),
+          )
+          ..add(const StudyInviteEvent.submitted(['ana']));
+        await Future<void>.delayed(const Duration(milliseconds: 2));
+        expect(
+          create.times,
+          const StudyRoomTimes(focusMinutes: 30, breakMinutes: 6),
+        );
+        await bloc.close();
+      },
+    );
+
+    test('los topes, los límites de minutos y los atajos llegan del '
+        'servidor (ADR 0053)', () {
       final limits = TogetherLimitsDto.fromJson({
         'challengeFriends': 24,
         'workoutFriends': 4,
         'studyRoomFriends': 4,
         'friendStreaks': 5,
         'studyRoomRounds': 4,
-        'studyRoomLengths': [
-          {'length': 'SHORT', 'focusMinutes': 25, 'breakMinutes': 5},
-          {'length': 'LONG', 'focusMinutes': 50, 'breakMinutes': 10},
+        'studyRoomFocusMinutes': {'min': 15, 'max': 90},
+        'studyRoomBreakMinutes': {'min': 1, 'max': 30},
+        'studyRoomPresets': [
+          {'focusMinutes': 25, 'breakMinutes': 5},
+          {'focusMinutes': 50, 'breakMinutes': 10},
         ],
       }).toDomain();
       expect(limits.friendsFor(TogetherInviteKind.studyRoom), 4);
       expect(limits.friendsFor(TogetherInviteKind.streak), 1);
-      expect(limits.studyRoomLengths.last.length, StudyRoomLength.long);
-      expect(limits.studyRoomLengths.last.breakMinutes, 10);
+      expect(
+        limits.studyRoomPresets.last,
+        const StudyRoomTimes(focusMinutes: 50, breakMinutes: 10),
+      );
+      expect(limits.studyRoomFocusMinutes.clamp(100), 90);
+      expect(limits.studyRoomBreakMinutes.clamp(0), 1);
+      // Un servidor anterior no manda los límites: valen los de siempre.
+      final old = TogetherLimitsDto.fromJson({
+        'challengeFriends': 24,
+        'workoutFriends': 4,
+        'studyRoomFriends': 4,
+        'friendStreaks': 5,
+        'studyRoomRounds': 4,
+      }).toDomain();
+      expect(old.studyRoomFocusMinutes, const MinutesRange(min: 15, max: 90));
     });
 
     test('la cuenta atrás usa el reloj del móvil corregido por el del '

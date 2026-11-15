@@ -1,12 +1,12 @@
-import '../../../enums/together_enums.dart';
 import '../../../models/result/app_result.dart';
 import '../../../models/social/together.dart';
 import '../../../repositories/together_repository_contract.dart';
 
-/// Crea una sala de «Estudiamos juntos» con 1-4 amigos; quien la crea queda dentro.
+/// Crea una sala de «Estudiamos juntos» con 1-4 amigos y los minutos de cada
+/// ronda; quien la crea queda dentro.
 abstract interface class CreateStudyRoomUseCaseContract {
   Future<AppResult<StudyRoom>> call({
-    required StudyRoomLength length,
+    required StudyRoomTimes times,
     required int rounds,
     required List<String> friendIds,
     String? subjectId,
@@ -21,12 +21,12 @@ class CreateStudyRoomUseCase implements CreateStudyRoomUseCaseContract {
 
   @override
   Future<AppResult<StudyRoom>> call({
-    required StudyRoomLength length,
+    required StudyRoomTimes times,
     required int rounds,
     required List<String> friendIds,
     String? subjectId,
   }) => _repository.createStudyRoom(
-    length: length,
+    times: times,
     rounds: rounds,
     friendIds: friendIds,
     subjectId: subjectId,

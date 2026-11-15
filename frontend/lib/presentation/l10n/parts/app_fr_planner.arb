@@ -239,8 +239,6 @@
   "plannerErrorScheduleFileTooLarge": "Le fichier dépasse 10 Mo.",
   "plannerPomodoroStudying": "J’étudie : {name}",
   "plannerPomodoroMinutes": "{minutes} min",
-  "plannerPomodoroPlanHint": "Conseillé pour aujourd’hui, avec des pauses de {minutes} min",
-  "plannerPomodoroPlanFatigue": "Aujourd’hui, concentration plus courte à cause de ta charge physique ; pauses de {minutes} min",
   "plannerFocusOnBlock": "Me concentrer",
   "plannerRepeatWeekly": "Répéter chaque semaine",
   "plannerRepeatWeeklyHint": "Le même jour à la même heure",
@@ -382,5 +380,18 @@
   "plannerSubjectArchived": "Matière archivée",
   "plannerDeadlinesSwipeHint": "Fais glisser un rendu vers la gauche pour le supprimer.",
   "plannerPomodoroWithFriends": "Étudier avec des amis",
-  "plannerShortcutDeadlines": "Rendus"
+  "plannerShortcutDeadlines": "Rendus",
+  "plannerPomodoroFocusRecommended": "Recommandé pour aujourd'hui",
+  "plannerPomodoroFocusFatigue": "Concentration plus courte aujourd'hui à cause de ta charge physique",
+  "plannerPomodoroBreaksSummary": "Pauses : {short} min · longue {long} min",
+  "plannerPomodoroBreaksChange": "Modifier",
+  "plannerPomodoroBreaksChangeSpoken": "Modifier les pauses",
+  "plannerPomodoroBreaksTitle": "Pauses",
+  "plannerPomodoroShortBreakLabel": "Pause courte",
+  "plannerPomodoroShortBreakMinutes": "Minutes de pause",
+  "plannerPomodoroLongBreakLabel": "Longue pause, toutes les {cycles} concentrations",
+  "plannerPomodoroLongBreakMinutes": "Minutes de la longue pause",
+  "plannerPomodoroMinutesRecommended": "{minutes} min · Recommandé",
+  "plannerPomodoroBreaksRemembered": "Elles serviront aussi la prochaine fois.",
+  "plannerPomodoroBreaksSaved": "Pauses : {short} min, et {long} min pour la longue"
 }

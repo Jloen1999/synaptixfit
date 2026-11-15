@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../domain/enums/training_enums.dart';
@@ -63,6 +62,34 @@ String targetLabel(
       : main;
 }
 
+/// Cifras de una serie en corto para el panel: «8 × 60 kg» con repeticiones y
+/// peso; si no, lo de [targetLabel]. Devuelve también cómo se lee (el lector
+/// leería «×» como «multiplicado por»).
+(String, String) compactTarget(
+  BuildContext context,
+  PlannedExercise e,
+  int set,
+  Map<SetField, num?> values,
+) {
+  final l10n = context.localizations;
+  final fields = SetFields.of(e);
+  final reps = values[SetField.reps];
+  final weight = values[SetField.weight];
+  if (!fields.isCardio &&
+      !fields.isHold &&
+      reps != null &&
+      weight != null &&
+      weight > 0) {
+    final kg = formatNumber(weight.toDouble());
+    return (
+      l10n.trainingRepsTimesWeight(reps.toInt(), kg),
+      l10n.trainingRepsWithWeightSpoken(reps.toInt(), kg),
+    );
+  }
+  final text = targetLabel(context, e, set, values: values);
+  return (text, text);
+}
+
 /// Abre «Cómo se hace» del ejercicio sin salir de la sesión.
 void openHowTo(BuildContext context, PlannedExercise exercise) => unawaited(
   showExerciseHowToSheet(
@@ -74,9 +101,10 @@ void openHowTo(BuildContext context, PlannedExercise exercise) => unawaited(
   ),
 );
 
-/// Cabecera fija de la sesión: progreso («4 de 6 ejercicios · 32 min»), barra
-/// de series y una tira con los ejercicios para saltar entre ellos. Con letra
-/// grande la tira se cambia por «Ejercicio 2 de 6» con anterior y siguiente.
+/// Cabecera fija de la sesión (ADR 0053): «N de M series» con el reloj ⏱ de
+/// las series, la barra de avance, «Entreno: N min · te quedan ≈ M min» y la
+/// tira con los ejercicios para saltar entre ellos. Con letra grande la tira
+/// se cambia por «Ejercicio 2 de 6» con anterior y siguiente.
 class LiveSessionHeader extends StatelessWidget {
   const LiveSessionHeader({super.key, required this.state});
 
@@ -103,35 +131,21 @@ class LiveSessionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (s.routineName != null)
-                Text(
-                  s.routineName!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.textStyles.labelMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                ),
               LiveClockSummary(
                 state: s,
                 leading: Text(
-                  l10n.trainingLiveExercisesProgress(
-                    s.finishedExercises,
-                    s.exercises.length,
-                  ),
+                  l10n.trainingLiveSetsCount(s.loggedSets, s.plannedSets),
                   style: context.textStyles.labelLarge,
                 ),
-              ),
-              const SizedBox(height: TokensSpacing.xs),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(TokensRadius.pill),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  color: context.colors.primary,
-                  backgroundColor: context.colors.surfaceContainerHigh,
-                  semanticsLabel: l10n.trainingSetsProgress(
-                    s.loggedSets,
-                    s.plannedSets,
+                // El lector ya oye «N de M series» a la izquierda.
+                bar: ExcludeSemantics(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(TokensRadius.pill),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      color: context.colors.primary,
+                      backgroundColor: context.colors.surfaceContainerHigh,
+                    ),
                   ),
                 ),
               ),
@@ -874,29 +888,15 @@ class _LiveSetRow extends StatelessWidget {
       );
     }
 
-    // Un solo botón que cambia de aspecto (no de widget) para no perder el
-    // foco al marcar la serie (WCAG 2.4.3). En una serie hecha, volver a
-    // tocarlo la desmarca al momento (con «Deshacer», como Hevy o Strong).
-    final check = IconButton(
-      tooltip: done == null
-          ? l10n.trainingMarkSetDone(n)
-          : l10n.trainingUnmarkSetNumber(n),
-      style: done == null
-          ? IconButton.styleFrom(
-              side: BorderSide(color: context.colors.outline),
-            ).copyWith(
-              side: WidgetStateProperty.resolveWith(
-                (states) => BorderSide(
-                  color: states.contains(WidgetState.focused)
-                      ? context.colors.onSurface
-                      : context.colors.outline,
-                  width: states.contains(WidgetState.focused)
-                      ? TokensSize.focusRing
-                      : TokensSize.focusRing / 2,
-                ),
-              ),
-            )
-          : IconButton.styleFrom(
+    // Un solo sitio para marcar: el panel de abajo (ADR 0053). En la tabla,
+    // el ✓ solo está en las series hechas y quitarlo las desmarca al momento
+    // (con «Deshacer», como Hevy o Strong); las pendientes dejan el hueco para
+    // que las columnas sigan alineadas.
+    final Widget check = done == null
+        ? SizedBox.square(dimension: number)
+        : IconButton(
+            tooltip: l10n.trainingUnmarkSetNumber(n),
+            style: IconButton.styleFrom(
               backgroundColor: done.completed
                   ? context.palette.success
                   : context.palette.warning,
@@ -905,17 +905,11 @@ class _LiveSetRow extends StatelessWidget {
                   ? context.palette.onSuccess
                   : context.palette.onWarning,
             ),
-      onPressed: done != null
-          ? () => onUnmark(e, done)
-          : state.saving || badInRow.isNotEmpty
-          ? null
-          : () => onLog(e, n, values),
-      icon: Icon(
-        done == null || done.completed
-            ? Icons.check_rounded
-            : Icons.cancel_rounded,
-      ),
-    );
+            onPressed: () => onUnmark(e, done),
+            icon: Icon(
+              done.completed ? Icons.check_rounded : Icons.cancel_rounded,
+            ),
+          );
 
     final numberText = Text(
       '$n',
@@ -931,11 +925,21 @@ class _LiveSetRow extends StatelessWidget {
         color: context.colors.onSurfaceVariant,
       ),
     );
+    // «Ahora» sobre lo previsto de la serie que toca (también en texto, no
+    // solo con el color del borde).
+    final nowMark = Text(
+      l10n.trainingSetNow,
+      style: context.textStyles.labelMedium?.copyWith(
+        color: context.colors.primary,
+        fontWeight: FontWeight.w700,
+      ),
+    );
     final Widget body;
     if (stacked) {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (current && done == null) nowMark,
           Text(
             l10n.trainingSetWithTarget(n, target),
             style: context.textStyles.titleSmall?.copyWith(
@@ -972,7 +976,16 @@ class _LiveSetRow extends StatelessWidget {
       body = Row(
         children: [
           SizedBox(width: number, child: numberText),
-          Expanded(flex: 2, child: targetText),
+          Expanded(
+            flex: 2,
+            child: current && done == null
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [nowMark, targetText],
+                  )
+                : targetText,
+          ),
           for (final f in fields.fields) ...[
             const SizedBox(width: TokensSpacing.xs),
             Expanded(flex: 2, child: cell(f)),
@@ -1028,9 +1041,11 @@ class _LiveSetRow extends StatelessWidget {
           ? (timerPaused
                 ? l10n.trainingSetTimerPaused(n)
                 : l10n.trainingSetTimerRunning(n))
+          : done != null
+          ? null
           : current
-          ? l10n.trainingCurrentSet
-          : null,
+          ? l10n.trainingSetNowSpoken(n)
+          : l10n.trainingSetPendingSpoken(n),
       // El margen va fuera del brillo: así el halo rodea la fila y no se
       // desplaza hacia arriba.
       child: Padding(
@@ -1228,23 +1243,33 @@ class _SetFocusPulseState extends State<_SetFocusPulse>
   }
 }
 
-/// Cronómetro de la sesión, igual en la de rutina ([LiveSessionHeader]) y en
-/// la libre: la píldora, qué mide («Tiempo real, sin contar pausas») y lo
-/// que queda según la duración prevista del servidor (gris: es una estimación).
+/// Reloj de la cabecera, igual en la sesión de rutina ([LiveSessionHeader]) y
+/// en la libre (ADR 0053): a la derecha la píldora ⏱ con el tiempo haciendo
+/// series ([LiveSessionState.seriesSeconds]); debajo, en pequeño y en minutos,
+/// lo que se lleva de entreno y lo que queda según la duración prevista del
+/// servidor (no se mueve cada segundo, así no parece que corra la serie).
 class LiveClockSummary extends StatelessWidget {
-  const LiveClockSummary({super.key, required this.state, this.leading});
+  const LiveClockSummary({
+    super.key,
+    required this.state,
+    this.leading,
+    this.bar,
+  });
 
   final LiveSessionState state;
 
-  /// Lo que va a la izquierda de la píldora (en la rutina, el avance).
+  /// Lo que va a la izquierda de la píldora (en la rutina, las series).
   final Widget? leading;
+
+  /// Barra de avance entre la fila de arriba y la línea del entreno.
+  final Widget? bar;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final hintStyle = context.textStyles.labelMedium?.copyWith(
-      color: context.colors.onSurfaceVariant,
-    );
+    final minutes = state.workoutMinutes;
+    final left = state.remainingEstimatedMinutes;
+    final hasLeft = left != null && left > 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -1256,38 +1281,40 @@ class LiveClockSummary extends StatelessWidget {
           alignment: WrapAlignment.spaceBetween,
           children: [
             ?leading,
-            LiveClockPill(seconds: state.elapsedSeconds, paused: state.paused),
+            LiveClockPill(
+              seconds: state.seriesSeconds,
+              mode: state.seriesClock,
+            ),
           ],
         ),
-        Wrap(
-          spacing: TokensSpacing.s,
-          children: [
-            // El lector ya lo oye en la píldora.
-            ExcludeSemantics(
-              child: Text(l10n.trainingClockRealHint, style: hintStyle),
-            ),
-            if (state.remainingEstimatedMinutes case final left? when left > 0)
-              Text(
-                l10n.trainingRemainingMinutes(left),
-                semanticsLabel: l10n.trainingRemainingMinutesSpoken(left),
-                style: hintStyle,
-              ),
-          ],
+        if (bar != null) ...[const SizedBox(height: TokensSpacing.xs), bar!],
+        const SizedBox(height: TokensSpacing.xxs),
+        Text(
+          hasLeft
+              ? l10n.trainingWorkoutMinutesLeft(minutes, left)
+              : l10n.trainingWorkoutMinutes(minutes),
+          semanticsLabel: hasLeft
+              ? l10n.trainingWorkoutMinutesLeftSpoken(minutes, left)
+              : l10n.trainingWorkoutMinutesSpoken(minutes),
+          style: context.textStyles.labelMedium?.copyWith(
+            color: context.colors.onSurfaceVariant,
+          ),
         ),
       ],
     );
   }
 }
 
-/// Tiempo real de la sesión (sin pausas): píldora naranja con icono de
-/// cronómetro y un punto que late dos veces al empezar o reanudar y se queda
-/// fijo (WCAG 2.2.2); en pausa, ámbar y quieta. Se distingue de «Quedan ≈ N
-/// min», que es una estimación en gris.
+/// Píldora ⏱ con el tiempo haciendo series (ADR 0053). Mientras corre una
+/// serie, en el color de acento con un punto que late dos veces y se queda
+/// fijo (WCAG 2.2.2); con la serie en pausa, ámbar con ⏸; sin serie en
+/// marcha, gris y quieta. El estado se dice con icono y texto para el lector,
+/// no solo con el color.
 class LiveClockPill extends StatefulWidget {
-  const LiveClockPill({super.key, required this.seconds, required this.paused});
+  const LiveClockPill({super.key, required this.seconds, required this.mode});
 
   final int seconds;
-  final bool paused;
+  final SeriesClockMode mode;
 
   @override
   State<LiveClockPill> createState() => _LiveClockPillState();
@@ -1312,14 +1339,14 @@ class _LiveClockPillState extends State<LiveClockPill>
     _sync();
   }
 
-  /// Si estaba en pausa la última vez (nulo: aún no se ha pintado).
-  bool? _wasPaused;
+  /// Si corría la última vez (nulo: aún no se ha pintado).
+  bool? _wasRunning;
 
   void _sync() {
-    final paused = widget.paused;
-    final starting = !paused && _wasPaused != false;
-    _wasPaused = paused;
-    if (paused || context.reduceMotion) {
+    final running = widget.mode == SeriesClockMode.running;
+    final starting = running && _wasRunning != true;
+    _wasRunning = running;
+    if (!running || context.reduceMotion) {
       _blink
         ..stop()
         ..value = 0;
@@ -1339,23 +1366,35 @@ class _LiveClockPillState extends State<LiveClockPill>
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final clock = formatClock(widget.seconds);
-    final paused = widget.paused;
-    final foreground = paused
-        ? context.palette.warning
-        : context.palette.onAccentContainer;
+    final mode = widget.mode;
     // Tinte opaco sobre la superficie, como [AppPill]: el contraste es el
     // mismo esté sobre la cabecera o sobre el fondo (contrast_test).
-    final background = paused
-        ? Color.alphaBlend(
-            context.palette.warning.withValues(alpha: AppPill.tintAlpha),
-            context.colors.surface,
-          )
-        : context.palette.accentContainer;
+    final (Color background, Color foreground) = switch (mode) {
+      SeriesClockMode.running => (
+        context.palette.accentContainer,
+        context.palette.onAccentContainer,
+      ),
+      SeriesClockMode.paused => (
+        Color.alphaBlend(
+          context.palette.warning.withValues(alpha: AppPill.tintAlpha),
+          context.colors.surface,
+        ),
+        context.palette.warning,
+      ),
+      SeriesClockMode.idle => (
+        context.colors.surfaceContainerHigh,
+        context.colors.onSurfaceVariant,
+      ),
+    };
     final spoken = spokenClock(l10n, widget.seconds);
     return Semantics(
-      label: paused
-          ? l10n.trainingClockPausedSpoken(spoken)
-          : l10n.trainingClockSpoken(spoken),
+      label: switch (mode) {
+        SeriesClockMode.paused => l10n.trainingSeriesClockPausedSpoken(spoken),
+        SeriesClockMode.running => l10n.trainingSeriesClockRunningSpoken(
+          spoken,
+        ),
+        SeriesClockMode.idle => l10n.trainingSeriesClockSpoken(spoken),
+      },
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -1370,18 +1409,28 @@ class _LiveClockPillState extends State<LiveClockPill>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              FadeTransition(
-                opacity: Tween<double>(
-                  begin: 1,
-                  end: TokensOpacity.blinkMin,
-                ).animate(_blink),
-                child: Icon(
-                  paused ? Icons.pause_rounded : Icons.circle,
-                  size: paused ? TokensSize.iconXs : TokensSize.liveDot,
-                  color: paused ? foreground : context.palette.accent,
+              if (mode == SeriesClockMode.running) ...[
+                FadeTransition(
+                  opacity: Tween<double>(
+                    begin: 1,
+                    end: TokensOpacity.blinkMin,
+                  ).animate(_blink),
+                  child: Icon(
+                    Icons.circle,
+                    size: TokensSize.liveDot,
+                    color: context.palette.accent,
+                  ),
                 ),
-              ),
-              const SizedBox(width: TokensSpacing.xs),
+                const SizedBox(width: TokensSpacing.xs),
+              ],
+              if (mode == SeriesClockMode.paused) ...[
+                Icon(
+                  Icons.pause_rounded,
+                  size: TokensSize.iconXs,
+                  color: foreground,
+                ),
+                const SizedBox(width: TokensSpacing.xxs),
+              ],
               Icon(
                 Icons.timer_outlined,
                 size: TokensSize.iconXs,
@@ -1404,10 +1453,17 @@ class _LiveClockPillState extends State<LiveClockPill>
   }
 }
 
-/// Barra inferior de la sesión. Descansando: cuenta atrás grande con −15 s,
-/// +15 s y «Saltar descanso». Si no: qué toca ahora y el siguiente ejercicio, con la
-/// acción principal al alcance del pulgar (marcar la serie, ir al siguiente o
-/// terminar). Al cambiar de una a otra el foco pasa a la acción nueva.
+/// Barra inferior de la sesión (ADR 0053), con poco texto y la foto del
+/// ejercicio a mano (abre «Cómo se hace»). Según el momento:
+/// - antes de la serie: «Serie 2 de 4», «8 × 60 kg», «Empezar serie» (arranca
+///   su cronómetro) y «Ya la hice» (la marca sin cronómetro);
+/// - haciéndola: el reloj grande de la serie, ⏸ y «Serie hecha» (en pausa,
+///   ámbar con «Seguir»);
+/// - descansando: «Serie 2 hecha · descansa», la cuenta atrás, qué viene
+///   después, −15 s, +15 s y «Saltar descanso»;
+/// - ejercicio terminado: el siguiente con su foto e «Ir al siguiente»; con
+///   todo hecho, «Terminar».
+/// Al cambiar de momento, si el foco estaba en la barra pasa a la acción nueva.
 class LiveSessionBottomBar extends StatefulWidget {
   const LiveSessionBottomBar({
     super.key,
@@ -1429,31 +1485,86 @@ class LiveSessionBottomBar extends StatefulWidget {
   State<LiveSessionBottomBar> createState() => _LiveSessionBottomBarState();
 }
 
+/// Momento del panel: decide qué acción recibe el foco al cambiar.
+enum _PanelMoment { before, beforePaused, doing, doingPaused, rest, next, done }
+
+/// La serie cronometrada que se acaba de marcar se está guardando: el panel
+/// sigue en «haciendo» (con «Serie hecha» cargando) en vez de volver un
+/// instante a «Empezar serie» de esa misma serie.
+bool _savingTimedSet(LiveSessionState s) => s.saving && s.recordingSeconds > 0;
+
+_PanelMoment _momentOf(LiveSessionState s) {
+  if (s.restRemaining != null) return _PanelMoment.rest;
+  final viewed = s.viewed;
+  final set = s.nextSetOf(viewed);
+  if (set != null) {
+    if (s.timerOn(viewed, set) || _savingTimedSet(s)) {
+      return s.timerSince == null && !_savingTimedSet(s)
+          ? _PanelMoment.doingPaused
+          : _PanelMoment.doing;
+    }
+    return s.paused ? _PanelMoment.beforePaused : _PanelMoment.before;
+  }
+  return s.upNext == null ? _PanelMoment.done : _PanelMoment.next;
+}
+
 class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
   final _actionFocus = FocusNode();
-  final _skipFocus = FocusNode();
+  final _toggleFocus = FocusNode();
+  final _restFocus = FocusNode();
 
   /// Agrupa todo lo de la barra: si el foco estaba en cualquiera de sus
-  /// botones (también «Deshacer» o −15 s), pasa a la acción del panel nuevo.
+  /// botones (también −15 s o la foto), pasa a la acción del panel nuevo.
   final _barFocus = FocusNode(skipTraversal: true, canRequestFocus: false);
+
+  /// El foco estaba en la barra. Sigue valiendo si se soltó porque un botón
+  /// se desactivó o desapareció (al guardar o al pausar); deja de valer si la
+  /// persona lo llevó a otro sitio (WCAG 2.4.3).
+  bool _focusWasHere = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _barFocus.addListener(_onBarFocus);
+  }
+
+  void _onBarFocus() {
+    if (_barFocus.hasFocus) {
+      _focusWasHere = true;
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final now = FocusManager.instance.primaryFocus;
+      if (now != null && now is! FocusScopeNode) _focusWasHere = false;
+    });
+  }
 
   @override
   void didUpdateWidget(LiveSessionBottomBar old) {
     super.didUpdateWidget(old);
-    final wasResting = old.state.restRemaining != null;
-    final resting = widget.state.restRemaining != null;
-    if (wasResting == resting) return;
-    final hadFocus = _barFocus.hasFocus;
-    if (!hadFocus) return;
+    final before = _momentOf(old.state);
+    final now = _momentOf(widget.state);
+    if (before == now || !(_barFocus.hasFocus || _focusWasHere)) return;
+    // En el descanso, a «+15 s»: un Intro de más no se salta el descanso.
+    // Al pausar o seguir la serie, al botón que cambia; si no, a la acción.
+    final target = switch (now) {
+      _PanelMoment.rest => _restFocus,
+      _PanelMoment.doing when before == _PanelMoment.doingPaused =>
+        _toggleFocus,
+      _PanelMoment.doingPaused => _toggleFocus,
+      _ => _actionFocus,
+    };
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) (resting ? _skipFocus : _actionFocus).requestFocus();
+      if (mounted && target.canRequestFocus) target.requestFocus();
     });
   }
 
   @override
   void dispose() {
+    _barFocus.removeListener(_onBarFocus);
     _actionFocus.dispose();
-    _skipFocus.dispose();
+    _toggleFocus.dispose();
+    _restFocus.dispose();
     _barFocus.dispose();
     super.dispose();
   }
@@ -1488,7 +1599,7 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
                     ? _RestPanel(
                         state: s,
                         drafts: widget.drafts,
-                        skipFocus: _skipFocus,
+                        restFocus: _restFocus,
                       )
                     : _NextPanel(
                         state: s,
@@ -1497,6 +1608,7 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
                         onLog: widget.onLog,
                         onFinish: widget.onFinish,
                         focus: _actionFocus,
+                        toggleFocus: _toggleFocus,
                       ),
               ),
             ),
@@ -1507,6 +1619,88 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
   }
 }
 
+/// Foto del ejercicio (o el icono de su tipo si no la hay) que abre «Cómo se
+/// hace» sin salir de la serie. El icono de vídeo dice que se puede tocar.
+class _ExerciseThumbButton extends StatelessWidget {
+  const _ExerciseThumbButton({required this.exercise});
+
+  final PlannedExercise exercise;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    // La miniatura ya es decorativa: el nodo lleva el nombre y la acción.
+    return Semantics(
+      container: true,
+      button: true,
+      label: l10n.trainingHowToOf(exercise.exerciseName),
+      child: AppFocusOutline(
+        borderRadius: BorderRadius.circular(TokensRadius.m),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(TokensRadius.m),
+          onTap: () => openHowTo(context, exercise),
+          child: Stack(
+            children: [
+              ExerciseThumbnail(
+                url: exercise.thumbnailUrl,
+                icon: exercise.modality.icon,
+              ),
+              PositionedDirectional(
+                end: TokensSpacing.xxs,
+                bottom: TokensSpacing.xxs,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.colors.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    AppIcons.howTo,
+                    size: TokensSize.iconXs,
+                    color: context.colors.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Puntos de avance de las series del ejercicio: hechas, la que toca y las
+/// que faltan. Decorativos: «Serie 2 de 4» ya lo dice.
+class _SetDots extends StatelessWidget {
+  const _SetDots({required this.total, required this.done});
+
+  final int total;
+  final int done;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Wrap(
+      spacing: TokensSpacing.xxs,
+      runSpacing: TokensSpacing.xxs,
+      children: [
+        for (var n = 1; n <= total; n++)
+          Container(
+            width: TokensSize.liveDot,
+            height: TokensSize.liveDot,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: n <= done
+                  ? context.palette.success
+                  : n == done + 1
+                  ? context.colors.primary
+                  : context.colors.surfaceContainerHigh,
+              border: Border.all(color: context.colors.outlineVariant),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
 class _NextPanel extends StatelessWidget {
   const _NextPanel({
     required this.state,
@@ -1515,6 +1709,7 @@ class _NextPanel extends StatelessWidget {
     required this.onLog,
     required this.onFinish,
     required this.focus,
+    required this.toggleFocus,
   });
 
   final LiveSessionState state;
@@ -1524,6 +1719,7 @@ class _NextPanel extends StatelessWidget {
   onLog;
   final VoidCallback? onFinish;
   final FocusNode focus;
+  final FocusNode toggleFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -1533,222 +1729,432 @@ class _NextPanel extends StatelessWidget {
     final set = s.nextSetOf(viewed);
     final up = s.upNext;
     final index = s.exercises.indexOf(viewed);
-    // Siguiente ejercicio (siempre a la vista): el que toca si no es este, o
-    // el siguiente con series por hacer.
+    final bloc = context.read<LiveSessionBloc>();
+    // Siguiente ejercicio: el que toca si no es este, o el siguiente con
+    // series por hacer.
     final following = up != null && up.id != viewed.id
         ? up
         : s.exercises
               .skip(index + 1)
               .where((e) => s.nextSetOf(e) != null)
               .firstOrNull;
-    final bloc = context.read<LiveSessionBloc>();
-    final Widget action;
-    Widget? timer;
+    final timed = set != null && (s.timerOn(viewed, set) || _savingTimedSet(s));
+    final children = <Widget>[
+      // En pausa sin cronómetro de serie (p. ej. la pausa del grupo): se dice
+      // y se reanuda a un toque, como siempre.
+      if (s.paused && !timed) ...[
+        _PausedBanner(state: s, focus: set == null ? focus : null),
+        const SizedBox(height: TokensSpacing.s),
+      ],
+    ];
     if (set != null) {
       final rowInvalid = SetFields.of(viewed).fields.any(
         (f) => invalid.contains(LiveSessionState.draftKey(viewed.id, set, f)),
       );
-      // «Serie N registrada · Deshacer» lo anuncia la página.
-      void log() => onLog(viewed, set, s.valuesFor(viewed, set, drafts));
-
       final canLog = !s.saving && !rowInvalid;
-      final timed = s.timerOn(viewed, set);
-      final running = timed && s.timerSince != null;
-      final doneLabel = timed
-          ? l10n.trainingSetDoneShort
-          : l10n.trainingLiveSetDone(set);
-      void resume() => bloc.add(const LiveSessionEvent.resumeRequested());
-      // Marcar la serie que toca es la acción principal (el ✓ de la fila hace
-      // lo mismo, a mano de quien mira la tabla). En pausa manda reanudar;
-      // marcarla también reanuda (el cronómetro ayuda, nunca obliga).
-      final Widget done = AppPrimaryButton(
-        label: doneLabel,
-        icon: Icons.check_rounded,
-        focusNode: focus,
-        onPressed: canLog ? log : null,
+      // Marca con las cifras de la fila (lo escrito o lo propuesto); si se
+      // cronometraba, el bloc le pone su tiempo.
+      void log() => onLog(viewed, set, s.valuesFor(viewed, set, drafts));
+      final (target, targetSpoken) = compactTarget(
+        context,
+        viewed,
+        set,
+        s.valuesFor(viewed, set, drafts),
       );
-      // El cronómetro de la serie es opcional: un botón cuadrado con icono y
-      // su nombre en la descripción (el texto «Cronometrar» no cabía).
-      Widget iconAction(String tooltip, IconData icon, VoidCallback? onTap) =>
-          IconButton.outlined(
-            tooltip: tooltip,
-            style: IconButton.styleFrom(
-              minimumSize: const Size.square(TokensSize.controlHeight),
-            ),
-            onPressed: onTap,
-            icon: Icon(icon),
-          );
-      final Widget secondary = s.paused
-          ? AppPrimaryButton(
-              label: l10n.trainingResume,
-              icon: Icons.play_arrow_rounded,
-              focusNode: focus,
-              onPressed: resume,
-            )
-          : !timed
-          ? iconAction(
-              l10n.trainingSetTimerStart,
-              Icons.timer_outlined,
-              () => bloc.add(LiveSessionEvent.setTimerStarted(viewed.id, set)),
-            )
-          : running
-          ? iconAction(
-              l10n.trainingPause,
-              Icons.pause_rounded,
-              () => bloc.add(const LiveSessionEvent.pauseRequested()),
-            )
-          : iconAction(l10n.trainingResume, Icons.play_arrow_rounded, resume);
-      // Un solo botón destacado, ancho y al lado del pulgar; el otro, un
-      // icono. En pausa manda «Reanudar» y marcar queda como icono.
-      final (primary, other) = s.paused
-          ? (
-              secondary,
-              iconAction(doneLabel, Icons.check_rounded, canLog ? log : null),
-            )
-          : (done, secondary);
-      action = Row(
-        children: [
-          other,
-          const SizedBox(width: TokensSpacing.s),
-          Expanded(child: primary),
-        ],
+      final total = viewed.parameters.sets;
+      children.add(
+        timed
+            ? _DoingSet(
+                state: s,
+                exercise: viewed,
+                set: set,
+                total: total,
+                target: target,
+                targetSpoken: targetSpoken,
+                focus: focus,
+                toggleFocus: toggleFocus,
+                onDone: canLog ? log : null,
+              )
+            : _BeforeSet(
+                state: s,
+                exercise: viewed,
+                set: set,
+                total: total,
+                target: target,
+                targetSpoken: targetSpoken,
+                focus: focus,
+                onStart: () =>
+                    bloc.add(LiveSessionEvent.setTimerStarted(viewed.id, set)),
+                onAlreadyDone: canLog ? log : null,
+              ),
       );
-      if (timed) {
-        final color = running
-            ? context.colors.primary
-            : context.palette.warning;
-        timer = Semantics(
-          container: true,
-          label: running
-              ? l10n.trainingSetTimerRunning(set)
-              : l10n.trainingSetTimerPaused(set),
-          value: spokenClock(l10n, s.timerSeconds),
-          excludeSemantics: true,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  running
-                      ? l10n.trainingSetTimerRunning(set)
-                      : l10n.trainingSetTimerPaused(set),
-                  style: context.textStyles.titleSmall?.copyWith(color: color),
-                ),
-              ),
-              Text(
-                formatClock(s.timerSeconds),
-                style: context.textStyles.headlineMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ],
-          ),
-        );
-      }
     } else if (following != null) {
-      action = AppPrimaryButton(
-        label: l10n.trainingLiveGoTo(following.exerciseName),
-        icon: Icons.arrow_forward_rounded,
-        focusNode: focus,
-        onPressed: () =>
-            bloc.add(LiveSessionEvent.exerciseSelected(following.id)),
-      );
+      children.addAll([
+        Row(
+          children: [
+            _ExerciseThumbButton(exercise: following),
+            const SizedBox(width: TokensSpacing.s),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.trainingNextExerciseSummary(
+                      plannedSummary(
+                        l10n,
+                        following.parameters,
+                        SetFields.of(following),
+                      ),
+                    ),
+                    style: context.textStyles.labelMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    following.exerciseName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.textStyles.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        AppPrimaryButton(
+          label: l10n.trainingGoToNext,
+          icon: Icons.arrow_forward_rounded,
+          focusNode: focus,
+          onPressed: () =>
+              bloc.add(LiveSessionEvent.exerciseSelected(following.id)),
+        ),
+      ]);
     } else {
-      action = AppPrimaryButton(
-        label: l10n.trainingFinishAction,
-        icon: Icons.flag_rounded,
-        loading: s.finishing,
-        focusNode: focus,
-        onPressed: onFinish,
-      );
+      children.addAll([
+        Text(
+          l10n.trainingAllSetsDone,
+          style: context.textStyles.titleSmall?.copyWith(
+            color: context.palette.success,
+          ),
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        AppPrimaryButton(
+          label: l10n.trainingFinishAction,
+          icon: Icons.flag_rounded,
+          loading: s.finishing,
+          focusNode: focus,
+          onPressed: onFinish,
+        ),
+      ]);
     }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+  }
+}
+
+/// «Sesión en pausa» (o «En pausa · la ha puesto Ana», ADR 0047) con
+/// «Reanudar» (para todos, si la pausa es del grupo).
+class _PausedBanner extends StatelessWidget {
+  const _PausedBanner({required this.state, this.focus});
+
+  final LiveSessionState state;
+
+  /// Foco de la acción del panel cuando «Reanudar» es lo único que hacer.
+  final FocusNode? focus;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final bloc = context.read<LiveSessionBloc>();
+    return Row(
       children: [
-        // En pausa (sin cronómetro de serie): se dice y se reanuda a un toque.
-        if (s.paused && (set == null || !s.timerOn(viewed, set))) ...[
-          Row(
-            children: [
-              Icon(
-                Icons.pause_circle_rounded,
-                color: context.palette.warning,
-                size: TokensSize.iconS,
-              ),
-              const SizedBox(width: TokensSpacing.xs),
-              Expanded(
-                // Entreno juntos: «En pausa · la ha puesto Ana» (ADR 0047).
-                child: Text(switch (s.groupPausedBy) {
-                  final String name => l10n.togetherPausedBy(name),
-                  null => l10n.trainingPausedBanner,
-                }, style: context.textStyles.titleSmall),
-              ),
-              // Con una serie por hacer, «Reanudar» ya es el botón principal.
-              // Con la pausa del grupo, reanudar es para todos y se dice.
-              if (set == null)
-                TextButton(
-                  onPressed: () =>
-                      bloc.add(const LiveSessionEvent.resumeRequested()),
-                  child: Text(
-                    s.groupPausedBy != null
-                        ? l10n.togetherResumeForAll
-                        : l10n.trainingResume,
-                  ),
-                ),
-            ],
+        Icon(
+          Icons.pause_circle_rounded,
+          color: context.palette.warning,
+          size: TokensSize.iconS,
+        ),
+        const SizedBox(width: TokensSpacing.xs),
+        Expanded(
+          child: Text(switch (state.groupPausedBy) {
+            final String name => l10n.togetherPausedBy(name),
+            null => l10n.trainingPausedBanner,
+          }, style: context.textStyles.titleSmall),
+        ),
+        // Con la pausa del grupo, reanudar es para todos y se dice.
+        TextButton(
+          focusNode: focus,
+          onPressed: () => bloc.add(const LiveSessionEvent.resumeRequested()),
+          child: Text(
+            state.groupPausedBy != null
+                ? l10n.togetherResumeForAll
+                : l10n.trainingResume,
           ),
-          const SizedBox(height: TokensSpacing.xs),
-        ],
-        if (timer != null) ...[timer, const SizedBox(height: TokensSpacing.xs)],
-        // Las cifras con las que se marcará (las de la fila): la serie ya la
-        // dice el botón.
-        if (set != null)
-          Text(
-            l10n.trainingLiveNowValues(
-              targetLabel(
-                context,
-                viewed,
-                set,
-                values: s.valuesFor(viewed, set, drafts),
-              ),
-            ),
-            style: context.textStyles.titleSmall,
-          )
-        else if (following == null)
-          Text(
-            l10n.trainingAllSetsDone,
-            style: context.textStyles.titleSmall?.copyWith(
-              color: context.palette.success,
-            ),
-          ),
-        if (following != null)
-          Text(
-            l10n.trainingLiveNextExercise(following.exerciseName),
-            style: context.textStyles.bodyMedium?.copyWith(
-              color: context.colors.onSurfaceVariant,
-            ),
-          ),
-        const SizedBox(height: TokensSpacing.s),
-        action,
+        ),
       ],
     );
   }
 }
 
-/// Descanso en grande. Arriba, «Serie N registrada · Deshacer» de la serie
-/// que lo abrió: dentro del panel siempre se ve (un aviso flotante quedaba
-/// tapado). Deshacer la desmarca y para el descanso.
+/// Antes de la serie: foto, «Serie 2 de 4», «8 × 60 kg», puntos de avance,
+/// «Empezar serie» y «Ya la hice» (sin cronómetro: esa serie no suma al ⏱).
+class _BeforeSet extends StatelessWidget {
+  const _BeforeSet({
+    required this.state,
+    required this.exercise,
+    required this.set,
+    required this.total,
+    required this.target,
+    required this.targetSpoken,
+    required this.focus,
+    required this.onStart,
+    required this.onAlreadyDone,
+  });
+
+  final LiveSessionState state;
+  final PlannedExercise exercise;
+  final int set;
+  final int total;
+  final String target;
+  final String targetSpoken;
+  final FocusNode focus;
+  final VoidCallback onStart;
+  final VoidCallback? onAlreadyDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    // Mientras se guarda otra serie no se desactiva (no se pierde el foco):
+    // el bloc encola lo que se marque.
+    final start = AppPrimaryButton(
+      label: l10n.trainingStartSet,
+      icon: AppIcons.start,
+      focusNode: focus,
+      onPressed: onStart,
+    );
+    final done = TextButton(
+      onPressed: onAlreadyDone,
+      child: Text(
+        l10n.trainingAlreadyDone,
+        semanticsLabel: l10n.trainingAlreadyDoneSpoken(set),
+      ),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            _ExerciseThumbButton(exercise: exercise),
+            const SizedBox(width: TokensSpacing.s),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.trainingSetOf(set, total),
+                    style: context.textStyles.labelMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    target,
+                    semanticsLabel: targetSpoken,
+                    style: context.textStyles.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: TokensSpacing.xxs),
+                  _SetDots(total: total, done: state.loggedSetsOf(exercise)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        // Con letra grande, uno debajo del otro: «Empezar serie» no se parte.
+        if (context.largeText)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              start,
+              const SizedBox(height: TokensSpacing.xs),
+              done,
+            ],
+          )
+        else
+          Row(
+            children: [
+              Expanded(child: start),
+              const SizedBox(width: TokensSpacing.xs),
+              done,
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+/// Haciendo la serie: foto y su reloj grande, ⏸ (pausa la serie y la sesión,
+/// ADR 0030) y «Serie hecha». En pausa, el reloj en ámbar, «Seguir» y ✓.
+class _DoingSet extends StatelessWidget {
+  const _DoingSet({
+    required this.state,
+    required this.exercise,
+    required this.set,
+    required this.total,
+    required this.target,
+    required this.targetSpoken,
+    required this.focus,
+    required this.toggleFocus,
+    required this.onDone,
+  });
+
+  final LiveSessionState state;
+  final PlannedExercise exercise;
+  final int set;
+  final int total;
+  final String target;
+  final String targetSpoken;
+  final FocusNode focus;
+
+  /// Foco compartido por ⏸ y «Seguir»: al cambiar uno por otro no se pierde.
+  final FocusNode toggleFocus;
+  final VoidCallback? onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final bloc = context.read<LiveSessionBloc>();
+    final saving = _savingTimedSet(state);
+    final running = saving || (state.timerSince != null && !state.paused);
+    final seconds = saving ? state.recordingSeconds : state.timerSeconds;
+    final color = running ? context.colors.primary : context.palette.warning;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            _ExerciseThumbButton(exercise: exercise),
+            const SizedBox(width: TokensSpacing.s),
+            Expanded(
+              // Sin región viva: cambiaría cada segundo. El lector oye la
+              // serie, si está en pausa y el tiempo al llegar aquí.
+              child: Semantics(
+                container: true,
+                label: running
+                    ? l10n.trainingSetTimerRunning(set)
+                    : l10n.trainingSetTimerPaused(set),
+                value: spokenClock(l10n, seconds),
+                hint: targetSpoken,
+                excludeSemantics: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.trainingSetOfWithTarget(set, total, target),
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        if (!running) ...[
+                          Icon(
+                            Icons.pause_rounded,
+                            color: color,
+                            size: TokensSize.iconM,
+                          ),
+                          const SizedBox(width: TokensSpacing.xxs),
+                        ],
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              formatClock(seconds),
+                              style: context.textStyles.headlineMedium
+                                  ?.copyWith(
+                                    color: color,
+                                    fontWeight: FontWeight.w800,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        Row(
+          children: [
+            if (running)
+              IconButton.outlined(
+                focusNode: toggleFocus,
+                tooltip: l10n.trainingPauseSet,
+                style: IconButton.styleFrom(
+                  minimumSize: const Size.square(TokensSize.controlHeight),
+                ),
+                onPressed: saving
+                    ? null
+                    : () => bloc.add(const LiveSessionEvent.pauseRequested()),
+                icon: const Icon(Icons.pause_rounded),
+              )
+            else
+              OutlinedButton.icon(
+                focusNode: toggleFocus,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, TokensSize.controlHeight),
+                ),
+                onPressed: () =>
+                    bloc.add(const LiveSessionEvent.resumeRequested()),
+                icon: const Icon(AppIcons.start),
+                label: Text(l10n.trainingContinueSet),
+              ),
+            const SizedBox(width: TokensSpacing.s),
+            Expanded(
+              child: AppPrimaryButton(
+                label: l10n.trainingSetDoneShort,
+                icon: Icons.check_rounded,
+                focusNode: focus,
+                loading: saving,
+                onPressed: onDone,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Descanso en grande: «Serie 2 hecha · descansa», la cuenta atrás y qué viene
+/// después («Después: serie 3 · 8 × 60 kg» o el ejercicio siguiente). Sin
+/// «Deshacer»: si se marcó sin querer, se quita con el ✓ verde de la fila.
 class _RestPanel extends StatelessWidget {
   const _RestPanel({
     required this.state,
     required this.drafts,
-    required this.skipFocus,
+    required this.restFocus,
   });
 
   final LiveSessionState state;
   final SetDrafts drafts;
-  final FocusNode skipFocus;
+
+  /// Foco al empezar el descanso: «+15 s» (no «Saltar descanso»).
+  final FocusNode restFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -1758,8 +2164,6 @@ class _RestPanel extends StatelessWidget {
     final remaining = s.restRemaining ?? 0;
     final progress = s.restTotal == 0 ? 0.0 : remaining / s.restTotal;
     final onColor = context.colors.onSecondaryContainer;
-    final up = s.upNext ?? s.viewed;
-    final next = s.nextSetOf(up);
     final owner = [...?s.session?.sets]
         .where(
           (x) =>
@@ -1767,44 +2171,30 @@ class _RestPanel extends StatelessWidget {
               s.restForSet,
         )
         .firstOrNull;
+    final up = s.upNext;
+    final next = up == null ? null : s.nextSetOf(up);
+    // Mismo ejercicio que la serie del descanso: «serie 3 · 8 × 60 kg»; si no
+    // (era la última), el nombre del siguiente ejercicio.
+    final String? after;
+    String? afterSpoken;
+    if (up == null || next == null) {
+      after = null;
+    } else if (owner == null || owner.plannedExerciseId == up.id) {
+      final (target, spoken) = compactTarget(
+        context,
+        up,
+        next,
+        s.valuesFor(up, next, drafts),
+      );
+      after = l10n.trainingRestNextSet(next, target);
+      afterSpoken = l10n.trainingRestNextSet(next, spoken);
+    } else {
+      after = l10n.trainingLiveNextExercise(up.exerciseName);
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (owner != null)
-          Row(
-            children: [
-              Icon(
-                Icons.check_circle_rounded,
-                color: onColor,
-                size: TokensSize.iconS,
-              ),
-              const SizedBox(width: TokensSpacing.xs),
-              Expanded(
-                child: Text(
-                  l10n.trainingSetLogged(owner.setNumber),
-                  style: context.textStyles.titleSmall?.copyWith(
-                    color: onColor,
-                  ),
-                ),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: onColor),
-                onPressed: () {
-                  bloc.add(LiveSessionEvent.setDeleted(owner.id));
-                  SemanticsService.sendAnnouncement(
-                    View.of(context),
-                    l10n.trainingSetUnmarked(owner.setNumber),
-                    Directionality.of(context),
-                  );
-                },
-                child: Text(
-                  l10n.commonUndo,
-                  semanticsLabel: l10n.trainingUndoSet(owner.setNumber),
-                ),
-              ),
-            ],
-          ),
         Row(
           children: [
             ExcludeSemantics(
@@ -1829,7 +2219,9 @@ class _RestPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.trainingRest,
+                      owner == null
+                          ? l10n.trainingRest
+                          : l10n.trainingRestAfterSet(owner.setNumber),
                       style: context.textStyles.labelLarge?.copyWith(
                         color: onColor,
                       ),
@@ -1847,19 +2239,11 @@ class _RestPanel extends StatelessWidget {
             ),
           ],
         ),
-        if (next != null) ...[
+        if (after != null) ...[
           const SizedBox(height: TokensSpacing.xs),
           Text(
-            l10n.trainingLiveAfterRest(
-              up.exerciseName,
-              next,
-              targetLabel(
-                context,
-                up,
-                next,
-                values: s.valuesFor(up, next, drafts),
-              ),
-            ),
+            after,
+            semanticsLabel: afterSpoken,
             style: context.textStyles.bodyMedium?.copyWith(color: onColor),
           ),
         ],
@@ -1879,6 +2263,7 @@ class _RestPanel extends StatelessWidget {
               ),
             ),
             OutlinedButton(
+              focusNode: restFocus,
               onPressed: () =>
                   bloc.add(const LiveSessionEvent.restAdjusted(15)),
               child: Semantics(
@@ -1888,7 +2273,6 @@ class _RestPanel extends StatelessWidget {
               ),
             ),
             FilledButton(
-              focusNode: skipFocus,
               onPressed: () => bloc.add(const LiveSessionEvent.restSkipped()),
               child: Text(l10n.trainingSkipRest),
             ),

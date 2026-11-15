@@ -272,6 +272,7 @@ void main() {
       testWidgets(
         'ejercicio actual, serie destacada y siguiente (x$scale, 360×$height)',
         (tester) async {
+          final semantics = tester.ensureSemantics();
           when(() => bloc.state).thenReturn(ready());
           await pump(
             tester,
@@ -280,26 +281,45 @@ void main() {
             height: height,
           );
           expect(tester.takeException(), isNull);
-          expect(find.text('0 de 3 ejercicios'), findsOneWidget);
-          // El tiempo real va aparte, en su píldora (con su propio color).
-          expect(find.byType(LiveClockPill), findsOneWidget);
-          expect(find.text('10:00'), findsOneWidget);
-          // El cronómetro de la serie es opcional: un icono con su nombre;
-          // «Marcar serie N» es la única acción destacada.
-          expect(find.byTooltip('Cronometrar la serie'), findsOneWidget);
+          // Cabecera (ADR 0053): series hechas, reloj ⏱ de las series (sin
+          // serie en marcha, quieto) y el entreno en minutos.
+          expect(find.text('1 de 7 series'), findsOneWidget);
+          final pill = tester.widget<LiveClockPill>(find.byType(LiveClockPill));
+          expect(pill.mode, SeriesClockMode.idle);
+          expect(find.text('0:00'), findsOneWidget);
+          expect(find.text('Entreno: 10 min'), findsOneWidget);
+          expect(find.textContaining('Tiempo real'), findsNothing);
+          // Panel de antes de la serie: poco texto y un botón con palabras.
           expect(find.text('Press banca'), findsWidgets);
-          expect(find.text('Marcar serie 2'), findsOneWidget);
-          expect(find.text('Después: Plancha'), findsOneWidget);
+          expect(find.text('Serie 2 de 3'), findsOneWidget);
           // Una sola cifra de partida: la de la fila (pirámide: 10 × 35 kg).
-          // Peso y unidad con espacio fijo: «35 kg» no se parte en dos líneas.
-          expect(find.text('Ahora: 10 reps · 35 kg'), findsOneWidget);
+          expect(find.text('10 × 35 kg'), findsOneWidget);
+          expect(find.text('Empezar serie'), findsOneWidget);
+          expect(find.text('Ya la hice'), findsOneWidget);
+          expect(
+            find.bySemanticsLabel('Cómo se hace: Press banca'),
+            findsOneWidget,
+          );
           expect(find.text('Terminar'), findsOneWidget);
+          // Un solo sitio para marcar: en la tabla, ✓ solo en la hecha.
+          expect(find.byTooltip('Desmarcar la serie 1'), findsOneWidget);
+          expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+          expect(
+            find.bySemanticsLabel(RegExp('^Serie 3, pendiente')),
+            findsOneWidget,
+          );
+          expect(
+            find.bySemanticsLabel(RegExp('^Serie 2, ahora')),
+            findsOneWidget,
+          );
+          expect(find.text('Ahora'), findsOneWidget);
           // Un solo camino de salida: la flecha de volver.
           expect(find.byTooltip('Salir de la sesión'), findsNothing);
           // Con letra grande, «Ejercicio 1 de 3» con anterior y siguiente.
           if (scale > 1) {
             expect(find.byTooltip('Ejercicio siguiente'), findsOneWidget);
           }
+          semantics.dispose();
           await tester.pumpWidget(const SizedBox());
         },
       );
@@ -378,12 +398,143 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('marcar la serie que toca envía lo previsto de esa serie', (
+    testWidgets('«Empezar serie» arranca el cronómetro de la serie que toca', (
       tester,
     ) async {
       when(() => bloc.state).thenReturn(ready());
       await pump(tester, const LiveSessionPage(sessionId: 's1'));
-      await tester.tap(find.text('Marcar serie 2'));
+      await tester.tap(find.text('Empezar serie'));
+      await tester.pump();
+      verify(
+        () => bloc.add(const LiveSessionEvent.setTimerStarted('p1', 2)),
+      ).called(1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('haciendo la serie: reloj grande, ⏸ y «Serie hecha»; el ⏱ de '
+        'arriba suma lo cronometrado', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final base = ready();
+      when(() => bloc.state).thenReturn(
+        base.copyWith(
+          session: base.session!.copyWith(
+            sets: [base.session!.sets.single.copyWith(activeSeconds: 40)],
+          ),
+          timerExerciseId: 'p1',
+          timerSet: 2,
+          timerSince: DateTime.now(),
+          timerSeconds: 42,
+        ),
+      );
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      expect(tester.takeException(), isNull);
+      expect(find.text('0:42'), findsOneWidget);
+      expect(find.text('Serie 2 de 3 · 10 × 35 kg'), findsOneWidget);
+      // 40 s de la serie 1 + 42 s de la que corre.
+      final pill = tester.widget<LiveClockPill>(find.byType(LiveClockPill));
+      expect(pill.mode, SeriesClockMode.running);
+      expect(find.text('1:22'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'Serie en marcha. Tiempo haciendo series: 1 minuto y 22 segundos',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Pausar la serie'), findsOneWidget);
+      await tester.tap(find.byTooltip('Pausar la serie'));
+      await tester.pump();
+      verify(() => bloc.add(const LiveSessionEvent.pauseRequested())).called(1);
+      await tester.tap(find.text('Serie hecha'));
+      await tester.pump();
+      final recorded = verify(
+        () => bloc.add(captureAny()),
+      ).captured.whereType<LiveSessionSetRecorded>().single.record;
+      expect(recorded.setNumber, 2);
+      semantics.dispose();
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('guardando la serie cronometrada sigue en «haciendo», sin '
+        'volver a «Empezar serie»', (tester) async {
+      when(
+        () => bloc.state,
+      ).thenReturn(ready().copyWith(saving: true, recordingSeconds: 30));
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      expect(tester.takeException(), isNull);
+      expect(find.text('Empezar serie'), findsNothing);
+      expect(find.text('0:30'), findsWidgets);
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('serie en pausa: reloj ámbar con «Seguir» y la píldora en '
+        'pausa', (tester) async {
+      final base = ready();
+      when(() => bloc.state).thenReturn(
+        base.copyWith(
+          session: base.session!.copyWith(pausedAt: DateTime.now()),
+          timerExerciseId: 'p1',
+          timerSet: 2,
+          timerBanked: 30,
+          timerSeconds: 30,
+        ),
+      );
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      expect(tester.takeException(), isNull);
+      final pill = tester.widget<LiveClockPill>(find.byType(LiveClockPill));
+      expect(pill.mode, SeriesClockMode.paused);
+      expect(find.text('Seguir'), findsOneWidget);
+      expect(find.text('Serie hecha'), findsOneWidget);
+      await tester.tap(find.text('Seguir'));
+      await tester.pump();
+      verify(
+        () => bloc.add(const LiveSessionEvent.resumeRequested()),
+      ).called(1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('ejercicio terminado: el siguiente con su foto e «Ir al '
+        'siguiente»', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final base = ready();
+      when(() => bloc.state).thenReturn(
+        base.copyWith(
+          session: base.session!.copyWith(
+            sets: [
+              for (var n = 1; n <= 3; n++)
+                SessionSet(
+                  id: 'x$n',
+                  plannedExerciseId: 'p1',
+                  setNumber: n,
+                  repsDone: 10,
+                  weightKg: 30,
+                  completed: true,
+                ),
+            ],
+          ),
+        ),
+      );
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      expect(tester.takeException(), isNull);
+      expect(find.text('Ir al siguiente'), findsOneWidget);
+      expect(find.text('Plancha'), findsWidgets);
+      expect(find.textContaining('Siguiente · 3 series'), findsOneWidget);
+      expect(find.bySemanticsLabel('Cómo se hace: Plancha'), findsOneWidget);
+      await tester.tap(find.text('Ir al siguiente'));
+      await tester.pump();
+      verify(
+        () => bloc.add(const LiveSessionEvent.exerciseSelected('p2')),
+      ).called(1);
+      semantics.dispose();
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('«Ya la hice» marca la serie que toca con lo previsto', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(ready());
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      await tester.tap(find.text('Ya la hice'));
       await tester.pump();
       final recorded = verify(
         () => bloc.add(captureAny()),
@@ -414,17 +565,34 @@ void main() {
       },
     );
 
-    testWidgets('«Deshacer» va en el panel del descanso y desmarca esa serie', (
-      tester,
-    ) async {
+    testWidgets('el descanso dice qué serie se hizo y qué viene, sin '
+        '«Deshacer»', (tester) async {
       when(
         () => bloc.state,
       ).thenReturn(ready(rest: 75).copyWith(restForSet: 'p1/1'));
       await pump(tester, const LiveSessionPage(sessionId: 's1'));
-      expect(find.text('Serie 1 registrada'), findsOneWidget);
-      await tester.tap(find.text('Deshacer'));
-      await tester.pump();
-      verify(() => bloc.add(const LiveSessionEvent.setDeleted('x1'))).called(1);
+      expect(find.text('✓ Serie 1 hecha · descansa'), findsOneWidget);
+      expect(find.text('Después: serie 2 · 10 × 35 kg'), findsOneWidget);
+      // Si se marcó sin querer, se quita con el ✓ verde de la fila.
+      expect(find.text('Deshacer'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('tocar la foto del ejercicio abre «Cómo se hace» sin salir', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final detail = _MockDetailBloc();
+      when(() => detail.state).thenReturn(const ExerciseDetailState.loading());
+      getIt.registerFactory<ExerciseDetailBloc>(() => detail);
+      addTearDown(() => getIt.unregister<ExerciseDetailBloc>());
+      when(() => bloc.state).thenReturn(ready());
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      await tester.tap(find.bySemanticsLabel('Cómo se hace: Press banca'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(tester.takeException(), isNull);
+      expect(find.byType(BottomSheet), findsOneWidget);
+      semantics.dispose();
       await tester.pumpWidget(const SizedBox());
     });
 

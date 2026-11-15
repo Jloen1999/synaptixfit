@@ -51,6 +51,7 @@ import '../use_cases/social/together/join_study_room_use_case.dart';
 import '../use_cases/social/together/decline_study_room_use_case.dart';
 import '../use_cases/social/together/leave_study_room_use_case.dart';
 import '../use_cases/social/together/start_study_room_use_case.dart';
+import '../use_cases/social/together/change_study_room_times_use_case.dart';
 import '../use_cases/social/together/choose_study_room_subject_use_case.dart';
 import '../use_cases/social/together/react_in_study_room_use_case.dart';
 import '../use_cases/notifications/get_notifications_use_case.dart';
@@ -228,6 +229,9 @@ void registerSocialDomain(GetIt getIt) {
     )
     ..registerLazySingleton<StartStudyRoomUseCaseContract>(
       () => StartStudyRoomUseCase(getIt()),
+    )
+    ..registerLazySingleton<ChangeStudyRoomTimesUseCaseContract>(
+      () => ChangeStudyRoomTimesUseCase(getIt()),
     )
     ..registerLazySingleton<ChooseStudyRoomSubjectUseCaseContract>(
       () => ChooseStudyRoomSubjectUseCase(getIt()),

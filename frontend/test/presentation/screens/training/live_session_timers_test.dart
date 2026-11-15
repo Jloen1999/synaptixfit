@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/domain/models/training/session_adaptation.dart';
@@ -172,6 +175,84 @@ void main() {
       await bloc.close();
     },
   );
+
+  group('reloj ⏱ de las series (ADR 0053)', () {
+    test(
+      'solo corre haciendo una serie y no baja mientras se guarda',
+      () async {
+        final saved = Completer<AppResult<TrainingSession>>();
+        when(() => recordSet(any(), any())).thenAnswer((_) => saved.future);
+        final bloc = build()..emit(ready());
+        expect(bloc.state.seriesClock, SeriesClockMode.idle);
+        expect(bloc.state.workoutMinutes, 5);
+        bloc.add(const LiveSessionEvent.setTimerStarted('p1', 1));
+        await settle();
+        expect(bloc.state.seriesClock, SeriesClockMode.running);
+        current = current.add(const Duration(seconds: 30));
+        bloc.add(const LiveSessionEvent.ticked());
+        await settle();
+        expect(bloc.state.seriesSeconds, 30);
+
+        bloc.add(
+          const LiveSessionEvent.setRecorded(
+            SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+          ),
+        );
+        await settle();
+        // Guardándose: el cronómetro de la serie ya no corre, pero su tiempo
+        // sigue en el reloj de arriba.
+        expect(bloc.state.seriesClock, SeriesClockMode.idle);
+        expect(bloc.state.seriesSeconds, 30);
+        saved.complete(
+          Success(
+            TrainingFixtures.session(startedAt: startedAt).copyWith(
+              sets: const [
+                SessionSet(
+                  id: 'x1',
+                  plannedExerciseId: 'p1',
+                  setNumber: 1,
+                  repsDone: 10,
+                  completed: true,
+                  activeSeconds: 30,
+                ),
+              ],
+            ),
+          ),
+        );
+        await settle();
+        expect(bloc.state.recordingSeconds, 0);
+        expect(bloc.state.seriesSeconds, 30);
+        await bloc.close();
+      },
+    );
+
+    test('en pausa queda en pausa y «Ya la hice» no suma tiempo', () async {
+      final bloc = build()..emit(ready());
+      bloc.add(const LiveSessionEvent.setTimerStarted('p1', 1));
+      await settle();
+      current = current.add(const Duration(seconds: 12));
+      bloc.add(const LiveSessionEvent.pauseRequested());
+      await settle();
+      expect(bloc.state.seriesClock, SeriesClockMode.paused);
+      expect(bloc.state.seriesSeconds, 12);
+      current = current.add(const Duration(minutes: 3));
+      bloc.add(const LiveSessionEvent.ticked());
+      await settle();
+      expect(bloc.state.seriesSeconds, 12);
+      await bloc.close();
+
+      final other = build()..emit(ready());
+      other.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+        ),
+      );
+      await settle();
+      expect(recorded().activeSeconds, isNull);
+      expect(other.state.seriesSeconds, 0);
+      await other.close();
+    });
+  });
 
   test('con el cronómetro de la serie se guarda lo que tardó', () async {
     final bloc = build()..emit(ready());

@@ -80,7 +80,8 @@ class _WorkoutView extends StatelessWidget with ErrorsMessageMixin {
               );
               Future<void>.delayed(
                 const Duration(milliseconds: 800),
-                () => SemanticsService.sendAnnouncement(view, message, direction),
+                () =>
+                    SemanticsService.sendAnnouncement(view, message, direction),
               );
             }
           } else if (state.left) {

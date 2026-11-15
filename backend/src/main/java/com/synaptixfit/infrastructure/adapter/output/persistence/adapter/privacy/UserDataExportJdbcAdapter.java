@@ -101,6 +101,11 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
         sections.put("routineExercises", rows("to_jsonb(t) || jsonb_build_object('ejercicio_nombre', e.nombre)",
                 "seleccion_de_ejercicios t LEFT JOIN ejercicios e ON e.id = t.ejercicio_id",
                 "t.rutina_id IN " + ROUTINE_IDS, "t.rutina_id, t.indice_orden"));
+        // Duraciones reales de las últimas veces de cada ejercicio (V1070, ADR 0048).
+        sections.put("routineExerciseDurations", rows("duraciones_ejercicio_rutina t",
+                "t.ejercicio_seleccionado_id IN (SELECT id FROM seleccion_de_ejercicios WHERE rutina_id IN "
+                        + ROUTINE_IDS + ")",
+                "t.ejercicio_seleccionado_id, t.registrada_en"));
         sections.put("trainingSessions", rows("sesiones_registradas t", "t.usuario_id = :id", "t.completada_en"));
         sections.put("sessionSets", rows("series_sesion t",
                 "t.sesion_id IN (SELECT id FROM sesiones_registradas WHERE usuario_id = :id)",

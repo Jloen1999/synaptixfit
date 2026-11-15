@@ -57,7 +57,6 @@ StudyRoom _room({
   return StudyRoom(
     id: 'r1',
     creator: _ana,
-    length: StudyRoomLength.short,
     rounds: 2,
     phase: phase,
     round: phase == StudyRoomPhase.waiting ? 0 : 1,

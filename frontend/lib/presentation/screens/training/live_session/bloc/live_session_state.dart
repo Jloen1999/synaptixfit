@@ -2,6 +2,11 @@ part of 'live_session_bloc.dart';
 
 enum LiveStatus { loading, ready, failure }
 
+/// Cómo está el reloj ⏱ de las series de la cabecera: corre mientras se hace
+/// una serie con su cronómetro, en pausa si esa serie está en pausa y quieto
+/// (gris) en cualquier otro momento (ADR 0053).
+enum SeriesClockMode { running, paused, idle }
+
 @freezed
 abstract class LiveSessionState with _$LiveSessionState {
   const factory LiveSessionState({
@@ -87,6 +92,11 @@ abstract class LiveSessionState with _$LiveSessionState {
     /// Segundos que marca el cronómetro de la serie (para pintar).
     @Default(0) int timerSeconds,
 
+    /// Segundos de la serie cronometrada que se acaba de marcar y aún no está
+    /// en la sesión (se está guardando): así el reloj ⏱ de las series no baja
+    /// un momento mientras llega la respuesta.
+    @Default(0) int recordingSeconds,
+
     /// Cuándo se reanudó sin que el servidor lo supiera (sin conexión). Se
     /// reintenta con esta hora y, mientras no llegue, no se puede terminar.
     DateTime? resumePendingAt,
@@ -112,6 +122,28 @@ abstract class LiveSessionState with _$LiveSessionState {
 
   /// Corre el cronómetro de alguna serie.
   bool get timerRunning => timerSet != null && timerSince != null;
+
+  /// Tiempo haciendo series (reloj ⏱ de la cabecera, ADR 0053): lo
+  /// cronometrado en las series de esta sesión más la serie en marcha. Las
+  /// marcadas con «Ya la hice» no suman (no se cronometraron).
+  int get seriesSeconds {
+    var total = recordingSeconds;
+    for (final s in session?.sets ?? const <SessionSet>[]) {
+      total += s.activeSeconds ?? 0;
+    }
+    if (timerSet != null) total += timerSeconds;
+    return total;
+  }
+
+  /// Estado del reloj ⏱ de las series.
+  SeriesClockMode get seriesClock => timerSet == null
+      ? SeriesClockMode.idle
+      : timerSince != null && !paused
+      ? SeriesClockMode.running
+      : SeriesClockMode.paused;
+
+  /// Minutos enteros de entreno (tiempo activo, con descansos y sin pausas).
+  int get workoutMinutes => elapsedSeconds ~/ 60;
 
   /// Series completadas frente a las planificadas.
   int get completedSets => session?.sets.where((s) => s.completed).length ?? 0;

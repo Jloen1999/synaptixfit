@@ -24,6 +24,10 @@ sealed class StudyRoomEvent with _$StudyRoomEvent {
   /// El aviso de salir se cerró: ahora se sale de verdad.
   const factory StudyRoomEvent.leaveCommitted() = StudyRoomLeaveCommitted;
 
+  /// «Cambiar tiempos» antes de empezar (cualquiera de dentro, ADR 0053).
+  const factory StudyRoomEvent.timesChanged(StudyRoomTimes times) =
+      StudyRoomTimesChanged;
+
   /// «Empezar»: el temporizador común arranca para todos.
   const factory StudyRoomEvent.startRequested() = StudyRoomStartRequested;
 

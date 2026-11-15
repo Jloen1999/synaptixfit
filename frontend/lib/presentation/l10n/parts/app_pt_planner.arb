@@ -239,8 +239,6 @@
   "plannerErrorScheduleFileTooLarge": "O ficheiro excede 10 MB.",
   "plannerPomodoroStudying": "A estudar: {name}",
   "plannerPomodoroMinutes": "{minutes} min",
-  "plannerPomodoroPlanHint": "Recomendado para hoje, com pausas de {minutes} min",
-  "plannerPomodoroPlanFatigue": "Hoje, concentração mais curta pela tua carga física; pausas de {minutes} min",
   "plannerFocusOnBlock": "Concentrar-me",
   "plannerRepeatWeekly": "Repetir todas as semanas",
   "plannerRepeatWeeklyHint": "No mesmo dia e à mesma hora",
@@ -382,5 +380,18 @@
   "plannerSubjectArchived": "Disciplina arquivada",
   "plannerDeadlinesSwipeHint": "Desliza uma entrega para a esquerda para a eliminar.",
   "plannerPomodoroWithFriends": "Estudar com amigos",
-  "plannerShortcutDeadlines": "Entregas"
+  "plannerShortcutDeadlines": "Entregas",
+  "plannerPomodoroFocusRecommended": "Recomendado para hoje",
+  "plannerPomodoroFocusFatigue": "Hoje, concentração mais curta pela tua carga física",
+  "plannerPomodoroBreaksSummary": "Pausas: {short} min · longa {long} min",
+  "plannerPomodoroBreaksChange": "Alterar",
+  "plannerPomodoroBreaksChangeSpoken": "Alterar as pausas",
+  "plannerPomodoroBreaksTitle": "Pausas",
+  "plannerPomodoroShortBreakLabel": "Pausa curta",
+  "plannerPomodoroShortBreakMinutes": "Minutos de pausa",
+  "plannerPomodoroLongBreakLabel": "Pausa longa, a cada {cycles} concentrações",
+  "plannerPomodoroLongBreakMinutes": "Minutos da pausa longa",
+  "plannerPomodoroMinutesRecommended": "{minutes} min · Recomendado",
+  "plannerPomodoroBreaksRemembered": "Também serão usadas da próxima vez.",
+  "plannerPomodoroBreaksSaved": "Pausas: {short} min, e {long} min a longa"
 }

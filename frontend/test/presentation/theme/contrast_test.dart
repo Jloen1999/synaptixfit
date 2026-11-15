@@ -166,12 +166,22 @@ void main() {
           final pill = Color.alphaBlend(tint(c.warning), behind);
           expectRatio('píldora en pausa sobre $behind', c.warning, pill, 4.5);
         }
+        // Reloj ⏱ de las series (ADR 0053): en marcha, en pausa (arriba) y
+        // quieto, en gris.
         expectRatio(
-          'píldora del tiempo real',
+          'píldora ⏱ en marcha',
           c.onAccentContainer,
           c.accentContainer,
           4.5,
         );
+        expectRatio(
+          'píldora ⏱ quieta',
+          c.onSurfaceVariant,
+          c.surfaceContainerHigh,
+          4.5,
+        );
+        // «Ahora» en la fila de la serie que toca (fondo primaryContainer).
+        expectRatio('fila «Ahora»', c.primary, c.primaryContainer, 4.5);
         for (final color in [c.success, c.warning, c.error]) {
           expectRatio('cifra de la nota $color', color, tint(color), 4.5);
         }

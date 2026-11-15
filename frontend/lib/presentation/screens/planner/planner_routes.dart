@@ -85,11 +85,19 @@ abstract final class PlannerExternalPaths {
   /// es global, no de cada evento.
   static const notificationSettings = '/profile/settings/notifications';
 
-  /// «Estudiar con amigos» (Con amigos, ADR 0045), con la asignatura del
-  /// Pomodoro si había una.
-  static String studyWithFriends({String? subjectId}) => Uri(
+  /// «Estudiar con amigos» (Con amigos, ADR 0045), con la asignatura y los
+  /// minutos del Pomodoro (ADR 0053).
+  static String studyWithFriends({
+    String? subjectId,
+    int? focusMinutes,
+    int? breakMinutes,
+  }) => Uri(
     path: '/social/together/study/new',
-    queryParameters: {'subject': ?subjectId},
+    queryParameters: {
+      'subject': ?subjectId,
+      'focus': ?focusMinutes?.toString(),
+      'break': ?breakMinutes?.toString(),
+    },
   ).toString();
 }
 

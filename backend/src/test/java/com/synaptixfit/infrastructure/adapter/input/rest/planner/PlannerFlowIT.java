@@ -272,7 +272,11 @@ class PlannerFlowIT {
         mvc.perform(auth(get("/api/v1/planner/focus-sessions/plan")))
                 .andExpect(jsonPath("$.focusMinutes").value(52))
                 .andExpect(jsonPath("$.shortBreakMinutes").value(17))
-                .andExpect(jsonPath("$.limitedByFatigue").value(false));
+                .andExpect(jsonPath("$.limitedByFatigue").value(false))
+                // Límites para elegir el descanso a mano (ADR 0053).
+                .andExpect(jsonPath("$.minShortBreakMinutes").value(1))
+                .andExpect(jsonPath("$.maxShortBreakMinutes").value(30))
+                .andExpect(jsonPath("$.maxLongBreakMinutes").value(60));
         // «Tu estudio» cuenta la concentración de la semana (la consulta corre sobre PostgreSQL).
         mvc.perform(auth(get("/api/v1/analytics/study-week")))
                 .andExpect(jsonPath("$.focusMinutes").value(25))

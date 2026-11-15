@@ -377,17 +377,6 @@
   },
   "trainingRestLess": "Quitar 15 segundos",
   "trainingRestMore": "Añadir 15 segundos",
-  "trainingSetsProgress": "{done}/{total} series",
-  "@trainingSetsProgress": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "trainingSetsDone": "{done} de {total} series",
   "@trainingSetsDone": {
     "placeholders": {
@@ -1277,48 +1266,10 @@
       }
     }
   },
-  "trainingMarkSetDone": "Marcar la serie {set} como hecha",
-  "@trainingMarkSetDone": {
-    "placeholders": {
-      "set": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingLiveSetDone": "Marcar serie {set}",
-  "@trainingLiveSetDone": {
-    "placeholders": {
-      "set": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingLiveGoTo": "Siguiente: {name}",
-  "@trainingLiveGoTo": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "trainingLiveNextExercise": "Después: {name}",
   "@trainingLiveNextExercise": {
     "placeholders": {
       "name": {
-        "type": "String"
-      }
-    }
-  },
-  "trainingLiveAfterRest": "Ahora: {name} · serie {set} · {target}",
-  "@trainingLiveAfterRest": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      },
-      "set": {
-        "type": "int"
-      },
-      "target": {
         "type": "String"
       }
     }
@@ -1357,7 +1308,6 @@
       }
     }
   },
-  "trainingCurrentSet": "Serie actual",
   "trainingSetFieldInvalidInSet": "Serie {set}: {field} entre {min} y {max}",
   "@trainingSetFieldInvalidInSet": {
     "placeholders": {
@@ -1561,24 +1511,8 @@
       }
     }
   },
-  "trainingRemainingMinutes": "Quedan ≈ {minutes} min",
-  "@trainingRemainingMinutes": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
   "trainingEstimatedMinutesSpoken": "Unos {minutes} minutos",
   "@trainingEstimatedMinutesSpoken": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingRemainingMinutesSpoken": "Quedan unos {minutes} minutos",
-  "@trainingRemainingMinutesSpoken": {
     "placeholders": {
       "minutes": {
         "type": "int"
@@ -1747,33 +1681,6 @@
       }
     }
   },
-  "trainingLiveExercisesProgress": "{done} de {total} ejercicios",
-  "@trainingLiveExercisesProgress": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingClockSpoken": "Tiempo real de la sesión, sin pausas: {time}",
-  "@trainingClockSpoken": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "trainingClockPausedSpoken": "Sesión en pausa. Tiempo real: {time}",
-  "@trainingClockPausedSpoken": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "trainingPausedBanner": "Sesión en pausa: el tiempo no corre",
   "trainingPause": "Pausar",
   "trainingResume": "Reanudar",
@@ -1827,7 +1734,6 @@
       }
     }
   },
-  "trainingClockRealHint": "Tiempo real, sin contar pausas",
   "@trainingLeaveMessage": {
     "placeholders": {
       "count": {
@@ -2042,11 +1948,27 @@
   "trainingTemplatesEmptyHint": "Quita algún filtro para ver más.",
   "trainingTemplatesClearFilters": "Quitar filtros",
   "trainingTemplatesFilter": "Filtrar",
-  "@trainingTemplatesFilter": {"description": "Botón y título de la hoja de filtros de las plantillas de rutina"},
+  "@trainingTemplatesFilter": {
+    "description": "Botón y título de la hoja de filtros de las plantillas de rutina"
+  },
   "trainingTemplatesFilterActive": "Filtrar ({count})",
-  "@trainingTemplatesFilterActive": {"description": "Botón de filtros con cuántos hay puestos", "placeholders": {"count": {"type": "int"}}},
+  "@trainingTemplatesFilterActive": {
+    "description": "Botón de filtros con cuántos hay puestos",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "trainingTemplatesShowResults": "{count, plural, =0{No hay plantillas} =1{Ver 1 plantilla} other{Ver {count} plantillas}}",
-  "@trainingTemplatesShowResults": {"description": "Botón que cierra la hoja de filtros", "placeholders": {"count": {"type": "int"}}},
+  "@trainingTemplatesShowResults": {
+    "description": "Botón que cierra la hoja de filtros",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "trainingTemplatesCreated": "Listo: «{name}» ya es tu rutina.",
   "@trainingTemplatesCreated": {
     "placeholders": {
@@ -3013,26 +2935,10 @@
   },
   "trainingFinishEmpty": "Aún no has marcado ninguna serie; se guarda igual.",
   "trainingLoadWhyTooltip": "Por qué esta propuesta",
-  "trainingLiveNowValues": "Ahora: {values}",
-  "@trainingLiveNowValues": {
-    "placeholders": {
-      "values": {
-        "type": "String"
-      }
-    }
-  },
   "trainingRemoveFromPlan": "Quitar del plan",
   "trainingSheetSeconds": "Segundos",
   "trainingSheetMinutes": "Minutos",
   "trainingReopenSession": "Reabrir y seguir",
-  "trainingUndoSet": "Deshacer serie {n}",
-  "@trainingUndoSet": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "trainingCheckInThanks": "¡Gracias por contarnos cómo estás!",
   "@trainingCheckInThanks": {
     "description": "Tarjeta tras el registro diario (sin la XP: se ve en Progreso)."
@@ -3169,5 +3075,190 @@
     }
   },
   "trainingErrorShareLinkNotFound": "Este enlace ya no vale. Pide uno nuevo a quien te lo pasó.",
-  "trainingErrorShareLinkLimit": "Ya has creado muchos enlaces de esta rutina. Deja de compartirla y crea uno nuevo."
+  "trainingErrorShareLinkLimit": "Ya has creado muchos enlaces de esta rutina. Deja de compartirla y crea uno nuevo.",
+  "trainingRepsTimesWeight": "{reps} × {weight} kg",
+  "@trainingRepsTimesWeight": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRepsWithWeightSpoken": "{reps} repeticiones con {weight} kilos",
+  "@trainingRepsWithWeightSpoken": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLiveSetsCount": "{done} de {total} series",
+  "@trainingLiveSetsCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWorkoutMinutes": "Entreno: {minutes} min",
+  "@trainingWorkoutMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWorkoutMinutesLeft": "Entreno: {minutes} min · te quedan ≈ {left} min",
+  "@trainingWorkoutMinutesLeft": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWorkoutMinutesSpoken": "Llevas {minutes, plural, =0{menos de un minuto} =1{1 minuto} other{{minutes} minutos}} de entreno",
+  "@trainingWorkoutMinutesSpoken": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWorkoutMinutesLeftSpoken": "Llevas {minutes, plural, =0{menos de un minuto} =1{1 minuto} other{{minutes} minutos}} de entreno; {left, plural, =0{ya casi has terminado} =1{te queda más o menos 1 minuto} other{te quedan unos {left} minutos}}",
+  "@trainingWorkoutMinutesLeftSpoken": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSeriesClockSpoken": "Tiempo haciendo series: {time}",
+  "@trainingSeriesClockSpoken": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSeriesClockPausedSpoken": "Serie en pausa. Tiempo haciendo series: {time}",
+  "@trainingSeriesClockPausedSpoken": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSetNow": "Ahora",
+  "trainingSetNowSpoken": "Serie {set}, ahora",
+  "@trainingSetNowSpoken": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetPendingSpoken": "Serie {set}, pendiente",
+  "@trainingSetPendingSpoken": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingHowToOf": "Cómo se hace: {name}",
+  "@trainingHowToOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingNextExerciseSummary": "Siguiente · {summary}",
+  "@trainingNextExerciseSummary": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingGoToNext": "Ir al siguiente",
+  "trainingSetOf": "Serie {set} de {total}",
+  "@trainingSetOf": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetOfWithTarget": "Serie {set} de {total} · {target}",
+  "@trainingSetOfWithTarget": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingStartSet": "Empezar serie",
+  "trainingAlreadyDone": "Ya la hice",
+  "trainingAlreadyDoneSpoken": "Ya hice la serie {set}: marcarla sin cronómetro",
+  "@trainingAlreadyDoneSpoken": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingContinueSet": "Seguir",
+  "trainingRestAfterSet": "✓ Serie {set} hecha · descansa",
+  "@trainingRestAfterSet": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRestNextSet": "Después: serie {set} · {target}",
+  "@trainingRestNextSet": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingPauseSet": "Pausar la serie",
+  "trainingSeriesClockRunningSpoken": "Serie en marcha. Tiempo haciendo series: {time}",
+  "@trainingSeriesClockRunningSpoken": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }

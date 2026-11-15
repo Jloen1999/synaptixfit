@@ -11,17 +11,18 @@ import '../../../../../theme/tokens.g.dart';
 import '../../../../../widgets/widgets.dart';
 import '../../../social_routes.dart';
 import '../../friend_picker/bloc/friend_picker_bloc.dart';
+import '../../widgets/study_room_times_picker.dart';
 import '../../widgets/together_widgets.dart';
 import '../bloc/study_invite_bloc.dart';
 
-/// «Estudiar con amigos» (ADR 0045): duración de la ronda, cuántas rondas y con
-/// quién. Una sola acción principal, «Invitar», que crea la sala y la abre.
-/// Desde el Pomodoro llega su asignatura ([subjectId]); [length] permite abrirla
-/// con la duración ya elegida.
+/// «Estudiar con amigos» (ADR 0045 y 0053): minutos de cada ronda, cuántas
+/// rondas y con quién. Una sola acción principal, «Invitar», que crea la sala y
+/// la abre. Desde el Pomodoro llegan su asignatura ([subjectId]) y sus minutos
+/// ([times]).
 class StudyInvitePage extends StatelessWidget {
-  const StudyInvitePage({super.key, this.length, this.subjectId});
+  const StudyInvitePage({super.key, this.times, this.subjectId});
 
-  final StudyRoomLength? length;
+  final StudyRoomTimes? times;
   final String? subjectId;
 
   @override
@@ -30,9 +31,7 @@ class StudyInvitePage extends StatelessWidget {
       providers: [
         BlocProvider(
           create: (_) => getIt<StudyInviteBloc>()
-            ..add(
-              StudyInviteEvent.started(length: length, subjectId: subjectId),
-            ),
+            ..add(StudyInviteEvent.started(times: times, subjectId: subjectId)),
         ),
         BlocProvider(
           create: (_) => getIt<FriendPickerBloc>()
@@ -127,8 +126,9 @@ class _InviteView extends StatelessWidget with ErrorsMessageMixin {
   }
 }
 
-/// Duración de cada ronda y cuántas rondas: las opciones y el máximo los manda
-/// el servidor (`/together/limits`); hasta que llegan no se enseñan.
+/// Minutos de cada ronda y cuántas rondas: los atajos, los límites y el máximo
+/// de rondas los manda el servidor (`/together/limits`); hasta que llegan no se
+/// enseñan.
 class _Options extends StatelessWidget {
   const _Options();
 
@@ -139,45 +139,48 @@ class _Options extends StatelessWidget {
       (b) => b.state.limits,
     );
     if (limits == null) return const SizedBox.shrink();
-    final lengths = limits.studyRoomLengths;
     final maxRounds = limits.studyRoomRounds;
-    return BlocBuilder<StudyInviteBloc, StudyInviteState>(
-      builder: (context, state) {
+    // Lo que llega del Pomodoro o de un enlace se acota a los límites del
+    // servidor en cuanto se conocen: así nunca se manda algo que no vale.
+    return BlocListener<FriendPickerBloc, FriendPickerState>(
+      listenWhen: (p, c) => c.limits != null && p.limits != c.limits,
+      listener: (context, picker) {
         final bloc = context.read<StudyInviteBloc>();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (lengths.isNotEmpty)
-              AppSegmentedChoice<StudyRoomLength>(
-                label: l10n.togetherStudyLength,
-                values: [for (final o in lengths) o.length],
-                selected: state.length,
-                labelOf: (l) {
-                  final o = lengths.firstWhere((o) => o.length == l);
-                  return l10n.togetherStudyLengthOption(
-                    o.focusMinutes,
-                    o.breakMinutes,
-                  );
-                },
-                onChanged: (l) {
-                  if (l != null) bloc.add(StudyInviteEvent.lengthChosen(l));
-                },
-              ),
-            if (maxRounds > 1) ...[
-              const SizedBox(height: TokensSpacing.m),
-              AppSegmentedChoice<int>(
-                label: l10n.togetherStudyRounds,
-                values: [for (var i = 1; i <= maxRounds; i++) i],
-                selected: state.rounds.clamp(1, maxRounds),
-                labelOf: (n) => '$n',
-                onChanged: (n) {
-                  if (n != null) bloc.add(StudyInviteEvent.roundsChosen(n));
-                },
-              ),
-            ],
-          ],
+        final fitted = StudyRoomTimesPicker.clamp(
+          bloc.state.times,
+          picker.limits!,
         );
+        if (fitted != bloc.state.times) {
+          bloc.add(StudyInviteEvent.timesChosen(fitted));
+        }
       },
+      child: BlocBuilder<StudyInviteBloc, StudyInviteState>(
+        builder: (context, state) {
+          final bloc = context.read<StudyInviteBloc>();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              StudyRoomTimesPicker(
+                limits: limits,
+                value: state.times,
+                onChanged: (t) => bloc.add(StudyInviteEvent.timesChosen(t)),
+              ),
+              if (maxRounds > 1) ...[
+                const SizedBox(height: TokensSpacing.m),
+                AppSegmentedChoice<int>(
+                  label: l10n.togetherStudyRounds,
+                  values: [for (var i = 1; i <= maxRounds; i++) i],
+                  selected: state.rounds.clamp(1, maxRounds),
+                  labelOf: (n) => '$n',
+                  onChanged: (n) {
+                    if (n != null) bloc.add(StudyInviteEvent.roundsChosen(n));
+                  },
+                ),
+              ],
+            ],
+          );
+        },
+      ),
     );
   }
 }

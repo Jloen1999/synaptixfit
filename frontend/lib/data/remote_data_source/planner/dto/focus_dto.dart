@@ -99,6 +99,11 @@ abstract class FocusPlanDto with _$FocusPlanDto {
     @Default(false) bool limitedByFatigue,
     required int minFocusMinutes,
     required int maxFocusMinutes,
+    // Un servidor anterior al ADR 0053 no los manda: los de entonces.
+    @Default(1) int minShortBreakMinutes,
+    @Default(30) int maxShortBreakMinutes,
+    @Default(5) int minLongBreakMinutes,
+    @Default(60) int maxLongBreakMinutes,
   }) = _FocusPlanDto;
 
   const FocusPlanDto._();
@@ -114,5 +119,9 @@ abstract class FocusPlanDto with _$FocusPlanDto {
     limitedByFatigue: limitedByFatigue,
     minFocusMinutes: minFocusMinutes,
     maxFocusMinutes: maxFocusMinutes,
+    minShortBreakMinutes: minShortBreakMinutes,
+    maxShortBreakMinutes: maxShortBreakMinutes,
+    minLongBreakMinutes: minLongBreakMinutes,
+    maxLongBreakMinutes: maxLongBreakMinutes,
   );
 }

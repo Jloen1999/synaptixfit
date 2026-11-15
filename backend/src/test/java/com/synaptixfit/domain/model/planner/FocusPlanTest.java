@@ -39,4 +39,15 @@ class FocusPlanTest {
         assertThat(FocusPlan.of(90).focusMinutes()).isEqualTo(52);
         assertThat(FocusPlan.of(60).limitedByFatigue()).isFalse();
     }
+
+    @Test
+    void theRecommendedBreaksAreAlwaysInsideTheLimitsToChooseThem() {
+        for (int max : new int[] {10, 25, 40, 52, 90}) {
+            FocusPlan plan = FocusPlan.of(max);
+            assertThat(plan.shortBreakMinutes()).isBetween(FocusPlan.MIN_SHORT_BREAK_MINUTES,
+                    FocusPlan.MAX_SHORT_BREAK_MINUTES);
+            assertThat(plan.longBreakMinutes()).isBetween(FocusPlan.MIN_LONG_BREAK_MINUTES,
+                    FocusPlan.MAX_LONG_BREAK_MINUTES);
+        }
+    }
 }

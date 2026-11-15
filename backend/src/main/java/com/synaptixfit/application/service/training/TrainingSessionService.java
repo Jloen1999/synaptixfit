@@ -241,8 +241,9 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         TrainingSession saved = sessions.save(session);
 
         Optional<Routine> trained = routine.filter(r -> session.dayId() != null && r.findDay(session.dayId()).isPresent());
+        // Cada ejercicio recuerda sus últimas duraciones reales: la estimación aprende de ellas (ADR 0048).
         trained.ifPresent(r -> realDurations.forEach((plannedId, seconds) ->
-                r.plannedExercise(plannedId).recordRealDuration(seconds)));
+                r.plannedExercise(plannedId).recordRealDuration(seconds, completedAt)));
 
         ExperienceChange experience = awardExperience.award(c.userId(), xp);
         Map<UUID, PlannedExercise> plannedById = planned.stream()

@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../../../../../domain/enums/together_enums.dart';
 import '../../../../../../domain/errors/app_error.dart';
 import '../../../../../../domain/models/result/result.dart';
 import '../../../../../../domain/models/social/together.dart';
@@ -11,14 +10,14 @@ part 'study_invite_bloc.freezed.dart';
 part 'study_invite_event.dart';
 part 'study_invite_state.dart';
 
-/// «Estudiar con amigos» (ADR 0045): cuánto dura cada ronda, cuántas rondas e
-/// «Invitar». Los amigos (y los topes, del servidor) los elige
+/// «Estudiar con amigos» (ADR 0045 y 0053): los minutos de cada ronda,
+/// cuántas rondas e «Invitar». Los amigos (y los topes, del servidor) los elige
 /// `FriendPickerBloc`; la asignatura llega del Pomodoro si había una.
 class StudyInviteBloc extends Bloc<StudyInviteEvent, StudyInviteState> {
   StudyInviteBloc({required this._create}) : super(const StudyInviteState()) {
     on<StudyInviteStarted>(_onStarted);
-    on<StudyInviteLengthChosen>(
-      (e, emit) => emit(state.copyWith(length: e.length)),
+    on<StudyInviteTimesChosen>(
+      (e, emit) => emit(state.copyWith(times: e.times)),
     );
     on<StudyInviteRoundsChosen>(
       (e, emit) => emit(state.copyWith(rounds: e.rounds)),
@@ -31,7 +30,7 @@ class StudyInviteBloc extends Bloc<StudyInviteEvent, StudyInviteState> {
   void _onStarted(StudyInviteStarted event, Emitter<StudyInviteState> emit) =>
       emit(
         state.copyWith(
-          length: event.length ?? state.length,
+          times: event.times ?? state.times,
           subjectId: event.subjectId,
         ),
       );
@@ -43,7 +42,7 @@ class StudyInviteBloc extends Bloc<StudyInviteEvent, StudyInviteState> {
     if (state.saving || event.friendIds.isEmpty) return;
     emit(state.copyWith(saving: true, error: null));
     final result = await _create(
-      length: state.length,
+      times: state.times,
       rounds: state.rounds,
       friendIds: event.friendIds,
       subjectId: state.subjectId,

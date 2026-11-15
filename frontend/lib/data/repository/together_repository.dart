@@ -191,13 +191,14 @@ class TogetherRepository implements TogetherRepositoryContract {
 
   @override
   Future<AppResult<StudyRoom>> createStudyRoom({
-    required StudyRoomLength length,
+    required StudyRoomTimes times,
     required int rounds,
     required List<String> friendIds,
     String? subjectId,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.createStudyRoom(
-      length: length.apiValue,
+      focusMinutes: times.focusMinutes,
+      breakMinutes: times.breakMinutes,
       rounds: rounds,
       friendIds: friendIds,
       subjectId: subjectId,
@@ -235,6 +236,18 @@ class TogetherRepository implements TogetherRepositoryContract {
       RepositoryErrorHandler.guard(
         () async => (await _remote.startStudyRoom(id)).toDomain(),
       );
+
+  @override
+  Future<AppResult<StudyRoom>> changeStudyRoomTimes(
+    String id,
+    StudyRoomTimes times,
+  ) => RepositoryErrorHandler.guard(
+    () async => (await _remote.changeStudyRoomTimes(
+      id,
+      focusMinutes: times.focusMinutes,
+      breakMinutes: times.breakMinutes,
+    )).toDomain(),
+  );
 
   @override
   Future<AppResult<StudyRoom>> chooseStudyRoomSubject(

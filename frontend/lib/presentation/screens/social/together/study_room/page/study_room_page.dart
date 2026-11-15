@@ -13,6 +13,7 @@ import '../../../../../mixins/errors_message_mixin.dart';
 import '../../../../../theme/tokens.g.dart';
 import '../../../../../widgets/widgets.dart';
 import '../../../../planner/widgets/pomodoro_ring_painter.dart';
+import '../../widgets/study_room_times_picker.dart';
 import '../../widgets/together_labels.dart';
 import '../../widgets/together_widgets.dart';
 import '../../../../shell/bloc/study_room_bar_bloc.dart';
@@ -86,6 +87,13 @@ class _RoomViewState extends State<_RoomView> with ErrorsMessageMixin {
     } else if (before.phase == StudyRoomPhase.waiting &&
         after.phase != StudyRoomPhase.waiting) {
       _focusAfterFrame(_clock);
+    } else if (after.phase == StudyRoomPhase.waiting &&
+        before.times != after.times) {
+      // Lo cambió alguien de dentro (o yo): se dice con los minutos nuevos,
+      // también al lector, para que nadie empiece con otros tiempos en mente.
+      context.showSnack(
+        l10n.togetherStudyTimesChanged(after.focusMinutes, after.breakMinutes),
+      );
     }
   }
 
@@ -340,11 +348,38 @@ class _Body extends StatelessWidget {
                 AppPrimaryButton(
                   label: l10n.togetherStart,
                   icon: AppIcons.start,
-                  loading: state.busy,
+                  loading: state.busy && !state.changingTimes,
                   focusNode: mainFocus,
                   onPressed: () =>
                       bloc.add(const StudyRoomEvent.startRequested()),
                 ),
+              // Antes de empezar, cualquiera de dentro puede cambiar los
+              // minutos (ADR 0053); los demás lo ven al momento.
+              if (state.inside &&
+                  room.canChangeTimes &&
+                  state.limits != null) ...[
+                const SizedBox(height: TokensSpacing.xs),
+                Center(
+                  child: TextButton.icon(
+                    // Mientras se guardan los minutos sigue activo: así no
+                    // suelta el foco al volver de la hoja.
+                    onPressed: state.busy && !state.changingTimes
+                        ? null
+                        : () async {
+                            final chosen = await showStudyRoomTimesSheet(
+                              context,
+                              limits: state.limits!,
+                              initial: room.times,
+                            );
+                            if (chosen != null && !bloc.isClosed) {
+                              bloc.add(StudyRoomEvent.timesChanged(chosen));
+                            }
+                          },
+                    icon: const Icon(AppIcons.edit),
+                    label: Text(l10n.togetherStudyChangeTimes),
+                  ),
+                ),
+              ],
               if (state.inside) ...[
                 const SizedBox(height: TokensSpacing.m),
                 _Reactions(mine: room.myReaction),

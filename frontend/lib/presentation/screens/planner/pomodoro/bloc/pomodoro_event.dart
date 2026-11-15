@@ -27,6 +27,11 @@ sealed class PomodoroEvent with _$PomodoroEvent {
   const factory PomodoroEvent.focusMinutesChanged(int minutes) =
       PomodoroFocusMinutesChanged;
 
+  /// Descansos elegidos a mano (nulo: el recomendado de hoy). Se recuerdan
+  /// para la próxima vez (ADR 0053).
+  const factory PomodoroEvent.breaksChosen(FocusBreakChoice choice) =
+      PomodoroBreaksChosen;
+
   const factory PomodoroEvent.startPressed() = PomodoroStartPressed;
 
   const factory PomodoroEvent.pausePressed() = PomodoroPausePressed;

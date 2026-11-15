@@ -34,7 +34,7 @@ final class InMemoryStudyRooms implements StudyRoomRepositoryPort {
         credited.putIfAbsent(room.id(), room.creditedRounds());
         StudyRoom previous = rooms.get(room.id());
         Instant started = previous != null && previous.startedAt() != null ? previous.startedAt() : room.startedAt();
-        rooms.put(room.id(), new StudyRoom(room.id(), room.creatorId(), room.length(), room.rounds(),
+        rooms.put(room.id(), new StudyRoom(room.id(), room.creatorId(), room.times(), room.rounds(),
                 room.createdAt(), started, 0, new TogetherMembers(room.members().all()), room.subjects(),
                 room.reactions(), room.enteredAt()));
         return room;
@@ -67,7 +67,7 @@ final class InMemoryStudyRooms implements StudyRoomRepositoryPort {
 
     /** Cada lectura devuelve una copia nueva, como la BD (así una escritura vieja no cambia lo guardado). */
     private StudyRoom copy(StudyRoom r) {
-        return new StudyRoom(r.id(), r.creatorId(), r.length(), r.rounds(), r.createdAt(), r.startedAt(),
+        return new StudyRoom(r.id(), r.creatorId(), r.times(), r.rounds(), r.createdAt(), r.startedAt(),
                 credited.getOrDefault(r.id(), 0),
                 new TogetherMembers(r.members().all()), r.subjects(),
                 r.reactions(), r.enteredAt());

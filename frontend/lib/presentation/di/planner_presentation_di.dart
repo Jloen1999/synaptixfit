@@ -106,6 +106,8 @@ void registerPlannerPresentation(GetIt getIt) {
         clearTimer: getIt(),
         getSubjects: getIt(),
         setBlockCompletion: getIt(),
+        loadBreakChoice: getIt(),
+        saveBreakChoice: getIt(),
       ),
     );
 }

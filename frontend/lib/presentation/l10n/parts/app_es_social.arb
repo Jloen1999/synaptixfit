@@ -806,7 +806,7 @@
   "togetherStudyTitle": "Estudiar juntos",
   "togetherStudyWithFriends": "Estudiar con amigos",
   "togetherStudyIntro": "Un temporizador para todos; cada uno estudia lo suyo.",
-  "togetherStudyHelp": "Cada ronda terminada cuenta como un Pomodoro tuyo (racha y retos). Los demás no ven tu asignatura ni cómo estás. Si te vas, los demás siguen; cualquiera de dentro puede empezar.",
+  "togetherStudyHelp": "Cada ronda terminada cuenta como un Pomodoro tuyo (racha y retos). Los demás no ven tu asignatura ni cómo estás. Si te vas, los demás siguen. Antes de empezar, cualquiera de dentro puede cambiar los tiempos y empezarla.",
   "togetherStudyLength": "Cada ronda",
   "togetherStudyLengthOption": "{focus} + {rest} min",
   "@togetherStudyLengthOption": {
@@ -928,29 +928,120 @@
     }
   },
   "togetherStudyAlertFocusBody": "Fin de la concentración · ronda {round} de {rounds}",
-  "@togetherStudyAlertFocusBody": {"description": "Aviso del móvil al acabar una concentración de la sala", "placeholders": {"round": {"type": "int"}, "rounds": {"type": "int"}}},
+  "@togetherStudyAlertFocusBody": {
+    "description": "Aviso del móvil al acabar una concentración de la sala",
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "rounds": {
+        "type": "int"
+      }
+    }
+  },
   "togetherStudyAlertBreakBody": "Fin del descanso: vuelve a concentrarte",
-  "@togetherStudyAlertBreakBody": {"description": "Aviso del móvil al acabar un descanso de la sala (sin número de ronda: lo dice el servidor al abrirla)"},
+  "@togetherStudyAlertBreakBody": {
+    "description": "Aviso del móvil al acabar un descanso de la sala (sin número de ronda: lo dice el servidor al abrirla)"
+  },
   "togetherStudyBarLabel": "Estudiar juntos, {phase}: quedan {time}. Abrir la sala",
-  "@togetherStudyBarLabel": {"description": "Lector: barra de la sala sobre la navegación", "placeholders": {"phase": {"type": "String"}, "time": {"type": "String"}}},
+  "@togetherStudyBarLabel": {
+    "description": "Lector: barra de la sala sobre la navegación",
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "togetherStudyBarLabelNoClock": "Estudiar juntos, {phase}. Abrir la sala",
-  "@togetherStudyBarLabelNoClock": {"description": "Lector: barra de la sala sin cuenta atrás (esperando o leyendo la fase siguiente)", "placeholders": {"phase": {"type": "String"}}},
+  "@togetherStudyBarLabelNoClock": {
+    "description": "Lector: barra de la sala sin cuenta atrás (esperando o leyendo la fase siguiente)",
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
   "togetherFriendStarted": "{name} ha empezado a entrenar",
-  "@togetherFriendStarted": {"description": "Aviso: un amigo empezó el entreno juntos (ADR 0047)", "placeholders": {"name": {"type": "String"}}},
+  "@togetherFriendStarted": {
+    "description": "Aviso: un amigo empezó el entreno juntos (ADR 0047)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "togetherGo": "Entrar",
-  "@togetherGo": {"description": "Botón del aviso: ir a la sesión"},
+  "@togetherGo": {
+    "description": "Botón del aviso: ir a la sesión"
+  },
   "togetherPausedBy": "En pausa · la ha puesto {name}",
-  "@togetherPausedBy": {"description": "Sesión en vivo: el grupo está en pausa porque la puso otra persona", "placeholders": {"name": {"type": "String"}}},
+  "@togetherPausedBy": {
+    "description": "Sesión en vivo: el grupo está en pausa porque la puso otra persona",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "togetherWaitingStart": "Cuando alguien empiece, empezáis todos a la vez.",
-  "@togetherWaitingStart": {"description": "Pantalla de espera de entrenar juntos, antes de empezar"},
+  "@togetherWaitingStart": {
+    "description": "Pantalla de espera de entrenar juntos, antes de empezar"
+  },
   "togetherRunning": "Ya está en marcha.",
-  "@togetherRunning": {"description": "Pantalla de entrenar juntos, ya empezado"},
+  "@togetherRunning": {
+    "description": "Pantalla de entrenar juntos, ya empezado"
+  },
   "togetherStartedAnnounce": "{name} ha empezado. Entras en la sesión.",
-  "@togetherStartedAnnounce": {"description": "Lector: otra persona empezó y se abre la sesión", "placeholders": {"name": {"type": "String"}}},
+  "@togetherStartedAnnounce": {
+    "description": "Lector: otra persona empezó y se abre la sesión",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "togetherPausedByAnnounce": "{name} ha puesto la pausa.",
-  "@togetherPausedByAnnounce": {"description": "Lector: otra persona puso la pausa del grupo (ADR 0047)", "placeholders": {"name": {"type": "String"}}},
+  "@togetherPausedByAnnounce": {
+    "description": "Lector: otra persona puso la pausa del grupo (ADR 0047)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "togetherResumedAnnounce": "Seguís entrenando: se ha quitado la pausa.",
-  "@togetherResumedAnnounce": {"description": "Lector: otra persona quitó la pausa del grupo (ADR 0047)"},
+  "@togetherResumedAnnounce": {
+    "description": "Lector: otra persona quitó la pausa del grupo (ADR 0047)"
+  },
   "togetherResumeForAll": "Reanudar para todos",
-  "@togetherResumeForAll": {"description": "Botón: reanudar la pausa del grupo"}
+  "@togetherResumeForAll": {
+    "description": "Botón: reanudar la pausa del grupo"
+  },
+  "togetherStudyFocusLabel": "Concentración",
+  "togetherStudyBreakLabel": "Descanso",
+  "togetherStudyMinutesValue": "{minutes} min",
+  "@togetherStudyMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "togetherStudyTimesTitle": "Tiempos de la sala",
+  "togetherStudyTimesHint": "Todos los de la sala verán el cambio al momento.",
+  "togetherStudyChangeTimes": "Cambiar tiempos",
+  "togetherStudyTimesChanged": "Ahora: {focus} min de concentración y {rest} min de descanso",
+  "@togetherStudyTimesChanged": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "rest": {
+        "type": "int"
+      }
+    }
+  }
 }

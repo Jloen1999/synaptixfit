@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.together;
 
+import com.synaptixfit.application.port.input.together.ChangeStudyRoomTimesUseCase;
 import com.synaptixfit.application.port.input.together.ChooseStudyRoomSubjectUseCase;
 import com.synaptixfit.application.port.input.together.CreateStudyRoomUseCase;
 import com.synaptixfit.application.port.input.together.DeclineStudyRoomUseCase;
@@ -13,6 +14,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.CreateStud
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.StudyRoomReactionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.StudyRoomResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.StudyRoomSubjectRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.together.dto.StudyRoomTimesRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -44,12 +46,13 @@ public class StudyRoomController {
     private final StartStudyRoomUseCase start;
     private final ChooseStudyRoomSubjectUseCase chooseSubject;
     private final ReactStudyRoomUseCase react;
+    private final ChangeStudyRoomTimesUseCase changeTimes;
 
     @SuppressWarnings("java:S107")
     public StudyRoomController(CreateStudyRoomUseCase create, GetStudyRoomUseCase get, JoinStudyRoomUseCase join,
                                DeclineStudyRoomUseCase decline, LeaveStudyRoomUseCase leave,
                                StartStudyRoomUseCase start, ChooseStudyRoomSubjectUseCase chooseSubject,
-                               ReactStudyRoomUseCase react) {
+                               ReactStudyRoomUseCase react, ChangeStudyRoomTimesUseCase changeTimes) {
         this.create = create;
         this.get = get;
         this.join = join;
@@ -58,12 +61,13 @@ public class StudyRoomController {
         this.start = start;
         this.chooseSubject = chooseSubject;
         this.react = react;
+        this.changeTimes = changeTimes;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public StudyRoomResponse create(@CurrentUserId UUID userId, @Valid @RequestBody CreateStudyRoomRequest request) {
-        return StudyRoomResponse.from(create.create(new CreateStudyRoomUseCase.Command(userId, request.length(),
+        return StudyRoomResponse.from(create.create(new CreateStudyRoomUseCase.Command(userId, request.times(),
                 request.rounds(), request.friendIds(), request.subjectId())));
     }
 
@@ -94,6 +98,13 @@ public class StudyRoomController {
     @PostMapping("/{roomId}/start")
     public StudyRoomResponse start(@CurrentUserId UUID userId, @PathVariable UUID roomId) {
         return StudyRoomResponse.from(start.start(userId, roomId));
+    }
+
+    /** Cambia los minutos de la ronda antes de empezar (cualquiera de dentro; ADR 0053). */
+    @PutMapping("/{roomId}/times")
+    public StudyRoomResponse times(@CurrentUserId UUID userId, @PathVariable UUID roomId,
+                                   @Valid @RequestBody StudyRoomTimesRequest request) {
+        return StudyRoomResponse.from(changeTimes.changeTimes(userId, roomId, request.times()));
     }
 
     @PutMapping("/{roomId}/subject")

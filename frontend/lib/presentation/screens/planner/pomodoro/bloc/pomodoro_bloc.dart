@@ -21,8 +21,10 @@ import '../../../../../domain/use_cases/planner/get_focus_plan_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_focus_stats_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import '../../../../../domain/use_cases/planner/load_active_focus_timer_use_case.dart';
+import '../../../../../domain/use_cases/planner/load_focus_break_choice_use_case.dart';
 import '../../../../../domain/use_cases/planner/record_focus_session_use_case.dart';
 import '../../../../../domain/use_cases/planner/save_active_focus_timer_use_case.dart';
+import '../../../../../domain/use_cases/planner/save_focus_break_choice_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
 
 part 'pomodoro_bloc.freezed.dart';
@@ -30,7 +32,9 @@ part 'pomodoro_event.dart';
 part 'pomodoro_state.dart';
 
 /// Duraciones del temporizador Pomodoro. Por defecto, el ciclo de atención de
-/// 52/17 min; al llegar la recomendación del servidor ([FocusPlan]) se usa esa.
+/// 52/17 min; al llegar la recomendación del servidor ([FocusPlan]) se usa esa,
+/// con los descansos que eligió la persona la última vez ([FocusBreakChoice],
+/// ADR 0053).
 class PomodoroConfig {
   const PomodoroConfig({
     this.focusMinutes = 52,
@@ -41,10 +45,13 @@ class PomodoroConfig {
     this.maxFocusMinutes = 90,
   });
 
-  factory PomodoroConfig.fromPlan(FocusPlan plan) => PomodoroConfig(
+  factory PomodoroConfig.fromPlan(
+    FocusPlan plan, [
+    FocusBreakChoice choice = const FocusBreakChoice(),
+  ]) => PomodoroConfig(
     focusMinutes: plan.focusMinutes,
-    shortBreakMinutes: plan.shortBreakMinutes,
-    longBreakMinutes: plan.longBreakMinutes,
+    shortBreakMinutes: choice.shortFor(plan),
+    longBreakMinutes: choice.longFor(plan),
     cyclesBeforeLongBreak: plan.cyclesBeforeLongBreak,
     minFocusMinutes: plan.minFocusMinutes,
     maxFocusMinutes: plan.maxFocusMinutes,
@@ -57,10 +64,17 @@ class PomodoroConfig {
   final int minFocusMinutes;
   final int maxFocusMinutes;
 
-  PomodoroConfig withFocusMinutes(int minutes) => PomodoroConfig(
-    focusMinutes: minutes.clamp(minFocusMinutes, maxFocusMinutes),
-    shortBreakMinutes: shortBreakMinutes,
-    longBreakMinutes: longBreakMinutes,
+  PomodoroConfig withFocusMinutes(int minutes) =>
+      copyWith(focusMinutes: minutes.clamp(minFocusMinutes, maxFocusMinutes));
+
+  PomodoroConfig copyWith({
+    int? focusMinutes,
+    int? shortBreakMinutes,
+    int? longBreakMinutes,
+  }) => PomodoroConfig(
+    focusMinutes: focusMinutes ?? this.focusMinutes,
+    shortBreakMinutes: shortBreakMinutes ?? this.shortBreakMinutes,
+    longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
     cyclesBeforeLongBreak: cyclesBeforeLongBreak,
     minFocusMinutes: minFocusMinutes,
     maxFocusMinutes: maxFocusMinutes,
@@ -129,6 +143,8 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     this._clearTimer,
     this._getSubjects,
     this._setBlockCompletion,
+    this._loadBreakChoice,
+    this._saveBreakChoice,
     PomodoroConfig config = const PomodoroConfig(),
     DateTime Function()? now,
     Stream<void> Function()? ticker,
@@ -144,6 +160,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
        ) {
     on<PomodoroStarted>(_onStarted);
     on<PomodoroFocusMinutesChanged>(_onFocusMinutesChanged);
+    on<PomodoroBreaksChosen>(_onBreaksChosen);
     on<PomodoroSubjectSelected>((event, emit) {
       if (!state.canPickSubject) return;
       emit(state.copyWith(subjectId: event.subjectId));
@@ -175,6 +192,8 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
   final ClearActiveFocusTimerUseCaseContract? _clearTimer;
   final GetPlannerSubjectsUseCaseContract? _getSubjects;
   final SetBlockCompletionUseCaseContract? _setBlockCompletion;
+  final LoadFocusBreakChoiceUseCaseContract? _loadBreakChoice;
+  final SaveFocusBreakChoiceUseCaseContract? _saveBreakChoice;
 
   /// Sin bloque, la pantalla ofrece elegir asignatura. Si falla, no se avisa:
   /// concentrarse sin asignatura sigue valiendo.
@@ -241,11 +260,22 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
   }
 
   /// Si falla, se queda con las duraciones por defecto (sin aviso: no impide
-  /// concentrarse).
+  /// concentrarse). Los descansos son los que se eligieron la última vez
+  /// (guardados en el teléfono); sin elección, los recomendados de hoy.
   Future<void> _loadPlan(Emitter<PomodoroState> emit) async {
-    final plan = (await _getPlan()).valueOrNull;
+    final load = _loadBreakChoice;
+    final (planResult, choiceResult) = await (
+      _getPlan(),
+      load == null
+          ? Future.value(
+              const Success<FocusBreakChoice, AppError>(FocusBreakChoice()),
+            )
+          : load(),
+    ).wait;
+    final plan = planResult.valueOrNull;
     if (plan == null) return;
-    _config = PomodoroConfig.fromPlan(plan);
+    final choice = choiceResult.valueOrNull ?? const FocusBreakChoice();
+    _config = PomodoroConfig.fromPlan(plan, choice);
     final untouched =
         state.status == PomodoroStatus.idle &&
         state.remainingSeconds == state.totalSeconds &&
@@ -255,13 +285,49 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
       emit(
         state.copyWith(
           plan: plan,
+          breakChoice: choice,
           totalSeconds: total,
           remainingSeconds: total,
         ),
       );
     } else {
-      emit(state.copyWith(plan: plan));
+      emit(state.copyWith(plan: plan, breakChoice: choice));
     }
+  }
+
+  /// Descansos elegidos en la hoja «Descansos» (nulo: el recomendado). Valen
+  /// desde ya: si la fase actual es un descanso sin empezar, cambia su
+  /// duración. Se recuerdan para la próxima vez.
+  Future<void> _onBreaksChosen(
+    PomodoroBreaksChosen event,
+    Emitter<PomodoroState> emit,
+  ) async {
+    final plan = state.plan;
+    final choice = event.choice;
+    final shortBreak = plan != null
+        ? choice.shortFor(plan)
+        : choice.shortBreakMinutes ?? const PomodoroConfig().shortBreakMinutes;
+    final longBreak = plan != null
+        ? choice.longFor(plan)
+        : choice.longBreakMinutes ?? const PomodoroConfig().longBreakMinutes;
+    _config = _config.copyWith(
+      shortBreakMinutes: shortBreak,
+      longBreakMinutes: longBreak,
+    );
+    final waitingBreak =
+        state.status == PomodoroStatus.idle &&
+        state.phase != FocusPhase.focus &&
+        state.remainingSeconds == state.totalSeconds;
+    final total = _config.minutesOf(state.phase) * 60;
+    emit(
+      state.copyWith(
+        breakChoice: choice,
+        totalSeconds: waitingBreak ? total : state.totalSeconds,
+        remainingSeconds: waitingBreak ? total : state.remainingSeconds,
+      ),
+    );
+    final save = _saveBreakChoice;
+    if (save != null) await save(choice);
   }
 
   void _onFocusMinutesChanged(

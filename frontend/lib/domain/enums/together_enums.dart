@@ -110,19 +110,6 @@ enum StudyRoomPhase {
   bool get over => this == finished || this == expired;
 }
 
-/// Duración de cada ronda: 25 + 5 o 50 + 10 minutos.
-enum StudyRoomLength {
-  short('SHORT'),
-  long('LONG');
-
-  const StudyRoomLength(this.apiValue);
-
-  final String apiValue;
-
-  static StudyRoomLength fromApi(String? value) =>
-      values.firstWhere((l) => l.apiValue == value, orElse: () => short);
-}
-
 /// Reacciones fijas de una sala (sin chat).
 enum StudyRoomReaction {
   clap('CLAP'),

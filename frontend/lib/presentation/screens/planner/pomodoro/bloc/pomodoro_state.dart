@@ -26,6 +26,9 @@ abstract class PomodoroState with _$PomodoroState {
     /// Recomendación del servidor para hoy (nula hasta que llega).
     FocusPlan? plan,
 
+    /// Descansos elegidos a mano (vacío: los recomendados).
+    @Default(FocusBreakChoice()) FocusBreakChoice breakChoice,
+
     /// Asignatura y bloque a los que se vinculan las fases registradas.
     String? subjectId,
     String? blockId,

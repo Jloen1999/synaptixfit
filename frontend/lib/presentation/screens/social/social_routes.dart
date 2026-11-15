@@ -1,7 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/enums/friendship_list_kind.dart';
-import '../../../domain/enums/together_enums.dart';
+import '../../../domain/models/social/together.dart';
 import 'feed/page/feed_page.dart';
 import 'friends/page/friends_page.dart';
 import 'notifications/page/notifications_page.dart';
@@ -19,6 +19,16 @@ import 'user_profile/page/user_profile_page.dart';
 /// [post], [friendRequests] y [user].
 abstract final class SocialPaths {
   static const root = '/social';
+
+  /// Minutos de la sala que trae el enlace (`focus` y `break`, los del
+  /// Pomodoro); nulos si falta alguno o no es un número.
+  static StudyRoomTimes? studyTimesFrom(Map<String, String> query) {
+    final focus = int.tryParse(query['focus'] ?? '');
+    final rest = int.tryParse(query['break'] ?? '');
+    if (focus == null || rest == null) return null;
+    return StudyRoomTimes(focusMinutes: focus, breakMinutes: rest);
+  }
+
   static const postPattern = '/social/posts/:postId';
   static const friends = '/social/friends';
   static const friendRequests = '/social/friends/requests';
@@ -163,10 +173,7 @@ List<RouteBase> socialRoutes() => [
   GoRoute(
     path: SocialPaths.togetherNewStudyRoom,
     builder: (_, state) => StudyInvitePage(
-      length: switch (state.uri.queryParameters['length']) {
-        final String value => StudyRoomLength.fromApi(value),
-        null => null,
-      },
+      times: SocialPaths.studyTimesFrom(state.uri.queryParameters),
       subjectId: state.uri.queryParameters['subject'],
     ),
   ),

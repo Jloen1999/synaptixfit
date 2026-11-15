@@ -12,6 +12,8 @@ import '../../../../../../domain/models/result/result.dart';
 import '../../../../../../domain/models/social/together.dart';
 import '../../../../../../domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/choose_study_room_subject_use_case.dart';
+import '../../../../../../domain/use_cases/social/together/change_study_room_times_use_case.dart';
+import '../../../../../../domain/use_cases/social/together/get_together_limits_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/decline_study_room_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/get_study_room_use_case.dart';
 import '../../../../../../domain/use_cases/social/together/join_study_room_use_case.dart';
@@ -52,6 +54,8 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
     required this._chooseSubject,
     required this._react,
     required this._subjects,
+    this._changeTimes,
+    this._limits,
     this._watchChanges,
     this.liveConnected,
     this.pollInterval = const Duration(seconds: 12),
@@ -66,6 +70,7 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
     on<StudyRoomLeaveUndone>(_onLeaveUndone);
     on<StudyRoomLeaveCommitted>(_onLeaveCommitted);
     on<StudyRoomStartRequested>(_onStart);
+    on<StudyRoomTimesChanged>(_onTimesChanged);
     on<StudyRoomSubjectChosen>(_onSubject);
     on<StudyRoomReacted>(_onReacted);
   }
@@ -78,6 +83,8 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
   final ChooseStudyRoomSubjectUseCaseContract _chooseSubject;
   final ReactInStudyRoomUseCaseContract _react;
   final GetPlannerSubjectsUseCaseContract _subjects;
+  final ChangeStudyRoomTimesUseCaseContract? _changeTimes;
+  final GetTogetherLimitsUseCaseContract? _limits;
   final WatchDataChangesUseCaseContract? _watchChanges;
   @override
   final IsTogetherLiveConnectedUseCaseContract? liveConnected;
@@ -127,8 +134,18 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
     });
     _poll();
     // Las asignaturas son solo para mi selector: si fallan, se elige «Ninguna».
-    final subjects = (await _subjects()).valueOrNull;
-    if (subjects != null) emit(state.copyWith(subjects: subjects));
+    // Los topes, solo para «Cambiar tiempos»: si fallan, no se ofrece.
+    final limits = _limits;
+    final Future<AppResult<TogetherLimits>?> loadLimits = limits == null
+        ? Future.value()
+        : limits();
+    final (subjects, limitsResult) = await (_subjects(), loadLimits).wait;
+    emit(
+      state.copyWith(
+        subjects: subjects.valueOrNull ?? state.subjects,
+        limits: limitsResult?.valueOrNull ?? state.limits,
+      ),
+    );
   }
 
   void _poll() {
@@ -189,6 +206,17 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
     StudyRoomStartRequested event,
     Emitter<StudyRoomState> emit,
   ) => _run(emit, () => _start(_id));
+
+  Future<void> _onTimesChanged(
+    StudyRoomTimesChanged event,
+    Emitter<StudyRoomState> emit,
+  ) async {
+    final change = _changeTimes;
+    if (change == null || event.times == state.room?.times) return;
+    emit(state.copyWith(changingTimes: true));
+    await _run(emit, () => change(_id, event.times));
+    emit(state.copyWith(changingTimes: false));
+  }
 
   Future<void> _onSubject(
     StudyRoomSubjectChosen event,

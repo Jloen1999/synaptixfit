@@ -328,7 +328,7 @@
   "togetherStudyTitle": "Étudier ensemble",
   "togetherStudyWithFriends": "Étudier avec des amis",
   "togetherStudyIntro": "Un minuteur pour tous ; chacun étudie ce qu’il veut.",
-  "togetherStudyHelp": "Chaque tour terminé compte comme un de tes Pomodoros (série et défis). Les autres ne voient ni ta matière ni ton état. Si tu pars, les autres continuent ; n’importe qui dans la salle peut la lancer.",
+  "togetherStudyHelp": "Chaque manche terminée compte comme un de tes Pomodoros (série et défis). Les autres ne voient ni ta matière ni comment tu te sens. Si tu pars, les autres continuent. Avant de commencer, n'importe qui dans la salle peut modifier les durées et la lancer.",
   "togetherStudyLength": "Chaque tour",
   "togetherStudyLengthOption": "{focus} + {rest} min",
   "togetherStudyRounds": "Tours",
@@ -373,5 +373,12 @@
   "togetherStartedAnnounce": "{name} a commencé. Ouverture de ta séance.",
   "togetherPausedByAnnounce": "{name} a mis la séance en pause.",
   "togetherResumedAnnounce": "Vous reprenez : la pause est terminée.",
-  "togetherResumeForAll": "Reprendre pour tous"
+  "togetherResumeForAll": "Reprendre pour tous",
+  "togetherStudyFocusLabel": "Concentration",
+  "togetherStudyBreakLabel": "Pause",
+  "togetherStudyMinutesValue": "{minutes} min",
+  "togetherStudyTimesTitle": "Durées de la salle",
+  "togetherStudyTimesHint": "Tout le monde dans la salle verra le changement tout de suite.",
+  "togetherStudyChangeTimes": "Modifier les durées",
+  "togetherStudyTimesChanged": "Maintenant : {focus} min de concentration et {rest} min de pause"
 }

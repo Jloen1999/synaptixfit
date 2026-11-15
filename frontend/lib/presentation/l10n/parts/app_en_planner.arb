@@ -239,8 +239,6 @@
   "plannerErrorScheduleFileTooLarge": "The file is over 10 MB.",
   "plannerPomodoroStudying": "Studying: {name}",
   "plannerPomodoroMinutes": "{minutes} min",
-  "plannerPomodoroPlanHint": "Recommended for today, with {minutes} min breaks",
-  "plannerPomodoroPlanFatigue": "Shorter focus time today because of your physical load; {minutes} min breaks",
   "plannerFocusOnBlock": "Focus",
   "plannerRepeatWeekly": "Repeat every week",
   "plannerRepeatWeeklyHint": "Same day, same time",
@@ -382,5 +380,18 @@
   "plannerSubjectArchived": "Archived subject",
   "plannerDeadlinesSwipeHint": "Swipe a deadline left to delete it.",
   "plannerPomodoroWithFriends": "Study with friends",
-  "plannerShortcutDeadlines": "Deadlines"
+  "plannerShortcutDeadlines": "Deadlines",
+  "plannerPomodoroFocusRecommended": "Recommended for today",
+  "plannerPomodoroFocusFatigue": "Shorter focus today because of your physical load",
+  "plannerPomodoroBreaksSummary": "Breaks: {short} min · long {long} min",
+  "plannerPomodoroBreaksChange": "Change",
+  "plannerPomodoroBreaksChangeSpoken": "Change the breaks",
+  "plannerPomodoroBreaksTitle": "Breaks",
+  "plannerPomodoroShortBreakLabel": "Short break",
+  "plannerPomodoroShortBreakMinutes": "Break minutes",
+  "plannerPomodoroLongBreakLabel": "Long break, every {cycles} focus sessions",
+  "plannerPomodoroLongBreakMinutes": "Long break minutes",
+  "plannerPomodoroMinutesRecommended": "{minutes} min · Recommended",
+  "plannerPomodoroBreaksRemembered": "They'll also be used next time.",
+  "plannerPomodoroBreaksSaved": "Breaks: {short} min, and {long} min for the long one"
 }

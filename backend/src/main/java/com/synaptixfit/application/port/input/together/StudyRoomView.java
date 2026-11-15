@@ -3,7 +3,6 @@ package com.synaptixfit.application.port.input.together;
 import com.synaptixfit.domain.model.together.MemberStatus;
 import com.synaptixfit.domain.model.together.Person;
 import com.synaptixfit.domain.model.together.StudyRoom;
-import com.synaptixfit.domain.model.together.StudyRoomLength;
 import com.synaptixfit.domain.model.together.StudyRoomReaction;
 import java.time.Instant;
 import java.util.List;
@@ -19,7 +18,7 @@ import java.util.UUID;
  * @param serverTime  hora del servidor al responder
  * @param mySubjectId mi asignatura para las rondas; nula si no elegí ninguna
  */
-public record StudyRoomView(UUID id, Person creator, StudyRoomLength length, int focusMinutes, int breakMinutes,
+public record StudyRoomView(UUID id, Person creator, int focusMinutes, int breakMinutes,
                             int rounds, StudyRoom.Phase phase, int round, Instant phaseEndsAt, Instant startedAt,
                             Instant endsAt, Instant serverTime, MemberStatus myStatus, UUID mySubjectId,
                             List<Member> members) {

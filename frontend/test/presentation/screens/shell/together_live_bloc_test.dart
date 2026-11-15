@@ -183,7 +183,6 @@ void main() {
       final room = StudyRoom(
         id: 'r1',
         creator: ana,
-        length: StudyRoomLength.short,
         phase: StudyRoomPhase.focus,
         serverTime: DateTime(2026, 11, 16, 18),
         myStatus: TogetherMemberStatus.joined,
@@ -205,7 +204,6 @@ void main() {
       final waiting = StudyRoom(
         id: 'r1',
         creator: ana,
-        length: StudyRoomLength.short,
         phase: StudyRoomPhase.waiting,
         serverTime: DateTime(2026, 11, 16, 18),
         myStatus: TogetherMemberStatus.joined,

@@ -3,6 +3,7 @@ package com.synaptixfit.infrastructure.adapter.output.persistence.mapper.trainin
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.PlannedExercise;
+import com.synaptixfit.domain.model.training.RecordedDuration;
 import com.synaptixfit.domain.model.training.Routine;
 import com.synaptixfit.domain.model.training.RoutineDay;
 import com.synaptixfit.domain.model.training.RoutineOrigin;
@@ -17,7 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Agregado rutina ↔ entidades {@code rutinas}, {@code semanas_rutina}, {@code dias_rutina} y {@code seleccion_de_ejercicios}. */
+/**
+ * Agregado rutina ↔ entidades {@code rutinas}, {@code semanas_rutina}, {@code dias_rutina},
+ * {@code seleccion_de_ejercicios} y {@code duraciones_ejercicio_rutina}.
+ */
 public final class RoutinePersistenceMapper {
 
     private RoutinePersistenceMapper() {
@@ -42,14 +46,15 @@ public final class RoutinePersistenceMapper {
                 e.getCerradoEn(), exercises);
     }
 
-    public static PlannedExercise toDomain(ExerciseSelectionEntity e, Map<UUID, ExerciseRef> refs) {
+    public static PlannedExercise toDomain(ExerciseSelectionEntity e, Map<UUID, ExerciseRef> refs,
+                                           List<RecordedDuration> durations) {
         ExerciseRef ref = refs.getOrDefault(e.getEjercicioId(), ExerciseRef.unknown(e.getEjercicioId()));
         // Los datos heredados pueden estar fuera de rango: se ajustan en lugar de romper la lectura.
         ExerciseParameters params = ExerciseParameters.clamped(e.getSeries(), e.getRepeticiones(),
                 e.getSegundosDescanso(), e.getPesoKg(), e.getPesosKg(), e.getDuracionObjetivoSegundos(),
                 e.getDistanciaMetros(), e.getTiempoIsometricoSegundos(), e.getRepeticionesPorSerie(),
                 e.getSegundosIsometricosPorSerie());
-        return new PlannedExercise(e.getId(), ref, params, e.getIndiceOrden(), e.getDuracionRealSegundos());
+        return new PlannedExercise(e.getId(), ref, params, e.getIndiceOrden(), durations);
     }
 
     public static void copy(Routine r, RoutineEntity e) {
@@ -114,6 +119,5 @@ public final class RoutinePersistenceMapper {
         e.setDuracionObjetivoSegundos(x.targetDurationSeconds());
         e.setDistanciaMetros(x.distanceMeters());
         e.setTiempoIsometricoSegundos(x.isometricSeconds());
-        e.setDuracionRealSegundos(p.realDurationSeconds());
     }
 }

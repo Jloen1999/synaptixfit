@@ -21,7 +21,7 @@ import com.synaptixfit.domain.model.together.FriendChallenge;
 import com.synaptixfit.domain.model.together.FriendStreak;
 import com.synaptixfit.domain.model.together.MemberStatus;
 import com.synaptixfit.domain.model.together.StudyRoom;
-import com.synaptixfit.domain.model.together.StudyRoomLength;
+import com.synaptixfit.domain.model.together.StudyRoomTimes;
 import com.synaptixfit.domain.model.together.StudyRoomReaction;
 import com.synaptixfit.domain.model.together.TogetherLiveChange;
 import com.synaptixfit.domain.model.together.WorkoutTogether;
@@ -99,7 +99,7 @@ class StudyRoomServiceTest {
         for (User f : friends) {
             ids.add(f.id());
         }
-        return service.create(new CreateStudyRoomUseCase.Command(me.id(), StudyRoomLength.SHORT, 2, ids, subjectId));
+        return service.create(new CreateStudyRoomUseCase.Command(me.id(), StudyRoomTimes.SHORT, 2, ids, subjectId));
     }
 
     @Test
@@ -147,6 +147,24 @@ class StudyRoomServiceTest {
         live.clear();
         service.react(me.id(), room.id(), StudyRoomReaction.FIRE);
         assertThat(live).singleElement().satisfies(c -> assertThat(c.recipients()).containsExactly(me.id()));
+    }
+
+    @Test
+    void anyoneInsideChangesTheMinutesBeforeStartingAndTheOthersHearItLive() {
+        StudyRoomView room = create(null, ana);
+        service.join(ana.id(), room.id());
+        live.clear();
+        StudyRoomView changed = service.changeTimes(ana.id(), room.id(), new StudyRoomTimes(40, 8));
+        assertThat(changed.focusMinutes()).isEqualTo(40);
+        assertThat(changed.breakMinutes()).isEqualTo(8);
+        assertThat(service.get(me.id(), room.id()).focusMinutes()).isEqualTo(40);
+        assertThat(live).singleElement().satisfies(c -> {
+            assertThat(c.topic()).isEqualTo(TogetherLiveChange.Topic.STUDY_ROOM);
+            assertThat(c.recipients()).containsExactlyInAnyOrder(me.id(), ana.id());
+        });
+        service.start(me.id(), room.id());
+        assertThatThrownBy(() -> service.changeTimes(ana.id(), room.id(), StudyRoomTimes.LONG))
+                .isInstanceOf(com.synaptixfit.domain.exception.together.TogetherInvalidStateException.class);
     }
 
     @Test

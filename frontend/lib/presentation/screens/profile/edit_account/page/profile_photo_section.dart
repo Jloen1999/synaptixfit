@@ -97,11 +97,11 @@ class _ProfilePhotoSectionState extends State<ProfilePhotoSection>
             if (hasPhoto)
               AppFocusOutline(
                 child: ListTile(
-                  leading: Icon(AppIcons.delete, color: context.colors.error),
-                  title: Text(
-                    l10n.profilePhotoRemove,
-                    style: TextStyle(color: context.colors.error),
-                  ),
+                  // El color de la acción destructiva lo pone la propia fila.
+                  iconColor: context.colors.error,
+                  textColor: context.colors.error,
+                  leading: const Icon(AppIcons.delete),
+                  title: Text(l10n.profilePhotoRemove),
                   onTap: () =>
                       Navigator.of(sheetContext).pop(_PhotoAction.remove),
                 ),

@@ -113,7 +113,11 @@ void main() {
     await open(tester, HomePaths.root);
     var committed = false;
     final context = tester.element(find.text('Inicio'));
-    context.showUndoSnack('Borrado', onUndo: () {}, onCommit: () => committed = true);
+    context.showUndoSnack(
+      'Borrado',
+      onUndo: () {},
+      onCommit: () => committed = true,
+    );
     await tester.pump();
 
     await friendStarts(tester);

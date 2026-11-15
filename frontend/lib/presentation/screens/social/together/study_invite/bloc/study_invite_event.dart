@@ -2,14 +2,15 @@ part of 'study_invite_bloc.dart';
 
 @freezed
 sealed class StudyInviteEvent with _$StudyInviteEvent {
-  /// Lo que trae el Pomodoro: su duración y su asignatura (opcionales).
+  /// Lo que trae el Pomodoro: sus minutos y su asignatura (opcionales).
   const factory StudyInviteEvent.started({
-    StudyRoomLength? length,
+    StudyRoomTimes? times,
     String? subjectId,
   }) = StudyInviteStarted;
 
-  const factory StudyInviteEvent.lengthChosen(StudyRoomLength length) =
-      StudyInviteLengthChosen;
+  /// Minutos de concentración y descanso de cada ronda (atajo o a medida).
+  const factory StudyInviteEvent.timesChosen(StudyRoomTimes times) =
+      StudyInviteTimesChosen;
 
   const factory StudyInviteEvent.roundsChosen(int rounds) =
       StudyInviteRoundsChosen;

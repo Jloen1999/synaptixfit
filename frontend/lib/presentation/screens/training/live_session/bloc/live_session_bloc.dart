@@ -425,11 +425,13 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   /// repeticiones de menos también descansa. Con [startRest] falso no toca el
   /// descanso (ya lo arrancó una serie posterior).
   LiveSessionState _afterSet(
-    LiveSessionState s,
+    LiveSessionState before,
     SetRecord record,
     DateTime at, {
     bool startRest = true,
   }) {
+    // La serie ya está en la sesión: su tiempo cuenta desde ahí.
+    final s = before.copyWith(recordingSeconds: 0);
     // El calentamiento no abre descanso ni cambia de ejercicio.
     if (record.warmup) return s;
     final planned = s.exercises
@@ -485,10 +487,9 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
           (since == null
               ? 0
               : math.max(0, tappedAt.difference(since).inSeconds));
-      record = record.copyWith(
-        activeSeconds: math.min(secs, _maxExerciseSeconds).toInt(),
-      );
-      emit(_withoutTimer(state));
+      final bounded = math.min(secs, _maxExerciseSeconds).toInt();
+      record = record.copyWith(activeSeconds: bounded);
+      emit(_withoutTimer(state).copyWith(recordingSeconds: bounded));
       await _persistDraft();
     }
     if (state.paused) await _resumeNow(emit);
@@ -534,7 +535,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
           add(const LiveSessionEvent.pendingRetried());
         }
       case Failure(:final error):
-        emit(state.copyWith(saving: false));
+        emit(state.copyWith(saving: false, recordingSeconds: 0));
         _effect(emit, TrainingEffect.error(error));
     }
   }
@@ -856,6 +857,10 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       // Como la pausa propia: el cronómetro de la serie se congela.
       final at = server.pausedAt ?? now;
       final since = state.timerSince;
+      final int banked = since == null
+          ? state.timerBanked
+          : state.timerBanked +
+                math.max(0, at.difference(since).inSeconds).toInt();
       emit(
         state.copyWith(
           groupPausedBy: pausedBy,
@@ -867,9 +872,8 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
             ),
           ),
           timerSince: null,
-          timerBanked: since == null
-              ? state.timerBanked
-              : state.timerBanked + math.max(0, at.difference(since).inSeconds),
+          timerBanked: banked,
+          timerSeconds: banked,
         ),
       );
     } else {
@@ -904,14 +908,18 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     }
     final now = _clock();
     final since = state.timerSince;
+    final int banked = since == null
+        ? state.timerBanked
+        : state.timerBanked +
+              math.max(0, now.difference(since).inSeconds).toInt();
+    // El reloj de la serie (y el ⏱ de arriba) se quedan ya en lo contado.
     emit(
       state.copyWith(
         groupPausedBy: null,
         session: session.copyWith(pausedAt: now),
         timerSince: null,
-        timerBanked: since == null
-            ? state.timerBanked
-            : state.timerBanked + math.max(0, now.difference(since).inSeconds),
+        timerBanked: banked,
+        timerSeconds: banked,
       ),
     );
     await _persistDraft();

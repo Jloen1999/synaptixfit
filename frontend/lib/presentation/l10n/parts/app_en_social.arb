@@ -328,7 +328,7 @@
   "togetherStudyTitle": "Study together",
   "togetherStudyWithFriends": "Study with friends",
   "togetherStudyIntro": "One timer for everyone; each of you studies your own thing.",
-  "togetherStudyHelp": "Each finished round counts as one of your Pomodoros (streak and challenges). Others never see your subject or how you feel. If you leave, the rest carry on; anyone inside can start.",
+  "togetherStudyHelp": "Each finished round counts as one of your Pomodoros (streak and challenges). Others can't see your subject or how you feel. If you leave, the others carry on. Before it starts, anyone inside can change the times and start it.",
   "togetherStudyLength": "Each round",
   "togetherStudyLengthOption": "{focus} + {rest} min",
   "togetherStudyRounds": "Rounds",
@@ -373,5 +373,12 @@
   "togetherStartedAnnounce": "{name} has started. Opening your session.",
   "togetherPausedByAnnounce": "{name} has paused the session.",
   "togetherResumedAnnounce": "You are training again: the pause is over.",
-  "togetherResumeForAll": "Resume for everyone"
+  "togetherResumeForAll": "Resume for everyone",
+  "togetherStudyFocusLabel": "Focus",
+  "togetherStudyBreakLabel": "Break",
+  "togetherStudyMinutesValue": "{minutes} min",
+  "togetherStudyTimesTitle": "Room times",
+  "togetherStudyTimesHint": "Everyone in the room will see the change right away.",
+  "togetherStudyChangeTimes": "Change times",
+  "togetherStudyTimesChanged": "Now: {focus} min of focus and {rest} min of break"
 }

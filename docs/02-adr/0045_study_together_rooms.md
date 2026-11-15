@@ -1,7 +1,7 @@
 # ADR 0045 — «Estudiamos juntos»: salas con temporizador común y topes de «Con amigos» desde el servidor
 
 - **Fecha:** 2026-11-15
-- **Estado:** aceptado
+- **Estado:** aceptado; las duraciones de ronda (`SHORT`/`LONG`, `studyRoomLengths`) las sustituye el ADR 0053 (minutos a elegir)
 
 ## Contexto
 

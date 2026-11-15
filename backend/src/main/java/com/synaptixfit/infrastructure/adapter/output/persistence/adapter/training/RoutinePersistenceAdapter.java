@@ -6,6 +6,7 @@ import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.PlannedExercise;
+import com.synaptixfit.domain.model.training.RecordedDuration;
 import com.synaptixfit.domain.model.training.Routine;
 import com.synaptixfit.domain.model.training.RoutineDay;
 import com.synaptixfit.domain.model.training.RoutineStatus;
@@ -15,22 +16,26 @@ import com.synaptixfit.domain.model.training.VisibleRoutine;
 import com.synaptixfit.domain.port.output.training.RoutineRepositoryPort;
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SharedContentSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SqlLike;
+import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.ExerciseDurationEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.ExerciseSelectionEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.RoutineDayEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.RoutineEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.RoutineWeekEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training.RoutinePersistenceMapper;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training.TrainingDbValues;
+import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.ExerciseDurationJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.ExerciseSelectionJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.RoutineDayJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.RoutineJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.RoutineWeekJpaRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +50,9 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Agregado rutina con JPA. Guardar sincroniza los hijos (borra los que ya no existen y actualiza
- * o inserta el resto) conservando los ids, porque sesiones y series los referencian. Las consultas
+ * o inserta el resto) conservando los ids, porque sesiones y series los referencian. Las duraciones reales de
+ * cada ejercicio (ADR 0048) se sincronizan igual: se borran las que el modelo ya no recuerda y se añaden las nuevas.
+ * Las consultas
  * de comunidad leen {@code usuarios} y {@code amistades} con SQL (tablas de otros módulos).
  */
 @Repository
@@ -63,17 +70,20 @@ public class RoutinePersistenceAdapter implements RoutineRepositoryPort {
     private final RoutineWeekJpaRepository weeks;
     private final RoutineDayJpaRepository days;
     private final ExerciseSelectionJpaRepository selections;
+    private final ExerciseDurationJpaRepository durations;
     private final ExerciseSqlReader exerciseReader;
     private final JdbcClient jdbc;
     private final Clock clock;
 
     public RoutinePersistenceAdapter(RoutineJpaRepository routines, RoutineWeekJpaRepository weeks,
                                      RoutineDayJpaRepository days, ExerciseSelectionJpaRepository selections,
-                                     ExerciseSqlReader exerciseReader, JdbcClient jdbc, Clock clock) {
+                                     ExerciseDurationJpaRepository durations, ExerciseSqlReader exerciseReader,
+                                     JdbcClient jdbc, Clock clock) {
         this.routines = routines;
         this.weeks = weeks;
         this.days = days;
         this.selections = selections;
+        this.durations = durations;
         this.exerciseReader = exerciseReader;
         this.jdbc = jdbc;
         this.clock = clock;
@@ -167,10 +177,18 @@ public class RoutinePersistenceAdapter implements RoutineRepositoryPort {
         Map<UUID, ExerciseRef> refs = exerciseReader.refs(selectionEntities.stream()
                 .map(ExerciseSelectionEntity::getEjercicioId).collect(Collectors.toSet()));
 
+        Map<UUID, List<RecordedDuration>> durationsBySelection = new HashMap<>();
+        if (!selectionEntities.isEmpty()) {
+            durations.findBySeleccionIdIn(selectionEntities.stream().map(ExerciseSelectionEntity::getId).toList())
+                    .forEach(d -> durationsBySelection.computeIfAbsent(d.getSeleccionId(), k -> new ArrayList<>())
+                            .add(new RecordedDuration(d.getSegundos(), d.getRegistradaEn())));
+        }
+
         Map<UUID, List<PlannedExercise>> exercisesByDay = new HashMap<>();
         selectionEntities.stream().sorted(Comparator.comparingInt(ExerciseSelectionEntity::getIndiceOrden))
                 .forEach(s -> exercisesByDay.computeIfAbsent(s.getDiaId(), k -> new ArrayList<>())
-                        .add(RoutinePersistenceMapper.toDomain(s, refs)));
+                        .add(RoutinePersistenceMapper.toDomain(s, refs,
+                                durationsBySelection.getOrDefault(s.getId(), List.of()))));
         Map<UUID, List<RoutineDay>> daysByWeek = new HashMap<>();
         dayEntities.forEach(d -> daysByWeek.computeIfAbsent(d.getSemanaId(), k -> new ArrayList<>())
                 .add(RoutinePersistenceMapper.toDomain(d, exercisesByDay.getOrDefault(d.getId(), List.of()))));
@@ -263,7 +281,56 @@ public class RoutinePersistenceAdapter implements RoutineRepositoryPort {
         days.flush();
         selections.saveAll(selectionRows);
         selections.flush();
+        syncDurations(routine);
         return routine;
+    }
+
+    /**
+     * Deja en {@code duraciones_ejercicio_rutina} exactamente las duraciones que recuerda cada ejercicio. Se comparan
+     * por segundos e instante (en microsegundos, la precisión de la columna) para no reescribir las que no cambian.
+     * Las de ejercicios borrados ya se fueron con su fila (ON DELETE CASCADE).
+     */
+    private void syncDurations(Routine routine) {
+        Map<UUID, List<RecordedDuration>> desired = new HashMap<>();
+        routine.allDays().forEach(d -> d.exercises().forEach(p -> desired.put(p.id(), p.recentDurations())));
+        if (desired.isEmpty()) {
+            return;
+        }
+        List<ExerciseDurationEntity> existing = durations.findBySeleccionIdIn(desired.keySet());
+        Set<String> kept = new HashSet<>();
+        List<ExerciseDurationEntity> toDelete = new ArrayList<>();
+        for (ExerciseDurationEntity e : existing) {
+            String key = durationKey(e.getSeleccionId(), e.getSegundos(), e.getRegistradaEn());
+            boolean wanted = desired.getOrDefault(e.getSeleccionId(), List.of()).stream()
+                    .anyMatch(d -> durationKey(e.getSeleccionId(), d.seconds(), d.recordedAt()).equals(key));
+            if (wanted && kept.add(key)) {
+                continue;
+            }
+            toDelete.add(e);
+        }
+        if (!toDelete.isEmpty()) {
+            durations.deleteAll(toDelete);
+            durations.flush();
+        }
+        List<ExerciseDurationEntity> toInsert = new ArrayList<>();
+        desired.forEach((selectionId, list) -> list.forEach(d -> {
+            if (kept.add(durationKey(selectionId, d.seconds(), d.recordedAt()))) {
+                ExerciseDurationEntity row = new ExerciseDurationEntity();
+                row.setId(UUID.randomUUID());
+                row.setSeleccionId(selectionId);
+                row.setSegundos(d.seconds());
+                row.setRegistradaEn(d.recordedAt().truncatedTo(ChronoUnit.MICROS));
+                toInsert.add(row);
+            }
+        }));
+        if (!toInsert.isEmpty()) {
+            durations.saveAll(toInsert);
+            durations.flush();
+        }
+    }
+
+    private static String durationKey(UUID selectionId, int seconds, Instant at) {
+        return selectionId + "/" + seconds + "/" + at.truncatedTo(ChronoUnit.MICROS);
     }
 
     private static <E> Map<UUID, E> byId(Collection<E> rows, Function<E, UUID> id) {

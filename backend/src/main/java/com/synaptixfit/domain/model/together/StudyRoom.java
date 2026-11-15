@@ -17,8 +17,8 @@ import java.util.UUID;
  * temporizador de {@value #MIN_ROUNDS} a {@value #MAX_ROUNDS} rondas. El tiempo no se guarda en ningún móvil: todo
  * sale de la hora de inicio que guarda el servidor, así cada uno pinta la misma cuenta atrás.
  *
- * <p>Nadie gobierna la sala: cualquiera que esté dentro la empieza y, una vez empezada, va sola, sin pausas. Si
- * quien la creó se va, sigue igual para los demás. Caduca sola: al terminar la última ronda o, si nadie la empieza,
+ * <p>Nadie gobierna la sala: cualquiera que esté dentro cambia sus minutos ({@link StudyRoomTimes}) mientras espera
+ * y la empieza; una vez empezada, va sola, sin pausas. Si quien la creó se va, sigue igual para los demás. Caduca sola: al terminar la última ronda o, si nadie la empieza,
  * {@link #WAITING_LIMIT} después de crearla.
  *
  * <p>Cada ronda terminada cuenta como un Pomodoro normal para cada persona que estaba dentro al acabar
@@ -60,7 +60,7 @@ public final class StudyRoom {
 
     private final UUID id;
     private final UUID creatorId;
-    private final StudyRoomLength length;
+    private StudyRoomTimes times;
     private final int rounds;
     private final Instant createdAt;
     private Instant startedAt;
@@ -72,21 +72,21 @@ public final class StudyRoom {
     private final Map<UUID, Instant> enteredAt;
 
     @SuppressWarnings("java:S107")
-    public StudyRoom(UUID id, UUID creatorId, StudyRoomLength length, int rounds, Instant createdAt, Instant startedAt,
+    public StudyRoom(UUID id, UUID creatorId, StudyRoomTimes times, int rounds, Instant createdAt, Instant startedAt,
                      int creditedRounds, TogetherMembers members, Map<UUID, UUID> subjects,
                      Map<UUID, MemberReaction> reactions) {
-        this(id, creatorId, length, rounds, createdAt, startedAt, creditedRounds, members, subjects, reactions,
+        this(id, creatorId, times, rounds, createdAt, startedAt, creditedRounds, members, subjects, reactions,
                 Map.of());
     }
 
     /** @param enteredAt cuándo entró cada persona; sin dato, se toma el último cambio de quien está dentro */
     @SuppressWarnings("java:S107")
-    public StudyRoom(UUID id, UUID creatorId, StudyRoomLength length, int rounds, Instant createdAt, Instant startedAt,
+    public StudyRoom(UUID id, UUID creatorId, StudyRoomTimes times, int rounds, Instant createdAt, Instant startedAt,
                      int creditedRounds, TogetherMembers members, Map<UUID, UUID> subjects,
                      Map<UUID, MemberReaction> reactions, Map<UUID, Instant> enteredAt) {
         this.id = Guard.notNull(id, "id");
         this.creatorId = Guard.notNull(creatorId, "creatorId");
-        this.length = Guard.notNull(length, "length");
+        this.times = Guard.notNull(times, "times");
         this.rounds = Guard.range(rounds, "rounds", MIN_ROUNDS, MAX_ROUNDS);
         this.createdAt = Guard.notNull(createdAt, "createdAt");
         this.startedAt = startedAt;
@@ -98,13 +98,13 @@ public final class StudyRoom {
     }
 
     /** Crea la sala con quien la crea dentro (con su asignatura, si eligió una) y los amigos invitados. */
-    public static StudyRoom create(UUID creatorId, Set<UUID> friendIds, StudyRoomLength length, int rounds,
+    public static StudyRoom create(UUID creatorId, Set<UUID> friendIds, StudyRoomTimes times, int rounds,
                                    UUID subjectId, Instant now) {
         Map<UUID, UUID> subjects = new HashMap<>();
         if (subjectId != null) {
             subjects.put(creatorId, subjectId);
         }
-        return new StudyRoom(UUID.randomUUID(), creatorId, length, rounds, now, null, 0,
+        return new StudyRoom(UUID.randomUUID(), creatorId, times, rounds, now, null, 0,
                 TogetherMembers.create(creatorId, friendIds == null ? Set.of() : friendIds, 1, MAX_FRIENDS, now),
                 subjects, Map.of(), Map.of(creatorId, now));
     }
@@ -147,11 +147,11 @@ public final class StudyRoom {
     }
 
     private Duration focusDuration() {
-        return Duration.ofMinutes(length.focusMinutes());
+        return Duration.ofMinutes(times.focusMinutes());
     }
 
     private Duration breakDuration() {
-        return Duration.ofMinutes(length.breakMinutes());
+        return Duration.ofMinutes(times.breakMinutes());
     }
 
     /** Rondas cuya concentración ya ha terminado. */
@@ -181,6 +181,21 @@ public final class StudyRoom {
             throw new TogetherInvalidStateException("The room is not waiting");
         }
         startedAt = now;
+    }
+
+    /**
+     * Cambia los minutos de la ronda. Cualquiera que esté dentro puede hacerlo, pero solo antes de empezar: con el
+     * temporizador en marcha cambiaría la cuenta atrás de todos a mitad de ronda.
+     */
+    public void changeTimes(UUID userId, StudyRoomTimes newTimes, Instant now) {
+        Guard.notNull(newTimes, "times");
+        if (!members.find(userId).map(TogetherMember::joined).orElse(false)) {
+            throw new TogetherInvalidStateException("Join before changing the times");
+        }
+        if (momentAt(now).phase() != Phase.WAITING) {
+            throw new TogetherInvalidStateException("The room is not waiting");
+        }
+        times = newTimes;
     }
 
     /** Acepta la invitación o vuelve tras salir («Deshacer»), mientras la sala no haya terminado. */
@@ -285,7 +300,7 @@ public final class StudyRoom {
 
     public UUID id() { return id; }
     public UUID creatorId() { return creatorId; }
-    public StudyRoomLength length() { return length; }
+    public StudyRoomTimes times() { return times; }
     public int rounds() { return rounds; }
     public Instant createdAt() { return createdAt; }
     public Instant startedAt() { return startedAt; }

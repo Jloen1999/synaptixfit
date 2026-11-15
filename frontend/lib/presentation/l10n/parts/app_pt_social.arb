@@ -328,7 +328,7 @@
   "togetherStudyTitle": "Estudar juntos",
   "togetherStudyWithFriends": "Estudar com amigos",
   "togetherStudyIntro": "Um temporizador para todos; cada um estuda o seu.",
-  "togetherStudyHelp": "Cada ronda terminada conta como um Pomodoro teu (sequência e desafios). Os outros não veem a tua disciplina nem como estás. Se saíres, os outros continuam; qualquer pessoa lá dentro pode começar.",
+  "togetherStudyHelp": "Cada ronda terminada conta como um Pomodoro teu (sequência e desafios). Os outros não veem a tua disciplina nem como estás. Se saíres, os outros continuam. Antes de começar, qualquer pessoa lá dentro pode alterar os tempos e começá-la.",
   "togetherStudyLength": "Cada ronda",
   "togetherStudyLengthOption": "{focus} + {rest} min",
   "togetherStudyRounds": "Rondas",
@@ -373,5 +373,12 @@
   "togetherStartedAnnounce": "{name} começou. A abrir a tua sessão.",
   "togetherPausedByAnnounce": "{name} pôs a sessão em pausa.",
   "togetherResumedAnnounce": "Continuam a treinar: a pausa terminou.",
-  "togetherResumeForAll": "Retomar para todos"
+  "togetherResumeForAll": "Retomar para todos",
+  "togetherStudyFocusLabel": "Concentração",
+  "togetherStudyBreakLabel": "Pausa",
+  "togetherStudyMinutesValue": "{minutes} min",
+  "togetherStudyTimesTitle": "Tempos da sala",
+  "togetherStudyTimesHint": "Todos na sala verão a alteração no momento.",
+  "togetherStudyChangeTimes": "Alterar tempos",
+  "togetherStudyTimesChanged": "Agora: {focus} min de concentração e {rest} min de pausa"
 }
