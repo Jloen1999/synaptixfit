@@ -2017,15 +2017,6 @@
   },
   "trainingTemplatesTitle": "Plantillas listas",
   "trainingTemplatesIntro": "Elige una y será tuya; luego la cambias a tu gusto.",
-  "trainingTemplatesAll": "Todas",
-  "trainingTemplatesDays": "{count, plural, =1{1 día/semana} other{{count} días/semana}}",
-  "@trainingTemplatesDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "trainingTemplatesAtHome": "En casa",
   "trainingTemplatesGym": "Gimnasio",
   "trainingTemplatesExams": "Exámenes",
@@ -2059,7 +2050,7 @@
     }
   },
   "trainingTemplatesEntry": "Elegir una plantilla",
-  "trainingTemplatesEntryHint": "Rutinas ya hechas: por días, para casa o para semanas de exámenes.",
+  "trainingTemplatesEntryHint": "Rutinas ya hechas: gimnasio, casa o parque, por días y por tiempo.",
   "trainingProgressTitle": "Tu evolución",
   "trainingProgressExplain": "Lo máximo que podrías levantar una vez, calculado con tus series.",
   "trainingProgressEmpty": "Apunta este ejercicio con peso y aquí verás cómo mejoras.",
@@ -3075,5 +3066,102 @@
       }
     }
   },
-  "trainingSessionDone": "Hecho"
+  "trainingSessionDone": "Hecho",
+  "trainingTemplatesCreatedWithRuns": "Listo: «{name}» ya es tu rutina. Sus carreras están en Entreno › Correr.",
+  "@trainingTemplatesCreatedWithRuns": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingTemplatesWhere": "Dónde",
+  "trainingTemplatesDaysLabel": "Días",
+  "trainingTemplatesTimeLabel": "Tiempo",
+  "trainingTemplatesLevelLabel": "Nivel",
+  "trainingTemplatesUpToMinutes": "Hasta {minutes} min",
+  "@trainingTemplatesUpToMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingTemplatesMoreThanMinutes": "Más de {minutes} min",
+  "@trainingTemplatesMoreThanMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingTemplatesOutdoor": "Al aire libre",
+  "trainingTemplatesBeginner": "Para empezar",
+  "trainingTemplatesIntermediate": "Si ya entrenas",
+  "trainingTemplatesRunDay": "{day} (correr)",
+  "@trainingTemplatesRunDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingTemplatesRuns": "{count, plural, =0{Sin carreras} =1{1 carrera por semana} other{{count} carreras por semana}}",
+  "@trainingTemplatesRuns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingShareLink": "Compartir enlace",
+  "trainingShareTitle": "Compartir esta rutina",
+  "trainingShareIntro": "Quien tenga el enlace podrá copiarla. No verá nada tuyo.",
+  "trainingShareHelp": "Para abrirlo hace falta una cuenta. El enlace vale 30 días. Si dejas de compartir, los enlaces que ya enviaste dejan de funcionar; las copias que ya se hicieron se quedan.",
+  "trainingShareMessage": "Te paso mi rutina «{name}» de SynaptixFit. Ábrela y cópiala a las tuyas:",
+  "@trainingShareMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingShareActiveUntil": "Compartida hasta el {date}",
+  "@trainingShareActiveUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingShareStop": "Dejar de compartir",
+  "trainingShareStopTitle": "¿Dejar de compartir?",
+  "trainingShareStopMessage": "Los enlaces que ya enviaste dejarán de funcionar. Las copias que ya se hicieron se quedan.",
+  "trainingShareStopped": "Ya no se comparte: los enlaces enviados no funcionan.",
+  "trainingSharedTitle": "Rutina compartida",
+  "trainingSharedCopied": "Añadida a Mis rutinas: «{name}»",
+  "@trainingSharedCopied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSharedGone": "Este enlace ya no vale",
+  "trainingSharedGoneHint": "Puede que haya caducado o que se haya dejado de compartir. Pide uno nuevo a quien te lo pasó.",
+  "trainingSharedGoToTraining": "Ir a Entreno",
+  "trainingSharedFirstWeek": "Primera semana",
+  "trainingSharedExerciseLine": "{name} · {sets, plural, =0{sin series} =1{1 serie} other{{sets} series}}",
+  "@trainingSharedExerciseLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "sets": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingErrorShareLinkNotFound": "Este enlace ya no vale. Pide uno nuevo a quien te lo pasó.",
+  "trainingErrorShareLinkLimit": "Ya has creado muchos enlaces de esta rutina. Deja de compartirla y crea uno nuevo."
 }

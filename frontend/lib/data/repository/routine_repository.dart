@@ -10,6 +10,7 @@ import '../errors/repository_error_handler.dart';
 import '../remote_data_source/training/dto/proposal_dto.dart';
 import '../remote_data_source/training/dto/routine_dto.dart';
 import '../remote_data_source/training/routine_remote_data_source.dart';
+import '../../domain/models/training/routine_share.dart';
 import '../../domain/models/training/routine_template.dart';
 
 class RoutineRepository implements RoutineRepositoryContract {
@@ -240,6 +241,41 @@ class RoutineRepository implements RoutineRepositoryContract {
   Future<AppResult<List<RoutineTemplate>>> listTemplates() =>
       RepositoryErrorHandler.guard(
         () async => [for (final t in await _remote.templates()) t.toDomain()],
+      );
+
+  @override
+  Future<AppResult<RoutineShareLink>> createShareLink(String routineId) =>
+      RepositoryErrorHandler.guard(() async {
+        final dto = await _remote.createShareLink(routineId);
+        return RoutineShareLink(
+          url: _remote.sharedRoutineUrl(dto.token),
+          expiresAt: dto.expiresAt,
+        );
+      });
+
+  @override
+  Future<AppResult<DateTime?>> shareStatus(String routineId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.shareStatus(routineId)).sharedUntil,
+      );
+
+  @override
+  Future<AppResult<Unit>> stopSharing(String routineId) =>
+      RepositoryErrorHandler.guard(() async {
+        await _remote.revokeShareLinks(routineId);
+        return unit;
+      });
+
+  @override
+  Future<AppResult<SharedRoutinePreview>> previewShared(String token) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.previewShared(token)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<Routine>> copyShared(String token) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.copyShared(token)).toDomain(),
       );
 
   @override

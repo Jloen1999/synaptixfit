@@ -223,6 +223,10 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                           ),
                         const SizedBox(height: TokensSpacing.l),
                       ],
+                      // Retos listos que se cuentan solos (ADR 0043): una fila,
+                      // secundaria frente a «Nuevo reto».
+                      const _TemplatesEntry(),
+                      const SizedBox(height: TokensSpacing.m),
                       if (!firstTime) ...[
                         AppSectionHeader(
                           title: context.localizations.challengesListTitle,
@@ -372,6 +376,33 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
         ),
       ),
     ];
+  }
+}
+
+/// Fila que abre las plantillas de retos (ADR 0043). Al volver se refresca la
+/// lista: puede haber un reto nuevo.
+class _TemplatesEntry extends StatelessWidget {
+  const _TemplatesEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: AppFocusOutline(
+        child: ListTile(
+          leading: Icon(Icons.flag_outlined, color: context.colors.primary),
+          title: Text(l10n.challengesTemplatesTitle),
+          subtitle: Text(l10n.challengesTemplatesEntry),
+          trailing: const Icon(AppIcons.next),
+          onTap: () async {
+            final bloc = context.read<ChallengesListBloc>();
+            await context.push(ChallengesPaths.templates);
+            bloc.add(const ChallengesListEvent.refreshed());
+          },
+        ),
+      ),
+    );
   }
 }
 

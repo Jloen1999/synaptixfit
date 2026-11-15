@@ -84,7 +84,7 @@ final class PlannerFakes {
 
     /** Plan semanal con el reloj de {@link #NOW} (lunes de la semana de prueba). */
     StudyPlanService studyPlanService() {
-        return new StudyPlanService(plans, blocks, deadlines, xp, xp, ZONE, CLOCK);
+        return new StudyPlanService(plans, blocks, deadlines, xp, xp, publisher, ZONE, CLOCK);
     }
 
     /** Minutos máximos de estudio por bloque que devuelve la regulación cruzada simulada. */

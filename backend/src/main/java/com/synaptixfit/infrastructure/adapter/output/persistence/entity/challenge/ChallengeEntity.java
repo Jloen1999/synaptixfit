@@ -65,6 +65,20 @@ public class ChallengeEntity {
     private UUID origenPropietarioId;
     @Column(name = "origen_propietario_nombre")
     private String origenPropietarioNombre;
+    @Column(name = "regla_metrica")
+    private String reglaMetrica;
+    @Column(name = "regla_unidad")
+    private String reglaUnidad;
+    @Column(name = "regla_por_unidad")
+    private Integer reglaPorUnidad;
+    @Column(name = "regla_objetivo")
+    private Integer reglaObjetivo;
+    @Column(name = "regla_solo_laborables", nullable = false)
+    private boolean reglaSoloLaborables;
+    @Column(name = "regla_cumplidas", nullable = false)
+    private int reglaCumplidas;
+    @Column(name = "plantilla_codigo")
+    private String plantillaCodigo;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -118,4 +132,18 @@ public class ChallengeEntity {
     public void setOrigenPropietarioId(UUID origenPropietarioId) { this.origenPropietarioId = origenPropietarioId; }
     public String getOrigenPropietarioNombre() { return origenPropietarioNombre; }
     public void setOrigenPropietarioNombre(String origenPropietarioNombre) { this.origenPropietarioNombre = origenPropietarioNombre; }
+    public String getReglaMetrica() { return reglaMetrica; }
+    public void setReglaMetrica(String reglaMetrica) { this.reglaMetrica = reglaMetrica; }
+    public String getReglaUnidad() { return reglaUnidad; }
+    public void setReglaUnidad(String reglaUnidad) { this.reglaUnidad = reglaUnidad; }
+    public Integer getReglaPorUnidad() { return reglaPorUnidad; }
+    public void setReglaPorUnidad(Integer reglaPorUnidad) { this.reglaPorUnidad = reglaPorUnidad; }
+    public Integer getReglaObjetivo() { return reglaObjetivo; }
+    public void setReglaObjetivo(Integer reglaObjetivo) { this.reglaObjetivo = reglaObjetivo; }
+    public boolean isReglaSoloLaborables() { return reglaSoloLaborables; }
+    public void setReglaSoloLaborables(boolean reglaSoloLaborables) { this.reglaSoloLaborables = reglaSoloLaborables; }
+    public int getReglaCumplidas() { return reglaCumplidas; }
+    public void setReglaCumplidas(int reglaCumplidas) { this.reglaCumplidas = reglaCumplidas; }
+    public String getPlantillaCodigo() { return plantillaCodigo; }
+    public void setPlantillaCodigo(String plantillaCodigo) { this.plantillaCodigo = plantillaCodigo; }
 }

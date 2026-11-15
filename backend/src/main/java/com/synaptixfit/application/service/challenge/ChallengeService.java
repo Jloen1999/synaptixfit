@@ -13,6 +13,7 @@ import com.synaptixfit.application.port.input.challenge.ListPendingMilestonesUse
 import com.synaptixfit.application.port.input.challenge.UpdateChallengeUseCase;
 import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.challenge.ChallengeNotFoundException;
+import com.synaptixfit.domain.exception.challenge.ChallengeTemplateAlreadyActiveException;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeChanges;
 import com.synaptixfit.domain.model.challenge.ChallengeDetails;
@@ -57,6 +58,7 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
     private final ChallengeReferenceValidator references;
     private final ChallengeEffects effects;
     private final TrainingSessionTracker trainingSessions;
+    private final RuleTracker rules;
     private final LinkedSourcesSync linkedSources;
     private final Clock clock;
     private final ZoneId zone;
@@ -74,6 +76,7 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
         this.references = references;
         this.effects = effects;
         this.trainingSessions = new TrainingSessionTracker(referencePort);
+        this.rules = new RuleTracker(referencePort, zone);
         this.linkedSources = new LinkedSourcesSync(challenges, zone);
         this.clock = clock;
         this.zone = zone;
@@ -211,13 +214,16 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
 
     /**
      * Guarda el reto con lo que lo hace avanzar desde fuera ya aplicado: el recuento de entrenamientos de su
-     * periodo (un reto con inicio pasado, o con un objetivo rebajado, puede quedar completado) y el estado
+     * periodo (un reto con inicio pasado, o con un objetivo rebajado, puede quedar completado), el de su regla
+     * automática si la tiene (ADR 0043) y el estado
      * actual de sus entregas y bloques (vincular una entrega ya hecha deja la tarea completada; ampliar un
      * reto vencido recupera lo ocurrido). Antes comprueba que {@code linksToCheck} vencen en su periodo.
      */
     private Challenge saveSynced(Challenge challenge, List<UUID> linksToCheck) {
         Instant now = clock.instant();
-        ChallengeChanges changes = trainingSessions.apply(challenge, LocalDate.ofInstant(now, zone));
+        LocalDate today = LocalDate.ofInstant(now, zone);
+        ChallengeChanges changes = trainingSessions.apply(challenge, today);
+        changes.merge(rules.apply(challenge, today));
         Challenge saved = linkedSources.apply(challenges.save(challenge), linksToCheck, changes, now);
         effects.apply(saved, changes);
         return saved;
@@ -238,13 +244,25 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
         if (!original.type().allowedFor(focusOf(userId))) {
             throw new ChallengeTypeOutsideFocusException();
         }
+        if (original.rule() != null) {
+            // Copiar un reto de plantilla es empezar otro igual: mismas reglas que «Empezar este reto» (ADR 0043).
+            if (!original.rule().availableFor(focusOf(userId))) {
+                throw new ChallengeTypeOutsideFocusException();
+            }
+            Instant now = clock.instant();
+            if (original.templateCode() != null && challenges.findActiveByOwner(userId, now).stream()
+                    .anyMatch(c -> original.templateCode().equals(c.templateCode()))) {
+                throw new ChallengeTemplateAlreadyActiveException(original.templateCode());
+            }
+        }
         String originOwnerName = source.owned() ? null : source.ownerName();
         if (originOwnerName == null) {
             originOwnerName = ownerName(original.ownerId());
         }
         Instant now = clock.instant();
         Challenge copy = original.cloneFor(UUID.randomUUID(), userId, originOwnerName, now);
-        return challenges.save(copy);
+        // Si se cuenta solo, se aplica ya lo hecho desde ahora (normalmente nada).
+        return saveSynced(copy, List.of());
     }
 
     @Override

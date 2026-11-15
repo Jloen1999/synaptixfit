@@ -334,7 +334,7 @@ public class PlannerBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     StudyPlanService studyPlanService() {
-        return new StudyPlanService(plans, blocks, deadlines, award, revoke, zone, clock);
+        return new StudyPlanService(plans, blocks, deadlines, award, revoke, events, zone, clock);
     }
 
     @Bean

@@ -19,7 +19,10 @@ public final class EmbeddedPostgresSupport {
     public static synchronized void register(DynamicPropertyRegistry registry) {
         if (postgres == null) {
             try {
-                postgres = EmbeddedPostgres.builder().start();
+                // Cada clase de integración guarda su contexto (y su pool de conexiones) en la caché de
+                // Spring: con más de 30 clases, las 100 conexiones por defecto se agotan. Por eso se sube el
+                // tope del servidor y se encoge el pool de cada contexto.
+                postgres = EmbeddedPostgres.builder().setServerConfig("max_connections", "300").start();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -27,6 +30,8 @@ public final class EmbeddedPostgresSupport {
         registry.add("spring.datasource.url", () -> postgres.getJdbcUrl("postgres", "postgres"));
         registry.add("spring.datasource.username", () -> "postgres");
         registry.add("spring.datasource.password", () -> "postgres");
+        registry.add("spring.datasource.hikari.maximum-pool-size", () -> "5");
+        registry.add("spring.datasource.hikari.minimum-idle", () -> "1");
         // Los tests nunca llaman a la IA real aunque exista backend/.env con una clave.
         registry.add("synaptixfit.ai.api-key", () -> "");
         // Ni envían correos reales.

@@ -6,6 +6,7 @@ import '../models/challenges/challenge_page.dart';
 import '../models/challenges/challenge_progress_entry.dart';
 import '../models/challenges/challenge_query.dart';
 import '../models/challenges/challenge_summary.dart';
+import '../models/challenges/challenge_template.dart';
 import '../models/challenges/pending_milestone.dart';
 import '../models/result/app_result.dart';
 import '../models/result/result.dart';
@@ -41,6 +42,12 @@ abstract interface class ChallengesRepositoryContract {
   Future<AppResult<Unit>> delete(String challengeId);
 
   Future<AppResult<Challenge>> clone(String challengeId);
+
+  /// Plantillas de retos productivos (ADR 0043).
+  Future<AppResult<List<ChallengeTemplate>>> templates();
+
+  /// «Empezar este reto»: reto propio desde una plantilla, que se cuenta solo.
+  Future<AppResult<Challenge>> startTemplate(String templateId);
 
   Future<AppResult<ChallengeOutcome>> setCompleted(
     String challengeId, {

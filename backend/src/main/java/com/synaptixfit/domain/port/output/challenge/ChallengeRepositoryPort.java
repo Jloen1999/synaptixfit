@@ -36,6 +36,9 @@ public interface ChallengeRepositoryPort {
     /** Retos de fitness del usuario con objetivo de sesiones de entrenamiento (de cualquier estado). */
     List<Challenge> findTrainingTrackedByOwner(UUID ownerId);
 
+    /** Retos del usuario con regla automática (ADR 0043), sin terminar o completados. */
+    List<Challenge> findRuleTrackedByOwner(UUID ownerId);
+
     /** Retos del usuario no privados. */
     List<Challenge> findNonPrivateByOwner(UUID ownerId);
 

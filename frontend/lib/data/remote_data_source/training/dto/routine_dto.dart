@@ -352,11 +352,14 @@ abstract class RoutineTemplateDto with _$RoutineTemplateDto {
     @Default('') String description,
     String? goal,
     @Default(false) bool atHome,
+    String? place,
+    String? level,
     @Default(false) bool forExams,
     @Default(30) int minutes,
     @Default(4) int weeks,
     @Default(0) int daysPerWeek,
     @Default(<int>[]) List<int> dayNumbers,
+    @Default(<TemplateRunDayDto>[]) List<TemplateRunDayDto> runDays,
     @Default(0) int exerciseCount,
   }) = _RoutineTemplateDto;
 
@@ -372,11 +375,34 @@ abstract class RoutineTemplateDto with _$RoutineTemplateDto {
     description: description,
     goal: TrainingGoal.tryFromApi(goal),
     atHome: atHome,
+    // Un servidor anterior no manda el lugar: se deduce de «en casa».
+    place: place == null
+        ? (atHome ? TemplatePlace.home : TemplatePlace.gym)
+        : TemplatePlace.fromApi(place),
+    level: TemplateLevel.fromApi(level),
     forExams: forExams,
     minutes: minutes,
     weeks: weeks,
     daysPerWeek: daysPerWeek,
     dayNumbers: dayNumbers,
+    runDays: [for (final d in runDays) d.toDomain()],
     exerciseCount: exerciseCount,
   );
+}
+
+/// Día de carrera de una plantilla (`runDays[]`).
+@freezed
+abstract class TemplateRunDayDto with _$TemplateRunDayDto {
+  const factory TemplateRunDayDto({
+    required int dayNumber,
+    required String workoutCode,
+  }) = _TemplateRunDayDto;
+
+  const TemplateRunDayDto._();
+
+  factory TemplateRunDayDto.fromJson(Map<String, dynamic> json) =>
+      _$TemplateRunDayDtoFromJson(json);
+
+  TemplateRunDay toDomain() =>
+      TemplateRunDay(dayNumber: dayNumber, workoutCode: workoutCode);
 }

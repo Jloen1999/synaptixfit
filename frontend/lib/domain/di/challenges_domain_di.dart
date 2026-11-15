@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 
 import '../use_cases/challenges/clone_challenge_use_case.dart';
+import '../use_cases/challenges/list_challenge_templates_use_case.dart';
+import '../use_cases/challenges/start_challenge_template_use_case.dart';
 import '../use_cases/challenges/create_challenge_use_case.dart';
 import '../use_cases/challenges/delete_challenge_use_case.dart';
 import '../use_cases/challenges/get_challenge_file_url_use_case.dart';
@@ -49,6 +51,13 @@ void registerChallengesDomain(GetIt getIt) {
     )
     ..registerLazySingleton<CloneChallengeUseCaseContract>(
       () => CloneChallengeUseCase(getIt()),
+    )
+    // Plantillas de retos productivos (ADR 0043).
+    ..registerLazySingleton<ListChallengeTemplatesUseCaseContract>(
+      () => ListChallengeTemplatesUseCase(getIt()),
+    )
+    ..registerLazySingleton<StartChallengeTemplateUseCaseContract>(
+      () => StartChallengeTemplateUseCase(getIt()),
     )
     ..registerLazySingleton<SetChallengeCompletionUseCaseContract>(
       () => SetChallengeCompletionUseCase(getIt()),

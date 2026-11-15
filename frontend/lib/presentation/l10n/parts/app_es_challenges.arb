@@ -562,5 +562,134 @@
   "challengesErrorRoutineDayNotLinkable": "Ese día de entreno ya no se puede usar: elige otro de tu rutina actual.",
   "@challengesErrorRoutineDayNotLinkable": {
     "description": "Error CHALLENGE_ROUTINE_DAY_NOT_LINKABLE: el día de rutina elegido para la tarea ya no se puede vincular."
-  }
+  },
+  "challengesTemplatesTitle": "Plantillas de retos",
+  "challengesTemplatesEntry": "Retos listos que se cuentan solos",
+  "challengesTemplatesIntro": "Elige uno y empieza hoy: no tienes que marcar nada.",
+  "challengesTemplatesHelp": "Avanzan con lo que ya haces en la app (repasos, Pomodoros, entrenos, carreras…). El reto es tuyo: puedes cambiarlo o eliminarlo cuando quieras.",
+  "challengesTemplatesStart": "Empezar este reto",
+  "challengesTemplatesStartNamed": "Empezar el reto «{title}»",
+  "@challengesTemplatesStartNamed": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesTemplatesRunning": "En marcha",
+  "challengesTemplatesPrivate": "Solo lo ves tú",
+  "challengesTemplatesStarted": "Reto empezado: «{title}»",
+  "@challengesTemplatesStarted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesTemplatesEmpty": "No hay plantillas para tu modo de uso",
+  "challengesRuleProgress": "{met} de {goal}",
+  "@challengesRuleProgress": {
+    "placeholders": {
+      "met": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesRuleDays": "{count, plural, =0{0 días} =1{1 día} other{{count} días}}",
+  "@challengesRuleDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesRuleWeekdays": "{count, plural, =0{0 días laborables} =1{1 día laborable} other{{count} días laborables}}",
+  "@challengesRuleWeekdays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesRuleWeeks": "{count, plural, =0{0 semanas} =1{1 semana} other{{count} semanas}}",
+  "@challengesRuleWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesRuleHours": "{count} h",
+  "@challengesRuleHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesRuleMinutes": "{count} min",
+  "@challengesRuleMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesRuleRuns": "{count, plural, =0{0 carreras} =1{1 carrera} other{{count} carreras}}",
+  "@challengesRuleRuns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesRuleTimes": "{count, plural, =0{0 veces} =1{1 vez} other{{count} veces}}",
+  "@challengesRuleTimes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesRuleCountsItself": "Se cuenta solo",
+  "challengesRuleHelpReviews": "Cuenta cada día en que haces al menos un repaso en Académico.",
+  "challengesRuleHelpFocus": "Cuentan los minutos de los Pomodoros de concentración que terminas.",
+  "challengesRuleHelpEarlyFocus": "Cuenta cada día laborable en que empiezas un Pomodoro antes de las 10 de la mañana.",
+  "challengesRuleHelpWorkouts": "Cuentan las sesiones de gimnasio y las actividades de al menos 10 minutos (carreras, partidos…).",
+  "challengesRuleHelpStudyAndMove": "Cuenta cada día con un Pomodoro terminado y un entreno hecho.",
+  "challengesRuleHelpTests": "Cuenta cada semana (de lunes a domingo) con al menos un test o simulacro terminado.",
+  "challengesRuleHelpCheckIns": "Cuenta cada día en que respondes «¿Qué tal estás hoy?». Solo se mira que respondiste, nunca las respuestas, y este reto no se comparte.",
+  "challengesRuleHelpPlannedWeeks": "Cuenta cada semana que dejas planificada en el calendario, con al menos 3 eventos.",
+  "challengesRuleHelpRuns": "Cuenta cada carrera que grabas en Entreno › Correr.",
+  "challengesRuleHelpGeneric": "Avanza solo con lo que haces en la app.",
+  "challengesErrorTemplateNotFound": "Esa plantilla de reto ya no está disponible.",
+  "challengesErrorTemplateAlreadyActive": "Ya tienes este reto en marcha.",
+  "challengesRuleLeft": "Te faltan {amount}",
+  "@challengesRuleLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesTemplatesGoal": "Meta: {goal}",
+  "@challengesTemplatesGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesTemplatesLasts": "{count, plural, =0{Dura 0 días} =1{Dura 1 día} other{Dura {count} días}}",
+  "@challengesTemplatesLasts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesTemplatesEmptyHint": "Cambia tu modo de uso en el perfil o crea tu propio reto."
 }

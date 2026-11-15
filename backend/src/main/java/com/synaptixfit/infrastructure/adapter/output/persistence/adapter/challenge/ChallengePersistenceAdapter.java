@@ -182,6 +182,11 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
     }
 
     @Override
+    public List<Challenge> findRuleTrackedByOwner(UUID ownerId) {
+        return toDomain(challenges.findByUsuarioIdAndReglaMetricaIsNotNull(ownerId));
+    }
+
+    @Override
     public List<Challenge> findNonPrivateByOwner(UUID ownerId) {
         return toDomain(challenges.findByUsuarioIdAndVisibilidadNot(ownerId, "private"));
     }

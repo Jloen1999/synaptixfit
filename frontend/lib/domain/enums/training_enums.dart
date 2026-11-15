@@ -266,3 +266,30 @@ enum AdjustmentReason {
   static AdjustmentReason? fromApi(String? value) =>
       values.where((v) => v.apiValue == value).firstOrNull;
 }
+
+/// Dónde se hace una plantilla de rutina (ADR 0043).
+enum TemplatePlace {
+  gym('GYM'),
+  home('HOME'),
+  outdoor('OUTDOOR');
+
+  const TemplatePlace(this.apiValue);
+
+  final String apiValue;
+
+  static TemplatePlace fromApi(String? value) =>
+      _fromApi(values, (v) => v.apiValue, value, gym);
+}
+
+/// Para quién es una plantilla de rutina (ADR 0043).
+enum TemplateLevel {
+  beginner('BEGINNER'),
+  intermediate('INTERMEDIATE');
+
+  const TemplateLevel(this.apiValue);
+
+  final String apiValue;
+
+  static TemplateLevel fromApi(String? value) =>
+      _fromApi(values, (v) => v.apiValue, value, beginner);
+}

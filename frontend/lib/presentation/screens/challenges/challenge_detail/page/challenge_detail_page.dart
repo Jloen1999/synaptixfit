@@ -552,6 +552,8 @@ class _SummaryCard extends StatelessWidget {
             challenge.sessionsCompleted,
             challenge.sessionTarget ?? 0,
           )
+        : challenge.tracksRule && challenge.rule != null
+        ? challenge.rule!.progressText(context)
         : challenge.hasMilestones
         ? l10n.challengesMilestonesProgress(
             challenge.completedMilestoneCount,
@@ -624,6 +626,20 @@ class _SummaryCard extends StatelessWidget {
               l10n.challengesDetailSessionsInfo,
               style: context.textStyles.bodySmall?.copyWith(
                 color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
+          // Se cuenta solo con su regla (ADR 0043): una línea y el «?».
+          if (challenge.tracksRule && challenge.rule != null) ...[
+            const SizedBox(height: TokensSpacing.s),
+            AppHelpToggle(
+              help: challenge.rule!.helpText(context),
+              tooltip: l10n.commonHelpAbout(l10n.challengesRuleCountsItself),
+              child: Text(
+                l10n.challengesRuleCountsItself,
+                style: context.textStyles.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -724,7 +740,7 @@ class _NextStepBox extends StatelessWidget {
                   Text(
                     // Con tarea siguiente, su nombre a secas (la etiqueta
                     // «Siguiente paso» ya va encima).
-                    active && next != null && !challenge.tracksTrainingSessions
+                    active && next != null && !challenge.countsItself
                         ? next.title
                         : text,
                     style: context.textStyles.titleSmall,
@@ -911,8 +927,10 @@ class _BottomActions extends StatelessWidget {
         case ChallengeStatus.completed:
           // Deshacer no es la acción que se busca: va como secundaria. No se
           // ofrece si lo completó su entrega ni con el plazo ya cerrado.
+          // Uno que se cuenta solo tampoco: el recuento lo volvería a marcar.
           if (!challenge.hasMilestones &&
               !challenge.completedByLink &&
+              !challenge.tracksRule &&
               challenge.open) {
             secondary = AppSecondaryButton(
               label: l10n.challengesDetailUncomplete,
@@ -938,6 +956,10 @@ class _BottomActions extends StatelessWidget {
               icon: Icons.fitness_center_rounded,
               onPressed: () => context.go(ChallengesExternalPaths.training),
             );
+          } else if (challenge.tracksRule) {
+            // Se cuenta solo con lo que se hace en la app (ADR 0043): no hay
+            // nada que marcar aquí.
+            primary = null;
           } else if (challenge.completedByLink) {
             // Lo completa su entrega o examen: se va a marcarlo allí.
             final link = challenge.link;

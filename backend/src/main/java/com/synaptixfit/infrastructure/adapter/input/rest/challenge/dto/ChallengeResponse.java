@@ -22,7 +22,8 @@ import java.util.UUID;
  * {@code currentStreak} es la racha vigente hoy (0 si se rompió). {@code completedByLink}: sin tareas, lo
  * completa su entrega vinculada ({@code linkTitle}, {@code linkDueAt}, {@code linkCompleted}; solo en retos
  * propios). {@code sessionTarget}/{@code sessionsCompleted}/{@code tracksTrainingSessions}: reto de fitness
- * por sesiones. Todas son reglas del servidor que el cliente no repite.
+ * por sesiones. {@code rule}/{@code tracksRule}/{@code templateCode}: reto que se cuenta solo con su regla (ADR
+ * 0043), con lo ya cumplido en {@code rule.met}. Todas son reglas del servidor que el cliente no repite.
  */
 public record ChallengeResponse(UUID id, UUID ownerId, boolean owned, String ownerName, String title,
                                 ChallengeType type, String goal, Visibility visibility, Difficulty difficulty,
@@ -34,7 +35,8 @@ public record ChallengeResponse(UUID id, UUID ownerId, boolean owned, String own
                                 boolean hasDependencies, int milestoneCount, int completedMilestoneCount,
                                 List<MilestoneResponse> milestones, UUID originId, UUID originOwnerId,
                                 String originOwnerName, Integer sessionTarget, int sessionsCompleted,
-                                boolean tracksTrainingSessions, Instant createdAt, Instant updatedAt) {
+                                boolean tracksTrainingSessions, ChallengeRuleResponse rule, boolean tracksRule,
+                                String templateCode, Instant createdAt, Instant updatedAt) {
 
     public static ChallengeResponse from(Challenge c, boolean owned, String ownerName, ResponseTime time) {
         List<Milestone> ms = c.milestones();
@@ -51,7 +53,8 @@ public record ChallengeResponse(UUID id, UUID ownerId, boolean owned, String own
                 (int) ms.stream().filter(Milestone::completed).count(),
                 ms.stream().map(m -> MilestoneResponse.from(c, m, xp.getOrDefault(m.id(), 0), owned)).toList(),
                 c.originId(), c.originOwnerId(), c.originOwnerName(), c.sessionTarget(), c.sessionsCompleted(),
-                c.tracksTrainingSessions(), c.createdAt(), c.updatedAt());
+                c.tracksTrainingSessions(), ChallengeRuleResponse.of(c.rule(), c.ruleProgress()), c.tracksRule(),
+                c.templateCode(), c.createdAt(), c.updatedAt());
     }
 
     public static ChallengeResponse own(Challenge c, ResponseTime time) {

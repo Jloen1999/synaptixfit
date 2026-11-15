@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/routine_template.dart';
 import '../../../../extensions/context_extensions.dart';
+import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_effect.dart';
@@ -12,10 +14,12 @@ import '../../training_routes.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
+import '../../widgets/training_section_bar.dart';
 import '../bloc/routine_templates_bloc.dart';
 
-/// Plantillas de rutina listas para usar: se filtran por días, casa o
-/// exámenes y una se convierte en rutina propia con un toque.
+/// Plantillas de rutina listas para usar: se filtran por lugar, días, tiempo,
+/// nivel y exámenes, y una se convierte en rutina propia con un toque (ADR
+/// 0043). Si trae carreras, el aviso dice que están en Correr.
 class RoutineTemplatesPage extends StatelessWidget {
   const RoutineTemplatesPage({super.key});
 
@@ -49,9 +53,22 @@ class _TemplatesView extends StatelessWidget {
           return;
         }
         final routine = state.created!;
-        context.showSnack(l10n.trainingTemplatesCreated(routine.name));
+        // El aviso sobrevive a esta pantalla: «Ver» usa el router, no este
+        // contexto, que ya no existirá al pulsarlo.
+        final router = GoRouter.of(context);
+        if (state.createdWithRuns) {
+          // Los entrenos de carrera los creó el servidor en Correr: el aviso
+          // dice dónde quedan y lleva hasta allí.
+          context.showActionSnack(
+            l10n.trainingTemplatesCreatedWithRuns(routine.name),
+            actionLabel: l10n.commonView,
+            onAction: () => router.go(TrainingPaths.section(TrainingSection.run)),
+          );
+        } else {
+          context.showSnack(l10n.trainingTemplatesCreated(routine.name));
+        }
         // Las dos rutas viven en la pestaña de entreno: se cambia dentro de ella.
-        context.go(TrainingPaths.routine(routine.id));
+        router.go(TrainingPaths.routine(routine.id));
       },
       builder: (context, state) {
         final bloc = context.read<RoutineTemplatesBloc>();
@@ -125,7 +142,7 @@ class _TemplatesView extends StatelessWidget {
                               message: l10n.trainingTemplatesEmptyHint,
                               action: AppSecondaryButton(
                                 label: l10n.trainingTemplatesClearFilters,
-                                icon: const Icon(Icons.clear_all_rounded),
+                                icon: const Icon(AppIcons.clearFilters),
                                 onPressed: () => bloc.add(
                                   const RoutineTemplatesEvent.filterChanged(
                                     TemplateFilter(),
@@ -171,37 +188,108 @@ class _Filters extends StatelessWidget {
     final f = state.filter;
     void set(TemplateFilter next) =>
         bloc.add(RoutineTemplatesEvent.filterChanged(next));
-    return Wrap(
-      spacing: TokensSpacing.xs,
-      runSpacing: TokensSpacing.xs,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ChoiceChip(
-          label: Text(l10n.trainingTemplatesAll),
-          selected: f.isEmpty,
-          onSelected: (_) => set(const TemplateFilter()),
-        ),
-        for (final days in state.dayOptions)
-          ChoiceChip(
-            label: Text(l10n.trainingTemplatesDays(days)),
-            selected: f.days == days,
-            onSelected: (on) => set(f.copyWith(days: on ? days : null)),
+        // Con icono: chips que bajan de fila (nunca se esconden a un lado).
+        Semantics(
+          container: true,
+          label: l10n.trainingTemplatesWhere,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(
+                child: Text(
+                  l10n.trainingTemplatesWhere,
+                  style: context.textStyles.labelLarge,
+                ),
+              ),
+              const SizedBox(height: TokensSpacing.xs),
+              Wrap(
+                spacing: TokensSpacing.xs,
+                runSpacing: TokensSpacing.xs,
+                children: [
+                  for (final place in state.placeOptions)
+                    ChoiceChip(
+                      avatar: Icon(
+                        templatePlaceIcon(place),
+                        size: TokensSize.iconS,
+                      ),
+                      label: Text(templatePlaceLabel(l10n, place)),
+                      selected: f.place == place,
+                      onSelected: (on) =>
+                          set(f.copyWith(place: on ? place : null)),
+                    ),
+                ],
+              ),
+            ],
           ),
-        FilterChip(
-          avatar: const Icon(Icons.home_rounded, size: TokensSize.iconS),
-          label: Text(l10n.trainingTemplatesAtHome),
-          selected: f.atHome,
-          onSelected: (on) => set(f.copyWith(atHome: on)),
         ),
-        FilterChip(
-          avatar: const Icon(Icons.school_rounded, size: TokensSize.iconS),
-          label: Text(l10n.trainingTemplatesExams),
-          selected: f.forExams,
-          onSelected: (on) => set(f.copyWith(forExams: on)),
+        const SizedBox(height: TokensSpacing.s),
+        if (state.dayOptions.length > 1) ...[
+          AppSegmentedChoice<int>(
+            label: l10n.trainingTemplatesDaysLabel,
+            values: state.dayOptions,
+            selected: f.days,
+            labelOf: (d) => '$d',
+            allowEmpty: true,
+            onChanged: (d) => set(f.copyWith(days: d)),
+          ),
+          const SizedBox(height: TokensSpacing.s),
+        ],
+        if (state.timeOptions.length > 1) ...[
+          AppSegmentedChoice<TemplateTime>(
+            label: l10n.trainingTemplatesTimeLabel,
+            values: state.timeOptions,
+            selected: f.time,
+            labelOf: (t) => _timeLabel(l10n, t),
+            allowEmpty: true,
+            onChanged: (t) => set(f.copyWith(time: t)),
+          ),
+          const SizedBox(height: TokensSpacing.s),
+        ],
+        AppSegmentedChoice<TemplateLevel>(
+          label: l10n.trainingTemplatesLevelLabel,
+          values: TemplateLevel.values,
+          selected: f.level,
+          labelOf: (l) => templateLevelLabel(l10n, l),
+          allowEmpty: true,
+          onChanged: (l) => set(f.copyWith(level: l)),
         ),
+        const SizedBox(height: TokensSpacing.s),
+        // Semanas de exámenes no es un nivel: interruptor propio.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: FilterChip(
+            avatar: const Icon(Icons.school_rounded, size: TokensSize.iconS),
+            label: Text(l10n.trainingTemplatesExams),
+            selected: f.forExams,
+            onSelected: (on) => set(f.copyWith(forExams: on)),
+          ),
+        ),
+        if (!f.isEmpty)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              icon: const Icon(AppIcons.clearFilters),
+              label: Text(l10n.trainingTemplatesClearFilters),
+              onPressed: () => set(const TemplateFilter()),
+            ),
+          ),
       ],
     );
   }
+
+  static String _timeLabel(AppLocalizations l10n, TemplateTime time) =>
+      switch (time) {
+        TemplateTime.upTo20 => l10n.trainingTemplatesUpToMinutes(20),
+        TemplateTime.upTo30 => l10n.trainingTemplatesUpToMinutes(30),
+        TemplateTime.upTo45 => l10n.trainingTemplatesUpToMinutes(45),
+        TemplateTime.more => l10n.trainingTemplatesMoreThanMinutes(45),
+      };
 }
+
+
 
 class _TemplateCard extends StatelessWidget {
   const _TemplateCard({
@@ -218,7 +306,16 @@ class _TemplateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final t = template;
-    final days = t.dayNumbers.map((d) => weekdayName(l10n, d)).join(' · ');
+    // Días de la semana en orden; los de carrera, con su nombre.
+    final runDays = {for (final r in t.runDays) r.dayNumber};
+    final allDays = {...t.dayNumbers, ...runDays}.toList()..sort();
+    final days = allDays
+        .map(
+          (d) => runDays.contains(d)
+              ? l10n.trainingTemplatesRunDay(weekdayName(l10n, d))
+              : weekdayName(l10n, d),
+        )
+        .join(' · ');
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -249,21 +346,25 @@ class _TemplateCard extends StatelessWidget {
                 label: l10n.trainingWeeksCount(t.weeks),
               ),
               AppPill(
-                icon: t.atHome
-                    ? Icons.home_rounded
-                    : Icons.fitness_center_rounded,
-                label: t.atHome
-                    ? l10n.trainingTemplatesAtHome
-                    : l10n.trainingTemplatesGym,
+                icon: templatePlaceIcon(t.place),
+                label: templatePlaceLabel(l10n, t.place),
               ),
+              AppPill(
+                icon: Icons.signal_cellular_alt_rounded,
+                label: templateLevelLabel(l10n, t.level),
+              ),
+              if (t.hasRuns)
+                AppPill(
+                  icon: Icons.directions_run_rounded,
+                  label: l10n.trainingTemplatesRuns(t.runDays.length),
+                  color: context.colors.secondary,
+                ),
               if (t.forExams)
                 AppPill(
                   icon: Icons.school_rounded,
                   label: l10n.trainingTemplatesForExams,
                   color: context.colors.tertiary,
                 ),
-              if (t.goal != null)
-                AppPill(icon: Icons.flag_outlined, label: t.goal!.label(l10n)),
             ],
           ),
           if (days.isNotEmpty) ...[
@@ -280,6 +381,12 @@ class _TemplateCard extends StatelessWidget {
             label: l10n.trainingTemplatesUseNamed(t.name),
             excludeSemantics: true,
             button: true,
+            enabled: !disabled,
+            onTap: disabled
+                ? null
+                : () => context.read<RoutineTemplatesBloc>().add(
+                    RoutineTemplatesEvent.used(t.id),
+                  ),
             child: AppSecondaryButton(
               label: l10n.trainingTemplatesUse,
               icon: const Icon(Icons.add_task_rounded),

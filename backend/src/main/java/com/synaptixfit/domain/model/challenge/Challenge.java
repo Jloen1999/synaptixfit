@@ -57,6 +57,9 @@ import java.util.UUID;
  *       se puede completar a mano.</li>
  *   <li>Un reto de fitness sin tareas con {@code sessionTarget} avanza con las sesiones de entrenamiento
  *       completadas en su periodo, recontadas desde cero (ADR 0009).</li>
+ *   <li>Un reto sin tareas con {@code rule} (de una plantilla, ADR 0043) avanza solo con lo que el servidor ya
+ *       sabe (repasos, Pomodoros, entrenos…), recontado desde cero con {@link ChallengeRule#count}. No admite a la
+ *       vez objetivo de sesiones; si la regla sale de datos de bienestar, el reto es siempre privado.</li>
  * </ul>
  */
 public final class Challenge {
@@ -93,6 +96,12 @@ public final class Challenge {
     private double manualProgress;
     private Integer sessionTarget;
     private int sessionsCompleted;
+    /** Regla con la que se cuenta solo (ADR 0043); nula en un reto hecho a mano. No se edita. */
+    private final ChallengeRule rule;
+    /** Unidades de la regla ya cumplidas (recuento del servidor, hasta su objetivo). */
+    private int ruleProgress;
+    /** Código de la plantilla de la que salió, si salió de una. */
+    private final String templateCode;
     private List<Milestone> milestones;
     /** Foto de las entregas y exámenes vinculados (por id), cargada con el reto. Solo lectura. */
     private final Map<UUID, LinkedDeadline> linkedDeadlines;
@@ -114,6 +123,9 @@ public final class Challenge {
         this.originOwnerName = b.originOwnerName;
         this.manualProgress = Math.max(0, Math.min(100, b.manualProgress));
         this.sessionsCompleted = Math.max(0, b.sessionsCompleted);
+        this.rule = b.rule;
+        this.ruleProgress = b.rule == null ? 0 : Math.max(0, Math.min(b.ruleProgress, b.rule.target()));
+        this.templateCode = b.templateCode;
         this.linkedDeadlines = Map.copyOf(b.linkedDeadlines);
         this.studyBlocks = Map.copyOf(b.studyBlocks);
         applyDetails(new ChallengeDetails(b.title, b.type, b.goal, b.visibility, b.difficulty, b.startAt, b.endAt,
@@ -140,6 +152,19 @@ public final class Challenge {
         return challenge;
     }
 
+    /**
+     * Crea un reto a partir de una plantilla (ADR 0043): sin tareas, con la regla que lo cuenta solo y el código de
+     * la plantilla. Es un reto normal: se edita, se completa o se descarta como cualquier otro.
+     */
+    public static Challenge fromTemplate(UUID id, UUID ownerId, ChallengeDetails details, ChallengeRule rule,
+                                         String templateCode, Instant now) {
+        Guard.notNull(rule, "rule");
+        return builder().id(id).ownerId(ownerId).title(details.title()).type(details.type())
+                .goal(details.goal()).visibility(details.visibility()).difficulty(details.difficulty())
+                .startAt(details.startAt()).endAt(details.endAt()).rule(rule).templateCode(templateCode)
+                .createdAt(now).updatedAt(now).build();
+    }
+
     // ---------------------------------------------------------------- datos
 
     /** Sustituye los datos editables validando título, meta y fechas. */
@@ -152,6 +177,12 @@ public final class Challenge {
         this.goal = d.goal() == null || d.goal().isBlank() ? this.title : Guard.length(d.goal(), "goal", 1, GOAL_MAX);
         Instant start = Guard.notNull(d.startAt(), "startAt");
         Instant end = Guard.notNull(d.endAt(), "endAt");
+        // Un reto de plantilla cuenta lo hecho desde que se empezó (ADR 0043): su inicio no se adelanta a
+        // antes de crearlo, o contaría lo de antes. Se ajusta en silencio (el formulario puede mandar la
+        // misma fecha redondeada al minuto).
+        if (rule != null && createdAt != null && start.isBefore(createdAt)) {
+            start = createdAt;
+        }
         if (!end.isAfter(start)) {
             throw new InvalidChallengeDatesException();
         }
@@ -159,17 +190,63 @@ public final class Challenge {
         this.endAt = end;
         this.subjectId = d.subjectId();
         this.type = d.type() != null ? d.type() : (d.subjectId() != null ? ChallengeType.ACADEMIC : ChallengeType.FITNESS);
-        this.visibility = d.visibility() == null ? Visibility.PRIVATE : d.visibility();
+        // Un reto que se cuenta con datos de bienestar no se comparte nunca (ADR 0043).
+        this.visibility = d.visibility() == null || (rule != null && rule.privateOnly())
+                ? Visibility.PRIVATE : d.visibility();
         this.difficulty = d.difficulty() == null ? Difficulty.MEDIUM : d.difficulty();
         this.link = d.link();
         if (d.sessionTarget() != null) {
             Guard.range(d.sessionTarget(), "sessionTarget", 1, SESSION_TARGET_MAX);
+            if (rule != null) {
+                throw new FieldValidationException("sessionTarget", "INVALID",
+                        "a challenge counted by a rule has no session target");
+            }
             if (this.type != ChallengeType.FITNESS) {
                 throw new FieldValidationException("sessionTarget", "INVALID",
                         "sessionTarget is only allowed in FITNESS challenges");
             }
         }
         this.sessionTarget = d.sessionTarget();
+    }
+
+    // ---------------------------------------------------------------- regla automática (ADR 0043)
+
+    /**
+     * Fija las unidades cumplidas de la regla (recuento hecho desde cero por quien llama). Mismo trato que
+     * {@link #applyTrainingSessions}: al llegar al objetivo se completa con el XP de su dificultad; si un desmarcado
+     * lo deja por debajo y lo había completado el recuento, se descompleta restándolo. Solo con {@link #tracksRule()}.
+     */
+    public ChallengeChanges applyRule(int met, LocalDate today) {
+        ChallengeChanges changes = new ChallengeChanges();
+        if (!tracksRule()) {
+            return changes;
+        }
+        int previous = ruleProgress;
+        ruleProgress = Math.max(0, Math.min(met, rule.target()));
+        if (ruleProgress > previous) {
+            touchStreak(today);
+        }
+        boolean reached = ruleProgress >= rule.target();
+        if (reached && !completed) {
+            changes.merge(markCompleted(today));
+        } else if (reached && xpAwarded == 0) {
+            // Se marcó a mano antes de tiempo (sin XP): la regla ya lo justifica.
+            xpAwarded = difficulty.xp();
+            changes.addXp(xpAwarded);
+        } else if (!reached && completed && previous >= rule.target()) {
+            changes.merge(markUncompleted(true));
+        }
+        return changes;
+    }
+
+    /** Se puede publicar al completarse: no si se cuenta con datos de bienestar (ADR 0043). */
+    public boolean shareable() {
+        return rule == null || !rule.privateOnly();
+    }
+
+    /** Avanza solo con su regla: tiene regla y no tiene tareas (con tareas, mandan las tareas). */
+    public boolean tracksRule() {
+        return rule != null && milestones.isEmpty();
     }
 
     /** Oculta el reto a otros usuarios. Devuelve true si cambia. */
@@ -604,9 +681,10 @@ public final class Challenge {
         return Math.max(0, MAX_XP - totalXpAwarded());
     }
 
-    /** Reto de sesiones que aún no las tiene: completarlo a mano no da XP. */
+    /** Reto que se cuenta solo y aún no llega (sesiones o regla): completarlo a mano no da XP. */
     private boolean belowSessionTarget() {
-        return tracksTrainingSessions() && sessionsCompleted < sessionTarget;
+        return (tracksTrainingSessions() && sessionsCompleted < sessionTarget)
+                || (tracksRule() && ruleProgress < rule.target());
     }
 
     /** Copia del reto para otro usuario: privada, sin progreso, sin asignatura, vínculos ni adjuntos. */
@@ -614,8 +692,8 @@ public final class Challenge {
         Instant end = endAt.isAfter(now) ? endAt : now.plus(Duration.between(startAt, endAt));
         Challenge copy = builder().id(newId).ownerId(newOwnerId).title(title).type(type).goal(goal)
                 .visibility(Visibility.PRIVATE).difficulty(difficulty).startAt(now).endAt(end)
-                .sessionTarget(sessionTarget).originId(id).originOwnerId(ownerId).originOwnerName(ownerName)
-                .createdAt(now).updatedAt(now).build();
+                .sessionTarget(sessionTarget).rule(rule).templateCode(templateCode).originId(id)
+                .originOwnerId(ownerId).originOwnerName(ownerName).createdAt(now).updatedAt(now).build();
         if (!milestones.isEmpty()) {
             Map<UUID, Integer> index = new HashMap<>();
             for (int i = 0; i < milestones.size(); i++) {
@@ -643,7 +721,8 @@ public final class Challenge {
             }
             double sessions = tracksTrainingSessions()
                     ? Math.round(sessionsCompleted * 10000.0 / sessionTarget) / 100.0 : 0;
-            return Math.min(100.0, Math.max(manualProgress, sessions));
+            double byRule = tracksRule() ? Math.round(ruleProgress * 10000.0 / rule.target()) / 100.0 : 0;
+            return Math.min(100.0, Math.max(manualProgress, Math.max(sessions, byRule)));
         }
         double sum = milestones.stream().mapToDouble(Milestone::weightedProgress).sum();
         return Math.min(100.0, Math.round(sum * 100.0) / 100.0);
@@ -954,6 +1033,9 @@ public final class Challenge {
     public double manualProgress() { return manualProgress; }
     public Integer sessionTarget() { return sessionTarget; }
     public int sessionsCompleted() { return sessionsCompleted; }
+    public ChallengeRule rule() { return rule; }
+    public int ruleProgress() { return ruleProgress; }
+    public String templateCode() { return templateCode; }
     public List<Milestone> milestones() { return List.copyOf(milestones); }
 
     /** Constructor fluido para crear o reconstruir el reto. */
@@ -982,6 +1064,9 @@ public final class Challenge {
         private double manualProgress;
         private Integer sessionTarget;
         private int sessionsCompleted;
+        private ChallengeRule rule;
+        private int ruleProgress;
+        private String templateCode;
         private List<Milestone> milestones = List.of();
         private Map<UUID, LinkedDeadline> linkedDeadlines = Map.of();
         private Map<UUID, StudyBlockProgress> studyBlocks = Map.of();
@@ -1010,6 +1095,9 @@ public final class Challenge {
         public Builder manualProgress(double v) { this.manualProgress = v; return this; }
         public Builder sessionTarget(Integer v) { this.sessionTarget = v; return this; }
         public Builder sessionsCompleted(int v) { this.sessionsCompleted = v; return this; }
+        public Builder rule(ChallengeRule v) { this.rule = v; return this; }
+        public Builder ruleProgress(int v) { this.ruleProgress = v; return this; }
+        public Builder templateCode(String v) { this.templateCode = v; return this; }
         public Builder milestones(List<Milestone> v) { this.milestones = List.copyOf(v); return this; }
         public Builder linkedDeadlines(Map<UUID, LinkedDeadline> v) { this.linkedDeadlines = v; return this; }
         public Builder studyBlocks(Map<UUID, StudyBlockProgress> v) { this.studyBlocks = v; return this; }

@@ -3,6 +3,8 @@ package com.synaptixfit.infrastructure.adapter.input.rest.training;
 import com.synaptixfit.application.port.input.training.CreateRoutineFromTemplateUseCase;
 import com.synaptixfit.application.port.input.training.ListRoutineTemplatesUseCase;
 import com.synaptixfit.domain.model.training.RoutineTemplate;
+import com.synaptixfit.domain.model.training.TemplateLevel;
+import com.synaptixfit.domain.model.training.TemplatePlace;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.RoutineResponse;
 import com.synaptixfit.infrastructure.i18n.RequestLanguage;
@@ -35,16 +37,26 @@ public class RoutineTemplateController {
         this.create = create;
     }
 
-    /** Plantilla resumida: días por semana, objetivo, para casa o semanas de exámenes y ejercicios por día. */
+    /**
+     * Plantilla resumida: días por semana (con los de carrera), objetivo, lugar, nivel, si es para semanas de
+     * exámenes y ejercicios. {@code dayNumbers} son los días de gimnasio o casa; {@code runDays}, los de salir a
+     * correr con su entreno de carrera. {@code atHome} se mantiene para las apps anteriores.
+     */
     public record RoutineTemplateResponse(UUID id, String code, String name, String description, TrainingGoal goal,
-                                          boolean atHome, boolean forExams, int minutes, int weeks, int daysPerWeek,
-                                          List<Integer> dayNumbers, int exerciseCount) {
+                                          boolean atHome, TemplatePlace place, TemplateLevel level, boolean forExams,
+                                          int minutes, int weeks, int daysPerWeek, List<Integer> dayNumbers,
+                                          List<RunDayResponse> runDays, int exerciseCount) {
         static RoutineTemplateResponse from(RoutineTemplate t) {
             return new RoutineTemplateResponse(t.id(), t.code(), t.name(), t.description(), t.goal(), t.atHome(),
-                    t.forExams(), t.minutes(), t.weeks(), t.daysPerWeek(),
+                    t.place(), t.level(), t.forExams(), t.minutes(), t.weeks(), t.daysPerWeek(),
                     t.days().stream().map(RoutineTemplate.Day::dayNumber).toList(),
+                    t.runDays().stream().map(d -> new RunDayResponse(d.dayNumber(), d.workoutCode())).toList(),
                     t.days().stream().mapToInt(d -> d.exercises().size()).sum());
         }
+    }
+
+    /** Día de salir a correr con el entreno de carrera {@code workoutCode} (se crea en Entreno › Correr). */
+    public record RunDayResponse(int dayNumber, String workoutCode) {
     }
 
     @GetMapping
@@ -52,7 +64,7 @@ public class RoutineTemplateController {
         return list.list(RequestLanguage.code()).stream().map(RoutineTemplateResponse::from).toList();
     }
 
-    /** Crea una rutina propia y privada a partir de la plantilla. */
+    /** Crea una rutina propia y privada a partir de la plantilla (y sus entrenos de carrera, si lleva). */
     @PostMapping("/{templateId}/use")
     @ResponseStatus(HttpStatus.CREATED)
     public RoutineResponse use(@CurrentUserId UUID userId, @PathVariable UUID templateId) {

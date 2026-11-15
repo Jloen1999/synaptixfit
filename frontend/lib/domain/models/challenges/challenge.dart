@@ -7,6 +7,7 @@ import '../../enums/challenge_type.dart';
 import '../../enums/milestone_condition.dart';
 import '../../enums/milestone_status.dart';
 import '../../enums/visibility.dart';
+import 'challenge_rule.dart';
 
 part 'challenge.freezed.dart';
 
@@ -79,6 +80,17 @@ abstract class Challenge with _$Challenge {
     /// Si el reto avanza solo con las sesiones de Rutinas. Lo decide el
     /// servidor (fitness, con objetivo y sin tareas); el cliente no lo recalcula.
     @Default(false) bool tracksTrainingSessions,
+
+    /// Regla con la que se cuenta solo (de una plantilla, ADR 0043), con lo
+    /// ya cumplido en `met`.
+    ChallengeRule? rule,
+
+    /// Avanza solo con su regla (la tiene y no tiene tareas). Lo decide el
+    /// servidor.
+    @Default(false) bool tracksRule,
+
+    /// Plantilla de la que salió, si salió de una.
+    String? templateCode,
   }) = _Challenge;
 
   const Challenge._();
@@ -108,6 +120,10 @@ abstract class Challenge with _$Challenge {
           });
     return open.isEmpty ? null : open.first;
   }
+
+  /// Se cuenta solo, con sesiones o con su regla: el progreso no se apunta a
+  /// mano.
+  bool get countsItself => tracksTrainingSessions || tracksRule;
 
   /// Sesiones que faltan para el objetivo (0 si no sigue sesiones o ya llegó).
   int get sessionsRemaining {

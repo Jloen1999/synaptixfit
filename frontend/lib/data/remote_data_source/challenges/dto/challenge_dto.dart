@@ -1,10 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../domain/enums/challenge_rule_kind.dart';
 import '../../../../domain/enums/visibility.dart';
 import '../../../../domain/models/challenges/challenge.dart';
 import '../../../../domain/models/challenges/challenge_outcome.dart';
 import '../../../../domain/models/challenges/challenge_page.dart';
 import '../../../../domain/models/challenges/challenge_progress_entry.dart';
+import '../../../../domain/models/challenges/challenge_rule.dart';
+import '../../../../domain/models/challenges/challenge_template.dart';
 import '../../../../domain/models/challenges/challenge_summary.dart';
 import '../../../../domain/models/challenges/pending_milestone.dart';
 import 'challenge_api_values.dart';
@@ -53,6 +56,9 @@ abstract class ChallengeDto with _$ChallengeDto {
     int? sessionTarget,
     @Default(0) int sessionsCompleted,
     @Default(false) bool tracksTrainingSessions,
+    ChallengeRuleDto? rule,
+    @Default(false) bool tracksRule,
+    String? templateCode,
   }) = _ChallengeDto;
 
   const ChallengeDto._();
@@ -102,8 +108,73 @@ abstract class ChallengeDto with _$ChallengeDto {
       sessionTarget: sessionTarget,
       sessionsCompleted: sessionsCompleted,
       tracksTrainingSessions: tracksTrainingSessions,
+      rule: rule?.toDomain(),
+      tracksRule: tracksRule,
+      templateCode: templateCode,
     );
   }
+}
+
+/// `ChallengeRuleResponse` de la API (ADR 0043).
+@freezed
+abstract class ChallengeRuleDto with _$ChallengeRuleDto {
+  const factory ChallengeRuleDto({
+    String? metric,
+    String? unit,
+    @Default(1) int perUnit,
+    @Default(1) int target,
+    @Default(false) bool weekdaysOnly,
+    @Default(0) int met,
+    @Default(false) bool privateOnly,
+  }) = _ChallengeRuleDto;
+
+  const ChallengeRuleDto._();
+
+  factory ChallengeRuleDto.fromJson(Map<String, dynamic> json) =>
+      _$ChallengeRuleDtoFromJson(json);
+
+  ChallengeRule toDomain() => ChallengeRule(
+    metric: ChallengeRuleMetric.fromApi(metric),
+    unit: ChallengeRuleUnit.fromApi(unit),
+    perUnit: perUnit,
+    target: target,
+    weekdaysOnly: weekdaysOnly,
+    met: met,
+    privateOnly: privateOnly,
+  );
+}
+
+/// `ChallengeTemplateResponse` de la API (ADR 0043).
+@freezed
+abstract class ChallengeTemplateDto with _$ChallengeTemplateDto {
+  const factory ChallengeTemplateDto({
+    required String id,
+    required String code,
+    required String title,
+    @Default('') String goal,
+    String? type,
+    String? difficulty,
+    @Default(7) int days,
+    required ChallengeRuleDto rule,
+    @Default(false) bool running,
+  }) = _ChallengeTemplateDto;
+
+  const ChallengeTemplateDto._();
+
+  factory ChallengeTemplateDto.fromJson(Map<String, dynamic> json) =>
+      _$ChallengeTemplateDtoFromJson(json);
+
+  ChallengeTemplate toDomain() => ChallengeTemplate(
+    id: id,
+    code: code,
+    title: title,
+    goal: goal,
+    type: ChallengeApiValues.type(type),
+    difficulty: ChallengeApiValues.difficulty(difficulty),
+    days: days,
+    rule: rule.toDomain(),
+    running: running,
+  );
 }
 
 /// `MilestoneResponse` de la API.

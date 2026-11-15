@@ -60,6 +60,10 @@ String? challengeNextStepText(BuildContext context, Challenge challenge) {
       if (challenge.tracksTrainingSessions) {
         return l10n.challengesSessionsLeft(challenge.sessionsRemaining);
       }
+      if (challenge.tracksRule && challenge.rule != null) {
+        // El contador ya dice lo que lleva: aquí, lo que falta.
+        return challenge.rule!.leftText(context);
+      }
       if (challenge.completedByLink) {
         final title = challenge.linkTitle;
         return title == null

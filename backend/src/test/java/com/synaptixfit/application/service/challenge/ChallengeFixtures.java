@@ -4,6 +4,8 @@ import com.synaptixfit.domain.model.challenge.RoutineDayTarget;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
 import com.synaptixfit.domain.event.DomainEvent;
+import com.synaptixfit.domain.model.challenge.ActivityFact;
+import com.synaptixfit.domain.model.challenge.ActivityKind;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
 import com.synaptixfit.domain.model.challenge.ChallengeSummary;
@@ -47,6 +49,8 @@ final class ChallengeFixtures {
     final Map<UUID, LinkedDeadline> deadlines = new HashMap<>();
     /** Instantes de fin de las sesiones de entrenamiento completadas (recuento de los retos por sesiones). */
     final List<Instant> trainingSessions = new ArrayList<>();
+    /** Lo hecho que leen los retos con regla automática (ADR 0043). */
+    final List<ActivityFact> activity = new ArrayList<>();
     boolean audienceAllows;
 
     final ChallengeRepositoryPort repository = new ChallengeRepositoryPort() {
@@ -78,6 +82,9 @@ final class ChallengeFixtures {
             return store.values().stream().filter(c -> c.isOwnedBy(o) && c.type() == ChallengeType.FITNESS
                     && c.sessionTarget() != null).toList();
         }
+        public List<Challenge> findRuleTrackedByOwner(UUID o) {
+            return store.values().stream().filter(c -> c.isOwnedBy(o) && c.rule() != null).toList();
+        }
         public List<Challenge> findNonPrivateByOwner(UUID o) {
             return store.values().stream().filter(c -> c.isOwnedBy(o) && c.visibility() != Visibility.PRIVATE).toList();
         }
@@ -98,6 +105,9 @@ final class ChallengeFixtures {
         }
         public int completedTrainingSessions(UUID u, Instant from, Instant to) {
             return (int) trainingSessions.stream().filter(t -> !t.isBefore(from) && !t.isAfter(to)).count();
+        }
+        public List<ActivityFact> activity(UUID u, Set<ActivityKind> kinds, Instant from, Instant to) {
+            return activity.stream().filter(f -> kinds.contains(f.kind())).toList();
         }
     };
 
@@ -130,7 +140,8 @@ final class ChallengeFixtures {
                 .difficulty(c.difficulty()).link(c.link()).xpAwarded(c.xpAwarded()).originId(c.originId())
                 .originOwnerId(c.originOwnerId()).originOwnerName(c.originOwnerName())
                 .manualProgress(c.manualProgress()).sessionTarget(c.sessionTarget())
-                .sessionsCompleted(c.sessionsCompleted()).milestones(c.milestones())
+                .sessionsCompleted(c.sessionsCompleted()).rule(c.rule()).ruleProgress(c.ruleProgress())
+                .templateCode(c.templateCode()).milestones(c.milestones())
                 .linkedDeadlines(Map.copyOf(deadlines)).studyBlocks(Map.copyOf(blocks)).build();
     }
 

@@ -191,6 +191,7 @@ La usan: el gasto del estudio (fórmula 1, `PlannerDirectoryJdbcAdapter.findMeta
 - **Plantillas:** todas las semanas repiten los días; la semana suave (descarga) quita una serie a cada ejercicio, mínimo una.
 - **Peso máximo estimado por día** (`ExerciseProgress`): la mejor serie de trabajo completada con peso y de 1 a 12 repeticiones, con `ProgressionCalculator.oneRepMax` (la misma fórmula no lineal que la progresión de cargas). Con más repeticiones la estimación no es fiable.
 - **Tarea vinculada a un día de rutina:** se completa cuando se completa la sesión de ese día y se reabre si se desmarca. No tiene fecha límite, así que no se comprueba el periodo del reto.
+- **Plantillas nuevas (ADR 0043):** series, repeticiones y descansos siguen la posición del ACSM sobre progresión en fuerza (Ratamess et al., 2009): quien empieza, 1-3 series de 8-12 repeticiones con 1-2 min de descanso; quien ya entrena, 3-4 series y 2-3 min en los ejercicios básicos pesados (sentadilla, peso muerto, press). Abdomen y movilidad, 2-3 series de 8-15 o 20-30 s de aguante. «De 0 a 5 km» sigue el esquema habitual de los planes de inicio (alternar andar y correr, tres salidas por semana, hasta 30 min seguidos; NHS *Couch to 5K*). Días por semana = días de fuerza + días de carrera.
 
 ## «Hoy toca: suave / normal / fuerte» (ADR 0042, `TodayIntensity`)
 - **Suave:** la adaptación de hoy recorta series por cualquier motivo (examen cerca, sobrecarga ACWR > 1,5, fatiga
@@ -232,6 +233,14 @@ Todo se calcula en el servidor (`RunTrack`, `RunEnergy`); el móvil solo manda l
 - **Fechas de lo vinculado:** la entrega vence dentro del periodo del reto y el bloque cae dentro de él (por días, en la zona de la app). Se comprueba al vincular y al cambiar las fechas del reto (no al mover la entrega). Si la entrega se borra, la tarea vuelve a marcarse a mano.
 - **Progreso manual (retos sin tareas):** «¿Cuánto llevas?» fija un valor absoluto 0-100; bajar es una corrección y no cuenta para la racha ni se anota en el historial (que guarda lo avanzado). Desmarcar el reto lo pone a 0.
 - **Racha mostrada:** `currentStreak` si el último día con actividad fue hoy o ayer; si no, 0.
+
+## Retos que se cuentan solos (ADR 0043, `ChallengeRule`)
+
+- **Regla:** «`perUnit` de `metric` cada `unit`, `target` veces». Unidades: **día** (cumple si la suma del día llega a `perUnit`; con `weekdaysOnly`, solo de lunes a viernes), **semana** de lunes a domingo (cuentan también las que el reto pisa a medias) y **total** (suma de todo el periodo; `perUnit` no se usa). El recuento nunca pasa de `target` y se rehace siempre desde cero.
+- **Qué cuenta:** lo hecho entre el inicio y el fin del reto; lo que solo tiene fecha (registro diario), entre el día de inicio y el de fin. Repasos (`registros_repaso_srs`), tests y simulacros terminados, Pomodoros de concentración terminados (minutos), entrenos hechos (la definición única `CompletedWorkoutsSql`, con el mínimo de minutos de `TrainingRewards`), carreras con GPS de tipo correr, semanas planificadas (las que dieron la experiencia de planificar, desde que se planificaron, por su lunes) y días con «¿Qué tal estás hoy?».
+- **Primer estudio temprano:** el Pomodoro empezó (fin − minutos) antes de las 10:00 locales. **Estudia y muévete:** el día tiene a la vez un Pomodoro y un entreno.
+- **Completar:** al llegar a `target`, el reto se completa con la XP de su dificultad; si un desmarcado lo deja por debajo, se descompleta y se resta. Completarlo a mano antes de llegar no da XP hasta que la regla llega (como los retos por sesiones). Con tareas, mandan las tareas.
+- **Plantillas:** duran `dias` días contando hoy (terminan a las 23:59:59 del último, en la zona de la app) y empiezan al tocar «Empezar este reto». No puede haber dos sin terminar de la misma plantilla.
 
 ## Configuración pendiente (aviso de Inicio)
 
@@ -284,6 +293,8 @@ dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se r
 - Sinnott, R. W. (1984). Virtues of the Haversine. *Sky and Telescope*, 68(2), 159.
 - Moritz, H. (2000). Geodetic Reference System 1980. *Journal of Geodesy*, 74, 128–133 (radio medio de la Tierra).
 - Herrmann, S. D. et al. (2024). 2024 Adult Compendium of Physical Activities. *Journal of Sport and Health Science*, 13(1), 6–12.
+- Ratamess, N. A. et al. (2009). American College of Sports Medicine position stand. Progression models in resistance training for healthy adults. *Medicine & Science in Sports & Exercise*, 41(3), 687–708.
+- NHS (2024). *Couch to 5K*: plan de 9 semanas con tres salidas por semana que alterna andar y correr hasta 30 min seguidos.
 - Wozniak, P. A. (1990). *Optimization of learning* (algoritmo SM-2) y Anki (2024), *Load balancer* del planificador de repasos (versión 24.11): repartir los repasos ±unos días para evitar picos.
 
 ## Objetivos por serie (`ExerciseParameters`, ADR 0027)

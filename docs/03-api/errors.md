@@ -168,6 +168,8 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `BADGE_NOT_FOUND` | 404 | Insignia inexistente o no obtenida | No encontramos esta insignia. | Activo |
 | `STREAK_INVALID_ZONE` | 400 | `zone` no es IANA | Zona horaria no válida. | Activo |
 | `STREAK_PAUSE_LIMIT_REACHED` | 422 | «Pausar racha» sin días disponibles: ya se pausaron 14 días en los últimos 90 (ADR 0042) | Ya has usado tus días de pausa. Podrás volver a pausar más adelante. | Activo |
+| `CHALLENGE_TEMPLATE_NOT_FOUND` | 404 | Plantilla de reto inexistente o que no es para el modo de uso de la persona (ADR 0043) | Esa plantilla de reto ya no está disponible. | Activo |
+| `CHALLENGE_TEMPLATE_ALREADY_ACTIVE` | 409 | Empezar una plantilla de reto que ya tiene un reto sin completar ni vencer (ADR 0043): se contarían con lo mismo | Ya tienes este reto en marcha. | Activo |
 
 ## Planificador
 
@@ -242,6 +244,8 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `ROUTINE_WEEK_NOT_FOUND` | 404 | La semana no pertenece a la rutina | Esa semana no existe. | Activo |
 | `ROUTINE_DAY_NOT_FOUND` | 404 | El día no pertenece a la rutina | Ese día no existe. | Activo |
 | `ROUTINE_TEMPLATE_NOT_FOUND` | 404 | La plantilla no existe o no tiene ejercicios | Esa plantilla ya no está disponible. | Activo |
+| `ROUTINE_SHARE_LINK_NOT_FOUND` | 404 | Enlace de rutina desconocido, caducado, revocado, de una rutina borrada o de alguien bloqueado o silenciado; siempre el mismo para no revelar si existió (ADR 0043) | Este enlace ya no vale. Pide uno nuevo a quien te lo pasó. | Activo |
+| `ROUTINE_SHARE_LINK_LIMIT` | 422 | La rutina ya tiene 5 enlaces vigentes (ADR 0043) | Ya has creado muchos enlaces de esta rutina. Deja de compartirla y crea uno nuevo. | Activo |
 | `ROUTINE_EXERCISE_NOT_FOUND` | 404 | El ejercicio planificado no es de la rutina | Ese ejercicio no está en la rutina. | Activo |
 | `ROUTINE_DAY_DUPLICATED` | 409 | Ya hay un día con ese número en la semana | Esa semana ya tiene ese día. | Activo |
 | `ROUTINE_WEEK_LIMIT` | 422 | Sin semanas, más de 52 o borrar la última | Una rutina debe tener entre 1 y 52 semanas. | Activo |

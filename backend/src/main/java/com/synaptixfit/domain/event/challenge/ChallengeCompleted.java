@@ -9,7 +9,8 @@ import java.util.UUID;
  * {@code challenge_completed}), como hacía la app antigua al completar un reto.
  *
  * @param challengeType {@code FITNESS} o {@code ACADEMIC}
+ * @param shareable     false si el reto se cuenta con datos de bienestar (ADR 0043): no se publica en el muro
  */
 public record ChallengeCompleted(UUID userId, UUID challengeId, String title, String challengeType,
-                                 Instant occurredAt) implements DomainEvent {
+                                 Instant occurredAt, boolean shareable) implements DomainEvent {
 }

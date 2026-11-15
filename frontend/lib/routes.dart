@@ -33,6 +33,22 @@ GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
     RegisterPage.path,
     ForgotPasswordPage.path,
   };
+  // Enlace de rutina abierto sin sesión, mientras carga o antes de aceptar la
+  // política (ADR 0043): se guarda al desviar y se abre al entrar, una vez.
+  String? pendingLink;
+  String toEntry(GoRouterState state, String entry) {
+    if (state.matchedLocation.startsWith(TrainingPaths.sharedPrefix)) {
+      pendingLink = state.uri.toString();
+    }
+    return entry;
+  }
+
+  String enterApp() {
+    final link = pendingLink;
+    pendingLink = null;
+    return link ?? HomePaths.root;
+  }
+
   return GoRouter(
     initialLocation: SplashPage.path,
     // Una dirección desconocida no enseña la página de error de go_router.
@@ -51,21 +67,24 @@ GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
       if (location.startsWith(ProfilePaths.legalPrefix)) return null;
       return switch (session.state) {
         SessionUnknown() =>
-          location == SplashPage.path ? null : SplashPage.path,
+          location == SplashPage.path ? null : toEntry(state, SplashPage.path),
         SessionUnauthenticated() =>
-          publicPaths.contains(location) ? null : LoginPage.path,
+          publicPaths.contains(location)
+              ? null
+              : toEntry(state, LoginPage.path),
         // Sin aceptar la versión vigente de la política no se entra en nada
         // más, tampoco en el onboarding ni en los permisos (ADR 0034).
         SessionAuthenticatedState()
             when legal.state.status == LegalGateStatus.required =>
           location == LegalAcceptancePage.path
               ? null
-              : LegalAcceptancePage.path,
+              : toEntry(state, LegalAcceptancePage.path),
         SessionAuthenticatedState(:final account) =>
           publicPaths.contains(location) ||
                   location == SplashPage.path ||
-                  location == LegalAcceptancePage.path ||
-                  _hiddenByFocus(location, account.usageFocus)
+                  location == LegalAcceptancePage.path
+              ? enterApp()
+              : _hiddenByFocus(location, account.usageFocus)
               ? HomePaths.root
               : null,
       };

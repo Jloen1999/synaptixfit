@@ -2,7 +2,10 @@ package com.synaptixfit.infrastructure.adapter.output.persistence.mapper.challen
 
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeLink;
+import com.synaptixfit.domain.model.challenge.ChallengeRule;
 import com.synaptixfit.domain.model.challenge.ChallengeType;
+import com.synaptixfit.domain.model.challenge.RuleMetric;
+import com.synaptixfit.domain.model.challenge.RuleUnit;
 import com.synaptixfit.domain.model.challenge.Difficulty;
 import com.synaptixfit.domain.model.challenge.LinkType;
 import com.synaptixfit.domain.model.challenge.LinkedDeadline;
@@ -58,6 +61,9 @@ public final class ChallengePersistenceMapper {
                 .manualProgress(e.getProgresoManual())
                 .sessionTarget(e.getSesionesObjetivo())
                 .sessionsCompleted(e.getSesionesCompletadas())
+                .rule(ruleToDomain(e))
+                .ruleProgress(e.getReglaCumplidas())
+                .templateCode(e.getPlantillaCodigo())
                 .milestones(milestones.stream().map(ChallengePersistenceMapper::toDomain).toList())
                 .linkedDeadlines(deadlines)
                 .studyBlocks(blocks)
@@ -101,6 +107,24 @@ public final class ChallengePersistenceMapper {
         e.setSesionesObjetivo(c.sessionTarget());
         e.setSesionesCompletadas(c.sessionsCompleted());
         e.setProgresoManual(c.manualProgress());
+        ChallengeRule rule = c.rule();
+        e.setReglaMetrica(rule == null ? null : rule.metric().name());
+        e.setReglaUnidad(rule == null ? null : rule.unit().name());
+        e.setReglaPorUnidad(rule == null ? null : rule.perUnit());
+        e.setReglaObjetivo(rule == null ? null : rule.target());
+        e.setReglaSoloLaborables(rule != null && rule.weekdaysOnly());
+        e.setReglaCumplidas(c.ruleProgress());
+        e.setPlantillaCodigo(c.templateCode());
+    }
+
+    /** Regla automática del reto (ADR 0043), o nula si no tiene. */
+    private static ChallengeRule ruleToDomain(ChallengeEntity e) {
+        if (e.getReglaMetrica() == null || e.getReglaUnidad() == null || e.getReglaPorUnidad() == null
+                || e.getReglaObjetivo() == null) {
+            return null;
+        }
+        return new ChallengeRule(RuleMetric.valueOf(e.getReglaMetrica()), RuleUnit.valueOf(e.getReglaUnidad()),
+                e.getReglaPorUnidad(), e.getReglaObjetivo(), e.isReglaSoloLaborables());
     }
 
     public static void copyToEntity(UUID challengeId, Milestone m, MilestoneEntity e) {

@@ -1,5 +1,7 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.run.CreateRunWorkoutUseCase;
+import com.synaptixfit.application.port.input.run.ListRunWorkoutsUseCase;
 import com.synaptixfit.application.port.input.training.CreateRoutineFromTemplateUseCase;
 import com.synaptixfit.application.port.input.training.CreateRoutineUseCase;
 import com.synaptixfit.application.port.input.training.ListRoutineTemplatesUseCase;
@@ -8,24 +10,29 @@ import com.synaptixfit.domain.port.output.training.RoutineTemplateRepositoryPort
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Composición de las plantillas de rutina listas para usar (ADR 0032). */
+/** Composición de las plantillas de rutina listas para usar (ADR 0032, 0043: con entrenos de carrera). */
 @Configuration
 public class RoutineTemplateBeanConfiguration {
 
     private final TransactionalUseCaseFactory tx;
     private final RoutineTemplateRepositoryPort templates;
     private final CreateRoutineUseCase createRoutine;
+    private final ListRunWorkoutsUseCase listRunWorkouts;
+    private final CreateRunWorkoutUseCase createRunWorkout;
 
     public RoutineTemplateBeanConfiguration(TransactionalUseCaseFactory tx, RoutineTemplateRepositoryPort templates,
-                                            CreateRoutineUseCase createRoutine) {
+                                            CreateRoutineUseCase createRoutine, ListRunWorkoutsUseCase listRunWorkouts,
+                                            CreateRunWorkoutUseCase createRunWorkout) {
         this.tx = tx;
         this.templates = templates;
         this.createRoutine = createRoutine;
+        this.listRunWorkouts = listRunWorkouts;
+        this.createRunWorkout = createRunWorkout;
     }
 
     @Bean(autowireCandidate = false)
     RoutineTemplateService routineTemplateService() {
-        return new RoutineTemplateService(templates, createRoutine);
+        return new RoutineTemplateService(templates, createRoutine, listRunWorkouts, createRunWorkout);
     }
 
     @Bean

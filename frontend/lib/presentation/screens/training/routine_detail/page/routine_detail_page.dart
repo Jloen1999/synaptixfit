@@ -18,6 +18,7 @@ import '../../widgets/training_dialogs.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
 import '../../widgets/week_selector.dart';
+import '../../routine_share/page/routine_share_sheet.dart';
 import '../bloc/routine_detail_bloc.dart';
 import 'routine_details_sheet.dart';
 import 'routine_plan_sheet.dart';
@@ -39,7 +40,7 @@ class RoutineDetailPage extends StatelessWidget {
   }
 }
 
-enum _MenuAction { edit, duplicate, delete, status }
+enum _MenuAction { edit, share, duplicate, delete, status }
 
 class _DetailView extends StatefulWidget {
   const _DetailView();
@@ -98,6 +99,8 @@ class _DetailViewState extends State<_DetailView> {
             goal: change.goal,
           ),
         );
+      case _MenuAction.share:
+        await showRoutineShareSheet(context, routine);
       case _MenuAction.duplicate:
         final name = await showTextPromptDialog(
           context,
@@ -203,6 +206,13 @@ class _DetailViewState extends State<_DetailView> {
                       child: ListTile(
                         leading: const Icon(Icons.flag_outlined),
                         title: Text(l10n.trainingChangeStatus),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: _MenuAction.share,
+                      child: ListTile(
+                        leading: const Icon(AppIcons.share),
+                        title: Text(l10n.trainingShareLink),
                       ),
                     ),
                     PopupMenuItem(

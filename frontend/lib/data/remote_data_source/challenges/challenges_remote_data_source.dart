@@ -88,6 +88,22 @@ class ChallengesRemoteDataSource {
   Future<void> delete(String challengeId) =>
       _dio.delete<void>('$_base/$challengeId');
 
+  /// Plantillas de retos productivos en el idioma de la app (ADR 0043).
+  Future<List<ChallengeTemplateDto>> templates() async {
+    final response = await _dio.get<List<dynamic>>('$_base/templates');
+    return (response.data ?? const [])
+        .map((e) => ChallengeTemplateDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// «Empezar este reto»: crea un reto propio desde la plantilla.
+  Future<ChallengeDto> startTemplate(String templateId) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/templates/$templateId/start',
+    );
+    return ChallengeDto.fromJson(response.data!);
+  }
+
   Future<ChallengeDto> clone(String challengeId) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '$_base/$challengeId/clone',

@@ -4,7 +4,7 @@ import '../../domain/repositories/analytics_repository_contract.dart';
 import '../../domain/repositories/badge_repository_contract.dart';
 import '../../domain/repositories/progress_repository_contract.dart';
 import '../../domain/repositories/share_repository_contract.dart';
-import '../local_data_source/image_share_data_source.dart';
+import '../local_data_source/system_share_data_source.dart';
 import '../remote_data_source/progress/analytics_remote_data_source.dart';
 import '../remote_data_source/progress/badge_remote_data_source.dart';
 import '../remote_data_source/progress/progress_remote_data_source.dart';
@@ -28,7 +28,7 @@ void registerProgressData(GetIt getIt) {
     ..registerLazySingleton<ProgressRepositoryContract>(
       () => ProgressRepository(getIt()),
     )
-    ..registerLazySingleton(() => const ImageShareDataSource())
+    ..registerLazySingleton(() => const SystemShareDataSource())
     ..registerLazySingleton<ShareRepositoryContract>(
       () => ShareRepository(getIt()),
     );

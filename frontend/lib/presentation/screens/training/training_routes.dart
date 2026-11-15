@@ -18,6 +18,7 @@ import 'session_history/page/session_history_page.dart';
 import 'training_home/page/training_home_page.dart';
 import 'weekly_plan/page/weekly_plan_page.dart';
 import 'routine_templates/page/routine_templates_page.dart';
+import 'shared_routine/page/shared_routine_page.dart';
 import 'run_detail/page/run_detail_page.dart';
 import 'run_home/page/run_home_page.dart';
 import 'run_recorder/page/run_recorder_page.dart';
@@ -128,6 +129,13 @@ abstract final class TrainingPaths {
 
   /// Cambiar un entreno de carrera (`extra`: el `RunWorkout`).
   static String runWorkout(String id) => '$root/run-workouts/$id';
+
+  /// Prefijo de los enlaces de rutina (ADR 0043): el router lo deja pendiente
+  /// si no hay sesión y vuelve a él al entrar.
+  static const sharedPrefix = '$root/shared/';
+
+  /// Rutina abierta desde un enlace (pantalla completa).
+  static String sharedRoutine(String token) => '$sharedPrefix$token';
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).
@@ -203,6 +211,13 @@ List<RouteBase> trainingBranchRoutes() => [
 
 /// Rutas a pantalla completa (sin barra inferior).
 List<RouteBase> trainingRoutes() => [
+  // Enlace de una rutina compartida (ADR 0043): se abre a pantalla completa y
+  // vuelve a Entreno al copiarla.
+  GoRoute(
+    path: '${TrainingPaths.root}/shared/:token',
+    builder: (_, state) =>
+        SharedRoutinePage(token: state.pathParameters['token']!),
+  ),
   // El check-in se abre desde Inicio y desde Entreno: a pantalla completa
   // vuelve siempre a quien lo abrió.
   GoRoute(

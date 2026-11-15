@@ -4,6 +4,7 @@ import '../../../domain/enums/challenge_difficulty.dart';
 import '../../../domain/enums/challenge_type.dart';
 import 'challenge_detail/page/challenge_detail_page.dart';
 import 'challenge_form/page/challenge_form_page.dart';
+import 'challenge_templates/page/challenge_templates_page.dart';
 import 'community_challenges/page/community_challenges_page.dart';
 
 /// Rutas del módulo challenges.
@@ -13,6 +14,7 @@ import 'community_challenges/page/community_challenges_page.dart';
 /// | `/challenges` | Dirección antigua: lleva a Progreso › Retos | — |
 /// | `/challenges/new` | Nuevo reto completo | `extra` opcional: `Map` con `prefilledTitle`, `subjectId`, `subjectName` (y `type`, `difficulty`, `endAt`, `sessionTarget`) |
 /// | `/challenges/community` | Retos de la comunidad | — |
+/// | `/challenges/templates` | Plantillas de retos que se cuentan solos (ADR 0043) | — |
 /// | `/challenges/:challengeId` | Detalle del reto | — |
 /// | `/challenges/:challengeId/milestones` | Editar tareas del reto | — |
 ///
@@ -26,6 +28,9 @@ abstract final class ChallengesPaths {
   static const list = '/progress?tab=challenges';
   static const create = '/challenges/new';
   static const community = '/challenges/community';
+
+  /// Plantillas de retos productivos (ADR 0043), a pantalla completa.
+  static const templates = '/challenges/templates';
 
   static String detail(String challengeId) => '/challenges/$challengeId';
 
@@ -107,6 +112,11 @@ List<RouteBase> challengesRoutes() => [
   GoRoute(
     path: ChallengesPaths.community,
     builder: (context, state) => const CommunityChallengesPage(),
+  ),
+  // Antes que `/:challengeId`, que si no la tomaría por un id.
+  GoRoute(
+    path: ChallengesPaths.templates,
+    builder: (context, state) => const ChallengeTemplatesPage(),
   ),
   GoRoute(
     path: '${ChallengesPaths.root}/:challengeId',

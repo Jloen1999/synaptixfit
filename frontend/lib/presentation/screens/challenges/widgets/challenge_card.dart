@@ -45,6 +45,8 @@ class ChallengeCard extends StatelessWidget {
             challenge.sessionsCompleted,
             challenge.sessionTarget ?? 0,
           )
+        : challenge.tracksRule && challenge.rule != null
+        ? challenge.rule!.progressText(context)
         : challenge.hasMilestones
         ? l10n.challengesMilestonesProgress(
             challenge.completedMilestoneCount,
@@ -141,7 +143,7 @@ class ChallengeCard extends StatelessWidget {
               ),
               if (counts != null)
                 AppPill(
-                  icon: challenge.tracksTrainingSessions
+                  icon: challenge.countsItself
                       ? Icons.repeat_rounded
                       : Icons.checklist_rounded,
                   label: counts,

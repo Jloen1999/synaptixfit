@@ -43,9 +43,10 @@ Reglas:
 | `RoutineDeactivated` | Entrenamiento (`RoutineLifecycle`: pausa, también al activar otra; borrado; ciclo terminado) | Planificador | Borra los bloques **futuros** pendientes de la rutina (los pasados y los completados se quedan como historial) |
 | `TrainingSessionCorrected` | Entrenamiento (corregir RPE o duración de una sesión terminada) | Indicadores | Actualiza la carga física de esa sesión. Evento propio para que el calendario y los retos no reaccionen como a una nueva finalización |
 | `RoutineCompleted` | Entrenamiento (último día hecho o saltado, o completar a mano) | Notificaciones | Aviso `MILESTONE` «rutina terminada» (uno por rutina y día, código `ROUTINE_COMPLETED`) |
-| `CheckInSubmitted` | Entrenamiento | Gamificación, Notificaciones | Evaluar insignias y racha; si el check-in pide adaptar el entrenamiento, aviso `FATIGUE_ALERT` (uno al día) |
+| `CheckInSubmitted` | Entrenamiento | Gamificación, Notificaciones | Evaluar insignias y racha; recontar los retos con regla automática (ADR 0043); si el check-in pide adaptar el entrenamiento, aviso `FATIGUE_ALERT` (uno al día) |
+| `WeekPlanChanged` | Planificador (dar la experiencia de planificar una semana o borrar su plan) | Gamificación | Recontar los retos con regla automática de semanas planificadas (ADR 0043) |
 | `OvertrainingDetected` | Indicadores | Notificaciones | El ACWR acaba de entrar en sobreentrenamiento: aviso `FATIGUE_ALERT` (uno al día) |
-| `ChallengeCompleted` | Gamificación | Social, Gamificación, Notificaciones | Publicación automática «reto completado» (sin duplicar si se recompleta); evaluar insignias; aviso `MILESTONE` (uno por reto, clave `challenge:<id>`: dos retos con el mismo título avisan los dos) |
+| `ChallengeCompleted` | Gamificación | Social, Gamificación, Notificaciones | Publicación automática «reto completado» (sin duplicar si se recompleta); evaluar insignias; aviso `MILESTONE` (uno por reto, clave `challenge:<id>`: dos retos con el mismo título avisan los dos). Con `shareable = false` (reto de bienestar, ADR 0043) no se publica en el muro |
 | `BadgeEarned` | Gamificación | Social, Notificaciones | Publicación automática «insignia desbloqueada»; aviso `MILESTONE` (uno por insignia, clave `badge:<id>`) |
 | `TestSessionCompleted` | Académico | Indicadores, Gamificación | Recalcular la carga cognitiva (el test cuenta como repaso, máx. 60 min); evaluar insignias |
 | `ReviewCompleted` | Académico | Planificador, Indicadores, Gamificación | Completar el bloque de repaso pendiente de hoy o atrasado del material (sin XP de bloque: la da el repaso); recalcular la carga cognitiva; evaluar insignias. Se publica antes de `ReviewScheduled` |
@@ -54,6 +55,8 @@ Reglas:
 | `TeachingGuideImportRequested` | Académico (importar plan docente) | Académico | **Asíncrono** (`@Async` + `@TransactionalEventListener`, tras confirmar la transacción, en el ejecutor `aiTaskExecutor` de 2 hilos): analizar el PDF con la IA y guardar el resultado o el `code` del error. Única excepción a la regla de oyentes síncronos, porque la IA puede tardar más de un minuto. Un análisis colgado más de 5 min cuenta como fallido |
 | `TeachingGuideApplied` | Académico (aplicar plan docente) | Planificador | Crear las pruebas con fecha de la modalidad activa como entregas o exámenes (examen → dificultad alta), sin duplicar las que ya existan con el mismo título el mismo día |
 | `UserDataErased` | Administración (RGPD) | — (para cachés o datos externos) | Datos de un usuario vaciados, anonimizados o eliminados |
+
+**Retos con regla automática (ADR 0043):** Gamificación (`ChallengeEventListener`) llama a `SyncRuleChallengesUseCase` con `ReviewCompleted`, `TestSessionCompleted`, `FocusSessionCompleted`, `TrainingSessionCompletionChanged`, `SportBlockCompletionChanged`, `TrainingSessionCorrected`, `CheckInSubmitted` y `WeekPlanChanged`. Una carrera se cuenta por su actividad con origen GPS, que se guarda antes de `SportBlockCompletionChanged` (la fila de `carreras_gps` llega después). El recuento se rehace desde cero con lo que lee `ChallengeReferencePort.activity` (idempotente); del registro diario solo se lee la fecha.
 
 Un módulo puede añadir eventos propios en su paquete; se registran aquí en el mismo cambio.
 

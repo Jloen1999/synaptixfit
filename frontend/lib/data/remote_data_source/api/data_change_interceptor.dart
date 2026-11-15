@@ -33,6 +33,9 @@ class DataChangeInterceptor extends Interceptor {
     '/api/v1/badges/notified',
     // Aceptar la política (ADR 0034) no cambia nada que se vea.
     '/api/v1/me/legal-acceptance',
+    // Ver una rutina compartida es un POST (el token va en el cuerpo, ADR
+    // 0043), pero no cambia nada.
+    '/api/v1/shared-routines/preview',
   ];
 
   /// Prefijo de ruta → áreas afectadas. Casi toda acción puede dar XP o
@@ -49,6 +52,8 @@ class DataChangeInterceptor extends Interceptor {
       DataTopic.social,
     },
     '/api/v1/routines': {DataTopic.training, DataTopic.planner},
+    // Copiar una rutina desde un enlace (ADR 0043).
+    '/api/v1/shared-routines': {DataTopic.training, DataTopic.planner},
     '/api/v1/planner': {
       DataTopic.planner,
       DataTopic.academic,

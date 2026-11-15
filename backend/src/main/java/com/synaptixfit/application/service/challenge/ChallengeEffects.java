@@ -34,7 +34,7 @@ public class ChallengeEffects {
         applyXp(userId, changes.xpDelta());
         if (changes.challengeCompleted()) {
             events.publish(new ChallengeCompleted(userId, challenge.id(), challenge.title(),
-                    challenge.type().name(), clock.instant()));
+                    challenge.type().name(), clock.instant(), challenge.shareable()));
         }
     }
 

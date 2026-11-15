@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.synaptixfit.application.port.input.planner.SaveWeeklyPlanUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateWeeklyWellbeingUseCase;
+import com.synaptixfit.domain.event.planner.WeekPlanChanged;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.PlannerProfile;
@@ -95,6 +96,9 @@ class StudyPlanAndWeeklyLoadServiceTest {
         assertThat(f.xp.of(f.user)).isEqualTo(115);
         plans.deletePlan(f.user, result.plan().id());
         assertThat(f.xp.of(f.user)).isZero();
+        // Los retos de semanas planificadas se recuentan al dar y al quitar la XP (ADR 0043).
+        assertThat(f.events).filteredOn(WeekPlanChanged.class::isInstance)
+                .extracting(e -> ((WeekPlanChanged) e).planned()).containsExactly(true, false);
         assertThatThrownBy(() -> plans.deletePlan(f.otherUser, result.plan().id()))
                 .extracting("code").isEqualTo("PLAN_NOT_FOUND");
     }

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/training/routine.dart';
@@ -52,11 +53,18 @@ class RoutineTemplatesBloc
   ) async {
     if (state.usingId != null) return;
     emit(state.copyWith(usingId: event.templateId, useError: null));
+    final withRuns = state.templates.any(
+      (t) => t.id == event.templateId && t.hasRuns,
+    );
     final result = await _use(event.templateId);
     emit(switch (result) {
-      Success(:final value) => state.copyWith(usingId: null, created: value),
+      Success(:final value) => state.copyWith(
+        usingId: null,
+        created: value,
+        createdWithRuns: withRuns,
+      ),
       Failure(:final error) => state.copyWith(usingId: null, useError: error),
     });
-    emit(state.copyWith(created: null, useError: null));
+    emit(state.copyWith(created: null, createdWithRuns: false, useError: null));
   }
 }

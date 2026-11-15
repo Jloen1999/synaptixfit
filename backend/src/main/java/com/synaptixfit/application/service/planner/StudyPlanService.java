@@ -8,6 +8,7 @@ import com.synaptixfit.application.port.input.planner.GetWeekPlanStatusUseCase;
 import com.synaptixfit.application.port.input.planner.PrivatizeUserStudyPlansUseCase;
 import com.synaptixfit.application.port.input.planner.RewardWeekPlanningUseCase;
 import com.synaptixfit.application.port.input.planner.SaveWeeklyPlanUseCase;
+import com.synaptixfit.domain.event.planner.WeekPlanChanged;
 import com.synaptixfit.domain.exception.planner.StudyPlanNotFoundException;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.Deadline;
@@ -16,6 +17,7 @@ import com.synaptixfit.domain.model.planner.StudyPlan;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.shared.Visibility;
+import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.StudyPlanRepositoryPort;
@@ -30,7 +32,8 @@ import java.util.UUID;
  * Plan semanal y su experiencia. La experiencia de planificar se da sola ({@link #rewardWeek}, ADR 0038), la pide
  * {@link CalendarBlockService} al añadir eventos; {@code PUT /plans/{weekStart}} («Cerrar semana» de las apps
  * antiguas) sigue guardando nombre y visibilidad con la misma regla. Al pasar el perfil a privado
- * ({@code UserPrivacyChanged}) los planes pasan a privados.
+ * ({@code UserPrivacyChanged}) los planes pasan a privados. Al dar o quitar esa experiencia publica
+ * {@link WeekPlanChanged}: los retos de semanas planificadas se recuentan (ADR 0043).
  */
 public class StudyPlanService implements SaveWeeklyPlanUseCase, GetStudyPlansUseCase, DeleteStudyPlanUseCase,
         PrivatizeUserStudyPlansUseCase, GetWeekPlanStatusUseCase, RewardWeekPlanningUseCase {
@@ -40,17 +43,20 @@ public class StudyPlanService implements SaveWeeklyPlanUseCase, GetStudyPlansUse
     private final DeadlineRepositoryPort deadlines;
     private final AwardExperienceUseCase award;
     private final RevokeExperienceUseCase revoke;
+    private final DomainEventPublisherPort events;
     private final PlannerZone zone;
     private final Clock clock;
 
     public StudyPlanService(StudyPlanRepositoryPort plans, CalendarBlockRepositoryPort blocks,
                             DeadlineRepositoryPort deadlines, AwardExperienceUseCase award,
-                            RevokeExperienceUseCase revoke, PlannerZone zone, Clock clock) {
+                            RevokeExperienceUseCase revoke, DomainEventPublisherPort events, PlannerZone zone,
+                            Clock clock) {
         this.plans = plans;
         this.blocks = blocks;
         this.deadlines = deadlines;
         this.award = award;
         this.revoke = revoke;
+        this.events = events;
         this.zone = zone;
         this.clock = clock;
     }
@@ -109,6 +115,7 @@ public class StudyPlanService implements SaveWeeklyPlanUseCase, GetStudyPlansUse
         }
         award.award(plan.userId(), xp);
         plan.markExperienceAwarded(xp);
+        events.publish(new WeekPlanChanged(plan.userId(), plan.weekStart(), true, clock.instant()));
         return xp;
     }
 
@@ -150,6 +157,9 @@ public class StudyPlanService implements SaveWeeklyPlanUseCase, GetStudyPlansUse
             revoke.revoke(userId, plan.xpPoints());
         }
         plans.delete(plan.id());
+        if (plan.xpAwarded()) {
+            events.publish(new WeekPlanChanged(userId, plan.weekStart(), false, clock.instant()));
+        }
     }
 
     @Override

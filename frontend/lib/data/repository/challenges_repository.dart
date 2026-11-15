@@ -6,6 +6,7 @@ import '../../domain/models/challenges/challenge_page.dart';
 import '../../domain/models/challenges/challenge_progress_entry.dart';
 import '../../domain/models/challenges/challenge_query.dart';
 import '../../domain/models/challenges/challenge_summary.dart';
+import '../../domain/models/challenges/challenge_template.dart';
 import '../../domain/models/challenges/pending_milestone.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/models/result/result.dart';
@@ -102,6 +103,18 @@ class ChallengesRepository implements ChallengesRepositoryContract {
         await _remote.delete(challengeId);
         return unit;
       });
+
+  @override
+  Future<AppResult<List<ChallengeTemplate>>> templates() =>
+      RepositoryErrorHandler.guard(
+        () async => [for (final t in await _remote.templates()) t.toDomain()],
+      );
+
+  @override
+  Future<AppResult<Challenge>> startTemplate(String templateId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.startTemplate(templateId)).toDomain(),
+      );
 
   @override
   Future<AppResult<Challenge>> clone(String challengeId) =>

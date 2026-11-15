@@ -30,6 +30,7 @@ const _home2 = RoutineTemplate(
   code: 'casa_2',
   name: 'En casa · 2 días',
   atHome: true,
+  place: TemplatePlace.home,
   minutes: 35,
   weeks: 4,
   daysPerWeek: 2,
@@ -39,15 +40,32 @@ const _gym3 = RoutineTemplate(
   id: 't2',
   code: 'cuerpo_completo_3',
   name: 'Cuerpo completo · 3 días',
+  level: TemplateLevel.intermediate,
   minutes: 50,
   weeks: 4,
   daysPerWeek: 3,
+);
+const _run = RoutineTemplate(
+  id: 't4',
+  code: 'cero_a_cinco_km',
+  name: 'De 0 a 5 km',
+  place: TemplatePlace.outdoor,
+  minutes: 30,
+  weeks: 8,
+  daysPerWeek: 4,
+  dayNumbers: [4],
+  runDays: [
+    TemplateRunDay(dayNumber: 1, workoutCode: 'START_WALK_RUN'),
+    TemplateRunDay(dayNumber: 3, workoutCode: 'STEADY_20'),
+    TemplateRunDay(dayNumber: 6, workoutCode: 'EASY_30'),
+  ],
 );
 const _exam = RoutineTemplate(
   id: 't3',
   code: 'examenes_casa',
   name: 'Semana de exámenes · en casa',
   atHome: true,
+  place: TemplatePlace.home,
   forExams: true,
   minutes: 20,
   weeks: 2,
@@ -70,7 +88,7 @@ const _routine = Routine(
 class _List implements ListRoutineTemplatesUseCaseContract {
   @override
   Future<AppResult<List<RoutineTemplate>>> call() async =>
-      const Success([_home2, _gym3, _exam]);
+      const Success([_home2, _gym3, _exam, _run]);
 }
 
 class _Use implements UseRoutineTemplateUseCaseContract {
@@ -151,12 +169,13 @@ void main() {
         ..add(const RoutineTemplatesEvent.started())
         ..add(
           const RoutineTemplatesEvent.filterChanged(
-            TemplateFilter(atHome: true, forExams: true),
+            TemplateFilter(place: TemplatePlace.home, forExams: true),
           ),
         ),
       verify: (bloc) {
         expect(bloc.state.status, TemplatesStatus.ready);
-        expect(bloc.state.dayOptions, [2, 3]);
+        expect(bloc.state.dayOptions, [2, 3, 4]);
+        expect(bloc.state.placeOptions, TemplatePlace.values);
         expect(bloc.state.visible, [_exam]);
       },
     );
@@ -164,6 +183,77 @@ void main() {
     test('filtrar por días deja solo las de esos días', () {
       const filter = TemplateFilter(days: 3);
       expect([_home2, _gym3, _exam].where(filter.matches), [_gym3, _exam]);
+    });
+
+    test('los días de carrera cuentan en los días por semana', () {
+      expect(_run.hasRuns, isTrue);
+      expect(const TemplateFilter(days: 4).matches(_run), isTrue);
+      expect(
+        const TemplateFilter(place: TemplatePlace.outdoor).matches(_run),
+        isTrue,
+      );
+    });
+
+    test('tiempo y nivel filtran por tramos y por quién es', () {
+      const all = [_home2, _gym3, _exam, _run];
+      expect(
+        all.where(const TemplateFilter(time: TemplateTime.upTo20).matches),
+        [_exam],
+      );
+      expect(
+        all.where(const TemplateFilter(time: TemplateTime.upTo45).matches),
+        [_home2, _exam, _run],
+      );
+      expect(
+        all.where(const TemplateFilter(time: TemplateTime.more).matches),
+        [_gym3],
+      );
+      expect(
+        all.where(
+          const TemplateFilter(level: TemplateLevel.intermediate).matches,
+        ),
+        [_gym3],
+      );
+      expect(const TemplateFilter().isEmpty, isTrue);
+    });
+
+    blocTest<RoutineTemplatesBloc, RoutineTemplatesState>(
+      'con carreras, el aviso de creada sabe que están en Correr',
+      build: () => RoutineTemplatesBloc(list: _List(), use: _Use()),
+      seed: () => const RoutineTemplatesState(
+        status: TemplatesStatus.ready,
+        templates: [_run],
+      ),
+      act: (bloc) => bloc.add(const RoutineTemplatesEvent.used('t4')),
+      expect: () => [
+        isA<RoutineTemplatesState>().having((s) => s.usingId, 'ocupado', 't4'),
+        isA<RoutineTemplatesState>()
+            .having((s) => s.created, 'creada', _routine)
+            .having((s) => s.createdWithRuns, 'con carreras', isTrue),
+        isA<RoutineTemplatesState>()
+            .having((s) => s.createdWithRuns, 'consumido', isFalse),
+      ],
+    );
+
+    test('una plantilla de un servidor anterior deduce el lugar de «en casa»', () {
+      const old = RoutineTemplateDto(
+        id: 'x',
+        code: 'casa_2',
+        name: 'En casa',
+        atHome: true,
+      );
+      expect(old.toDomain().place, TemplatePlace.home);
+      const fresh = RoutineTemplateDto(
+        id: 'y',
+        code: 'parque_3',
+        name: 'Parque',
+        place: 'OUTDOOR',
+        level: 'INTERMEDIATE',
+        runDays: [TemplateRunDayDto(dayNumber: 2, workoutCode: 'EASY_30')],
+      );
+      expect(fresh.toDomain().place, TemplatePlace.outdoor);
+      expect(fresh.toDomain().level, TemplateLevel.intermediate);
+      expect(fresh.toDomain().runDays.single.workoutCode, 'EASY_30');
     });
 
     late _Use use;

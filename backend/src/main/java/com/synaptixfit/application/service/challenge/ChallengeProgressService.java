@@ -9,6 +9,7 @@ import com.synaptixfit.application.port.input.challenge.ReorderMilestonesUseCase
 import com.synaptixfit.application.port.input.challenge.ReplaceMilestonesUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncLinkedEntityChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncMilestoneStudyBlocksUseCase;
+import com.synaptixfit.application.port.input.challenge.SyncRuleChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.UncompleteChallengeUseCase;
 import com.synaptixfit.application.port.input.challenge.UncompleteMilestoneUseCase;
@@ -40,7 +41,7 @@ import java.util.UUID;
 public class ChallengeProgressService implements CompleteChallengeUseCase, UncompleteChallengeUseCase,
         ReplaceMilestonesUseCase, ReorderMilestonesUseCase, CompleteMilestoneUseCase, UncompleteMilestoneUseCase,
         RecordChallengeProgressUseCase, SyncLinkedEntityChallengesUseCase, SyncMilestoneStudyBlocksUseCase,
-        SyncTrainingSessionChallengesUseCase, HideUserChallengesUseCase {
+        SyncTrainingSessionChallengesUseCase, SyncRuleChallengesUseCase, HideUserChallengesUseCase {
 
     private final ChallengeRepositoryPort challenges;
     private final ChallengeReferencePort referencePort;
@@ -49,6 +50,7 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     private final Clock clock;
     private final ZoneId zone;
     private final TrainingSessionTracker trainingSessions;
+    private final RuleTracker rules;
     private final LinkedSourcesSync linkedSources;
 
     /**
@@ -64,6 +66,7 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
         this.clock = clock;
         this.zone = zone;
         this.trainingSessions = new TrainingSessionTracker(referencePort);
+        this.rules = new RuleTracker(referencePort, zone);
         this.linkedSources = new LinkedSourcesSync(challenges, zone);
     }
 
@@ -197,6 +200,22 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
             int before = challenge.sessionsCompleted();
             ChallengeChanges changes = trainingSessions.apply(challenge, today);
             if (before != challenge.sessionsCompleted() || !changes.isEmpty()) {
+                persist(challenge, changes);
+            }
+        }
+    }
+
+    @Override
+    public void syncRuleChallenges(UUID userId) {
+        LocalDate today = today();
+        Instant now = clock.instant();
+        for (Challenge challenge : challenges.findRuleTrackedByOwner(userId)) {
+            if (challenge.status(now) == ChallengeStatus.EXPIRED) {
+                continue;
+            }
+            int before = challenge.ruleProgress();
+            ChallengeChanges changes = rules.apply(challenge, today);
+            if (before != challenge.ruleProgress() || !changes.isEmpty()) {
                 persist(challenge, changes);
             }
         }

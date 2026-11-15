@@ -1,0 +1,1433 @@
+{
+  "sesiones": {
+    "maquinas_a": [
+      [
+        "Prensa de piernas a 45 grados",
+        3,
+        12,
+        90
+      ],
+      [
+        "Press de pecho en máquina",
+        3,
+        12,
+        90
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        3,
+        12,
+        90
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        3,
+        12,
+        60
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        3,
+        1,
+        60,
+        30
+      ]
+    ],
+    "maquinas_b": [
+      [
+        "Extensión de piernas en máquina",
+        3,
+        12,
+        60
+      ],
+      [
+        "Remo sentado en polea",
+        3,
+        12,
+        90
+      ],
+      [
+        "Press de hombros sentado en máquina",
+        3,
+        12,
+        90
+      ],
+      [
+        "Abducción de cadera en máquina",
+        2,
+        15,
+        60
+      ],
+      [
+        "Bicho muerto",
+        3,
+        10,
+        60
+      ]
+    ],
+    "parque_a": [
+      [
+        "Dominada negativa",
+        3,
+        5,
+        120
+      ],
+      [
+        "Fondos en barras paralelas",
+        3,
+        8,
+        120
+      ],
+      [
+        "Remo invertido",
+        3,
+        10,
+        90
+      ],
+      [
+        "Sentadilla búlgara",
+        3,
+        10,
+        90
+      ],
+      [
+        "Elevación de rodillas colgado",
+        3,
+        10,
+        60
+      ]
+    ],
+    "parque_b": [
+      [
+        "Flexiones declinadas",
+        3,
+        10,
+        90
+      ],
+      [
+        "Remo invertido",
+        3,
+        10,
+        90
+      ],
+      [
+        "Subida al cajón",
+        3,
+        10,
+        60
+      ],
+      [
+        "Fondos de tríceps en banco",
+        3,
+        10,
+        60
+      ],
+      [
+        "Zancada",
+        3,
+        12,
+        60
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        3,
+        1,
+        45,
+        30
+      ]
+    ],
+    "expres_a": [
+      [
+        "Prensa de piernas a 45 grados",
+        3,
+        10,
+        60
+      ],
+      [
+        "Press de banca con mancuerna",
+        3,
+        10,
+        60
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        3,
+        10,
+        60
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        45,
+        30
+      ]
+    ],
+    "expres_b": [
+      [
+        "Peso muerto rumano con mancuernas",
+        3,
+        10,
+        60
+      ],
+      [
+        "Press de hombros sentado en máquina",
+        3,
+        10,
+        60
+      ],
+      [
+        "Remo sentado en polea",
+        3,
+        10,
+        60
+      ],
+      [
+        "Bicho muerto",
+        2,
+        10,
+        45
+      ]
+    ],
+    "torso_casa": [
+      [
+        "Flexiones declinadas",
+        4,
+        10,
+        90
+      ],
+      [
+        "Remo invertido bajo una mesa",
+        4,
+        10,
+        90
+      ],
+      [
+        "Flexiones diamante",
+        3,
+        10,
+        60
+      ],
+      [
+        "Fondos de tríceps en banco",
+        3,
+        12,
+        60
+      ],
+      [
+        "Plancha lateral",
+        3,
+        1,
+        45,
+        30
+      ]
+    ],
+    "pierna_casa": [
+      [
+        "Sentadilla búlgara",
+        4,
+        10,
+        90
+      ],
+      [
+        "Peso muerto a una pierna",
+        3,
+        10,
+        60
+      ],
+      [
+        "Sentadilla con salto",
+        3,
+        10,
+        60
+      ],
+      [
+        "Puente de glúteos a una pierna",
+        3,
+        12,
+        60
+      ],
+      [
+        "Bicho muerto",
+        3,
+        12,
+        45
+      ]
+    ],
+    "empuje": [
+      [
+        "Press de banca con barra",
+        4,
+        8,
+        120
+      ],
+      [
+        "Press de hombros sentado en máquina",
+        3,
+        10,
+        90
+      ],
+      [
+        "Press de banca inclinado con mancuernas",
+        3,
+        10,
+        90
+      ],
+      [
+        "Elevaciones laterales con mancuernas",
+        3,
+        12,
+        60
+      ],
+      [
+        "Extensión de tríceps en polea",
+        3,
+        12,
+        60
+      ]
+    ],
+    "tiron": [
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        4,
+        10,
+        90
+      ],
+      [
+        "Remo con barra y agarre prono",
+        3,
+        8,
+        120
+      ],
+      [
+        "Remo sentado en polea",
+        3,
+        10,
+        90
+      ],
+      [
+        "Face pull de pie con polea",
+        3,
+        15,
+        60
+      ],
+      [
+        "Curl con barra",
+        3,
+        10,
+        60
+      ]
+    ],
+    "pierna": [
+      [
+        "Sentadilla con barra",
+        4,
+        8,
+        150
+      ],
+      [
+        "Peso muerto rumano con mancuernas",
+        3,
+        10,
+        120
+      ],
+      [
+        "Prensa de piernas a 45 grados",
+        3,
+        12,
+        90
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        3,
+        12,
+        60
+      ],
+      [
+        "Elevación de gemelos de pie",
+        3,
+        15,
+        60
+      ]
+    ],
+    "mancuernas_a": [
+      [
+        "Sentadilla goblet con mancuerna",
+        3,
+        12,
+        90
+      ],
+      [
+        "Press en el suelo alterno con mancuerna",
+        3,
+        10,
+        90
+      ],
+      [
+        "Remo con mancuernas y agarre prono",
+        3,
+        10,
+        90
+      ],
+      [
+        "Press de hombros de pie con mancuerna",
+        3,
+        10,
+        90
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        3,
+        1,
+        45,
+        30
+      ]
+    ],
+    "mancuernas_b": [
+      [
+        "Peso muerto rumano con mancuernas",
+        3,
+        10,
+        90
+      ],
+      [
+        "Zancada",
+        3,
+        10,
+        60
+      ],
+      [
+        "Remo a una mano con mancuerna",
+        3,
+        10,
+        60
+      ],
+      [
+        "Curl de bíceps con mancuernas",
+        2,
+        12,
+        60
+      ],
+      [
+        "Extensión de tríceps de pie con mancuernas",
+        2,
+        12,
+        60
+      ],
+      [
+        "Bicho muerto",
+        3,
+        10,
+        45
+      ]
+    ],
+    "gomas_a": [
+      [
+        "Sentadilla con banda elástica",
+        3,
+        15,
+        60
+      ],
+      [
+        "Press de pecho de pie con banda elástica",
+        3,
+        12,
+        60
+      ],
+      [
+        "Remo con agarre cerrado y banda elástica",
+        3,
+        12,
+        60
+      ],
+      [
+        "Face pull con banda elástica",
+        3,
+        15,
+        45
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        3,
+        1,
+        45,
+        30
+      ]
+    ],
+    "gomas_b": [
+      [
+        "Peso muerto con banda elástica",
+        3,
+        12,
+        60
+      ],
+      [
+        "Flexiones",
+        3,
+        10,
+        60
+      ],
+      [
+        "Separación de brazos con banda elástica",
+        3,
+        15,
+        45
+      ],
+      [
+        "Curl de bíceps con banda elástica",
+        2,
+        15,
+        45
+      ],
+      [
+        "Puente de glúteos",
+        3,
+        15,
+        45
+      ]
+    ],
+    "kettlebell_a": [
+      [
+        "Swing ruso con kettlebell",
+        4,
+        15,
+        60
+      ],
+      [
+        "Sentadilla goblet con kettlebell",
+        3,
+        10,
+        90
+      ],
+      [
+        "Remo a dos brazos con kettlebell",
+        3,
+        10,
+        60
+      ],
+      [
+        "Press de hombros semiarrodillado con kettlebell",
+        3,
+        8,
+        60
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        3,
+        1,
+        45,
+        30
+      ]
+    ],
+    "kettlebell_b": [
+      [
+        "Peso muerto con kettlebell",
+        3,
+        12,
+        90
+      ],
+      [
+        "Zancada",
+        3,
+        10,
+        60
+      ],
+      [
+        "Remo alternado con kettlebell",
+        3,
+        10,
+        60
+      ],
+      [
+        "Flexiones",
+        3,
+        10,
+        60
+      ],
+      [
+        "Bicho muerto",
+        3,
+        10,
+        45
+      ]
+    ],
+    "fuerza_correr": [
+      [
+        "Sentadilla",
+        2,
+        12,
+        60
+      ],
+      [
+        "Puente de glúteos",
+        2,
+        15,
+        45
+      ],
+      [
+        "Elevación de gemelos de pie",
+        2,
+        15,
+        45
+      ],
+      [
+        "Bird dog",
+        2,
+        10,
+        45
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        45,
+        30
+      ]
+    ],
+    "correr_fuerza_a": [
+      [
+        "Sentadilla con barra",
+        3,
+        6,
+        150
+      ],
+      [
+        "Press de banca con barra",
+        3,
+        6,
+        150
+      ],
+      [
+        "Remo con barra y agarre prono",
+        3,
+        8,
+        120
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        3,
+        1,
+        60,
+        30
+      ]
+    ],
+    "correr_fuerza_b": [
+      [
+        "Peso muerto rumano con mancuernas",
+        3,
+        8,
+        120
+      ],
+      [
+        "Sentadilla búlgara",
+        3,
+        8,
+        90
+      ],
+      [
+        "Press de hombros sentado en máquina",
+        3,
+        8,
+        90
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        3,
+        10,
+        90
+      ],
+      [
+        "Bicho muerto",
+        3,
+        10,
+        60
+      ]
+    ],
+    "espalda": [
+      [
+        "Estiramiento gato-vaca",
+        2,
+        8,
+        30
+      ],
+      [
+        "Bird dog",
+        2,
+        8,
+        30
+      ],
+      [
+        "Bicho muerto",
+        2,
+        8,
+        30
+      ],
+      [
+        "Puente de glúteos",
+        2,
+        12,
+        30
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        30,
+        20
+      ]
+    ],
+    "gluteo_a": [
+      [
+        "Hip thrust con barra",
+        4,
+        10,
+        90
+      ],
+      [
+        "Sentadilla goblet con mancuerna",
+        3,
+        12,
+        90
+      ],
+      [
+        "Peso muerto rumano con mancuernas",
+        3,
+        10,
+        90
+      ],
+      [
+        "Abducción de cadera en máquina",
+        3,
+        15,
+        60
+      ],
+      [
+        "Elevación de gemelos de pie",
+        3,
+        15,
+        45
+      ]
+    ],
+    "gluteo_b": [
+      [
+        "Sentadilla búlgara",
+        3,
+        10,
+        90
+      ],
+      [
+        "Prensa de piernas a 45 grados",
+        3,
+        12,
+        90
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        3,
+        12,
+        60
+      ],
+      [
+        "Patada de glúteo de rodillas en polea",
+        3,
+        12,
+        60
+      ],
+      [
+        "Puente de glúteos a una pierna",
+        2,
+        12,
+        45
+      ]
+    ],
+    "vuelta_a": [
+      [
+        "Sentadilla goblet con mancuerna",
+        2,
+        10,
+        90
+      ],
+      [
+        "Press de pecho en máquina",
+        2,
+        10,
+        90
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        2,
+        10,
+        90
+      ],
+      [
+        "Peso muerto rumano con mancuernas",
+        2,
+        10,
+        90
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        45,
+        30
+      ]
+    ],
+    "vuelta_b": [
+      [
+        "Prensa de piernas a 45 grados",
+        2,
+        12,
+        90
+      ],
+      [
+        "Remo sentado en polea",
+        2,
+        12,
+        90
+      ],
+      [
+        "Press de hombros sentado en máquina",
+        2,
+        10,
+        90
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        2,
+        12,
+        60
+      ],
+      [
+        "Bicho muerto",
+        2,
+        10,
+        45
+      ]
+    ]
+  },
+  "plantillas": [
+    {
+      "codigo": "maquinas_3",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 45,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "maquinas_a"
+        ],
+        [
+          3,
+          "maquinas_b"
+        ],
+        [
+          5,
+          "maquinas_a"
+        ]
+      ],
+      "es": [
+        "Máquinas para empezar · 3 días",
+        "Todo con máquinas guiadas: fáciles de aprender y seguras si es tu primer gimnasio."
+      ],
+      "en": [
+        "Machines to get started · 3 days",
+        "All on guided machines: easy to learn and safe if it's your first gym."
+      ],
+      "fr": [
+        "Machines pour débuter · 3 jours",
+        "Tout sur machines guidées : faciles à apprendre et sûres si c'est ta première salle."
+      ],
+      "pt": [
+        "Máquinas para começar · 3 dias",
+        "Tudo em máquinas guiadas: fáceis de aprender e seguras se é o teu primeiro ginásio."
+      ]
+    },
+    {
+      "codigo": "parque_3",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "OUTDOOR",
+      "nivel": "BEGINNER",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 40,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "parque_a"
+        ],
+        [
+          3,
+          "parque_b"
+        ],
+        [
+          5,
+          "parque_a"
+        ]
+      ],
+      "es": [
+        "Calistenia en el parque · 3 días",
+        "Barras, paralelas y un banco del parque. Gratis y al aire libre."
+      ],
+      "en": [
+        "Park calisthenics · 3 days",
+        "Bars, dip bars and a park bench. Free and outdoors."
+      ],
+      "fr": [
+        "Street workout au parc · 3 jours",
+        "Barres, barres parallèles et un banc du parc. Gratuit et en plein air."
+      ],
+      "pt": [
+        "Calistenia no parque · 3 dias",
+        "Barras, paralelas e um banco do parque. Grátis e ao ar livre."
+      ]
+    },
+    {
+      "codigo": "expres_gimnasio_3",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 30,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "expres_a"
+        ],
+        [
+          3,
+          "expres_b"
+        ],
+        [
+          5,
+          "expres_a"
+        ]
+      ],
+      "es": [
+        "Exprés 30 min · gimnasio · 3 días",
+        "Cuatro ejercicios y descansos cortos. Entras, entrenas y vuelves a estudiar."
+      ],
+      "en": [
+        "Express 30 min · gym · 3 days",
+        "Four exercises and short rests. In, train and back to studying."
+      ],
+      "fr": [
+        "Express 30 min · salle · 3 jours",
+        "Quatre exercices et des repos courts. Tu entres, tu t'entraînes et tu retournes réviser."
+      ],
+      "pt": [
+        "Expresso 30 min · ginásio · 3 dias",
+        "Quatro exercícios e descansos curtos. Entras, treinas e voltas a estudar."
+      ]
+    },
+    {
+      "codigo": "casa_intermedio_4",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "HOME",
+      "nivel": "INTERMEDIATE",
+      "en_casa": true,
+      "examenes": false,
+      "minutos": 40,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "torso_casa"
+        ],
+        [
+          2,
+          "pierna_casa"
+        ],
+        [
+          4,
+          "torso_casa"
+        ],
+        [
+          5,
+          "pierna_casa"
+        ]
+      ],
+      "es": [
+        "En casa · torso y pierna · 4 días",
+        "Sin material y más exigente: para cuando las rutinas de casa se te quedan cortas."
+      ],
+      "en": [
+        "At home · upper and lower · 4 days",
+        "No equipment and more demanding: for when home routines feel too easy."
+      ],
+      "fr": [
+        "À la maison · haut et bas · 4 jours",
+        "Sans matériel et plus exigeant : quand les routines maison deviennent trop faciles."
+      ],
+      "pt": [
+        "Em casa · tronco e pernas · 4 dias",
+        "Sem material e mais exigente: para quando as rotinas de casa já te sabem a pouco."
+      ]
+    },
+    {
+      "codigo": "empuje_tiron_pierna_3",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "INTERMEDIATE",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 60,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "empuje"
+        ],
+        [
+          3,
+          "tiron"
+        ],
+        [
+          5,
+          "pierna"
+        ]
+      ],
+      "es": [
+        "Empuje, tirón y pierna · 3 días",
+        "Un día para empujar (pecho, hombro, tríceps), otro para tirar (espalda, bíceps) y otro de pierna."
+      ],
+      "en": [
+        "Push, pull and legs · 3 days",
+        "One day to push (chest, shoulders, triceps), one to pull (back, biceps) and one for legs."
+      ],
+      "fr": [
+        "Poussée, tirage et jambes · 3 jours",
+        "Un jour pour pousser (pecs, épaules, triceps), un pour tirer (dos, biceps) et un pour les jambes."
+      ],
+      "pt": [
+        "Empurrar, puxar e pernas · 3 dias",
+        "Um dia para empurrar (peito, ombros, tríceps), outro para puxar (costas, bíceps) e outro de pernas."
+      ]
+    },
+    {
+      "codigo": "empuje_tiron_pierna_6",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "INTERMEDIATE",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 60,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "empuje"
+        ],
+        [
+          2,
+          "tiron"
+        ],
+        [
+          3,
+          "pierna"
+        ],
+        [
+          4,
+          "empuje"
+        ],
+        [
+          5,
+          "tiron"
+        ],
+        [
+          6,
+          "pierna"
+        ]
+      ],
+      "es": [
+        "Empuje, tirón y pierna · 6 días",
+        "El mismo reparto dos veces por semana. Solo si ya entrenas a menudo y duermes bien."
+      ],
+      "en": [
+        "Push, pull and legs · 6 days",
+        "The same split twice a week. Only if you already train often and sleep well."
+      ],
+      "fr": [
+        "Poussée, tirage et jambes · 6 jours",
+        "La même répartition deux fois par semaine. Seulement si tu t'entraînes déjà souvent et dors bien."
+      ],
+      "pt": [
+        "Empurrar, puxar e pernas · 6 dias",
+        "A mesma divisão duas vezes por semana. Só se já treinas com frequência e dormes bem."
+      ]
+    },
+    {
+      "codigo": "mancuernas_3",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "en_casa": true,
+      "examenes": false,
+      "minutos": 45,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "mancuernas_a"
+        ],
+        [
+          3,
+          "mancuernas_b"
+        ],
+        [
+          5,
+          "mancuernas_a"
+        ]
+      ],
+      "es": [
+        "Solo mancuernas · 3 días",
+        "Con un par de mancuernas en tu cuarto trabajas todo el cuerpo."
+      ],
+      "en": [
+        "Dumbbells only · 3 days",
+        "A pair of dumbbells in your room is enough for your whole body."
+      ],
+      "fr": [
+        "Haltères uniquement · 3 jours",
+        "Une paire d'haltères dans ta chambre suffit pour tout le corps."
+      ],
+      "pt": [
+        "Só halteres · 3 dias",
+        "Com um par de halteres no teu quarto trabalhas o corpo todo."
+      ]
+    },
+    {
+      "codigo": "gomas_3",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "en_casa": true,
+      "examenes": false,
+      "minutos": 30,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "gomas_a"
+        ],
+        [
+          3,
+          "gomas_b"
+        ],
+        [
+          5,
+          "gomas_a"
+        ]
+      ],
+      "es": [
+        "Con gomas elásticas · 3 días",
+        "Caben en la mochila: para casa, la residencia o cuando viajas."
+      ],
+      "en": [
+        "Resistance bands · 3 days",
+        "They fit in your backpack: for home, halls or when you travel."
+      ],
+      "fr": [
+        "Avec élastiques · 3 jours",
+        "Ils tiennent dans le sac : pour la maison, la résidence ou en voyage."
+      ],
+      "pt": [
+        "Com elásticos · 3 dias",
+        "Cabem na mochila: para casa, a residência ou quando viajas."
+      ]
+    },
+    {
+      "codigo": "kettlebell_3",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "en_casa": true,
+      "examenes": false,
+      "minutos": 30,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "kettlebell_a"
+        ],
+        [
+          3,
+          "kettlebell_b"
+        ],
+        [
+          5,
+          "kettlebell_a"
+        ]
+      ],
+      "es": [
+        "Una pesa rusa · 3 días",
+        "Con una sola kettlebell: fuerza y fondo en media hora."
+      ],
+      "en": [
+        "One kettlebell · 3 days",
+        "Just one kettlebell: strength and stamina in half an hour."
+      ],
+      "fr": [
+        "Un kettlebell · 3 jours",
+        "Un seul kettlebell : force et endurance en une demi-heure."
+      ],
+      "pt": [
+        "Um kettlebell · 3 dias",
+        "Só com um kettlebell: força e resistência em meia hora."
+      ]
+    },
+    {
+      "codigo": "cero_a_cinco_km",
+      "objetivo": "METABOLIC_CONDITIONING",
+      "lugar": "OUTDOOR",
+      "nivel": "BEGINNER",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 30,
+      "semanas": 8,
+      "dias": [
+        [
+          4,
+          "fuerza_correr"
+        ]
+      ],
+      "es": [
+        "De 0 a 5 km",
+        "Tres salidas a correr por semana y un día corto de fuerza. Empieza alternando andar y correr y termina corriendo 30 minutos seguidos."
+      ],
+      "en": [
+        "From 0 to 5 km",
+        "Three runs a week and one short strength day. Start by alternating walking and running and finish running 30 minutes non-stop."
+      ],
+      "fr": [
+        "De 0 à 5 km",
+        "Trois sorties de course par semaine et une courte séance de force. Commence en alternant marche et course et finis par courir 30 minutes d'affilée."
+      ],
+      "pt": [
+        "Dos 0 aos 5 km",
+        "Três corridas por semana e um dia curto de força. Começa a alternar caminhar e correr e acaba a correr 30 minutos seguidos."
+      ],
+      "carreras": [
+        [
+          1,
+          "START_WALK_RUN"
+        ],
+        [
+          3,
+          "STEADY_20"
+        ],
+        [
+          6,
+          "EASY_30"
+        ]
+      ]
+    },
+    {
+      "codigo": "correr_y_fuerza",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "GYM",
+      "nivel": "INTERMEDIATE",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 45,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "correr_fuerza_a"
+        ],
+        [
+          4,
+          "correr_fuerza_b"
+        ]
+      ],
+      "es": [
+        "Correr y fuerza · 2 + 2",
+        "Dos días de gimnasio y dos salidas a correr: una suave y otra con cambios de ritmo."
+      ],
+      "en": [
+        "Running and strength · 2 + 2",
+        "Two gym days and two runs: one easy and one with pace changes."
+      ],
+      "fr": [
+        "Course et force · 2 + 2",
+        "Deux jours de salle et deux sorties de course : une tranquille et une avec changements de rythme."
+      ],
+      "pt": [
+        "Corrida e força · 2 + 2",
+        "Dois dias de ginásio e duas corridas: uma leve e outra com mudanças de ritmo."
+      ],
+      "carreras": [
+        [
+          2,
+          "EASY_30"
+        ],
+        [
+          5,
+          "PACE_CHANGES"
+        ]
+      ]
+    },
+    {
+      "codigo": "espalda_sana_5",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "en_casa": true,
+      "examenes": false,
+      "minutos": 10,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "espalda"
+        ],
+        [
+          2,
+          "espalda"
+        ],
+        [
+          3,
+          "espalda"
+        ],
+        [
+          4,
+          "espalda"
+        ],
+        [
+          5,
+          "espalda"
+        ]
+      ],
+      "es": [
+        "Espalda sana · 10 min · 5 días",
+        "Movilidad y abdomen para pasar muchas horas sentado sin que la espalda lo note."
+      ],
+      "en": [
+        "Healthy back · 10 min · 5 days",
+        "Mobility and core work so long hours sitting don't hurt your back."
+      ],
+      "fr": [
+        "Dos en forme · 10 min · 5 jours",
+        "Mobilité et gainage pour rester assis des heures sans que ton dos le sente."
+      ],
+      "pt": [
+        "Costas saudáveis · 10 min · 5 dias",
+        "Mobilidade e abdómen para passares muitas horas sentado sem que as costas sintam."
+      ]
+    },
+    {
+      "codigo": "gluteo_pierna_3",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 50,
+      "semanas": 4,
+      "dias": [
+        [
+          1,
+          "gluteo_a"
+        ],
+        [
+          3,
+          "gluteo_b"
+        ],
+        [
+          5,
+          "gluteo_a"
+        ]
+      ],
+      "es": [
+        "Glúteo y pierna · 3 días",
+        "Tres días centrados en glúteos y piernas, con algo de abdomen."
+      ],
+      "en": [
+        "Glutes and legs · 3 days",
+        "Three days focused on glutes and legs, with some core work."
+      ],
+      "fr": [
+        "Fessiers et jambes · 3 jours",
+        "Trois jours centrés sur les fessiers et les jambes, avec un peu de gainage."
+      ],
+      "pt": [
+        "Glúteos e pernas · 3 dias",
+        "Três dias centrados em glúteos e pernas, com algum abdómen."
+      ]
+    },
+    {
+      "codigo": "vuelta_tras_parada_3",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "en_casa": false,
+      "examenes": false,
+      "minutos": 40,
+      "semanas": 3,
+      "dias": [
+        [
+          1,
+          "vuelta_a"
+        ],
+        [
+          3,
+          "vuelta_b"
+        ],
+        [
+          5,
+          "vuelta_a"
+        ]
+      ],
+      "es": [
+        "Volver tras los exámenes · 3 días",
+        "Pocas series para retomar sin agujetas después de exámenes o un parón. Luego pasa a otra rutina."
+      ],
+      "en": [
+        "Back after exams · 3 days",
+        "Few sets to get going again without soreness after exams or a break. Then move to another routine."
+      ],
+      "fr": [
+        "Reprendre après les examens · 3 jours",
+        "Peu de séries pour reprendre sans courbatures après les examens ou une pause. Ensuite, passe à une autre routine."
+      ],
+      "pt": [
+        "Voltar depois dos exames · 3 dias",
+        "Poucas séries para retomar sem dores depois dos exames ou de uma pausa. Depois passa para outra rotina."
+      ]
+    }
+  ],
+  "nombres_carrera": {
+    "START_WALK_RUN": {
+      "es": "Empieza a correr: alterna andar y correr",
+      "en": "Start running: alternate walking and running",
+      "fr": "Commence à courir : alterne marche et course",
+      "pt": "Começa a correr: alterna caminhar e correr"
+    },
+    "EASY_30": {
+      "es": "Rodaje suave 30 min",
+      "en": "Easy run 30 min",
+      "fr": "Footing tranquille 30 min",
+      "pt": "Corrida leve 30 min"
+    },
+    "PACE_CHANGES": {
+      "es": "Cambios de ritmo",
+      "en": "Pace changes",
+      "fr": "Changements de rythme",
+      "pt": "Mudanças de ritmo"
+    },
+    "STEADY_20": {
+      "es": "Ritmo constante 20 min",
+      "en": "Steady pace 20 min",
+      "fr": "Allure régulière 20 min",
+      "pt": "Ritmo constante 20 min"
+    }
+  }
+}

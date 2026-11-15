@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../domain/models/training/training_page.dart';
 import '../api/api_client.dart';
 import 'dto/page_dto.dart';
 import 'dto/proposal_dto.dart';
 import 'dto/routine_dto.dart';
+import 'dto/routine_share_dto.dart';
 
 /// Rutinas (`/api/v1/routines`). Casi todas las ediciones devuelven la rutina completa.
 class RoutineRemoteDataSource {
@@ -222,4 +224,52 @@ class RoutineRemoteDataSource {
       '/api/v1/training/templates/$templateId/use',
     ),
   );
+
+  // ------------------------------------------------ compartir por enlace (ADR 0043)
+
+  static const _shared = '/api/v1/shared-routines';
+
+  /// Ruta de la app que abre un enlace de rutina (la misma que declara
+  /// `TrainingPaths.sharedRoutine`).
+  static const sharedRoutinePath = '/training/shared';
+
+  Future<RoutineShareLinkDto> createShareLink(String routineId) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/$routineId/share-links',
+    );
+    return RoutineShareLinkDto.fromJson(response.data!);
+  }
+
+  Future<RoutineShareStatusDto> shareStatus(String routineId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/$routineId/share-links',
+    );
+    return RoutineShareStatusDto.fromJson(response.data!);
+  }
+
+  Future<void> revokeShareLinks(String routineId) =>
+      _dio.delete<void>('$_base/$routineId/share-links');
+
+  /// El token va en el cuerpo para que no quede en los registros de acceso.
+  Future<SharedRoutinePreviewDto> previewShared(String token) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_shared/preview',
+      data: {'token': token},
+    );
+    return SharedRoutinePreviewDto.fromJson(response.data!);
+  }
+
+  Future<RoutineDto> copyShared(String token) => _routine(
+    _dio.post<Map<String, dynamic>>('$_shared/copy', data: {'token': token}),
+  );
+
+  /// Dirección que se comparte: la app web con el token tras `#`, que nunca
+  /// llega a un servidor. En web, el origen desde el que se usa la app; en el
+  /// móvil, el de la API (en producción, el mismo dominio que la web).
+  String sharedRoutineUrl(String token) {
+    final base = kIsWeb
+        ? Uri.base.origin
+        : _dio.options.baseUrl.replaceFirst(RegExp(r'/+$'), '');
+    return '$base/#$sharedRoutinePath/$token';
+  }
 }

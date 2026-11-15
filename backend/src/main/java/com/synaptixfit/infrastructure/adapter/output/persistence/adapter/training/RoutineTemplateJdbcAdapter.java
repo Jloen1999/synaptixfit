@@ -1,6 +1,8 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.training;
 
 import com.synaptixfit.domain.model.training.RoutineTemplate;
+import com.synaptixfit.domain.model.training.TemplateLevel;
+import com.synaptixfit.domain.model.training.TemplatePlace;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.domain.port.output.training.RoutineTemplateRepositoryPort;
 import java.util.ArrayList;
@@ -16,7 +18,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Implementa {@link RoutineTemplateRepositoryPort} sobre {@code plantillas_rutina}, sus textos y sus ejercicios
- * (V1034-V1035). Los textos se toman en el idioma pedido y, si faltan, en español.
+ * (V1034-V1035), sus días de carrera y el nombre de esos entrenos (V1060-V1061). Los textos se toman en el idioma
+ * pedido y, si faltan, en español.
  */
 @Component
 public class RoutineTemplateJdbcAdapter implements RoutineTemplateRepositoryPort {
@@ -29,17 +32,18 @@ public class RoutineTemplateJdbcAdapter implements RoutineTemplateRepositoryPort
         this.jdbc = jdbc;
     }
 
-    private record Head(UUID id, String code, TrainingGoal goal, boolean atHome, boolean forExams, int minutes,
-                        int weeks) {
+    private record Head(UUID id, String code, TrainingGoal goal, TemplatePlace place, TemplateLevel level,
+                        boolean forExams, int minutes, int weeks) {
     }
 
     @Override
     public List<RoutineTemplate> findAll(String language) {
-        List<Head> heads = jdbc.sql("SELECT id, codigo, objetivo, en_casa, para_examenes, minutos, semanas"
+        List<Head> heads = jdbc.sql("SELECT id, codigo, objetivo, lugar, nivel, para_examenes, minutos, semanas"
                         + " FROM plantillas_rutina ORDER BY orden, codigo")
                 .query((rs, n) -> new Head(rs.getObject("id", UUID.class), rs.getString("codigo"),
-                        TrainingGoal.valueOf(rs.getString("objetivo")), rs.getBoolean("en_casa"),
-                        rs.getBoolean("para_examenes"), rs.getInt("minutos"), rs.getInt("semanas")))
+                        TrainingGoal.valueOf(rs.getString("objetivo")), TemplatePlace.valueOf(rs.getString("lugar")),
+                        TemplateLevel.valueOf(rs.getString("nivel")), rs.getBoolean("para_examenes"),
+                        rs.getInt("minutos"), rs.getInt("semanas")))
                 .list();
         return assemble(heads, language);
     }
@@ -85,14 +89,36 @@ public class RoutineTemplateJdbcAdapter implements RoutineTemplateRepositoryPort
                     return null;
                 })
                 .list();
+        Map<String, String> runNames = new LinkedHashMap<>();
+        jdbc.sql("SELECT codigo, idioma, nombre FROM nombres_entreno_carrera WHERE idioma IN (:lang, :fallback)")
+                .param("lang", language)
+                .param("fallback", FALLBACK)
+                .query((rs, n) -> {
+                    if (language.equals(rs.getString("idioma")) || !runNames.containsKey(rs.getString("codigo"))) {
+                        runNames.put(rs.getString("codigo"), rs.getString("nombre"));
+                    }
+                    return null;
+                })
+                .list();
+        Map<UUID, List<RoutineTemplate.RunDay>> runs = new LinkedHashMap<>();
+        jdbc.sql("SELECT plantilla_id, dia, codigo_entreno FROM plantillas_rutina_carreras"
+                        + " WHERE plantilla_id IN (:ids) ORDER BY plantilla_id, dia")
+                .param("ids", ids)
+                .query((rs, n) -> {
+                    String code = rs.getString("codigo_entreno");
+                    runs.computeIfAbsent(rs.getObject("plantilla_id", UUID.class), k -> new ArrayList<>())
+                            .add(new RoutineTemplate.RunDay(rs.getInt("dia"), code, runNames.get(code)));
+                    return null;
+                })
+                .list();
         List<RoutineTemplate> result = new ArrayList<>();
         for (Head h : heads) {
             String[] text = texts.getOrDefault(h.id(), new String[] {h.code(), ""});
             List<RoutineTemplate.Day> templateDays = days.getOrDefault(h.id(), Map.of()).entrySet().stream()
                     .map(e -> new RoutineTemplate.Day(e.getKey(), e.getValue()))
                     .toList();
-            result.add(new RoutineTemplate(h.id(), h.code(), text[0], text[1], h.goal(), h.atHome(), h.forExams(),
-                    h.minutes(), h.weeks(), templateDays));
+            result.add(new RoutineTemplate(h.id(), h.code(), text[0], text[1], h.goal(), h.place(), h.level(),
+                    h.forExams(), h.minutes(), h.weeks(), templateDays, runs.getOrDefault(h.id(), List.of())));
         }
         return result;
     }

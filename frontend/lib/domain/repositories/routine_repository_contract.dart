@@ -5,6 +5,7 @@ import '../models/result/result.dart';
 import '../models/training/routine.dart';
 import '../models/training/routine_draft.dart';
 import '../models/training/training_page.dart';
+import '../models/training/routine_share.dart';
 import '../models/training/routine_template.dart';
 
 /// Rutinas de entrenamiento (`/api/v1/routines`). Las operaciones de edición
@@ -134,4 +135,19 @@ abstract interface class RoutineRepositoryContract {
 
   /// Crea una rutina propia y privada a partir de una plantilla.
   Future<AppResult<Routine>> useTemplate(String templateId);
+
+  /// Crea un enlace para que otra persona copie la rutina (ADR 0043).
+  Future<AppResult<RoutineShareLink>> createShareLink(String routineId);
+
+  /// Hasta cuándo se comparte la rutina por enlace; `null` si no se comparte.
+  Future<AppResult<DateTime?>> shareStatus(String routineId);
+
+  /// «Dejar de compartir»: revoca todos los enlaces vigentes de la rutina.
+  Future<AppResult<Unit>> stopSharing(String routineId);
+
+  /// Resumen de la rutina de un enlace (sin datos de quien la comparte).
+  Future<AppResult<SharedRoutinePreview>> previewShared(String token);
+
+  /// «Copiar a mis rutinas» desde un enlace.
+  Future<AppResult<Routine>> copyShared(String token);
 }

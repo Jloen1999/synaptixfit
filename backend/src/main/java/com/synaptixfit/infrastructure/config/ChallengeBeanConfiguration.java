@@ -18,6 +18,11 @@ import com.synaptixfit.application.port.input.challenge.ReplaceMilestonesUseCase
 import com.synaptixfit.application.port.input.challenge.SyncLinkedEntityChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncMilestoneStudyBlocksUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChallengesUseCase;
+import com.synaptixfit.application.port.input.challenge.SyncRuleChallengesUseCase;
+import com.synaptixfit.application.port.input.challenge.ListChallengeTemplatesUseCase;
+import com.synaptixfit.application.port.input.challenge.StartChallengeTemplateUseCase;
+import com.synaptixfit.application.service.challenge.ChallengeTemplateService;
+import com.synaptixfit.domain.port.output.challenge.ChallengeTemplateRepositoryPort;
 import com.synaptixfit.application.port.input.challenge.UncompleteChallengeUseCase;
 import com.synaptixfit.application.port.input.challenge.UncompleteMilestoneUseCase;
 import com.synaptixfit.application.port.input.challenge.UpdateChallengeUseCase;
@@ -46,6 +51,7 @@ public class ChallengeBeanConfiguration {
     private final ChallengeRepositoryPort challenges;
     private final ChallengeAudiencePort audience;
     private final ChallengeReferencePort references;
+    private final ChallengeTemplateRepositoryPort templates;
     private final UserRepositoryPort users;
     private final AwardExperienceUseCase awardExperience;
     private final RevokeExperienceUseCase revokeExperience;
@@ -55,7 +61,7 @@ public class ChallengeBeanConfiguration {
 
     public ChallengeBeanConfiguration(TransactionalUseCaseFactory tx, ChallengeRepositoryPort challenges,
                                       ChallengeAudiencePort audience, ChallengeReferencePort references,
-                                      UserRepositoryPort users, AwardExperienceUseCase awardExperience,
+                                      ChallengeTemplateRepositoryPort templates, UserRepositoryPort users, AwardExperienceUseCase awardExperience,
                                       RevokeExperienceUseCase revokeExperience, DomainEventPublisherPort events,
                                       Clock clock,
                                       @Value("${synaptixfit.gamification.zone:Europe/Madrid}") String zone) {
@@ -63,6 +69,7 @@ public class ChallengeBeanConfiguration {
         this.challenges = challenges;
         this.audience = audience;
         this.references = references;
+        this.templates = templates;
         this.users = users;
         this.awardExperience = awardExperience;
         this.revokeExperience = revokeExperience;
@@ -83,6 +90,11 @@ public class ChallengeBeanConfiguration {
     ChallengeProgressService challengeProgressService() {
         return new ChallengeProgressService(challenges, references, new ChallengeReferenceValidator(references),
                 challengeEffects(), clock, zone);
+    }
+
+    @Bean(autowireCandidate = false)
+    ChallengeTemplateService challengeTemplateService() {
+        return new ChallengeTemplateService(templates, challenges, users, references, challengeEffects(), clock, zone);
     }
 
     @Bean(autowireCandidate = false)
@@ -194,6 +206,23 @@ public class ChallengeBeanConfiguration {
     @Bean
     SyncTrainingSessionChallengesUseCase syncTrainingSessionChallengesUseCase() {
         return tx.wrap(SyncTrainingSessionChallengesUseCase.class, challengeProgressService());
+    }
+
+    @Bean
+    SyncRuleChallengesUseCase syncRuleChallengesUseCase() {
+        return tx.wrap(SyncRuleChallengesUseCase.class, challengeProgressService());
+    }
+
+    // ---------------------------------------------------------------- plantillas (ADR 0043)
+
+    @Bean
+    ListChallengeTemplatesUseCase listChallengeTemplatesUseCase() {
+        return tx.wrap(ListChallengeTemplatesUseCase.class, challengeTemplateService());
+    }
+
+    @Bean
+    StartChallengeTemplateUseCase startChallengeTemplateUseCase() {
+        return tx.wrap(StartChallengeTemplateUseCase.class, challengeTemplateService());
     }
 
     @Bean

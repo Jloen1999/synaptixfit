@@ -86,4 +86,31 @@ class RoutineTemplateIT {
         String progress = body(get("/api/v1/training/exercises/" + exerciseId + "/progress"), token, 200);
         assertThat((List<?>) JsonPath.read(progress, "$")).isEmpty();
     }
+
+    /** ADR 0043: lugar, nivel y días de carrera; los entrenos de carrera se crean una sola vez en Correr. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void runningTemplateAddsItsRunWorkoutsOnce() throws Exception {
+        String token = register("plantillas-correr@example.com");
+
+        String templates = body(get("/api/v1/training/templates"), token, 200);
+        assertThat((List<String>) JsonPath.read(templates, "$[*].code"))
+                .contains("parque_3", "empuje_tiron_pierna_6", "espalda_sana_5", "cero_a_cinco_km");
+        assertThat((List<String>) JsonPath.read(templates, "$[?(@.code == 'parque_3')].place")).containsExactly("OUTDOOR");
+        assertThat((List<String>) JsonPath.read(templates, "$[?(@.code == 'casa_2')].place")).containsExactly("HOME");
+        assertThat((List<String>) JsonPath.read(templates, "$[?(@.code == 'fuerza_3')].level"))
+                .containsExactly("INTERMEDIATE");
+        assertThat((List<Integer>) JsonPath.read(templates, "$[?(@.code == 'cero_a_cinco_km')].daysPerWeek"))
+                .containsExactly(4);
+        List<String> ids = JsonPath.read(templates, "$[?(@.code == 'cero_a_cinco_km')].id");
+
+        body(post("/api/v1/training/templates/" + ids.getFirst() + "/use"), token, 201);
+        body(post("/api/v1/training/templates/" + ids.getFirst() + "/use"), token, 201);
+
+        String workouts = body(get("/api/v1/training/run-workouts"), token, 200);
+        assertThat((List<String>) JsonPath.read(workouts, "$[*].templateCode"))
+                .containsExactlyInAnyOrder("START_WALK_RUN", "STEADY_20", "EASY_30");
+        assertThat((List<String>) JsonPath.read(workouts, "$[?(@.templateCode == 'EASY_30')].name"))
+                .containsExactly("Rodaje suave 30 min");
+    }
 }

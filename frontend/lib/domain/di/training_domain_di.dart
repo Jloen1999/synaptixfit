@@ -71,6 +71,11 @@ import '../use_cases/training/update_routine_use_case.dart';
 import '../use_cases/training/update_routine_week_use_case.dart';
 import '../use_cases/training/list_routine_templates_use_case.dart';
 import '../use_cases/training/use_routine_template_use_case.dart';
+import '../use_cases/training/copy_shared_routine_use_case.dart';
+import '../use_cases/training/get_routine_share_status_use_case.dart';
+import '../use_cases/training/preview_shared_routine_use_case.dart';
+import '../use_cases/training/share_routine_link_use_case.dart';
+import '../use_cases/training/stop_sharing_routine_use_case.dart';
 import '../use_cases/training/get_exercise_progress_use_case.dart';
 
 /// Casos de uso del módulo training.
@@ -183,6 +188,22 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<UseRoutineTemplateUseCaseContract>(
       () => UseRoutineTemplateUseCase(getIt()),
+    )
+    // Compartir una rutina por enlace (ADR 0043).
+    ..registerLazySingleton<ShareRoutineLinkUseCaseContract>(
+      () => ShareRoutineLinkUseCase(getIt(), getIt()),
+    )
+    ..registerLazySingleton<GetRoutineShareStatusUseCaseContract>(
+      () => GetRoutineShareStatusUseCase(getIt()),
+    )
+    ..registerLazySingleton<StopSharingRoutineUseCaseContract>(
+      () => StopSharingRoutineUseCase(getIt()),
+    )
+    ..registerLazySingleton<PreviewSharedRoutineUseCaseContract>(
+      () => PreviewSharedRoutineUseCase(getIt()),
+    )
+    ..registerLazySingleton<CopySharedRoutineUseCaseContract>(
+      () => CopySharedRoutineUseCase(getIt()),
     )
     ..registerLazySingleton<GetExerciseProgressUseCaseContract>(
       () => GetExerciseProgressUseCase(getIt()),

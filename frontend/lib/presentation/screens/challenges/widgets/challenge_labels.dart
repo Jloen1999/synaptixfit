@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../domain/enums/challenge_difficulty.dart';
 import '../../../../domain/enums/challenge_link_type.dart';
+import '../../../../domain/enums/challenge_rule_kind.dart';
 import '../../../../domain/enums/challenge_status.dart';
 import '../../../../domain/enums/challenge_type.dart';
 import '../../../../domain/enums/milestone_condition.dart';
@@ -10,9 +11,82 @@ import '../../../../domain/enums/milestone_status.dart';
 import '../../../../domain/enums/visibility.dart';
 import '../../../../domain/models/challenges/challenge.dart';
 import '../../../../domain/models/challenges/challenge_draft_validator.dart';
+import '../../../../domain/models/challenges/challenge_rule.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../widgets/app_date_block.dart';
 import '../../../widgets/routine_day_labels.dart';
+
+/// Textos de un reto que se cuenta solo (ADR 0043). Las cifras las da el
+/// servidor; aquí solo se eligen las palabras.
+extension ChallengeRuleLabel on ChallengeRule {
+  /// La meta en palabras: «12 días», «4 semanas», «10 h», «18 carreras».
+  String goalText(BuildContext context) =>
+      _amount(context, target, hours: _inHours(target));
+
+  /// Lo que lleva, con la misma unidad que la meta: «5 de 12 días», «5 de
+  /// 10 h» o, si no son horas exactas, «290 de 600 min».
+  String progressText(BuildContext context) {
+    final done = met.clamp(0, target);
+    final hours = _inHours(target) && _inHours(done);
+    return context.localizations.challengesRuleProgress(
+      hours ? done ~/ 60 : done,
+      _amount(context, target, hours: hours),
+    );
+  }
+
+  /// Lo que falta: «Te faltan 7 días».
+  String leftText(BuildContext context) {
+    final left = (target - met).clamp(0, target);
+    return context.localizations.challengesRuleLeft(
+      _amount(context, left, hours: _inHours(left)),
+    );
+  }
+
+  /// Minutos que se dicen mejor en horas (solo si son horas exactas).
+  bool _inHours(int minutes) =>
+      metric == ChallengeRuleMetric.focusMinutes &&
+      unit == ChallengeRuleUnit.total &&
+      minutes > 0 &&
+      minutes % 60 == 0;
+
+  /// Cantidad con su unidad (días, semanas, minutos u horas, carreras…).
+  String _amount(BuildContext context, int value, {required bool hours}) {
+    final l10n = context.localizations;
+    return switch (unit) {
+      ChallengeRuleUnit.day =>
+        weekdaysOnly
+            ? l10n.challengesRuleWeekdays(value)
+            : l10n.challengesRuleDays(value),
+      ChallengeRuleUnit.week => l10n.challengesRuleWeeks(value),
+      ChallengeRuleUnit.total => switch (metric) {
+        // Las horas solo si son exactas; si no, minutos.
+        ChallengeRuleMetric.focusMinutes =>
+          hours
+              ? l10n.challengesRuleHours(value ~/ 60)
+              : l10n.challengesRuleMinutes(value),
+        ChallengeRuleMetric.runs => l10n.challengesRuleRuns(value),
+        _ => l10n.challengesRuleTimes(value),
+      },
+    };
+  }
+
+  /// Qué cuenta, en una frase (para el «?»).
+  String helpText(BuildContext context) {
+    final l10n = context.localizations;
+    return switch (metric) {
+      ChallengeRuleMetric.reviews => l10n.challengesRuleHelpReviews,
+      ChallengeRuleMetric.focusMinutes => l10n.challengesRuleHelpFocus,
+      ChallengeRuleMetric.earlyFocus => l10n.challengesRuleHelpEarlyFocus,
+      ChallengeRuleMetric.workouts => l10n.challengesRuleHelpWorkouts,
+      ChallengeRuleMetric.studyAndMove => l10n.challengesRuleHelpStudyAndMove,
+      ChallengeRuleMetric.tests => l10n.challengesRuleHelpTests,
+      ChallengeRuleMetric.checkIns => l10n.challengesRuleHelpCheckIns,
+      ChallengeRuleMetric.plannedWeeks => l10n.challengesRuleHelpPlannedWeeks,
+      ChallengeRuleMetric.runs => l10n.challengesRuleHelpRuns,
+      ChallengeRuleMetric.unknown => l10n.challengesRuleHelpGeneric,
+    };
+  }
+}
 
 /// Etiquetas e iconos de los enums de retos (fuente única para todas las pantallas).
 extension ChallengeDifficultyLabel on ChallengeDifficulty {

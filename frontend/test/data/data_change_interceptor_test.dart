@@ -100,6 +100,20 @@ void main() {
       );
     });
 
+    test('ver una rutina compartida no avisa; copiarla refresca Entreno', () {
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'POST',
+          '/api/v1/shared-routines/preview',
+        ),
+        isEmpty,
+      );
+      expect(
+        DataChangeInterceptor.topicsFor('POST', '/api/v1/shared-routines/copy'),
+        contains(DataTopic.training),
+      );
+    });
+
     test('aceptar la política no refresca ninguna pantalla', () {
       expect(
         DataChangeInterceptor.topicsFor('PUT', '/api/v1/me/legal-acceptance'),

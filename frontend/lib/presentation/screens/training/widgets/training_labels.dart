@@ -11,6 +11,27 @@ export '../../../widgets/routine_day_labels.dart';
 
 /// Textos y iconos de los enums del módulo de entrenamiento.
 
+/// Lugar de una plantilla de rutina (ADR 0043).
+String templatePlaceLabel(AppLocalizations l10n, TemplatePlace place) =>
+    switch (place) {
+      TemplatePlace.gym => l10n.trainingTemplatesGym,
+      TemplatePlace.home => l10n.trainingTemplatesAtHome,
+      TemplatePlace.outdoor => l10n.trainingTemplatesOutdoor,
+    };
+
+IconData templatePlaceIcon(TemplatePlace place) => switch (place) {
+  TemplatePlace.gym => Icons.fitness_center_rounded,
+  TemplatePlace.home => Icons.home_rounded,
+  TemplatePlace.outdoor => Icons.park_rounded,
+};
+
+/// Nivel de una plantilla de rutina, en palabras de todos los días.
+String templateLevelLabel(AppLocalizations l10n, TemplateLevel level) =>
+    switch (level) {
+      TemplateLevel.beginner => l10n.trainingTemplatesBeginner,
+      TemplateLevel.intermediate => l10n.trainingTemplatesIntermediate,
+    };
+
 extension TrainingGoalLabel on TrainingGoal {
   String label(AppLocalizations l10n) => switch (this) {
     TrainingGoal.hypertrophy => l10n.trainingGoalHypertrophy,

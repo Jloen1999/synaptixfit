@@ -11,4 +11,7 @@ abstract interface class ShareRepositoryContract {
     required String fileName,
     required String text,
   });
+
+  /// Comparte un texto (p. ej. un enlace). `false` si se cancela.
+  Future<AppResult<bool>> shareText({required String text, String? subject});
 }

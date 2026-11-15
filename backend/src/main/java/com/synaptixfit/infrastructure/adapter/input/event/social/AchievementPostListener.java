@@ -23,6 +23,10 @@ public class AchievementPostListener {
 
     @EventListener
     public void on(ChallengeCompleted event) {
+        // Un reto de bienestar (registro diario) no sale en el muro (ADR 0043).
+        if (!event.shareable()) {
+            return;
+        }
         publish.publishAchievement(new PublishAchievementPostUseCase.Command(event.userId(),
                 PostType.CHALLENGE_COMPLETED, "Ha completado el reto «" + event.title() + "»",
                 "{\"challengeId\":\"" + event.challengeId() + "\"}"));
