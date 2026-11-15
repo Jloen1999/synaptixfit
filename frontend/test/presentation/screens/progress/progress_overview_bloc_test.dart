@@ -7,6 +7,8 @@ import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_due_study_materials_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_dashboard_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/get_progress_overview_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/progress/pause_streak_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/progress/resume_streak_use_case.dart';
 import 'package:synaptixfit/presentation/screens/progress/overview/bloc/progress_overview_bloc.dart';
 
 import '../../../progress_fixtures.dart';
@@ -21,17 +23,25 @@ class _MockGetToday extends Mock implements GetHomeDashboardUseCaseContract {}
 
 class _MockGetDue extends Mock implements GetDueStudyMaterialsUseCaseContract {}
 
+class _MockPause extends Mock implements PauseStreakUseCaseContract {}
+
+class _MockResume extends Mock implements ResumeStreakUseCaseContract {}
+
 void main() {
   late _MockGetOverview getOverview;
   late FakeDataChanges changes;
   late _MockGetToday getToday;
   late _MockGetDue getDue;
+  late _MockPause pause;
+  late _MockResume resume;
 
   setUp(() {
     getOverview = _MockGetOverview();
     changes = FakeDataChanges();
     getToday = _MockGetToday();
     getDue = _MockGetDue();
+    pause = _MockPause();
+    resume = _MockResume();
     // Sin resumen de hoy, «Tu equilibrio» dice el error y deja reintentar.
     when(
       () => getToday(),
@@ -45,7 +55,73 @@ void main() {
     getToday: getToday,
     getDueMaterials: getDue,
     watchChanges: changes.useCase,
+    pauseStreak: pause,
+    resumeStreak: resume,
   );
+
+  group('pausar racha (ADR 0042)', () {
+    final paused = testOverview.streak.copyWith(
+      pausedUntil: DateTime(2026, 11, 21),
+      canPause: false,
+    );
+
+    blocTest<ProgressOverviewBloc, ProgressOverviewState>(
+      'pausar pinta la racha del servidor y avisa una vez',
+      setUp: () => when(
+        () => pause(),
+      ).thenAnswer((_) async => Success(paused)),
+      build: build,
+      seed: () => ProgressOverviewState.loaded(testOverview),
+      act: (bloc) =>
+          bloc.add(const ProgressOverviewEvent.streakPaused()),
+      expect: () => [
+        ProgressOverviewState.loaded(testOverview, updatingStreak: true),
+        ProgressOverviewState.loaded(
+          testOverview.copyWith(streak: paused),
+          streakJustPaused: paused,
+        ),
+      ],
+    );
+
+    blocTest<ProgressOverviewBloc, ProgressOverviewState>(
+      'sin días de pausa se dice el error y la racha no cambia',
+      setUp: () => when(() => pause()).thenAnswer(
+        (_) async => const Failure(
+          AppError.business('STREAK_PAUSE_LIMIT_REACHED'),
+        ),
+      ),
+      build: build,
+      seed: () => ProgressOverviewState.loaded(testOverview),
+      act: (bloc) => bloc.add(
+        const ProgressOverviewEvent.streakPaused(),
+      ),
+      expect: () => [
+        ProgressOverviewState.loaded(testOverview, updatingStreak: true),
+        ProgressOverviewState.loaded(
+          testOverview,
+          streakError: const AppError.business('STREAK_PAUSE_LIMIT_REACHED'),
+        ),
+      ],
+    );
+
+    blocTest<ProgressOverviewBloc, ProgressOverviewState>(
+      'reanudar no vuelve a avisar de la pausa',
+      setUp: () => when(
+        () => resume(),
+      ).thenAnswer((_) async => Success(testOverview.streak)),
+      build: build,
+      seed: () =>
+          ProgressOverviewState.loaded(testOverview.copyWith(streak: paused)),
+      act: (bloc) => bloc.add(const ProgressOverviewEvent.streakResumed()),
+      expect: () => [
+        ProgressOverviewState.loaded(
+          testOverview.copyWith(streak: paused),
+          updatingStreak: true,
+        ),
+        ProgressOverviewState.loaded(testOverview),
+      ],
+    );
+  });
 
   blocTest<ProgressOverviewBloc, ProgressOverviewState>(
     '«Tu equilibrio» (carga y energía de hoy) se carga en Progreso',

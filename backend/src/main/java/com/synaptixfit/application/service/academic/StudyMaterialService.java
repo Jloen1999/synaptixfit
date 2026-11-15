@@ -29,6 +29,7 @@ import com.synaptixfit.domain.model.academic.RetentionMetrics;
 import com.synaptixfit.domain.model.academic.ReviewOutcome;
 import com.synaptixfit.domain.model.academic.ReviewPreview;
 import com.synaptixfit.domain.model.academic.ReviewRecord;
+import com.synaptixfit.domain.model.academic.ReviewLoadBalancer;
 import com.synaptixfit.domain.model.academic.SpacedRepetition;
 import com.synaptixfit.domain.model.academic.StudyMaterial;
 import com.synaptixfit.domain.model.academic.StudySourceType;
@@ -168,8 +169,10 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
         for (int q = 0; q <= 5; q++) {
             double adjusted = FatigueAdjustedRecall.adjustedQuality(q, f.today(), f.max());
             SpacedRepetition.Result r = m.simulate(q, adjusted, now);
+            // La misma fecha que dará el repaso de verdad: ya repartida sin picos.
+            Instant proposed = now.plus(Duration.ofDays(r.intervalDays()));
             options.add(new ReviewPreview.Option(q, round(adjusted, 2), r.intervalDays(),
-                    m.nextReviewAfter(r, now), r.masteryState()));
+                    m.nextReviewAfter(r, now, reviewLoad(userId, m, proposed)), r.masteryState()));
         }
         return new ReviewPreview(f.today(), f.max(), round(f.coefficient(), 3), options,
                 recentPractice(userId, m, now).orElse(null));
@@ -224,7 +227,9 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
         Instant now = clock.instant();
         Fatigue f = fatigue(userId, now);
         double adjusted = FatigueAdjustedRecall.adjustedQuality(quality, f.today(), f.max());
-        m.review(quality, adjusted, now);
+        SpacedRepetition.Result planned = m.simulate(quality, adjusted, now);
+        m.review(quality, adjusted, now,
+                reviewLoad(userId, m, now.plus(Duration.ofDays(planned.intervalDays()))));
         if (xp > 0) {
             m.markPracticeXpAwarded();
         }
@@ -238,6 +243,12 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
         events.publish(new ReviewScheduled(userId, saved.id(), saved.subjectId(), "Repaso: " + saved.title(),
                 saved.nextReviewAt(), now));
         return new ReviewOutcome(saved, record, xp);
+    }
+
+    /** Repasos ya programados alrededor de {@code proposed}, sin este material, para repartirlo sin picos. */
+    private ReviewLoadBalancer.Load reviewLoad(UUID userId, StudyMaterial m, Instant proposed) {
+        return ReviewLoadBalancer.Load.of(materials.scheduledReviews(userId,
+                ReviewLoadBalancer.windowStart(proposed), ReviewLoadBalancer.windowEnd(proposed)), m.id(), zone);
     }
 
     /** Carga de hoy y máxima diaria histórica (la de hoy cuenta para el máximo). */

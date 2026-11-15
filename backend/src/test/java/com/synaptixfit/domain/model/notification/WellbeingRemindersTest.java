@@ -39,6 +39,14 @@ class WellbeingRemindersTest {
     }
 
     @Test
+    void conLaRachaEnPausaNoAvisaDeQueSePierde() {
+        WellbeingReminders.Input paused = new WellbeingReminders.Input(prefs, UsageFocus.BOTH,
+                new ReminderOptions(true, false, false), NOW, ZONE, END, 5, false, false, List.of(), true);
+
+        assertThat(WellbeingReminders.plan(paused)).isEmpty();
+    }
+
+    @Test
     void registroDiarioCadaMananaYHoySoloSiFalta() {
         ReminderOptions onlyCheckIn = new ReminderOptions(false, true, false);
         List<ReminderPlan.Item> pending = WellbeingReminders.plan(input(onlyCheckIn, 0, false, false, List.of()));

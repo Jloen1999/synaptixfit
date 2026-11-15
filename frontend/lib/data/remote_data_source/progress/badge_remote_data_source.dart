@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
+import '../api/device_zone.dart';
 import 'dto/badge_dto.dart';
 import 'dto/streak_dto.dart';
 
@@ -44,7 +45,30 @@ class BadgeRemoteDataSource {
       _dio.post<void>('/api/v1/badges/notified', data: {'badgeIds': badgeIds});
 
   Future<StreakDto> streak() async {
-    final response = await _dio.get<Map<String, dynamic>>('/api/v1/streak');
+    // «Hoy» es el del móvil: el mismo día para la racha, su riesgo y sus pausas.
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/streak',
+      queryParameters: {'zone': deviceZoneOffset()},
+    );
+    return StreakDto.fromJson(response.data!);
+  }
+
+  /// «Pausar racha» desde hoy, sin motivo (ADR 0042); devuelve la racha ya en
+  /// pausa.
+  Future<StreakDto> pauseStreak() async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/streak/pause',
+      queryParameters: {'zone': deviceZoneOffset()},
+    );
+    return StreakDto.fromJson(response.data!);
+  }
+
+  /// «Reanudar»: la pausa acaba ayer.
+  Future<StreakDto> resumeStreak() async {
+    final response = await _dio.delete<Map<String, dynamic>>(
+      '/api/v1/streak/pause',
+      queryParameters: {'zone': deviceZoneOffset()},
+    );
     return StreakDto.fromJson(response.data!);
   }
 

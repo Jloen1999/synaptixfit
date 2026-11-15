@@ -149,6 +149,41 @@ void main() {
         expectRatio('portada primary', c.primary, bg, 4.5);
       });
 
+      // Tarjeta de sesión con foto y texto abajo (AppCoverLayout.bottom, ADR
+      // 0042): la foto a dos tonos llega como mucho a la mezcla de primary y
+      // encima va un degradado vertical hacia la superficie (0 → coverScrimMid
+      // → coverScrimMax). Se mide el texto y los iconos en cada parada; la
+      // peor zona es sin velo (parada 0).
+      test('tarjeta de sesión con texto abajo', () {
+        final photo = Color.lerp(
+          c.surface,
+          c.primary,
+          mode == 'oscuro'
+              ? TokensOpacity.coverTintDark
+              : TokensOpacity.coverTintLight,
+        )!;
+        for (final alpha in [
+          0.0,
+          TokensOpacity.coverScrimMid,
+          TokensOpacity.coverScrimMax,
+        ]) {
+          final bg = Color.alphaBlend(
+            c.surface.withValues(alpha: alpha),
+            photo,
+          );
+          expectRatio('sesión onSurface ($alpha)', c.onSurface, bg, 4.5);
+          expectRatio(
+            'sesión onSurfaceVariant ($alpha)',
+            c.onSurfaceVariant,
+            bg,
+            4.5,
+          );
+          // Icono del chevron (onSurfaceVariant) y de las pastillas: 3:1.
+          expectRatio('sesión icono ($alpha)', c.onSurfaceVariant, bg, 3);
+          expectRatio('sesión icono primary ($alpha)', c.primary, bg, 3);
+        }
+      });
+
       // Sesión en vivo y repaso: el tinte va opaco sobre la superficie, así
       // que su contraste no depende de lo que haya detrás (la cabecera es
       // surfaceContainerLow; la nota elegida, primaryContainer).

@@ -4,12 +4,15 @@ import com.synaptixfit.application.port.input.badge.ChangeBadgeVisibilityUseCase
 import com.synaptixfit.application.port.input.badge.EvaluateBadgesUseCase;
 import com.synaptixfit.application.port.input.badge.GetBadgeCatalogUseCase;
 import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
+import com.synaptixfit.application.port.input.badge.PauseStreakUseCase;
+import com.synaptixfit.application.port.input.badge.ResumeStreakUseCase;
 import com.synaptixfit.application.port.input.badge.ListMyBadgesUseCase;
 import com.synaptixfit.application.port.input.badge.ListUnnotifiedBadgesUseCase;
 import com.synaptixfit.application.port.input.badge.MarkBadgesNotifiedUseCase;
 import com.synaptixfit.application.service.badge.BadgeService;
 import com.synaptixfit.application.service.badge.StreakService;
 import com.synaptixfit.domain.port.output.badge.BadgeCatalogPort;
+import com.synaptixfit.domain.port.output.badge.StreakPauseRepositoryPort;
 import com.synaptixfit.domain.port.output.badge.UserActivityPort;
 import com.synaptixfit.domain.port.output.badge.UserBadgeRepositoryPort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
@@ -34,13 +37,15 @@ public class BadgeBeanConfiguration {
     private final Clock clock;
     private final ZoneId zone;
     private final UsageFocusPort focus;
+    private final StreakPauseRepositoryPort pauses;
 
     public BadgeBeanConfiguration(TransactionalUseCaseFactory tx, BadgeCatalogPort catalog,
                                   UserBadgeRepositoryPort userBadges, UserActivityPort activity,
                                   UserRepositoryPort users, DomainEventPublisherPort events, Clock clock,
                                   @Value("${synaptixfit.gamification.zone:Europe/Madrid}") String zone,
-                                  UsageFocusPort focus) {
+                                  UsageFocusPort focus, StreakPauseRepositoryPort pauses) {
         this.focus = focus;
+        this.pauses = pauses;
         this.tx = tx;
         this.catalog = catalog;
         this.userBadges = userBadges;
@@ -53,7 +58,7 @@ public class BadgeBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     StreakService streakService() {
-        return new StreakService(activity, users, clock, zone);
+        return new StreakService(activity, users, pauses, clock, zone);
     }
 
     @Bean(autowireCandidate = false)
@@ -94,5 +99,15 @@ public class BadgeBeanConfiguration {
     @Bean
     GetStreakUseCase getStreakUseCase() {
         return tx.wrap(GetStreakUseCase.class, streakService());
+    }
+
+    @Bean
+    PauseStreakUseCase pauseStreakUseCase() {
+        return tx.wrap(PauseStreakUseCase.class, streakService());
+    }
+
+    @Bean
+    ResumeStreakUseCase resumeStreakUseCase() {
+        return tx.wrap(ResumeStreakUseCase.class, streakService());
     }
 }

@@ -55,4 +55,14 @@ class BadgeRepository implements BadgeRepositoryContract {
   Future<AppResult<Streak>> getStreak() => RepositoryErrorHandler.guard(
     () async => (await _remote.streak()).toDomain(),
   );
+
+  @override
+  Future<AppResult<Streak>> pauseStreak() => RepositoryErrorHandler.guard(
+    () async => (await _remote.pauseStreak()).toDomain(),
+  );
+
+  @override
+  Future<AppResult<Streak>> resumeStreak() => RepositoryErrorHandler.guard(
+    () async => (await _remote.resumeStreak()).toDomain(),
+  );
 }

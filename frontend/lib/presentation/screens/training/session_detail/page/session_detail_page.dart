@@ -199,6 +199,16 @@ class _DetailView extends StatelessWidget {
 class _Content extends StatelessWidget {
   const _Content({required this.state, required this.date});
 
+  /// Foto del primer ejercicio de la rutina (el que representa el día).
+  static String? _firstImage(SessionDetailState state) {
+    final exercises = state.exercises.values.toList()
+      ..sort((a, b) => a.order.compareTo(b.order));
+    for (final e in exercises) {
+      if (e.thumbnailUrl case final url?) return url;
+    }
+    return null;
+  }
+
   final SessionDetailState state;
 
   /// Cuándo se hizo («lun, 2 nov 18:30»).
@@ -231,15 +241,45 @@ class _Content extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (date != null) ...[
-                Text(
-                  [?entry.routineName, date].join(' · '),
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
+              // Cabecera con la foto del día (ADR 0042): estado en pastilla,
+              // la rutina y cuándo. Si no llegó del historial, la foto del
+              // primer ejercicio de la rutina; sin ella, el color de reserva.
+              AppCoverCard(
+                layout: AppCoverLayout.bottom,
+                imageUrl: entry.coverImageUrl ?? _firstImage(state),
+                padding: const EdgeInsets.all(TokensSpacing.m),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppCoverPill(
+                      icon: session.isCompleted
+                          ? AppIcons.done
+                          : AppIcons.inProgress,
+                      color: session.isCompleted
+                          ? context.palette.success
+                          : context.colors.primary,
+                      label: session.isCompleted
+                          ? l10n.trainingSessionDone
+                          : l10n.trainingProgressInProgress,
+                    ),
+                    const SizedBox(height: TokensSpacing.xs),
+                    Text(
+                      _DetailView._title(context, entry),
+                      style: context.textStyles.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (date != null || entry.routineName != null)
+                      Text(
+                        [?entry.routineName, ?date].join(' · '),
+                        style: context.textStyles.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: TokensSpacing.m),
-              ],
+              ),
+              const SizedBox(height: TokensSpacing.m),
               AppTileGrid(
                 minTileWidth: TokensLayout.minTouchTarget * 2,
                 children: [

@@ -92,15 +92,16 @@ public final class SessionDtos {
     /**
      * Sesión sin terminar con su nombre. {@code stale}: abandonada (más de 6 h abierta): se termina con
      * lo registrado o se descarta. Rutina y día nulos en sesiones libres; {@code dayName} nulo si el día
-     * no tiene nombre propio.
+     * no tiene nombre propio. {@code coverImageUrl}: foto de fondo de su tarjeta (nula: color de reserva).
      */
     public record OpenSessionResponse(SessionResponse session, boolean stale, String routineName, String dayName,
-                                      Integer dayNumber, Integer weekNumber) {
+                                      Integer dayNumber, Integer weekNumber, String coverImageUrl) {
         public static OpenSessionResponse from(OpenTrainingSession o) {
             SessionLabel l = o.label();
             return new OpenSessionResponse(SessionResponse.from(o.session()), o.stale(),
                     l == null ? null : l.routineName(), l == null ? null : l.dayName(),
-                    l == null ? null : l.dayNumber(), l == null ? null : l.weekNumber());
+                    l == null ? null : l.dayNumber(), l == null ? null : l.weekNumber(),
+                    l == null ? null : l.coverImageUrl());
         }
     }
 

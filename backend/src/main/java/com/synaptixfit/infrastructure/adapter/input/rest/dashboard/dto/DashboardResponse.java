@@ -11,6 +11,7 @@ import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.Modality;
 import com.synaptixfit.domain.model.training.PendingDay;
+import com.synaptixfit.domain.model.training.TodayIntensity;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.CognitiveStateResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.CrossRegulationResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.WellbeingResponse;
@@ -22,13 +23,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Resumen del inicio. Los tipos de la BD se exponen como enums en UPPER_SNAKE_CASE (ver {@link #code}). */
+/**
+ * Resumen del inicio. Los tipos de la BD se exponen como enums en UPPER_SNAKE_CASE (ver {@link #code}).
+ * {@code todayIntensity}: «Hoy toca: suave / normal / fuerte» (EASY, NORMAL, HARD); nulo si hoy no hay entreno.
+ */
 public record DashboardResponse(GreetingResponse greeting, TodayResponse today, WeekResponse week,
                                 CognitiveStateResponse cognitive, CrossRegulationResponse crossRegulation,
                                 WellbeingResponse wellbeing, NextTrainingDayResponse nextTrainingDay,
                                 List<ChallengeResponse> activeChallenges, List<PlanDayResponse> planWeek,
                                 List<TodayEventResponse> todayEvents, BannerResponse banner,
-                                NextDeadlineResponse nextDeadline) {
+                                NextDeadlineResponse nextDeadline, TodayIntensity todayIntensity) {
 
     private static final Map<String, String> CODES = Map.ofEntries(
             // tipo_actividad de horarios_academicos
@@ -168,6 +172,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                         e.routineDayId(), e.tasks().stream().map(TaskMentionResponse::from).toList(),
                         e.tracksPhysicalLoad())).toList(),
                 new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()),
-                NextDeadlineResponse.from(d.nextDeadline()));
+                NextDeadlineResponse.from(d.nextDeadline()),
+                d.todayIntensity());
     }
 }

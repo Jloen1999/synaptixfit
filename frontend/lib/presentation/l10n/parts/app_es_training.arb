@@ -3066,5 +3066,14 @@
   "trainingCheckInAutoSaveHint": "Se guarda al contestar la tercera pregunta.",
   "trainingCheckInChangeHint": "Cambia lo que quieras y toca «Guardar cambios».",
   "trainingAdaptedDeclined": "Hoy harás todas las series.",
-  "runWorkoutDeleted": "Entreno eliminado"
+  "runWorkoutDeleted": "Entreno eliminado",
+  "trainingRecordsPill": "{count, plural, =0{Sin récords} =1{1 récord} other{{count} récords}}",
+  "@trainingRecordsPill": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSessionDone": "Hecho"
 }

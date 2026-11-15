@@ -84,6 +84,8 @@ class DataChangeInterceptor extends Interceptor {
       DataTopic.social,
     },
     '/api/v1/badges': {DataTopic.gamification, DataTopic.social},
+    // Pausar o reanudar la racha: Progreso y el aviso de racha en peligro.
+    '/api/v1/streak': {DataTopic.gamification, DataTopic.social},
     // Antes que /profile: aplicar la matrícula crea asignaturas (leerla no
     // cambia nada).
     '/api/v1/profile/enrollment/read': {},

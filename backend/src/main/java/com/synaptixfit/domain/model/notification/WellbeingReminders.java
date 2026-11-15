@@ -18,7 +18,8 @@ import java.util.UUID;
  * antes del límite diario. Lógica pura.
  *
  * <ul>
- *   <li>Racha en riesgo: hoy a las {@link #STREAK_TIME} si hay racha y aún no hay actividad hoy. Categoría de hitos
+ *   <li>Racha en riesgo: hoy a las {@link #STREAK_TIME} si hay racha, aún no hay actividad hoy y la racha no está en
+ *       pausa (ADR 0042: en pausa no se pierde). Categoría de hitos
  *       ({@link NotificationType#MILESTONE}): la racha es un logro.</li>
  *   <li>Registro diario: a las {@link #CHECK_IN_TIME} de cada día de la ventana; hoy solo si aún no se ha hecho.
  *       Categoría de fatiga ({@link NotificationType#FATIGUE_ALERT}): el registro mide la fatiga.</li>
@@ -44,13 +45,21 @@ public final class WellbeingReminders {
      * @param streakDays       días de la racha actual
      * @param activeToday      hoy ya cuenta para la racha
      * @param checkInDoneToday hoy ya hay registro diario
+     * @param streakPaused     la racha está en pausa hoy (ADR 0042)
      */
     public record Input(NotificationPreferences preferences, UsageFocus focus, ReminderOptions options, Instant now,
                         ZoneId zone, Instant end, int streakDays, boolean activeToday, boolean checkInDoneToday,
-                        List<ClassBlock> classes) {
+                        List<ClassBlock> classes, boolean streakPaused) {
 
         public Input {
             classes = classes == null ? List.of() : List.copyOf(classes);
+        }
+
+        public Input(NotificationPreferences preferences, UsageFocus focus, ReminderOptions options, Instant now,
+                     ZoneId zone, Instant end, int streakDays, boolean activeToday, boolean checkInDoneToday,
+                     List<ClassBlock> classes) {
+            this(preferences, focus, options, now, zone, end, streakDays, activeToday, checkInDoneToday, classes,
+                    false);
         }
     }
 
@@ -60,7 +69,7 @@ public final class WellbeingReminders {
             return out;
         }
         LocalDate today = in.now().atZone(in.zone()).toLocalDate();
-        if (in.options().streak() && in.streakDays() > 0 && !in.activeToday()
+        if (in.options().streak() && in.streakDays() > 0 && !in.activeToday() && !in.streakPaused()
                 && in.preferences().admits(NotificationType.MILESTONE)) {
             addIfInWindow(out, in, ReminderKind.STREAK_AT_RISK, at(today, STREAK_TIME, in), today.toString(),
                     in.streakDays(), null, null);

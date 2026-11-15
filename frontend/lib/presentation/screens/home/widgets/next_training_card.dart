@@ -8,7 +8,8 @@ import '../../../widgets/widgets.dart';
 
 /// Próximo día de entrenamiento con «Empezar» (1 toque) y el registro diario.
 /// Misma información que la tarjeta de Entreno › Gimnasio: foto del ejercicio
-/// principal de fondo, cuándo toca, retraso y avance del ciclo. Sus botones son
+/// principal de fondo con el texto abajo (ADR 0042), cuándo toca, retraso y
+/// avance del ciclo. Sus botones son
 /// secundarios: el destacado de Inicio es el de «Tu día». Grabar una carrera
 /// vive en Entreno › Correr (ADR 0038).
 class NextTrainingCard extends StatelessWidget {
@@ -43,6 +44,16 @@ class NextTrainingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final next = day;
+    final whenText = next == null
+        ? ''
+        : [
+            if (next.scheduledDate != null)
+              scheduledDayLabel(l10n, next.scheduledDate!)
+            else
+              weekdayName(l10n, next.dayNumber),
+            if (next.dayName?.trim() case final name? when name.isNotEmpty)
+              name,
+          ].join(' · ');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -68,6 +79,7 @@ class NextTrainingCard extends StatelessWidget {
           )
         else
           AppCoverCard(
+            layout: AppCoverLayout.bottom,
             imageUrl: next.coverImageUrl,
             padding: const EdgeInsets.all(TokensSpacing.m),
             // Progreso y botones a todo el ancho, sin la foto detrás.
@@ -127,69 +139,53 @@ class NextTrainingCard extends StatelessWidget {
                 ],
               ],
             ),
+            // Texto abajo sobre la foto (ADR 0042): el estado en pastilla
+            // sólida y tres datos como mucho (qué rutina, cuándo y cuánto).
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        next.routineName,
-                        style: context.textStyles.titleLarge,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (next.inProgress)
-                      AppCoverPill(
-                        icon: Icons.play_circle_outline_rounded,
-                        label: l10n.homeTrainingInProgress,
-                        color: context.colors.primary,
-                      ),
-                  ],
-                ),
-                // «Miércoles 5 nov · Semana 2 de 4 · Tirón»: la misma regla
-                // que la pestaña de Rutinas.
-                Text(
-                  nextDayHeadline(
-                    l10n,
-                    date: next.scheduledDate,
-                    weekNumber: next.weekNumber,
-                    totalWeeks: next.totalWeeks,
-                    dayNumber: next.dayNumber,
-                    dayName: next.dayName,
-                  ),
-                  style: context.textStyles.bodyLarge,
-                ),
-                if ((next.overdue && next.scheduledDate != null) ||
-                    next.estimatedMinutes > 0)
+                if (next.inProgress ||
+                    (next.overdue && next.scheduledDate != null))
                   Padding(
-                    padding: const EdgeInsets.only(top: TokensSpacing.xs),
-                    child: Wrap(
-                      spacing: TokensSpacing.xs,
-                      runSpacing: TokensSpacing.xs,
-                      children: [
-                        if (next.overdue && next.scheduledDate != null)
-                          AppCoverPill(
-                            icon: Icons.schedule_rounded,
+                    padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
+                    child: next.inProgress
+                        ? AppCoverPill(
+                            icon: AppIcons.inProgress,
+                            label: l10n.homeTrainingInProgress,
+                            color: context.colors.primary,
+                          )
+                        : AppCoverPill(
+                            icon: AppIcons.overdue,
                             color: context.palette.warning,
                             label: overdueSinceLabel(l10n, next.scheduledDate!),
                           ),
-                        // Duración prevista (la calcula el servidor).
-                        if (next.estimatedMinutes > 0)
-                          AppCoverPill(
-                            icon: AppIcons.duration,
-                            label: l10n.trainingEstimatedMinutes(
-                              next.estimatedMinutes,
-                            ),
-                            semanticLabel: l10n.trainingEstimatedMinutesSpoken(
-                              next.estimatedMinutes,
-                            ),
-                          ),
-                      ],
-                    ),
                   ),
+                Text(
+                  next.routineName,
+                  style: context.textStyles.titleLarge,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                // «Miércoles 5 nov · Tirón · 45 min»: cuándo, qué día y la
+                // duración que calcula el servidor (la semana va en el pie).
+                Semantics(
+                  label: [
+                    whenText,
+                    if (next.estimatedMinutes > 0)
+                      l10n.trainingEstimatedMinutesSpoken(
+                        next.estimatedMinutes,
+                      ),
+                  ].join(', '),
+                  excludeSemantics: true,
+                  child: Text(
+                    [
+                      whenText,
+                      if (next.estimatedMinutes > 0)
+                        l10n.trainingEstimatedMinutes(next.estimatedMinutes),
+                    ].join(' · '),
+                    style: context.textStyles.bodyLarge,
+                  ),
+                ),
               ],
             ),
           ),

@@ -7,28 +7,35 @@ import 'package:synaptixfit/presentation/widgets/widgets.dart';
 const _url = 'https://example.com/foto.webp';
 const _cardWidth = 320.0;
 
-Future<void> _pump(WidgetTester tester, {double scale = 1}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  double scale = 1,
+  AppCoverLayout layout = AppCoverLayout.side,
+  String? url = _url,
+  bool dark = false,
+}) async {
   tester.view.physicalSize = const Size(360, 800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: AppTheme.light,
+      theme: dark ? AppTheme.dark : AppTheme.light,
       builder: (context, app) => MediaQuery(
         data: MediaQuery.of(
           context,
         ).copyWith(textScaler: TextScaler.linear(scale)),
         child: app!,
       ),
-      home: const Scaffold(
+      home: Scaffold(
         body: Center(
           child: SizedBox(
             width: _cardWidth,
             child: AppCoverCard(
-              imageUrl: _url,
+              imageUrl: url,
+              layout: layout,
               padding: EdgeInsets.zero,
-              footer: SizedBox(height: 48, key: Key('pie')),
-              child: Text('Fuerza A', key: Key('texto')),
+              footer: const SizedBox(height: 48, key: Key('pie')),
+              child: const Text('Fuerza A', key: Key('texto')),
             ),
           ),
         ),
@@ -71,5 +78,67 @@ void main() {
         .whereType<BoxDecoration>()
         .where((d) => d.image != null);
     expect(decorated.single.image!.colorFilter, isNotNull);
+  });
+
+  group('texto abajo (sesiones, ADR 0042)', () {
+    testWidgets('la foto a dos tonos queda arriba y el texto abajo', (
+      tester,
+    ) async {
+      await _pump(tester, layout: AppCoverLayout.bottom);
+      final text = tester.getRect(find.byKey(const Key('texto')));
+      final card = tester.getRect(find.byType(AppCoverCard));
+      // La franja de la foto queda a la vista encima del texto.
+      expect(text.top - card.top, greaterThanOrEqualTo(TokensSize.coverBanner));
+      final footer = tester.getRect(find.byKey(const Key('pie')));
+      expect(footer.top, greaterThanOrEqualTo(text.bottom));
+      expect(footer.width, closeTo(_cardWidth, 0.5));
+      final photo = tester
+          .widgetList<Ink>(find.byType(Ink))
+          .map((i) => i.decoration)
+          .whereType<BoxDecoration>()
+          .where((d) => d.image != null)
+          .single;
+      // A dos tonos: el texto cumple AA en cualquier punto (contrast_test).
+      expect(photo.image!.colorFilter, isNotNull);
+      // Mientras carga o si falla, debajo queda el color de reserva.
+      expect(photo.gradient, isNotNull);
+      // Degradado vertical de tres paradas hacia la superficie.
+      final gradient = tester
+          .widgetList<Ink>(find.byType(Ink))
+          .map((i) => i.decoration)
+          .whereType<BoxDecoration>()
+          .where((d) => d.image == null)
+          .map((d) => d.gradient)
+          .whereType<LinearGradient>()
+          .single;
+      expect(gradient.colors, hasLength(3));
+    });
+
+    testWidgets('con el texto al 200 % no se desborda', (tester) async {
+      await _pump(tester, layout: AppCoverLayout.bottom, scale: 2);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Fuerza A'), findsOneWidget);
+    });
+
+    testWidgets('sin foto queda el color de reserva, en claro y oscuro', (
+      tester,
+    ) async {
+      for (final dark in [false, true]) {
+        await _pump(
+          tester,
+          layout: AppCoverLayout.bottom,
+          url: null,
+          dark: dark,
+        );
+        expect(tester.takeException(), isNull);
+        final images = tester
+            .widgetList<Ink>(find.byType(Ink))
+            .map((i) => i.decoration)
+            .whereType<BoxDecoration>()
+            .where((d) => d.image != null);
+        expect(images, isEmpty);
+        expect(find.text('Fuerza A'), findsOneWidget);
+      }
+    });
   });
 }

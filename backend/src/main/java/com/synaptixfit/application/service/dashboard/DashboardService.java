@@ -1,5 +1,8 @@
 package com.synaptixfit.application.service.dashboard;
 
+import com.synaptixfit.application.port.input.training.GetTodayAdaptationUseCase;
+import com.synaptixfit.domain.model.training.PendingDay;
+import com.synaptixfit.domain.model.training.TodayIntensity;
 import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
 import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
 import com.synaptixfit.application.port.input.dashboard.GetDashboardUseCase;
@@ -96,6 +99,7 @@ public class DashboardService implements GetDashboardUseCase {
     private final GetPendingTrainingDayUseCase pendingDays;
     /** Racha efectiva al leer (null: se usa la guardada en el usuario). */
     private final GetStreakUseCase streaks;
+    private final GetTodayAdaptationUseCase todayAdaptation;
     private final Clock clock;
     private final ZoneId defaultZone;
 
@@ -116,6 +120,19 @@ public class DashboardService implements GetDashboardUseCase {
                             GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges,
                             GetPendingTrainingDayUseCase pendingDays, GetStreakUseCase streaks, Clock clock,
                             ZoneId defaultZone) {
+        this(users, reads, insightSources, cognitiveStates, crossRegulation, studyCalories, studyActivity, physicalLoad,
+                wellbeing, challenges, pendingDays, streaks, null, clock, defaultZone);
+    }
+
+    /** @param todayAdaptation adaptación de hoy para «Hoy toca» (ADR 0042); nula, no se calcula */
+    public DashboardService(UserRepositoryPort users, DashboardReadPort reads, InsightsSourcePort insightSources,
+                            GetCognitiveStateUseCase cognitiveStates, GetCrossRegulationUseCase crossRegulation,
+                            GetStudyCaloriesTodayUseCase studyCalories, GetStudyActivityUseCase studyActivity,
+                            GetPhysicalLoadUseCase physicalLoad,
+                            GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges,
+                            GetPendingTrainingDayUseCase pendingDays, GetStreakUseCase streaks,
+                            GetTodayAdaptationUseCase todayAdaptation, Clock clock, ZoneId defaultZone) {
+        this.todayAdaptation = todayAdaptation;
         this.pendingDays = pendingDays;
         this.streaks = streaks;
         this.users = users;
@@ -217,20 +234,31 @@ public class DashboardService implements GetDashboardUseCase {
             banner = SmartBannerRules.describeLatestMissed(banner, missed, today, zone);
         }
 
+        PendingDay nextTraining = focus.includesFitness() ? pendingDays.pendingDay(userId).orElse(null) : null;
+        List<Dashboard.TodayEvent> events = withTasks(todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart,
+                now), todayBlocks, active.stream().filter(c -> c.status(now) == ChallengeStatus.ACTIVE).toList());
         return new Dashboard(greeting, todayKpis, weekKpis, cognitive, regulation, wellbeingNow,
-                focus.includesFitness()
-                        ? pendingDays.pendingDay(userId).orElse(null)
-                        : null,
+                nextTraining,
                 active.stream().limit(TOP_CHALLENGES).map(ActiveChallenge::of).toList(),
                 planWeek(weekStart, weekBlocks.stream()
                         .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus)).toList(), zone, now),
-                withTasks(todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart, now), todayBlocks,
-                        active.stream().filter(c -> c.status(now) == ChallengeStatus.ACTIVE).toList()),
+                events,
                 banner,
                 focus.includesAcademic()
                         ? Dashboard.countdownOf(reads.deadlines(userId, now,
                                 now.plus(Duration.ofDays(Dashboard.COUNTDOWN_HORIZON_DAYS))), now)
-                        : null);
+                        : null,
+                todayIntensity(userId, tz, focus, nextTraining, events, today));
+    }
+
+    /** «Hoy toca» (ADR 0042): solo con deporte en el enfoque y entreno por hacer hoy; si no, nula. */
+    private TodayIntensity todayIntensity(UUID userId, String tz, UsageFocus focus, PendingDay nextTraining,
+                                          List<Dashboard.TodayEvent> events, LocalDate today) {
+        if (todayAdaptation == null || !focus.includesFitness()
+                || !Dashboard.trainsToday(nextTraining, events, today)) {
+            return null;
+        }
+        return todayAdaptation.today(userId, tz).intensity();
     }
 
     /**

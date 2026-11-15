@@ -6,6 +6,7 @@ import '../../../../domain/enums/home_event_type.dart';
 import '../../../../domain/enums/item_time_status.dart';
 import '../../../../domain/enums/usage_focus.dart';
 import '../../../../domain/enums/planner_enums.dart';
+import '../../../../domain/enums/today_intensity.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
 import '../../../../domain/models/home/today_next.dart';
 import '../../../extensions/context_extensions.dart';
@@ -187,6 +188,12 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
               ),
             ],
           ),
+          // «Hoy toca: suave / normal / fuerte» (ADR 0042): solo con entreno
+          // por hacer hoy; el nivel lo da el servidor.
+          if (focus.includesFitness && dashboard.todayIntensity != null) ...[
+            const SizedBox(height: TokensSpacing.s),
+            _TodayIntensityLine(intensity: dashboard.todayIntensity!),
+          ],
           if (button != null) ...[
             const SizedBox(height: TokensSpacing.m),
             // En pantallas anchas el botón mide lo que su texto; en móvil, a
@@ -385,6 +392,57 @@ class _ActionButton extends StatelessWidget {
       icon: icon,
       loading: busy,
       onPressed: busy ? null : onPressed,
+    );
+  }
+}
+
+/// Una línea con cómo toca entrenar hoy y su porqué en el «?» (sin jerga ni
+/// cifras técnicas, vocabulario §4).
+class _TodayIntensityLine extends StatelessWidget {
+  const _TodayIntensityLine({required this.intensity});
+
+  final TodayIntensity intensity;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final (text, help) = switch (intensity) {
+      TodayIntensity.easy => (
+        l10n.homeTodayIntensityEasy,
+        l10n.homeTodayIntensityEasyHelp,
+      ),
+      TodayIntensity.normal => (
+        l10n.homeTodayIntensityNormal,
+        l10n.homeTodayIntensityNormalHelp,
+      ),
+      TodayIntensity.hard => (
+        l10n.homeTodayIntensityHard,
+        l10n.homeTodayIntensityHardHelp,
+      ),
+    };
+    return AppHelpToggle(
+      help: help,
+      tooltip: l10n.commonHelpAbout(l10n.homeTodayIntensityAbout),
+      child: Row(
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              AppIcons.effort,
+              size: TokensSize.iconS,
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: TokensSpacing.xs),
+          Expanded(
+            child: Text(
+              text,
+              style: context.textStyles.labelLarge?.copyWith(
+                color: context.colors.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

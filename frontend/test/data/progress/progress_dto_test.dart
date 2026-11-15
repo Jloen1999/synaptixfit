@@ -80,6 +80,26 @@ void main() {
     expect(streak.reachedMilestones, [7, 30, 100, 365]);
   });
 
+  test('StreakDto lee la pausa (ADR 0042)', () {
+    final paused = StreakDto.fromJson({
+      'currentDays': 5,
+      'pausedUntil': '2026-11-21',
+      'pauseDaysLeft': 0,
+      'canPause': false,
+    }).toDomain();
+    expect(paused.paused, isTrue);
+    expect(paused.pausedUntil, DateTime(2026, 11, 21));
+
+    final free = StreakDto.fromJson({
+      'currentDays': 5,
+      'pauseDaysLeft': 7,
+      'canPause': true,
+    }).toDomain();
+    expect(free.paused, isFalse);
+    expect(free.canPause, isTrue);
+    expect(free.pauseDaysLeft, 7);
+  });
+
   test('CorrelationDto sin datos suficientes anula coeficiente y fuerza', () {
     final c = CorrelationDto.fromJson({
       'metric': 'MINUTES',

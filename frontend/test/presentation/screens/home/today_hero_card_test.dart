@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:synaptixfit/domain/enums/today_intensity.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:synaptixfit/domain/enums/home_event_kind.dart';
 import 'package:synaptixfit/domain/enums/home_event_type.dart';
@@ -42,6 +43,7 @@ void main() {
     WidgetTester tester,
     List<HomeTodayEvent> events, {
     double textScale = 1,
+    TodayIntensity? intensity,
   }) async {
     final actions = <TodayAction>[];
     await tester.pumpWidget(
@@ -64,7 +66,10 @@ void main() {
         home: Scaffold(
           body: SingleChildScrollView(
             child: TodayHeroCard(
-              dashboard: homeDashboardFixture.copyWith(todayEvents: events),
+              dashboard: homeDashboardFixture.copyWith(
+                todayEvents: events,
+                todayIntensity: intensity,
+              ),
               focus: UsageFocus.both,
               onAction: actions.add,
             ),
@@ -89,6 +94,21 @@ void main() {
       [_block('5', HomeEventType.study, ItemTimeStatus.missed)].nextUp,
       isNull,
     );
+  });
+
+  testWidgets('«Hoy toca» sale solo si el servidor lo manda (ADR 0042)', (
+    tester,
+  ) async {
+    await pump(tester, const []);
+    expect(find.textContaining('Hoy toca'), findsNothing);
+
+    await pump(tester, const [], intensity: TodayIntensity.easy);
+    expect(find.text('Hoy toca: entreno suave'), findsOneWidget);
+    // El porqué, solo al tocar el «?».
+    expect(find.textContaining('menos series'), findsNothing);
+    await tester.tap(find.byTooltip('Qué es «Hoy toca»'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('menos series'), findsOneWidget);
   });
 
   testWidgets('un bloque de estudio en curso ofrece concentrarse', (

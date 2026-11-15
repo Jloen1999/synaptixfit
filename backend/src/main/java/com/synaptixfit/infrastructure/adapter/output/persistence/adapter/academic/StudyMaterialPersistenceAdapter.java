@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.academic;
 
+import com.synaptixfit.domain.model.academic.ReviewLoadBalancer;
 import com.synaptixfit.domain.model.academic.StudyMaterial;
 import com.synaptixfit.domain.model.academic.StudySourceType;
 import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
@@ -46,6 +47,13 @@ public class StudyMaterialPersistenceAdapter implements StudyMaterialRepositoryP
     public List<StudyMaterial> findDue(UUID userId, Instant now, int limit) {
         return repository.findDue(userId, now, PageRequest.of(0, limit)).stream()
                 .map(AcademicPersistenceMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<ReviewLoadBalancer.Scheduled> scheduledReviews(UUID userId, Instant from, Instant to) {
+        return repository.findScheduled(userId, from, to).stream()
+                .map(r -> new ReviewLoadBalancer.Scheduled(r.getId(), r.getNextReviewAt()))
+                .toList();
     }
 
     @Override

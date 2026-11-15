@@ -10,6 +10,7 @@ import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.training.PendingDay;
+import com.synaptixfit.domain.model.training.TodayIntensity;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -18,13 +19,14 @@ import java.util.UUID;
 
 /**
  * Resumen del inicio en una sola lectura. {@code nextDeadline}: la cuenta atrás de «Tu día» (ver
- * {@link #countdownOf}); nula si no hay nada pendiente.
+ * {@link #countdownOf}); nula si no hay nada pendiente. {@code todayIntensity}: «Hoy toca: suave / normal / fuerte»,
+ * nula si hoy no hay entreno por hacer ({@link #trainsToday}).
  */
 public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, CognitiveState cognitive,
                         CrossRegulationView crossRegulation, WellbeingSnapshot wellbeing,
                         PendingDay nextTrainingDay, List<ActiveChallenge> activeChallenges,
                         List<PlanDay> planWeek, List<TodayEvent> todayEvents, SmartBanner banner,
-                        Deadline nextDeadline) {
+                        Deadline nextDeadline, TodayIntensity todayIntensity) {
 
     /** Hasta dónde se busca la cuenta atrás: un curso entero, para que no tenga límite de días en la práctica. */
     public static final int COUNTDOWN_HORIZON_DAYS = 366;
@@ -33,6 +35,25 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
         activeChallenges = List.copyOf(activeChallenges);
         planWeek = List.copyOf(planWeek);
         todayEvents = List.copyOf(todayEvents);
+    }
+
+    /** Sin «Hoy toca» (no hay entreno hoy o no se pudo saber). */
+    public Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, CognitiveState cognitive,
+                     CrossRegulationView crossRegulation, WellbeingSnapshot wellbeing, PendingDay nextTrainingDay,
+                     List<ActiveChallenge> activeChallenges, List<PlanDay> planWeek, List<TodayEvent> todayEvents,
+                     SmartBanner banner, Deadline nextDeadline) {
+        this(greeting, today, week, cognitive, crossRegulation, wellbeing, nextTrainingDay, activeChallenges,
+                planWeek, todayEvents, banner, nextDeadline, null);
+    }
+
+    /**
+     * ¿Hay entreno hoy por hacer? (ADR 0042: solo entonces sale «Hoy toca» en «Tu día»). Sí si el próximo día de la
+     * rutina toca hoy o va con retraso, o si hoy hay un evento de deporte sin marcar.
+     */
+    public static boolean trainsToday(PendingDay next, List<TodayEvent> todayEvents, LocalDate today) {
+        boolean routineDay = next != null && next.scheduledDate() != null && !next.scheduledDate().isAfter(today);
+        return routineDay || todayEvents.stream().anyMatch(e -> e.kind() == TodayEvent.Kind.BLOCK
+                && ActivityType.SPORT.code().equals(e.type()) && !e.completed());
     }
 
     /**

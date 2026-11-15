@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:synaptixfit/domain/enums/today_intensity.dart';
 import 'package:synaptixfit/domain/enums/cognitive_level.dart';
 import 'package:synaptixfit/domain/enums/planner_enums.dart';
 import 'package:synaptixfit/data/remote_data_source/home/dto/home_dashboard_dto.dart';
@@ -117,6 +118,7 @@ void main() {
       'dueAt': '2026-11-20T08:00:00Z',
       'subjectName': 'Histología',
     },
+    'todayIntensity': 'EASY',
   };
 
   test('mapea el resumen del inicio al dominio', () {
@@ -158,6 +160,8 @@ void main() {
     expect(dashboard.cognitive.loadLevel, CognitiveLevel.critical);
     expect(dashboard.cognitive.attentionLevel, CognitiveLevel.high);
     expect(dashboard.nextDeadline!.type, DeadlineType.exam);
+    // «Hoy toca» lo decide el servidor (ADR 0042).
+    expect(dashboard.todayIntensity, TodayIntensity.easy);
     expect(dashboard.nextDeadline!.dueAt.isUtc, isFalse);
   });
 

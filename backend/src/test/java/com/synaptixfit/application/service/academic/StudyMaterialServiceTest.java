@@ -27,6 +27,7 @@ import com.synaptixfit.domain.model.academic.StudySourceType;
 import com.synaptixfit.domain.model.academic.Subject;
 import com.synaptixfit.domain.model.insights.PhysicalLoadHistory;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,6 +89,31 @@ class StudyMaterialServiceTest {
             assertThat(e.dueAt()).isEqualTo(AcademicFakes.NOW.plus(Duration.ofDays(1)));
             assertThat(e.title()).isEqualTo("Repaso: Material");
         });
+    }
+
+    @Test
+    void theNextReviewAvoidsABusyDay() {
+        Subject s = f.subject(user, "Física");
+        Instant now = AcademicFakes.NOW;
+        // Segundo acierto: SM-2 propone 6 días. Ese día ya hay tres repasos y el anterior está libre.
+        StudyMaterial m = f.materials.save(scheduled(s, now, 1));
+        for (int i = 0; i < 3; i++) {
+            f.materials.save(scheduled(s, now.plus(Duration.ofDays(6)), 1));
+        }
+        f.materials.save(scheduled(s, now.plus(Duration.ofDays(7)), 1));
+
+        ReviewOutcome outcome = service.review(user, m.id(), 5);
+
+        // El intervalo SM-2 no cambia; solo la fecha se adelanta un día (ADR 0042).
+        assertThat(outcome.material().intervalDays()).isEqualTo(6);
+        assertThat(outcome.material().nextReviewAt()).isEqualTo(now.plus(Duration.ofDays(5)));
+    }
+
+    private StudyMaterial scheduled(Subject s, Instant next, int completedReviews) {
+        return StudyMaterial.builder().id(UUID.randomUUID()).userId(user).subjectId(s.id())
+                .originType(StudySourceType.NOTE).originId(UUID.randomUUID()).title("Material")
+                .masteryState(MasteryState.IN_PROGRESS).nextReviewAt(next).intervalDays(1)
+                .completedReviews(completedReviews).createdAt(AcademicFakes.NOW).build();
     }
 
     @Test

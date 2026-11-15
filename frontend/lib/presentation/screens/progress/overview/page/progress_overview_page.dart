@@ -22,6 +22,7 @@ import '../../widgets/balance_card.dart';
 import '../../widgets/community_preview_card.dart';
 import '../../widgets/next_badge_card.dart';
 import '../../widgets/physical_load_card.dart';
+import '../../widgets/progress_labels.dart';
 import '../../widgets/streak_card.dart';
 import '../../widgets/week_headline_card.dart';
 import '../bloc/progress_overview_bloc.dart';
@@ -166,7 +167,34 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
   }
 
   static ProgressOverviewLoaded _withoutReview(ProgressOverviewLoaded s) =>
-      s.copyWith(openingReview: false, reviewQueue: null, reviewError: null);
+      s.copyWith(
+        openingReview: false,
+        reviewQueue: null,
+        reviewError: null,
+        updatingStreak: false,
+        streakJustPaused: null,
+        streakError: null,
+      );
+
+  /// Racha recién pausada: lo dice con «Deshacer» (lo reversible no pregunta,
+  /// vocabulario §4); o el error, con su texto.
+  void _onStreak(ProgressOverviewLoaded state) {
+    final bloc = context.read<ProgressOverviewBloc>()
+      ..add(const ProgressOverviewEvent.streakHandled());
+    if (state.streakError case final error?) {
+      context.showSnack(errorMessage(context, error));
+      return;
+    }
+    final until = state.streakJustPaused?.pausedUntil;
+    if (until == null) return;
+    context.showActionSnack(
+      context.localizations.progressStreakPausedUntil(
+        ProgressFormat.pauseDate(until),
+      ),
+      actionLabel: context.localizations.commonUndo,
+      onAction: () => bloc.add(const ProgressOverviewEvent.streakResumed()),
+    );
+  }
 
   /// Abre la cola de repaso que pidió el bloc (en un toque, ADR 0041). Si ya
   /// no queda ninguno, lo avisa y recarga.
@@ -202,10 +230,15 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
           previous != current &&
           (current.reviewQueue != null ||
               current.reviewError != null ||
+              current.streakJustPaused != null ||
+              current.streakError != null ||
               previous is! ProgressOverviewLoaded ||
               _withoutReview(previous) != _withoutReview(current)),
       listener: (context, state) {
         if (state is! ProgressOverviewLoaded) return;
+        if (state.streakJustPaused != null || state.streakError != null) {
+          return _onStreak(state);
+        }
         if (state.reviewQueue != null || state.reviewError != null) {
           return _onReview(state);
         }
@@ -225,6 +258,7 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
             :final today,
             :final todayError,
             :final openingReview,
+            :final updatingStreak,
           ) =>
             _focusAware(
               context,
@@ -246,6 +280,13 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                       // Semana a cero: la acción útil es planificar algo.
                       onStart: () =>
                           context.go(ProgressExternalPaths.addEvent()),
+                      updatingStreak: updatingStreak,
+                      onPauseStreak: () => context
+                          .read<ProgressOverviewBloc>()
+                          .add(const ProgressOverviewEvent.streakPaused()),
+                      onResumeStreak: () => context
+                          .read<ProgressOverviewBloc>()
+                          .add(const ProgressOverviewEvent.streakResumed()),
                     ),
                     if (focus.includesAcademic &&
                         (overview.studyWeek?.reviewsDue ?? 0) > 0)

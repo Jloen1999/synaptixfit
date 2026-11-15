@@ -41,44 +41,24 @@ class OpenSessionCard extends StatelessWidget {
     final started = DateFormat.MMMEd(
       l10n.localeName,
     ).add_Hm().format(session.startedAt);
-    return AppCard(
-      child: Column(
+    // Foto del día de fondo y el texto abajo (ADR 0042): el estado en una
+    // pastilla sólida, el nombre y cuándo empezó. Sin toque en toda la
+    // tarjeta: lleva sus propios botones (nada de controles anidados).
+    return AppCoverCard(
+      layout: AppCoverLayout.bottom,
+      imageUrl: open.coverImageUrl,
+      padding: const EdgeInsets.all(TokensSpacing.m),
+      footer: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                open.stale
-                    ? Icons.pending_actions_rounded
-                    : Icons.timelapse_rounded,
-                color: open.stale
-                    ? context.palette.warning
-                    : context.colors.primary,
-                size: TokensSize.iconS,
+          if (open.stale)
+            Padding(
+              padding: const EdgeInsets.only(top: TokensSpacing.s),
+              child: Text(
+                l10n.trainingStaleSessionHint,
+                style: context.textStyles.bodySmall,
               ),
-              const SizedBox(width: TokensSpacing.s),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: context.textStyles.titleSmall),
-                    Text(
-                      [?open.routineName, started].join(' · '),
-                      style: context.textStyles.labelMedium?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                    if (open.stale)
-                      Text(
-                        l10n.trainingStaleSessionHint,
-                        style: context.textStyles.bodySmall,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
           const SizedBox(height: TokensSpacing.s),
           // Descartar (no guarda) a un lado y Terminar o Continuar al otro:
           // separados para no pulsar uno por otro (vocabulario §4). Con texto
@@ -130,6 +110,35 @@ class OpenSessionCard extends StatelessWidget {
                   child: Text(l10n.trainingContinueDay),
                 ),
             ],
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppCoverPill(
+            icon: open.stale
+                ? Icons.pending_actions_rounded
+                : AppIcons.inProgress,
+            color: open.stale
+                ? context.palette.warning
+                : context.colors.primary,
+            label: open.stale
+                ? l10n.trainingUnfinishedTitle
+                : l10n.trainingProgressInProgress,
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          Text(
+            title,
+            style: context.textStyles.titleMedium,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            [?open.routineName, started].join(' · '),
+            style: context.textStyles.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'routine_dto.dart' show blankToNull;
 import '../../../../domain/models/training/session_history.dart';
 import 'session_dto.dart';
 
@@ -44,6 +45,7 @@ abstract class SessionHistoryDto with _$SessionHistoryDto {
     int? weekNumber,
     @Default(<PersonalRecordDto>[]) List<PersonalRecordDto> records,
     @Default(false) bool unmarkable,
+    String? coverImageUrl,
   }) = _SessionHistoryDto;
 
   const SessionHistoryDto._();
@@ -59,6 +61,7 @@ abstract class SessionHistoryDto with _$SessionHistoryDto {
     weekNumber: weekNumber,
     records: [for (final r in records) r.toDomain()],
     unmarkable: unmarkable,
+    coverImageUrl: blankToNull(coverImageUrl),
   );
 }
 

@@ -26,4 +26,11 @@ abstract interface class BadgeRepositoryContract {
   Future<AppResult<Unit>> markNotified(List<String> badgeIds);
 
   Future<AppResult<Streak>> getStreak();
+
+  /// Pausa la racha desde hoy (ADR 0042). Sin días disponibles falla con
+  /// `STREAK_PAUSE_LIMIT_REACHED`.
+  Future<AppResult<Streak>> pauseStreak();
+
+  /// Reanuda la racha en pausa.
+  Future<AppResult<Streak>> resumeStreak();
 }

@@ -203,5 +203,10 @@
   "progressHeadlineStreakOnly": "{days, plural, =0{Pas de série} =1{Série : 1 jour} other{Série : {days} jours}}",
   "progressShowMore": "Plus de chiffres",
   "progressReviewsAllDone": "Il ne te reste aucune révision à faire.",
-  "progressLoadPoints": "{value} points"
+  "progressLoadPoints": "{value} points",
+  "progressStreakPause": "Mettre la série en pause",
+  "progressStreakResume": "Reprendre",
+  "progressStreakPausedUntil": "Série en pause jusqu'au {date}",
+  "progressStreakPausedChip": "En pause",
+  "progressErrorStreakPauseLimit": "Tu as utilisé tes jours de pause. Tu pourras de nouveau faire une pause plus tard."
 }

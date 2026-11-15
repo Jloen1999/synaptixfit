@@ -54,12 +54,12 @@ La galería usa el selector de fotos del sistema y no necesita permiso de almace
 | Información personal › Dirección de correo | Sí | Sí | Gestión de la cuenta, comunicaciones de la app | Inicio de sesión, recuperar contraseña, resumen semanal opcional |
 | Información personal › IDs de usuario | Sí | Sí | Gestión de la cuenta | Id interno; id de Google si se entra con Google |
 | Información personal › Otra información | Sí | No | Funcionalidad, personalización | Universidad, carrera, curso, asignaturas, horario y fecha de nacimiento (opcional, ADR 0036: edad para las kcal y las propuestas, y felicitar el cumpleaños; nunca en el perfil público; se borra al vaciar o eliminar la cuenta y sale en la exportación de la persona) |
-| Salud y forma física › Información de salud | Sí | No | Funcionalidad, personalización | Registro diario (sueño, estrés, agujetas, zonas con dolor) y «Mi ciclo» (opcional, con consentimiento explícito) |
+| Salud y forma física › Información de salud | Sí | No | Funcionalidad, personalización | Registro diario (sueño, estrés, agujetas, zonas con dolor) y «Mi ciclo» (opcional, con consentimiento explícito). |
 | Salud y forma física › Información de forma física | Sí | No | Funcionalidad, personalización | Rutinas, sesiones, series, pesos, actividades, sexo, peso y altura del perfil de bienestar (la edad se calcula con la fecha de nacimiento o es la que se dio antes) |
 | Fotos y vídeos › Fotos | Sí | No | Funcionalidad | Fotos de apuntes: se leen para pasarlas a texto y **no se guardan** (marcar «tratado de forma efímera») |
 | Archivos y documentos | Sí | No | Funcionalidad | Archivos que sube la persona (Cloudflare R2) |
 | Mensajes › Otros mensajes en la app | Sí | No | Funcionalidad | Publicaciones y comentarios de la comunidad |
-| Actividad en la app › Interacciones | Sí | Sí | Funcionalidad, analíticas propias | Progreso, XP, rachas e insignias (sin herramientas de analítica de terceros) |
+| Actividad en la app › Interacciones | Sí | Sí | Funcionalidad, analíticas propias | Progreso, XP, rachas (con las fechas de sus pausas, ADR 0042) e insignias (sin herramientas de analítica de terceros) |
 | Actividad en la app › Otro contenido generado | Sí | No | Funcionalidad | Apuntes, preguntas de repaso y respuestas |
 | Información y rendimiento de la app › Registros de fallos | No | — | — | No hay SDK de fallos |
 | Identificadores del dispositivo | No | — | — | No se usa id de publicidad |

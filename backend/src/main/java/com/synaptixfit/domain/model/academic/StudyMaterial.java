@@ -77,13 +77,30 @@ public final class StudyMaterial {
 
     /** Fecha del siguiente repaso si se aplica {@code r} en {@code now} (un acierto adelantado la conserva). */
     public Instant nextReviewAfter(SpacedRepetition.Result r, Instant now) {
-        return r.failed() || isReviewOwed(now) ? now.plus(Duration.ofDays(r.intervalDays())) : nextReviewAt;
+        return nextReviewAfter(r, now, ReviewLoadBalancer.Load.NONE);
+    }
+
+    /**
+     * Igual, repartida con {@link ReviewLoadBalancer} para que ningún día acumule un pico de repasos. Solo se reparte
+     * una fecha nueva: la que se conserva (acierto adelantado) no se toca.
+     */
+    public Instant nextReviewAfter(SpacedRepetition.Result r, Instant now, ReviewLoadBalancer.Load load) {
+        if (!r.failed() && !isReviewOwed(now)) {
+            return nextReviewAt;
+        }
+        return ReviewLoadBalancer.balance(now.plus(Duration.ofDays(r.intervalDays())), r.intervalDays(), load);
     }
 
     /** Aplica un repaso: actualiza dominio, intervalo, facilidad, contadores y la siguiente fecha. */
     public SpacedRepetition.Result review(int realQuality, double adjustedQuality, Instant now) {
+        return review(realQuality, adjustedQuality, now, ReviewLoadBalancer.Load.NONE);
+    }
+
+    /** Igual, con la siguiente fecha repartida según los repasos ya programados ({@code load}). */
+    public SpacedRepetition.Result review(int realQuality, double adjustedQuality, Instant now,
+                                          ReviewLoadBalancer.Load load) {
         SpacedRepetition.Result r = simulate(realQuality, adjustedQuality, now);
-        Instant next = nextReviewAfter(r, now);
+        Instant next = nextReviewAfter(r, now, load);
         this.masteryState = r.masteryState();
         this.intervalDays = r.intervalDays();
         this.easeFactor = r.easeFactor();

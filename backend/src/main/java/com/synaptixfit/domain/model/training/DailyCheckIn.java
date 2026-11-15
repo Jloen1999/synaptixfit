@@ -19,6 +19,10 @@ public final class DailyCheckIn {
     public static final int ADAPTATION_THRESHOLD = 50;
     /** Estrés neutro: el registro rápido (tres toques) no lo pregunta y no debe sumar ni restar fatiga. */
     public static final int NEUTRAL_STRESS = 3;
+    /** «Bien» o mejor (4-5) en sueño y energía para que hoy toque fuerte. */
+    static final int STRONG_MIN_SCORE = 4;
+    /** Agujetas «nada» o «algo» (1-2) como mucho para que hoy toque fuerte. */
+    static final int STRONG_MAX_SORENESS = 2;
 
     private final UUID id;
     private final UUID userId;
@@ -106,6 +110,15 @@ public final class DailyCheckIn {
             return FatigueCause.SORENESS;
         }
         return max == low ? FatigueCause.LOW_ENERGY : FatigueCause.STRESS;
+    }
+
+    /**
+     * Día para apretar (ADR 0042): dormiste bien, con energía, sin agujetas ni dolores y con ganas de entrenar. Es la
+     * mitad «fuerte» de {@link TodayIntensity}; la mitad «suave» es la adaptación de siempre.
+     */
+    public boolean feelsStrong() {
+        return readyToTrain && sleepQuality >= STRONG_MIN_SCORE && energy >= STRONG_MIN_SCORE
+                && soreness <= STRONG_MAX_SORENESS && painZones.isEmpty();
     }
 
     public UUID id() { return id; }

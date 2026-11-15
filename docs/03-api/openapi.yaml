@@ -2070,6 +2070,41 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/StudyMaterialResponse"
+  /api/v1/streak/pause:
+    post:
+      tags:
+      - Streak
+      operationId: pause_1
+      parameters:
+      - name: zone
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StreakResponse"
+    delete:
+      tags:
+      - Streak
+      operationId: resume_1
+      parameters:
+      - name: zone
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StreakResponse"
   /api/v1/social/posts:
     get:
       tags:
@@ -11146,6 +11181,49 @@ components:
         xpAwarded:
           type: integer
           format: int32
+    StreakResponse:
+      type: object
+      properties:
+        currentDays:
+          type: integer
+          format: int32
+        bestDays:
+          type: integer
+          format: int32
+        activeToday:
+          type: boolean
+        atRisk:
+          type: boolean
+        nextMilestone:
+          type: integer
+          format: int32
+        daysToNextMilestone:
+          type: integer
+          format: int32
+        milestoneProgress:
+          type: number
+          format: double
+        reachedMilestones:
+          type: array
+          items:
+            type: integer
+            format: int32
+        freezesAvailable:
+          type: integer
+          format: int32
+        frozenDays:
+          type: array
+          items:
+            type: string
+            format: date
+        pausedUntil:
+          type: string
+          format: date
+        pauseDaysLeft:
+          type: integer
+          format: int32
+        canPause:
+          type: boolean
     CreatePostRequest:
       type: object
       properties:
@@ -12662,41 +12740,6 @@ components:
         progress:
           type: number
           format: double
-    StreakResponse:
-      type: object
-      properties:
-        currentDays:
-          type: integer
-          format: int32
-        bestDays:
-          type: integer
-          format: int32
-        activeToday:
-          type: boolean
-        atRisk:
-          type: boolean
-        nextMilestone:
-          type: integer
-          format: int32
-        daysToNextMilestone:
-          type: integer
-          format: int32
-        milestoneProgress:
-          type: number
-          format: double
-        reachedMilestones:
-          type: array
-          items:
-            type: integer
-            format: int32
-        freezesAvailable:
-          type: integer
-          format: int32
-        frozenDays:
-          type: array
-          items:
-            type: string
-            format: date
     RegisterRequest:
       type: object
       properties:
@@ -13494,6 +13537,8 @@ components:
         weekNumber:
           type: integer
           format: int32
+        coverImageUrl:
+          type: string
     RunWeekResponse:
       type: object
       properties:
@@ -13675,6 +13720,8 @@ components:
             $ref: "#/components/schemas/PersonalRecordResponse"
         unmarkable:
           type: boolean
+        coverImageUrl:
+          type: string
     ExerciseProgressPointResponse:
       type: object
       properties:
@@ -13749,6 +13796,12 @@ components:
         soreness:
           type: integer
           format: int32
+        intensity:
+          type: string
+          enum:
+          - EASY
+          - NORMAL
+          - HARD
     TestSessionSummaryResponse:
       type: object
       properties:
@@ -15307,6 +15360,12 @@ components:
           $ref: "#/components/schemas/BannerResponse"
         nextDeadline:
           $ref: "#/components/schemas/DashboardNextDeadlineResponse"
+        todayIntensity:
+          type: string
+          enum:
+          - EASY
+          - NORMAL
+          - HARD
     DashboardWeekResponse:
       type: object
       properties:

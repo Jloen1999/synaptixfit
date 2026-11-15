@@ -156,6 +156,10 @@ abstract class OpenSession with _$OpenSession {
     String? dayName,
     int? dayNumber,
     int? weekNumber,
+
+    /// Foto de fondo de su tarjeta (la elige el servidor, ADR 0042); nula:
+    /// color de reserva.
+    String? coverImageUrl,
   }) = _OpenSession;
 }
 

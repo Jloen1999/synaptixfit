@@ -49,6 +49,9 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.synaptixfit.application.port.input.training.GetTodayAdaptationUseCase;
+import com.synaptixfit.domain.model.training.SessionAdaptation;
+import com.synaptixfit.domain.model.training.TodayIntensity;
 
 class DashboardServiceTest {
 
@@ -98,8 +101,28 @@ class DashboardServiceTest {
                             mondayStudy.plusSeconds(3600), 3, null),
                     CompletedStudyBlock.focus(UUID.randomUUID(), mondayStudy.plusSeconds(7200), 25, null));
         };
+        GetTodayAdaptationUseCase todayAdaptation = (u, tz) -> adaptationToday;
         service = new DashboardService(users, reads, sources, cognitive, regulation, calories, studyActivity, load,
-                wellbeing, challenges, userId -> Optional.empty(), Clock.fixed(NOW, ZoneOffset.UTC), ZoneId.of("UTC"));
+                wellbeing, challenges, userId -> Optional.empty(), null, todayAdaptation,
+                Clock.fixed(NOW, ZoneOffset.UTC), ZoneId.of("UTC"));
+    }
+
+    private GetTodayAdaptationUseCase.Result adaptationToday =
+            new GetTodayAdaptationUseCase.Result(SessionAdaptation.NONE, null);
+
+    @Test
+    void todayIntensityOnlyWithTrainingToDoToday() {
+        Instant sport = Instant.parse("2026-10-14T18:00:00Z");
+        when(reads.deadlines(eq(USER), any(), any())).thenReturn(List.of());
+        when(reads.calendarBlocks(eq(USER), any(), any())).thenReturn(List.of());
+
+        assertThat(service.getDashboard(USER, null).todayIntensity()).isNull();
+
+        when(reads.calendarBlocks(eq(USER), any(), any())).thenReturn(List.of(
+                new CalendarBlock(UUID.randomUUID(), "deporte", sport, sport.plusSeconds(3600), false, null, null)));
+        adaptationToday = new GetTodayAdaptationUseCase.Result(SessionAdaptation.of(1.0, true, null), null);
+
+        assertThat(service.getDashboard(USER, null).todayIntensity()).isEqualTo(TodayIntensity.EASY);
     }
 
     @Test

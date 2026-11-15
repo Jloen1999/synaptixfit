@@ -15,4 +15,16 @@ sealed class ProgressOverviewEvent with _$ProgressOverviewEvent {
   /// La página ya abrió la cola (o dijo el error): se olvida.
   const factory ProgressOverviewEvent.reviewHandled() =
       ProgressOverviewReviewHandled;
+
+  /// «Pausar racha» en un toque (ADR 0042).
+  const factory ProgressOverviewEvent.streakPaused() =
+      ProgressOverviewStreakPaused;
+
+  /// «Reanudar» la racha (también el «Deshacer» de pausarla).
+  const factory ProgressOverviewEvent.streakResumed() =
+      ProgressOverviewStreakResumed;
+
+  /// La página ya avisó del cambio de la racha (o de su error): se olvida.
+  const factory ProgressOverviewEvent.streakHandled() =
+      ProgressOverviewStreakHandled;
 }

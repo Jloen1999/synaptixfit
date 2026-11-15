@@ -607,5 +607,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "homeTodayIntensityEasy": "Hoy toca: entreno suave",
+  "homeTodayIntensityNormal": "Hoy toca: entreno normal",
+  "homeTodayIntensityHard": "Hoy toca: entreno fuerte",
+  "homeTodayIntensityEasyHelp": "Hoy haces menos series: llegas con cansancio, tienes un examen cerca o vienes de días muy cargados.",
+  "homeTodayIntensityNormalHelp": "Entrena como lo tienes previsto.",
+  "homeTodayIntensityHardHelp": "Dormiste bien, tienes energía y no tienes agujetas: buen día para apretar.",
+  "homeTodayIntensityAbout": "Hoy toca"
 }

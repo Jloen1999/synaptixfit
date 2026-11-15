@@ -23,4 +23,16 @@ public interface StudyMaterialJpaRepository extends JpaRepository<StudyMaterialE
     @Query("select m from StudyMaterialEntity m where m.userId = :userId and m.nextReviewAt is not null "
             + "and m.nextReviewAt <= :now and m.masteryState <> 'abandonado' order by m.nextReviewAt asc")
     List<StudyMaterialEntity> findDue(UUID userId, Instant now, Pageable page);
+
+    /** Solo id y fecha de los repasos programados en [from, to): para repartirlos sin picos. */
+    @Query("select m.id as id, m.nextReviewAt as nextReviewAt from StudyMaterialEntity m where m.userId = :userId "
+            + "and m.nextReviewAt >= :from and m.nextReviewAt < :to and m.masteryState <> 'abandonado'")
+    List<ScheduledReviewRow> findScheduled(UUID userId, Instant from, Instant to);
+
+    /** Proyección de {@link #findScheduled}. */
+    interface ScheduledReviewRow {
+        UUID getId();
+
+        Instant getNextReviewAt();
+    }
 }

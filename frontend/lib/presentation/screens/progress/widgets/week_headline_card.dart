@@ -8,6 +8,7 @@ import '../../../../domain/models/progress/weekly_analytics.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
+import 'progress_labels.dart';
 
 /// Cabecera de Progreso › Resumen: el titular de la semana («4 h de estudio ·
 /// 3 entrenos»), el nivel con su barra y la racha. Lo demás va plegado debajo
@@ -22,7 +23,19 @@ class WeekHeadlineCard extends StatelessWidget {
     this.weekly,
     this.onRetry,
     this.onStart,
+    this.onPauseStreak,
+    this.onResumeStreak,
+    this.updatingStreak = false,
   });
+
+  /// «Pausar racha» en un toque (ADR 0042).
+  final VoidCallback? onPauseStreak;
+
+  /// «Reanudar» la racha en pausa.
+  final VoidCallback? onResumeStreak;
+
+  /// Pausando o reanudando: el botón espera.
+  final bool updatingStreak;
 
   final Account account;
   final Streak streak;
@@ -122,7 +135,12 @@ class WeekHeadlineCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: TokensSpacing.s),
-          _StreakLine(streak: streak),
+          _StreakLine(
+            streak: streak,
+            busy: updatingStreak,
+            onPause: onPauseStreak,
+            onResume: onResumeStreak,
+          ),
         ],
       ),
     );
@@ -130,11 +148,20 @@ class WeekHeadlineCard extends StatelessWidget {
 }
 
 /// «Racha: 5 días · récord 36 días» (sin récord si es 0 o la racha actual) y,
-/// si hoy se pierde, una línea que lo dice.
+/// si hoy se pierde, una línea que lo dice. Al lado, «Pausar racha» (si el
+/// servidor lo ofrece) o, en pausa, hasta cuándo y «Reanudar» (ADR 0042).
 class _StreakLine extends StatelessWidget {
-  const _StreakLine({required this.streak});
+  const _StreakLine({
+    required this.streak,
+    required this.busy,
+    this.onPause,
+    this.onResume,
+  });
 
   final Streak streak;
+  final bool busy;
+  final VoidCallback? onPause;
+  final VoidCallback? onResume;
 
   @override
   Widget build(BuildContext context) {
@@ -149,11 +176,21 @@ class _StreakLine extends StatelessWidget {
       children: [
         Row(
           children: [
+            // En pausa la llama se apaga y lo dice una pastilla (ADR 0042).
             ExcludeSemantics(
-              child: Icon(AppIcons.streak, color: context.palette.streak),
+              child: Icon(
+                AppIcons.streak,
+                color: streak.paused ? muted : context.palette.streak,
+              ),
             ),
             const SizedBox(width: TokensSpacing.s),
             Expanded(child: Text(text, style: context.textStyles.bodyMedium)),
+            if (streak.paused)
+              AppPill(
+                icon: AppIcons.paused,
+                label: l10n.progressStreakPausedChip,
+                color: context.colors.onSurfaceVariant,
+              ),
           ],
         ),
         if (streak.atRisk)
@@ -162,6 +199,32 @@ class _StreakLine extends StatelessWidget {
             child: Text(
               l10n.progressStreakAtRisk,
               style: context.textStyles.bodySmall?.copyWith(color: muted),
+            ),
+          ),
+        if (streak.pausedUntil case final until?)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: TokensSpacing.s,
+            children: [
+              Text(
+                l10n.progressStreakPausedUntil(ProgressFormat.pauseDate(until)),
+                style: context.textStyles.bodySmall?.copyWith(color: muted),
+              ),
+              if (onResume != null)
+                TextButton.icon(
+                  onPressed: busy ? null : onResume,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: Text(l10n.progressStreakResume),
+                ),
+            ],
+          )
+        else if (streak.canPause && onPause != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: busy ? null : onPause,
+              icon: const Icon(Icons.pause_rounded),
+              label: Text(l10n.progressStreakPause),
             ),
           ),
       ],

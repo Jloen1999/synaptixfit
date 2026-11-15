@@ -7,4 +7,9 @@ import java.util.UUID;
 public interface GetStreakUseCase {
 
     StreakStatus getStreak(UUID userId, String zone);
+
+    /** La racha de hoy sin guardarla (para lecturas como el catálogo de insignias). */
+    default StreakStatus peekStreak(UUID userId, String zone) {
+        return getStreak(userId, zone);
+    }
 }

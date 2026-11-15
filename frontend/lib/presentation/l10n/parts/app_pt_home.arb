@@ -171,5 +171,12 @@
   "homeBirthdayMessage": "Tem um ótimo dia. O teu plano espera por ti quando quiseres.",
   "homeSetupSnoozedWhere": "Ocultado durante 7 dias. Depois volta a aparecer aqui, no Início.",
   "homeCountdownExam": "Exame: {title} · {when}",
-  "homeCountdownDelivery": "Entrega: {title} · {when}"
+  "homeCountdownDelivery": "Entrega: {title} · {when}",
+  "homeTodayIntensityEasy": "Hoje: treino leve",
+  "homeTodayIntensityNormal": "Hoje: treino normal",
+  "homeTodayIntensityHard": "Hoje: treino forte",
+  "homeTodayIntensityEasyHelp": "Hoje fazes menos séries: com cansaço, um exame perto ou dias muito carregados.",
+  "homeTodayIntensityNormalHelp": "Treina como tens previsto.",
+  "homeTodayIntensityHardHelp": "Dormiste bem, tens energia e não tens dores musculares: bom dia para puxar.",
+  "homeTodayIntensityAbout": "Treino de hoje"
 }

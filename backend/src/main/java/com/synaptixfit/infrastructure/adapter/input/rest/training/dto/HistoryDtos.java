@@ -40,16 +40,19 @@ public final class HistoryDtos {
      * Sesión del historial. {@code dayName} es nulo si el día no tiene nombre (el cliente muestra el
      * día de la semana de {@code dayNumber}); rutina, día y semana son nulos en sesiones libres.
      * {@code unmarkable}: se terminó hoy y se puede desmarcar (si no, se corrige o se elimina).
+     * {@code coverImageUrl}: foto de fondo de su tarjeta (nula: color de reserva).
      */
     public record SessionHistoryResponse(SessionResponse session, String routineName, String dayName,
                                          Integer dayNumber, Integer weekNumber,
-                                         List<PersonalRecordResponse> records, boolean unmarkable) {
+                                         List<PersonalRecordResponse> records, boolean unmarkable,
+                                         String coverImageUrl) {
         public static SessionHistoryResponse from(SessionHistoryEntry e) {
             SessionLabel label = e.label();
             return new SessionHistoryResponse(SessionResponse.from(e.session()),
                     label == null ? null : label.routineName(), label == null ? null : label.dayName(),
                     label == null ? null : label.dayNumber(), label == null ? null : label.weekNumber(),
-                    e.records().stream().map(PersonalRecordResponse::from).toList(), e.unmarkable());
+                    e.records().stream().map(PersonalRecordResponse::from).toList(), e.unmarkable(),
+                    label == null ? null : label.coverImageUrl());
         }
     }
 }

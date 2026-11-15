@@ -23,6 +23,12 @@ import 'app_pill.dart';
 /// oscuro en los dos temas, para que no se vea en negativo. La foto y el velo
 /// se pintan con `Ink`: la onda del toque se ve por encima. La foto es
 /// decorativa: el lector no la anuncia.
+///
+/// [AppCoverLayout.bottom] (sesiones, ADR 0042): la foto a dos tonos ocupa la
+/// cabecera entera, con una franja arriba a la vista ([TokensSize.coverBanner])
+/// y el texto abajo a la izquierda sobre un degradado vertical de tres paradas
+/// hacia la superficie. Como la foto ya está en el rango seguro, el texto
+/// cumple AA en cualquier punto del degradado (`contrast_test`, peor zona).
 class AppCoverCard extends StatelessWidget {
   const AppCoverCard({
     super.key,
@@ -31,7 +37,11 @@ class AppCoverCard extends StatelessWidget {
     this.onTap,
     this.padding = const EdgeInsets.all(TokensSpacing.l),
     this.footer,
+    this.layout = AppCoverLayout.side,
   });
+
+  /// Dónde va la foto respecto al texto.
+  final AppCoverLayout layout;
 
   /// Cabecera: lo que se lee de un vistazo (junto a la foto).
   final Widget child;
@@ -86,8 +96,105 @@ class AppCoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = imageUrl;
+    if (layout == AppCoverLayout.bottom) return _bottomText(context, url);
     if (url != null && !context.largeText) return _sidePhoto(context, url);
     return _duotoneBackground(context, url);
+  }
+
+  /// Foto a dos tonos (o, sin foto, un degradado del mismo tono): el fondo
+  /// seguro de las dos variantes con texto encima.
+  Widget _safePhoto(BuildContext context, String? url, Alignment alignment) {
+    final surface = context.colors.surface;
+    final tinted = tint(context);
+    final darkFirst = tinted.computeLuminance() < surface.computeLuminance();
+    return url == null
+        // Sin foto (color de reserva), un degradado del mismo tono: nada con
+        // forma que compita con el texto que va encima.
+        ? Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
+                colors: [surface, tinted],
+              ),
+            ),
+          )
+        : Ink(
+            decoration: BoxDecoration(
+              // Debajo de la foto, el mismo color de reserva: mientras carga o
+              // si falla no queda una franja vacía.
+              gradient: LinearGradient(
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
+                colors: [surface, tinted],
+              ),
+              image: DecorationImage(
+                image: CachedNetworkImageProvider(url),
+                fit: BoxFit.cover,
+                alignment: alignment,
+                colorFilter: darkFirst
+                    ? _duotone(tinted, surface)
+                    : _duotone(surface, tinted),
+                // Sin foto (error de red) queda la superficie.
+                onError: (_, _) {},
+              ),
+            ),
+          );
+  }
+
+  /// Foto arriba a la vista y texto abajo a la izquierda sobre el degradado.
+  Widget _bottomText(BuildContext context, String? url) {
+    final surface = context.colors.surface;
+    final header = Stack(
+      children: [
+        Positioned.fill(child: _safePhoto(context, url, Alignment.center)),
+        Positioned.fill(
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  surface.withValues(alpha: 0),
+                  surface.withValues(alpha: TokensOpacity.coverScrimMid),
+                  surface.withValues(alpha: TokensOpacity.coverScrimMax),
+                ],
+                stops: const [0, TokensLayout.coverBannerFadeMid, 1],
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: padding.add(
+            const EdgeInsets.only(top: TokensSize.coverBanner),
+          ),
+          child: Align(
+            alignment: AlignmentDirectional.bottomStart,
+            child: child,
+          ),
+        ),
+      ],
+    );
+    final footer = this.footer;
+    return AppCard(
+      color: surface,
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: footer == null
+          ? header
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                header,
+                Padding(
+                  padding: padding.resolve(Directionality.of(context)).copyWith(
+                    top: 0,
+                  ),
+                  child: footer,
+                ),
+              ],
+            ),
+    );
   }
 
   /// Foto visible en el lado final y texto sobre la superficie lisa.
@@ -166,8 +273,6 @@ class AppCoverCard extends StatelessWidget {
 
   Widget _duotoneBackground(BuildContext context, String? url) {
     final surface = context.colors.surface;
-    final tinted = tint(context);
-    final darkFirst = tinted.computeLuminance() < surface.computeLuminance();
     return AppCard(
       color: surface,
       padding: EdgeInsets.zero,
@@ -175,34 +280,13 @@ class AppCoverCard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: url == null
-                // Sin foto, un degradado del mismo tono: nada con forma que
-                // compita con el texto que va encima.
-                ? Ink(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: AlignmentDirectional.topStart,
-                        end: AlignmentDirectional.bottomEnd,
-                        colors: [surface, tinted],
-                      ),
-                    ),
-                  )
-                : Ink(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: CachedNetworkImageProvider(url),
-                        fit: BoxFit.cover,
-                        alignment: AlignmentDirectional.centerEnd.resolve(
-                          Directionality.of(context),
-                        ),
-                        colorFilter: darkFirst
-                            ? _duotone(tinted, surface)
-                            : _duotone(surface, tinted),
-                        // Sin foto (error de red) queda la superficie.
-                        onError: (_, _) {},
-                      ),
-                    ),
-                  ),
+            child: _safePhoto(
+              context,
+              url,
+              AlignmentDirectional.centerEnd.resolve(
+                Directionality.of(context),
+              ),
+            ),
           ),
           Positioned.fill(
             child: Ink(
@@ -231,6 +315,15 @@ class AppCoverCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Dónde va la foto de un [AppCoverCard].
+enum AppCoverLayout {
+  /// Foto en el lado final de la cabecera y texto en la zona lisa (rutinas).
+  side,
+
+  /// Foto arriba y texto abajo a la izquierda sobre un degradado (sesiones).
+  bottom,
 }
 
 /// [AppPill] sobre una base opaca de superficie, para usarla encima de la foto

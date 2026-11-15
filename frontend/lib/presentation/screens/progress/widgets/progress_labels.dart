@@ -26,6 +26,9 @@ abstract final class ProgressFormat {
 
   static String date(DateTime value) => DateFormat.yMMMd().format(value);
 
+  /// Día de una pausa de racha: «jue, 21 nov» (vocabulario §1).
+  static String pauseDate(DateTime value) => DateFormat.MMMEd().format(value);
+
   /// Etiqueta corta de semana para los ejes (`12 oct`).
   static String week(DateTime value) => DateFormat('d MMM').format(value);
 

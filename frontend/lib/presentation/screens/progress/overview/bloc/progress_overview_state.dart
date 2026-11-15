@@ -27,6 +27,16 @@ sealed class ProgressOverviewState with _$ProgressOverviewState {
 
     /// No se pudo leer la cola de repaso.
     AppError? reviewError,
+
+    /// Pausando o reanudando la racha.
+    @Default(false) bool updatingStreak,
+
+    /// Racha recién pausada: la página lo dice con «Deshacer». Se consume
+    /// con `streakHandled`.
+    Streak? streakJustPaused,
+
+    /// No se pudo pausar o reanudar la racha.
+    AppError? streakError,
   }) = ProgressOverviewLoaded;
 
   const factory ProgressOverviewState.failure(AppError error) =

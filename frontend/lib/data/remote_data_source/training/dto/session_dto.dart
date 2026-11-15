@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'routine_dto.dart' show blankToNull;
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/training/load_suggestion.dart';
 import '../../../../domain/models/training/session.dart';
@@ -208,6 +209,7 @@ abstract class OpenSessionDto with _$OpenSessionDto {
     String? dayName,
     int? dayNumber,
     int? weekNumber,
+    String? coverImageUrl,
   }) = _OpenSessionDto;
 
   const OpenSessionDto._();
@@ -222,6 +224,7 @@ abstract class OpenSessionDto with _$OpenSessionDto {
     dayName: (dayName?.trim().isEmpty ?? true) ? null : dayName,
     dayNumber: dayNumber,
     weekNumber: weekNumber,
+    coverImageUrl: blankToNull(coverImageUrl),
   );
 }
 

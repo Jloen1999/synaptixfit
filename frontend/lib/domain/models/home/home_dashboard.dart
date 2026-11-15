@@ -7,6 +7,7 @@ import '../../enums/home_banner_type.dart';
 import '../../enums/home_event_kind.dart';
 import '../../enums/home_event_type.dart';
 import '../../enums/planner_enums.dart';
+import '../../enums/today_intensity.dart';
 import '../../enums/training_enums.dart';
 
 part 'home_dashboard.freezed.dart';
@@ -30,6 +31,10 @@ abstract class HomeDashboard with _$HomeDashboard {
     /// Cuenta atrás de «Tu día»: el próximo examen o, si no hay, la próxima
     /// entrega pendiente. La elige el servidor (ADR 0039).
     HomeNextDeadline? nextDeadline,
+
+    /// «Hoy toca: suave / normal / fuerte»; nulo si hoy no hay entreno por
+    /// hacer (lo decide el servidor, ADR 0042).
+    TodayIntensity? todayIntensity,
   }) = _HomeDashboard;
 }
 

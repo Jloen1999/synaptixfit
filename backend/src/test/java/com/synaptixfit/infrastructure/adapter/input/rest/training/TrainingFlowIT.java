@@ -191,6 +191,12 @@ class TrainingFlowIT {
         assertThat((String) JsonPath.read(named, "$.items[0].session.id")).isEqualTo(sessionId);
         assertThat((Integer) JsonPath.read(named, "$.items[0].dayNumber")).isEqualTo(1);
         assertThat((List<?>) JsonPath.read(named, "$.items[0].records")).isEmpty();
+        // Foto de su tarjeta (ADR 0042): la del primer ejercicio del día (tras reordenarlo arriba, el segundo de
+        // la lista inicial), con la regla de ExerciseRef.stillImageUrl.
+        String expectedCover = jdbc.sql("SELECT COALESCE(NULLIF(url_preview, ''), url_gif) FROM ejercicios "
+                + "WHERE id = CAST(:id AS uuid)").param("id", ids.get(1)).query(String.class).optional()
+                .orElse(null);
+        assertThat((String) JsonPath.read(named, "$.items[0].coverImageUrl")).isEqualTo(expectedCover);
         String records = body(get("/api/v1/training/records"), token, 200);
         assertThat((List<?>) JsonPath.read(records, "$")).hasSize(1);
         assertThat((Double) JsonPath.read(records, "$[0].weightKg")).isEqualTo(42.5);

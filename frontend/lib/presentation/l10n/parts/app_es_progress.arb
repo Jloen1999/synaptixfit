@@ -782,5 +782,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "progressStreakPause": "Pausar racha",
+  "progressStreakResume": "Reanudar",
+  "progressStreakPausedUntil": "Racha en pausa hasta el {date}",
+  "@progressStreakPausedUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "progressStreakPausedChip": "En pausa",
+  "progressErrorStreakPauseLimit": "Ya has usado tus días de pausa. Podrás volver a pausar más adelante."
 }

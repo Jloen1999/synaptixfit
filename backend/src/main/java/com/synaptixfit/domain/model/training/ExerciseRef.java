@@ -37,6 +37,11 @@ public record ExerciseRef(UUID id, String name, String gifUrl, String previewUrl
 
     /** Imagen fija del ejercicio (la vista previa; si no hay, la animación). */
     public String stillImageUrl() {
+        return stillImage(previewUrl, gifUrl);
+    }
+
+    /** Regla única de la imagen fija: la vista previa y, si no hay, la animación. */
+    public static String stillImage(String previewUrl, String gifUrl) {
         return previewUrl != null && !previewUrl.isBlank() ? previewUrl : gifUrl;
     }
 

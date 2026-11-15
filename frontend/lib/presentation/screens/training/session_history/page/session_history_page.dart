@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../widgets/personal_record_row.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/session.dart';
@@ -13,6 +12,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_routes.dart';
 import '../../widgets/open_session_card.dart';
+import '../../widgets/personal_record_row.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
@@ -299,7 +299,13 @@ class _SessionCard extends StatelessWidget {
                 SessionType.routine => l10n.trainingSessionRoutine,
                 SessionType.weekly => l10n.trainingSessionWeekly,
               });
-    final subtitle = [?entry.routineName, date].join(' · ');
+    // Tres datos como mucho (ADR 0042): cuándo, cuánto y qué esfuerzo.
+    final figures = [
+      date,
+      l10n.trainingMinutes(s.durationMinutes),
+      if (s.rpe != null) l10n.trainingRpeValue(s.rpe!),
+    ];
+    final subtitle = figures.join(' · ');
     // Una sesión terminada se abre en su detalle de solo lectura (no en la
     // sesión en vivo); lo que se pida allí lo hace este historial al volver.
     Future<void> openDetail() async {
@@ -325,74 +331,67 @@ class _SessionCard extends StatelessWidget {
       }
     }
 
-    return AppCard(
+    // Foto del día entrenado de fondo y el texto abajo (ADR 0042): toda la
+    // tarjeta abre el detalle; corregir, reabrir y eliminar están allí.
+    return AppCoverCard(
+      layout: AppCoverLayout.bottom,
+      imageUrl: entry.coverImageUrl,
+      padding: const EdgeInsets.all(TokensSpacing.m),
       onTap: openDetail,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: context.textStyles.titleSmall),
-                    Text(
-                      subtitle,
-                      style: context.textStyles.labelMedium?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (busy)
-                SizedBox.square(
-                  dimension: TokensLayout.minTouchTarget,
-                  child: Center(
-                    child: SizedBox.square(
-                      dimension: TokensSize.iconM,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        semanticsLabel: l10n.commonLoading,
-                      ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (entry.records.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
+                    child: AppCoverPill(
+                      icon: Icons.emoji_events_rounded,
+                      color: context.palette.accent,
+                      label: l10n.trainingRecordsPill(entry.records.length),
                     ),
                   ),
-                )
-              else
-                // Corregir, reabrir y eliminar están en el detalle (sin
-                // menú de tres puntos dentro de una tarjeta pulsable).
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: context.colors.onSurfaceVariant,
+                Text(
+                  title,
+                  style: context.textStyles.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-            ],
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          Wrap(
-            spacing: TokensSpacing.xs,
-            runSpacing: TokensSpacing.xs,
-            children: [
-              AppPill(
-                icon: Icons.timer_outlined,
-                label: l10n.trainingMinutes(s.durationMinutes),
-              ),
-              if (s.rpe != null)
-                AppPill(
-                  icon: AppIcons.effort,
-                  label: l10n.trainingRpeValue(s.rpe!),
+                // El lector lo oye separado por comas, no con «punto medio».
+                Semantics(
+                  label: figures.join(', '),
+                  excludeSemantics: true,
+                  child: Text(
+                    subtitle,
+                    style: context.textStyles.labelMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
                 ),
-            ],
-          ),
-          for (final r in entry.records) ...[
-            const SizedBox(height: TokensSpacing.xs),
-            PersonalRecordRow(
-              record: r,
-              style: context.textStyles.labelMedium?.copyWith(
-                color: context.palette.accent,
-              ),
+              ],
             ),
-          ],
+          ),
+          if (busy)
+            SizedBox.square(
+              dimension: TokensLayout.minTouchTarget,
+              child: Center(
+                child: SizedBox.square(
+                  dimension: TokensSize.iconM,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    semanticsLabel: l10n.commonLoading,
+                  ),
+                ),
+              ),
+            )
+          else
+            Icon(
+              Icons.chevron_right_rounded,
+              color: context.colors.onSurfaceVariant,
+            ),
         ],
       ),
     );

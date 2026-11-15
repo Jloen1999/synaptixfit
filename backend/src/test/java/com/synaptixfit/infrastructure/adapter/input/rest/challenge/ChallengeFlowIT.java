@@ -195,6 +195,30 @@ class ChallengeFlowIT {
         mvc.perform(auth(get("/api/v1/streak"), token).param("zone", "Nowhere/City"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("STREAK_INVALID_ZONE"));
+
+        // Pausar racha (ADR 0042). Sin racha no hace nada; con un Pomodoro de ayer hay racha que proteger.
+        mvc.perform(auth(post("/api/v1/streak/pause"), token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pausedUntil").doesNotExist());
+        String meJson = mvc.perform(auth(get("/api/v1/me"), token)).andReturn().getResponse().getContentAsString();
+        jdbc.sql("INSERT INTO sesiones_focus (usuario_id, duracion_minutos, tipo_fase, completada, fecha) "
+                        + "VALUES (:u, 25, 'focus', true, :d)")
+                .param("u", UUID.fromString(JsonPath.read(meJson, "$.id")))
+                .param("d", java.time.LocalDate.now(java.time.ZoneId.of("Europe/Madrid")).minusDays(1))
+                .update();
+        // Desde hoy, idempotente, y «Reanudar» la quita (empezó hoy).
+        String paused = mvc.perform(auth(post("/api/v1/streak/pause"), token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pausedUntil").isNotEmpty())
+                .andExpect(jsonPath("$.pauseReason").doesNotExist())
+                .andExpect(jsonPath("$.canPause").value(false))
+                .andReturn().getResponse().getContentAsString();
+        mvc.perform(auth(post("/api/v1/streak/pause"), token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pausedUntil").value((String) JsonPath.read(paused, "$.pausedUntil")));
+        mvc.perform(auth(delete("/api/v1/streak/pause"), token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pausedUntil").doesNotExist());
     }
 
     @Test

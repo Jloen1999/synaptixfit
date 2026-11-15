@@ -137,6 +137,57 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  group('Pausar racha (ADR 0042)', () {
+    testWidgets('«Pausar racha» pausa en un toque, sin preguntar', (
+      tester,
+    ) async {
+      var paused = false;
+      await pump(
+        tester,
+        WeekHeadlineCard(
+          account: testAccount,
+          streak: testStreak.copyWith(canPause: true, pauseDaysLeft: 7),
+          focus: UsageFocus.both,
+          studyWeek: StudyWeek(weekStart: DateTime(2026, 10, 5), studyHours: 4),
+          weekly: testWeekly,
+          onPauseStreak: () => paused = true,
+          onResumeStreak: () {},
+        ),
+      );
+      await tester.tap(find.text('Pausar racha'));
+      await tester.pumpAndSettle();
+      expect(paused, isTrue);
+      // Sin hojas ni diálogos que pregunten.
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.byType(Dialog), findsNothing);
+    });
+
+    testWidgets('en pausa dice hasta cuándo y ofrece «Reanudar»', (
+      tester,
+    ) async {
+      var resumed = false;
+      await pump(
+        tester,
+        WeekHeadlineCard(
+          account: testAccount,
+          streak: testStreak.copyWith(
+            atRisk: false,
+            pausedUntil: DateTime(2026, 11, 21),
+          ),
+          focus: UsageFocus.both,
+          studyWeek: StudyWeek(weekStart: DateTime(2026, 10, 5), studyHours: 4),
+          weekly: testWeekly,
+          onPauseStreak: () {},
+          onResumeStreak: () => resumed = true,
+        ),
+      );
+      expect(find.textContaining('Racha en pausa hasta'), findsOneWidget);
+      expect(find.text('Pausar racha'), findsNothing);
+      await tester.tap(find.text('Reanudar'));
+      expect(resumed, isTrue);
+    });
+  });
+
   group('Titular de la semana', () {
     testWidgets('dice las horas de estudio y los entrenos de esta semana', (
       tester,

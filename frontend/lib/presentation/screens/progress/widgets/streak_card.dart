@@ -58,6 +58,12 @@ class StreakCard extends StatelessWidget {
                         color: context.colors.onSurfaceVariant,
                       ),
                     ),
+                    if (streak.paused)
+                      _StatusChip(
+                        icon: AppIcons.paused,
+                        label: l10n.progressStreakPausedChip,
+                        color: context.colors.primary,
+                      ),
                     if (streak.activeToday)
                       _StatusChip(
                         icon: Icons.check_circle_rounded,

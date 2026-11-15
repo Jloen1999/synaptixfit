@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+
 part 'streak.freezed.dart';
 
 /// Racha diaria de actividad del usuario.
@@ -27,7 +28,21 @@ abstract class Streak with _$Streak {
 
     /// Días de la racha actual salvados con un comodín.
     @Default(<DateTime>[]) List<DateTime> frozenDays,
+
+    /// Último día de la pausa en curso (ADR 0042); nulo si no está en pausa.
+    DateTime? pausedUntil,
+
+    /// Días que duraría una pausa que empiece hoy (lo decide el servidor).
+    @Default(0) int pauseDaysLeft,
+
+    /// Se ofrece «Pausar racha» (lo decide el servidor).
+    @Default(false) bool canPause,
   }) = _Streak;
+
+  const Streak._();
+
+  /// La racha está en pausa hoy.
+  bool get paused => pausedUntil != null;
 
   /// Hitos de racha que la app celebra.
   static const milestones = [7, 30, 100, 365];

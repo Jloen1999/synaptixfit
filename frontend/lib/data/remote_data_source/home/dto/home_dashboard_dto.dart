@@ -1,3 +1,4 @@
+import '../../../../domain/enums/today_intensity.dart';
 import '../../../../domain/enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -32,6 +33,7 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     @Default(<HomeTodayEventDto>[]) List<HomeTodayEventDto> todayEvents,
     HomeBannerDto? banner,
     HomeNextDeadlineDto? nextDeadline,
+    String? todayIntensity,
   }) = _HomeDashboardDto;
 
   const HomeDashboardDto._();
@@ -53,6 +55,7 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     todayEvents: todayEvents.map((e) => e.toDomain()).toList(),
     banner: (banner ?? const HomeBannerDto()).toDomain(),
     nextDeadline: nextDeadline?.toDomain(),
+    todayIntensity: TodayIntensity.fromApi(todayIntensity),
   );
 }
 

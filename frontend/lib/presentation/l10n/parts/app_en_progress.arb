@@ -203,5 +203,10 @@
   "progressHeadlineStreakOnly": "{days, plural, =0{No streak} =1{Streak: 1 day} other{Streak: {days} days}}",
   "progressShowMore": "More stats",
   "progressReviewsAllDone": "You have no reviews left to do.",
-  "progressLoadPoints": "{value} points"
+  "progressLoadPoints": "{value} points",
+  "progressStreakPause": "Pause streak",
+  "progressStreakResume": "Resume",
+  "progressStreakPausedUntil": "Streak paused until {date}",
+  "progressStreakPausedChip": "Paused",
+  "progressErrorStreakPauseLimit": "You've used your pause days. You'll be able to pause again later."
 }

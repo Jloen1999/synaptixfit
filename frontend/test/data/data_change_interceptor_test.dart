@@ -89,6 +89,17 @@ void main() {
       );
     });
 
+    test('pausar o reanudar la racha refresca Progreso y los avisos', () {
+      expect(
+        DataChangeInterceptor.topicsFor('POST', '/api/v1/streak/pause'),
+        {DataTopic.gamification, DataTopic.social},
+      );
+      expect(
+        DataChangeInterceptor.topicsFor('DELETE', '/api/v1/streak/pause'),
+        {DataTopic.gamification, DataTopic.social},
+      );
+    });
+
     test('aceptar la política no refresca ninguna pantalla', () {
       expect(
         DataChangeInterceptor.topicsFor('PUT', '/api/v1/me/legal-acceptance'),

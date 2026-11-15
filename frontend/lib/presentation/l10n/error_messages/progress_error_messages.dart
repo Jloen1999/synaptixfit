@@ -4,6 +4,7 @@ import '../gen_l10n/app_localizations.dart';
 String? progressErrorMessage(AppLocalizations l10n, String code) =>
     switch (code) {
       'BADGE_NOT_FOUND' => l10n.progressErrorBadgeNotFound,
+      'STREAK_PAUSE_LIMIT_REACHED' => l10n.progressErrorStreakPauseLimit,
       'STREAK_INVALID_ZONE' ||
       'INSIGHTS_INVALID_TIME_ZONE' => l10n.progressErrorInvalidZone,
       'ANALYTICS_INVALID_PERIOD' => l10n.progressErrorInvalidPeriod,

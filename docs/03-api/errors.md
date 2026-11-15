@@ -167,6 +167,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `CHALLENGE_ALREADY_COMPLETED` | 409 | Progreso sobre un reto completado | Este reto ya está completado. | Activo |
 | `BADGE_NOT_FOUND` | 404 | Insignia inexistente o no obtenida | No encontramos esta insignia. | Activo |
 | `STREAK_INVALID_ZONE` | 400 | `zone` no es IANA | Zona horaria no válida. | Activo |
+| `STREAK_PAUSE_LIMIT_REACHED` | 422 | «Pausar racha» sin días disponibles: ya se pausaron 14 días en los últimos 90 (ADR 0042) | Ya has usado tus días de pausa. Podrás volver a pausar más adelante. | Activo |
 
 ## Planificador
 

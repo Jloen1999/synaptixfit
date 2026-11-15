@@ -74,6 +74,23 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 - **Tras un fallo todas las opciones dicen «En 1 día»:** un fallo (nota < 3) reinicia las repeticiones a 0, y en SM-2 tanto fallar como el primer acierto dan 1 día (después 6 días y luego intervalo × facilidad). No es un error; la app lo explica cuando todas las opciones tienen el mismo intervalo.
 - **Nota propuesta con la práctica (`PracticeScore`):** se valora el repaso después de repasar (practicar, abrir el material o recordarlo sin mirar). Si se practicó con preguntas del material en las últimas 6 h y después del último repaso, con al menos 3 preguntas respondidas (la última respuesta de cada una), se propone: aciertos ≥ 90 % → 5, ≥ 75 % → 4, ≥ 60 % → 3, ≥ 40 % → 2, ≥ 20 % → 1, menos → 0. El 60 % para el 3 sigue el umbral de acierto de SM-2 (nota ≥ 3). Es solo una propuesta: quien repasa elige.
 
+### Repasos sin picos (ADR 0042, `ReviewLoadBalancer`)
+
+Al fijar la fecha del siguiente repaso, SM-2 propone `hoy + intervalo`. Antes de guardarla se cuentan los repasos que la persona ya tiene programados cada día cercano (sin contar el propio material) y se elige el día con **menos** repasos dentro de este margen:
+
+| Intervalo SM-2 | Puede adelantarse | Puede retrasarse |
+|---|---|---|
+| 1 día (fallo o primer acierto) | 0 | 0 |
+| 2 días | 0 (nunca se adelanta un intervalo ≤ 2) | 1 día |
+| 3 a 13 días | 1 día | 1 día |
+| 14 días o más | 2 días | 2 días |
+
+- Solo se mueve si otro día tiene **estrictamente menos** repasos que el propuesto. Con empate gana el más cercano y, a la misma distancia, el anterior (repasar antes no hace olvidar).
+- Se conserva la hora; solo cambia el día (en la zona por defecto del servidor).
+- El **intervalo SM-2 guardado no cambia** (el siguiente cálculo parte de él); solo la fecha.
+- La vista previa del repaso enseña ya la fecha repartida (la misma que dará el repaso de verdad).
+- Origen: el «load balancer» de Anki (2024) y el *fuzz* de SuperMemo; ±2 días en intervalos de 14 o más es como mucho un 14 % del intervalo, por debajo del margen con el que SM-2 ya redondea (`ceil(intervalo × EF)`).
+
 ## Progreso justo (ADR 0019)
 
 | Qué | Regla |
@@ -175,6 +192,15 @@ La usan: el gasto del estudio (fórmula 1, `PlannerDirectoryJdbcAdapter.findMeta
 - **Peso máximo estimado por día** (`ExerciseProgress`): la mejor serie de trabajo completada con peso y de 1 a 12 repeticiones, con `ProgressionCalculator.oneRepMax` (la misma fórmula no lineal que la progresión de cargas). Con más repeticiones la estimación no es fiable.
 - **Tarea vinculada a un día de rutina:** se completa cuando se completa la sesión de ese día y se reabre si se desmarca. No tiene fecha límite, así que no se comprueba el periodo del reto.
 
+## «Hoy toca: suave / normal / fuerte» (ADR 0042, `TodayIntensity`)
+- **Suave:** la adaptación de hoy recorta series por cualquier motivo (examen cerca, sobrecarga ACWR > 1,5, fatiga
+  alta en el registro o el ciclo). Manda sobre lo demás.
+- **Fuerte:** ningún motivo para recortar y el registro de hoy dice que estás bien: sueño y energía 4-5, agujetas
+  1-2, sin zonas de dolor y con ganas de entrenar (`DailyCheckIn.feelsStrong`). Sin registro no se propone fuerte.
+- **Normal:** lo demás.
+- Solo se enseña con entreno por hacer hoy (`Dashboard.trainsToday`): el próximo día de la rutina toca hoy o va con
+  retraso, o hay un evento de deporte de hoy sin marcar.
+
 ## Bienestar: ciclo, registro rápido y ritmo (ADR 0033)
 
 - **Estimación del ciclo (`CycleOverview`):** un ciclo empieza el primer día con regla tras un día sin ella. Duración = media de los últimos 6 ciclos completos entre 21 y 45 días, acotada a 21-40 (28 si no hay). Regla = media de los periodos apuntados, acotada a 2-8 (5 si no hay). Con la ovulación estimada 14 días antes de la próxima regla (`duración − 14`): días 1…regla → «Con la regla»; hasta 3 días antes de la ovulación → «Después de la regla»; ±2 días → «Mitad del ciclo»; después → «Días antes de la regla». Próxima regla = último inicio + duración. Sin inicio en los últimos 60 días no se estima. Es orientativo, no médico: la app lo dice.
@@ -221,6 +247,18 @@ dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se r
   vuelve a 0. Hoy, aún sin actividad, ni corta ni gasta.
 - Se recalcula entero desde el historial de días activos (`StreakFreezes.run`); no se guarda.
 
+## Pausar racha (ADR 0042, `StreakPause`)
+- «Pausar racha» (un toque, sin motivo: solo se guardan las fechas) empieza hoy. Un día en pausa **sin actividad** ni suma, ni
+  corta, ni gasta un día libre, ni cuenta para ganar uno; **con actividad** cuenta como siempre. En pausa la racha
+  no está «en peligro».
+- Topes: **7 días seguidos** como mucho y **14 días en los últimos 90** (ventana móvil, «un trimestre»). Una pausa
+  dura `min(7, 14 − días ya pausados en los últimos 90)`; si sale 0 → `STREAK_PAUSE_LIMIT_REACHED`.
+- «Reanudar» hoy corta la pausa en ayer (si empezó hoy, se borra). Solo se ofrece pausar con racha (> 0 días) y
+  sin otra pausa en curso (`StreakStatus.canPause`); el servidor hace lo mismo: sin racha, pausar no hace nada (no
+  gasta días) y con una pausa en curso devuelve la que hay. «Hoy» es el del móvil (`zone`).
+- Por qué esos topes: cubren dos semanas de exámenes o una gripe más un viaje, sin que la racha deje de medir
+  constancia (la misma idea que los días libres, pero elegida por la persona).
+
 ## Modo exámenes automático (ADR 0023)
 - Con el modo **Normal** y un **examen pendiente en los próximos 7 días**
   (`NotificationPreferences.EXAM_SEASON_DAYS`), las notificaciones y los avisos del móvil se filtran como en el
@@ -246,6 +284,7 @@ dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se r
 - Sinnott, R. W. (1984). Virtues of the Haversine. *Sky and Telescope*, 68(2), 159.
 - Moritz, H. (2000). Geodetic Reference System 1980. *Journal of Geodesy*, 74, 128–133 (radio medio de la Tierra).
 - Herrmann, S. D. et al. (2024). 2024 Adult Compendium of Physical Activities. *Journal of Sport and Health Science*, 13(1), 6–12.
+- Wozniak, P. A. (1990). *Optimization of learning* (algoritmo SM-2) y Anki (2024), *Load balancer* del planificador de repasos (versión 24.11): repartir los repasos ±unos días para evitar picos.
 
 ## Objetivos por serie (`ExerciseParameters`, ADR 0027)
 

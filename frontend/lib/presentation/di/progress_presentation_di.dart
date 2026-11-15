@@ -13,6 +13,8 @@ void registerProgressPresentation(GetIt getIt) {
         getToday: getIt(),
         getDueMaterials: getIt(),
         watchChanges: getIt(),
+        pauseStreak: getIt(),
+        resumeStreak: getIt(),
       ),
     )
     ..registerFactory(

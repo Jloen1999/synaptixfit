@@ -181,7 +181,7 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
                 ? toClasses(userId, blocksInWindow.get()) : List.of();
         return WellbeingReminders.plan(new WellbeingReminders.Input(prefs, focus, options, now, zone, end,
                 streak == null ? 0 : streak.currentDays(), streak != null && streak.activeToday(), checkInDone,
-                classes));
+                classes, streak != null && streak.pause() != null));
     }
 
     /** Clases de la ventana con su asignatura (o temas) y su aula. */

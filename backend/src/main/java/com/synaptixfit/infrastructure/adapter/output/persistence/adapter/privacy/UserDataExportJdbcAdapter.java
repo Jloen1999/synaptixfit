@@ -127,6 +127,8 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
         sections.put("challengeTasks", rows("hitos_de_reto t",
                 "t.reto_id IN (SELECT id FROM retos WHERE usuario_id = :id)", "t.reto_id, t.indice_orden"));
         sections.put("challengeProgress", rows("progreso_de_reto t", "t.usuario_id = :id", "t.registrado_en"));
+        // Pausas de racha (ADR 0042): solo fechas.
+        sections.put("streakPauses", rows("pausas_racha t", "t.usuario_id = :id", "t.desde"));
         sections.put("badges", rows(
                 "to_jsonb(t) || jsonb_build_object('insignia_nombre', i.nombre, 'insignia_descripcion', i.descripcion)",
                 "usuario_insignias t JOIN insignias i ON i.id = t.insignia_id", "t.usuario_id = :id", "t.obtenida_en"));

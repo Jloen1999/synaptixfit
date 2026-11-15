@@ -19,6 +19,9 @@ abstract class StreakDto with _$StreakDto {
     @Default(<int>[]) List<int> reachedMilestones,
     @Default(0) int freezesAvailable,
     @Default(<String>[]) List<String> frozenDays,
+    String? pausedUntil,
+    @Default(0) int pauseDaysLeft,
+    @Default(false) bool canPause,
   }) = _StreakDto;
 
   const StreakDto._();
@@ -40,5 +43,8 @@ abstract class StreakDto with _$StreakDto {
     reachedMilestones: [...reachedMilestones]..sort(),
     freezesAvailable: freezesAvailable,
     frozenDays: [for (final d in frozenDays) DateTime.parse(d)],
+    pausedUntil: pausedUntil == null ? null : DateTime.parse(pausedUntil!),
+    pauseDaysLeft: pauseDaysLeft < 0 ? 0 : pauseDaysLeft,
+    canPause: canPause,
   );
 }

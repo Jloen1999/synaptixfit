@@ -34,6 +34,8 @@ Regla general: palabras cotidianas, verbos en los botones, una acción útil sig
 | Resumen de la mañana (`MORNING_SUMMARY`) | «Hoy: 2 estudios, 1 entreno, entrega de Física y 1 tarea de reto» | «digest», «resumen diario» | Solo si hay algo; incluye el recordatorio del registro diario de ese día (ADR 0035) |
 | Avisos de dónde queda algo | «Asignatura archivada. La tienes en Académico › Archivadas» + «Ver»; «Usuario bloqueado. Para desbloquearlo: Comunidad › Amigos › Bloqueados» + «Ver»; «Reto añadido. Lo tienes en Progreso › Retos» | «se puede recuperar», «queda guardado» sin decir dónde | La ruta usa los nombres que se ven (pestaña › apartado). Si el aviso abre ya la pantalla, basta con el texto; si no, lleva «Ver» (`showActionSnack`) |
 | Copiar algo de otra persona | «Añadir a mis rutinas», «Añadir a mis retos»; origen: «Copiada de Ana» | «Clonar», «clonada» | Icono `AppIcons.copyToMine` en los dos |
+| Pausa de la racha (ADR 0042) | «Pausar racha», «Racha en pausa hasta el jue 21 nov», «En pausa», «Reanudar» | «congelar», «comodín», «suspender» | Junto a la racha de Progreso; un toque, sin preguntar el motivo («Deshacer» en el aviso) |
+| Cómo toca entrenar hoy (ADR 0042) | «Hoy toca: entreno suave / normal / fuerte», con el porqué en el «?» | «ACWR», «carga», «intensidad» con cifras | Una línea de «Tu día», solo si hoy hay entreno por hacer |
 | Antelación de los avisos | «Avisarme antes de…»: «15 min antes», «1 y 3 días antes», «La tarde anterior», «La mañana del día» | «lead time», «offset» | Opciones cerradas en Perfil › Ajustes › Preferencias de notificaciones › «Más avisos» (grupo «Avisos y permisos») |
 
 ## 2. Dueños de cada pieza compartida

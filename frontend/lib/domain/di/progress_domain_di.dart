@@ -7,6 +7,8 @@ import '../use_cases/progress/get_load_correlation_use_case.dart';
 import '../use_cases/progress/get_progress_overview_use_case.dart';
 import '../use_cases/progress/get_unnotified_badges_use_case.dart';
 import '../use_cases/progress/mark_badges_notified_use_case.dart';
+import '../use_cases/progress/pause_streak_use_case.dart';
+import '../use_cases/progress/resume_streak_use_case.dart';
 import '../use_cases/progress/share_achievement_image_use_case.dart';
 import '../use_cases/progress/share_badge_use_case.dart';
 import '../use_cases/progress/get_streak_use_case.dart';
@@ -16,6 +18,12 @@ void registerProgressDomain(GetIt getIt) {
   getIt
     ..registerLazySingleton<GetStreakUseCaseContract>(
       () => GetStreakUseCase(getIt()),
+    )
+    ..registerLazySingleton<PauseStreakUseCaseContract>(
+      () => PauseStreakUseCase(getIt()),
+    )
+    ..registerLazySingleton<ResumeStreakUseCaseContract>(
+      () => ResumeStreakUseCase(getIt()),
     )
     ..registerLazySingleton<GetProgressOverviewUseCaseContract>(
       () => GetProgressOverviewUseCase(

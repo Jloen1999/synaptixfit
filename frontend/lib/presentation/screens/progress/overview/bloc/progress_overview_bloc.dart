@@ -5,9 +5,13 @@ import '../../../../../domain/enums/data_topic.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/home/home_dashboard.dart';
 import '../../../../../domain/models/progress/progress_overview.dart';
+import '../../../../../domain/models/progress/streak.dart';
+import '../../../../../domain/models/result/app_result.dart';
 import '../../../../../domain/use_cases/academic/get_due_study_materials_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_dashboard_use_case.dart';
 import '../../../../../domain/use_cases/progress/get_progress_overview_use_case.dart';
+import '../../../../../domain/use_cases/progress/pause_streak_use_case.dart';
+import '../../../../../domain/use_cases/progress/resume_streak_use_case.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../mixins/data_change_refresh_mixin.dart';
 
@@ -25,11 +29,16 @@ class ProgressOverviewBloc
     required this._getToday,
     required this._getDueMaterials,
     required this._watchChanges,
+    required this._pauseStreak,
+    required this._resumeStreak,
   }) : super(const ProgressOverviewState.loading()) {
     on<ProgressOverviewStarted>(_onStarted);
     on<ProgressOverviewRefreshed>(_onRefreshed);
     on<ProgressOverviewReviewRequested>(_onReviewRequested);
     on<ProgressOverviewReviewHandled>(_onReviewHandled);
+    on<ProgressOverviewStreakPaused>(_onStreakPaused);
+    on<ProgressOverviewStreakResumed>(_onStreakResumed);
+    on<ProgressOverviewStreakHandled>(_onStreakHandled);
   }
 
   final GetProgressOverviewUseCaseContract _getOverview;
@@ -44,6 +53,58 @@ class ProgressOverviewBloc
   /// piden al tocar «Ver N repasos pendientes» (y no en cada carga).
   final GetDueStudyMaterialsUseCaseContract _getDueMaterials;
   final WatchDataChangesUseCaseContract _watchChanges;
+  final PauseStreakUseCaseContract _pauseStreak;
+  final ResumeStreakUseCaseContract _resumeStreak;
+
+  /// La racha que devuelve el servidor se pinta ya; la recarga que dispara el
+  /// cambio (`DataTopic.gamification`) pone al día el resto.
+  Future<void> _onStreakPaused(
+    ProgressOverviewStreakPaused event,
+    Emitter<ProgressOverviewState> emit,
+  ) => _updateStreak(emit, _pauseStreak.call, paused: true);
+
+  Future<void> _onStreakResumed(
+    ProgressOverviewStreakResumed event,
+    Emitter<ProgressOverviewState> emit,
+  ) => _updateStreak(emit, _resumeStreak.call, paused: false);
+
+  Future<void> _updateStreak(
+    Emitter<ProgressOverviewState> emit,
+    Future<AppResult<Streak>> Function() action, {
+    required bool paused,
+  }) async {
+    final current = state;
+    if (current is! ProgressOverviewLoaded || current.updatingStreak) return;
+    emit(
+      current.copyWith(
+        updatingStreak: true,
+        streakError: null,
+        streakJustPaused: null,
+      ),
+    );
+    final result = await action();
+    final latest = state;
+    if (latest is! ProgressOverviewLoaded) return;
+    emit(
+      result.fold(
+        (streak) => latest.copyWith(
+          overview: latest.overview.copyWith(streak: streak),
+          updatingStreak: false,
+          streakJustPaused: paused ? streak : null,
+        ),
+        (error) => latest.copyWith(updatingStreak: false, streakError: error),
+      ),
+    );
+  }
+
+  void _onStreakHandled(
+    ProgressOverviewStreakHandled event,
+    Emitter<ProgressOverviewState> emit,
+  ) {
+    final current = state;
+    if (current is! ProgressOverviewLoaded) return;
+    emit(current.copyWith(streakJustPaused: null, streakError: null));
+  }
 
   Future<void> _onReviewRequested(
     ProgressOverviewReviewRequested event,

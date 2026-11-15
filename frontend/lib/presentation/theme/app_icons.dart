@@ -138,6 +138,15 @@ abstract final class AppIcons {
   /// Lo siguiente que toca (próximo entreno, día fuerte).
   static const IconData upNext = Icons.upcoming_outlined;
 
+  /// Estado «En curso» (sesión abierta, día empezado).
+  static const IconData inProgress = Icons.timelapse_rounded;
+
+  /// «Con retraso»: tocaba antes y aún no está hecho (no es [duration]).
+  static const IconData overdue = Icons.event_busy_outlined;
+
+  /// Racha en pausa (ADR 0042).
+  static const IconData paused = Icons.pause_circle_outline_rounded;
+
   /// Un cambio que se aplica al momento, sin pulsar «Guardar».
   static const IconData appliesNow = Icons.published_with_changes_rounded;
 

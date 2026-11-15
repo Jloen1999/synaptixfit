@@ -44,6 +44,10 @@ abstract class SessionHistoryEntry with _$SessionHistoryEntry {
     /// Terminada hoy: se puede desmarcar (lo decide el servidor). Si no, se
     /// corrige o se elimina.
     @Default(false) bool unmarkable,
+
+    /// Foto de fondo de su tarjeta (la elige el servidor, ADR 0042); nula:
+    /// color de reserva.
+    String? coverImageUrl,
   }) = _SessionHistoryEntry;
 }
 

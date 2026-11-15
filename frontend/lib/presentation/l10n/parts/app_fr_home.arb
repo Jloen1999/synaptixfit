@@ -171,5 +171,12 @@
   "homeBirthdayMessage": "Passe une excellente journée. Ton plan t'attend quand tu veux.",
   "homeSetupSnoozedWhere": "Masqué pendant 7 jours. Ensuite, il réapparaîtra ici, dans Accueil.",
   "homeCountdownExam": "Examen : {title} · {when}",
-  "homeCountdownDelivery": "Rendu : {title} · {when}"
+  "homeCountdownDelivery": "Rendu : {title} · {when}",
+  "homeTodayIntensityEasy": "Aujourd'hui : séance légère",
+  "homeTodayIntensityNormal": "Aujourd'hui : séance normale",
+  "homeTodayIntensityHard": "Aujourd'hui : séance intense",
+  "homeTodayIntensityEasyHelp": "Moins de séries aujourd'hui : avec de la fatigue, un examen qui approche ou des jours très chargés.",
+  "homeTodayIntensityNormalHelp": "Entraîne-toi comme prévu.",
+  "homeTodayIntensityHardHelp": "Tu as bien dormi, tu as de l'énergie et pas de courbatures : bonne journée pour pousser.",
+  "homeTodayIntensityAbout": "Séance du jour"
 }

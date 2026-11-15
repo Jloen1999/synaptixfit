@@ -2,6 +2,7 @@ package com.synaptixfit.application.port.input.training;
 
 import com.synaptixfit.domain.model.training.DailyCheckIn;
 import com.synaptixfit.domain.model.training.SessionAdaptation;
+import com.synaptixfit.domain.model.training.TodayIntensity;
 import java.util.UUID;
 
 /**
@@ -15,6 +16,11 @@ public interface GetTodayAdaptationUseCase {
 
         public boolean checkInDone() {
             return todayCheckIn != null;
+        }
+
+        /** «Hoy toca: suave / normal / fuerte» (ADR 0042). */
+        public TodayIntensity intensity() {
+            return TodayIntensity.of(adaptation, todayCheckIn);
         }
     }
 

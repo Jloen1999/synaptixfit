@@ -40,6 +40,7 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM eventos_entreno_carrera WHERE usuario_id = :id",
             "DELETE FROM entrenos_carrera WHERE usuario_id = :id",
             "DELETE FROM seguimiento_ciclo WHERE usuario_id = :id",
+            "DELETE FROM pausas_racha WHERE usuario_id = :id",
             "DELETE FROM notas_ejercicio WHERE usuario_id = :id",
             "DELETE FROM sesiones_focus WHERE usuario_id = :id",
             "DELETE FROM entregas_examenes WHERE usuario_id = :id",

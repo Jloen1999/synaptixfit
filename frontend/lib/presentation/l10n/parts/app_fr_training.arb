@@ -997,5 +997,7 @@
   "trainingCheckInAutoSaveHint": "C’est enregistré dès la troisième réponse.",
   "trainingCheckInChangeHint": "Modifie ce que tu veux et touche « Enregistrer les modifications ».",
   "trainingAdaptedDeclined": "Aujourd'hui, tu feras toutes les séries.",
-  "runWorkoutDeleted": "Entraînement supprimé"
+  "runWorkoutDeleted": "Entraînement supprimé",
+  "trainingRecordsPill": "{count, plural, =0{Aucun record} =1{1 record} other{{count} records}}",
+  "trainingSessionDone": "Fait"
 }

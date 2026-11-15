@@ -406,8 +406,13 @@ class _PendingDayCard extends StatelessWidget {
     // Jerarquía: qué día toca (grande), cuándo y si va con retraso, cuánto
     // queda del ciclo y el botón para empezar. La foto del primer ejercicio
     // de fondo dice de un vistazo qué se va a entrenar.
+    final whenText = day.scheduledDate != null
+        ? scheduledDayLabel(l10n, day.scheduledDate!)
+        : weekdayName(l10n, day.dayNumber);
     return AppCoverCard(
+      layout: AppCoverLayout.bottom,
       imageUrl: day.coverImageUrl,
+      padding: const EdgeInsets.all(TokensSpacing.m),
       // Sin toque en toda la tarjeta: lleva sus propios botones (nada de
       // controles anidados); la rutina se abre con «Ver rutina».
       // Lo que necesita el ancho entero va al pie, sin la foto detrás.
@@ -424,6 +429,17 @@ class _PendingDayCard extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: TokensSpacing.s),
+          Text(
+            [
+              day.routineName,
+              l10n.trainingWeekOfTotal(day.weekNumber, day.totalWeeks),
+              l10n.trainingSessionOfWeek(day.sessionOfWeek, day.sessionsInWeek),
+            ].join(' · '),
+            style: context.textStyles.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
           // Los nombres de los primeros ejercicios dicen qué toca hoy mejor
           // que solo las miniaturas.
           if (day.exercises.isNotEmpty) ...[
@@ -490,79 +506,45 @@ class _PendingDayCard extends StatelessWidget {
           ),
         ],
       ),
+      // Texto abajo sobre la foto (ADR 0042): el estado en pastilla sólida y
+      // tres datos como mucho (qué día, cuándo y cuánto). La rutina y los
+      // ejercicios van al pie, a todo el ancho.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                AppIcons.upNext,
-                color: context.colors.primary,
-                size: TokensSize.iconS,
-              ),
-              const SizedBox(width: TokensSpacing.xs),
-              // Expanded: con el texto al 200 % la etiqueta se parte en vez
-              // de desbordar la fila.
-              Expanded(
-                child: Text(
-                  l10n.trainingNextWorkout,
-                  style: context.textStyles.labelLarge?.copyWith(
-                    color: context.colors.primary,
-                  ),
-                ),
-              ),
-            ],
+          AppCoverPill(
+            icon: day.overdue && day.scheduledDate != null
+                ? AppIcons.overdue
+                : AppIcons.upNext,
+            color: day.overdue && day.scheduledDate != null
+                ? context.palette.warning
+                : context.colors.primary,
+            label: day.overdue && day.scheduledDate != null
+                ? overdueSinceLabel(l10n, day.scheduledDate!)
+                : l10n.trainingNextWorkout,
           ),
-          const SizedBox(height: TokensSpacing.s),
+          const SizedBox(height: TokensSpacing.xs),
           Text(
             dayTitle(l10n, day.dayNumber, day.dayName),
             style: context.textStyles.headlineSmall,
           ),
-          // Cuándo toca, en qué semana va y qué sesión de la semana es.
-          Text(
-            [
-              nextDayHeadline(
-                l10n,
-                date: day.scheduledDate,
-                weekNumber: day.weekNumber,
-                totalWeeks: day.totalWeeks,
-                dayNumber: day.dayNumber,
-              ),
-              l10n.trainingSessionOfWeek(day.sessionOfWeek, day.sessionsInWeek),
-            ].join(' · '),
-            style: context.textStyles.bodyMedium,
-          ),
-          Text(
-            day.routineName,
-            style: context.textStyles.labelMedium?.copyWith(
-              color: context.colors.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          Wrap(
-            spacing: TokensSpacing.xs,
-            runSpacing: TokensSpacing.xs,
-            children: [
-              if (day.overdue && day.scheduledDate != null)
-                AppCoverPill(
-                  icon: Icons.schedule_rounded,
-                  color: context.palette.warning,
-                  label: overdueSinceLabel(l10n, day.scheduledDate!),
-                ),
-              AppCoverPill(
-                icon: Icons.fitness_center_rounded,
-                label: l10n.trainingExercisesCount(day.exercises.length),
-              ),
-              // Duración prevista (la calcula el servidor).
+          // Cuándo toca, en qué semana va y cuánto dura (lo calcula el
+          // servidor).
+          Semantics(
+            label: [
+              whenText,
               if (day.estimatedMinutes > 0)
-                AppCoverPill(
-                  icon: Icons.timer_outlined,
-                  label: l10n.trainingEstimatedMinutes(day.estimatedMinutes),
-                  semanticLabel: l10n.trainingEstimatedMinutesSpoken(
-                    day.estimatedMinutes,
-                  ),
-                ),
-            ],
+                l10n.trainingEstimatedMinutesSpoken(day.estimatedMinutes),
+            ].join(', '),
+            excludeSemantics: true,
+            child: Text(
+              [
+                whenText,
+                if (day.estimatedMinutes > 0)
+                  l10n.trainingEstimatedMinutes(day.estimatedMinutes),
+              ].join(' · '),
+              style: context.textStyles.bodyMedium,
+            ),
           ),
         ],
       ),

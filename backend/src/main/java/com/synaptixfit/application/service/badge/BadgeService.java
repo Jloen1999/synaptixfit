@@ -77,9 +77,9 @@ public class BadgeService implements GetBadgeCatalogUseCase, ListMyBadgesUseCase
     public List<BadgeView> getBadgeCatalog(UUID userId, BadgeCategory category, String zone) {
         ZoneId z = UserZones.resolve(zone, defaultZone);
         Map<UUID, UserBadge> earned = earnedByBadge(userId);
-        // El catálogo es una lectura: la racha se calcula sin guardarla (la guarda la evaluación).
-        StreakStatus streak = StreakStatus.compute(activity.activeDays(userId, z),
-                LocalDateTime.ofInstant(clock.instant(), z));
+        // El catálogo es una lectura: la racha se calcula sin guardarla (la guarda la evaluación), con sus pausas.
+        StreakStatus streak = streaks != null ? streaks.peekStreak(userId, z.getId())
+                : StreakStatus.compute(activity.activeDays(userId, z), LocalDateTime.ofInstant(clock.instant(), z));
         Map<BadgeCriterion, Integer> metrics = metrics(userId, z, streak, earned.size());
         UsageFocus usage = focus.focusOf(userId);
         return catalog.findAll().stream()

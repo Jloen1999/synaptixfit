@@ -32,6 +32,14 @@ public final class StreakFreezes {
 
     /** Recorre el historial de días activos hasta hoy. Hoy, aún sin actividad, no rompe ni gasta comodín. */
     public static Run run(Set<LocalDate> activeDays, LocalDate today) {
+        return run(activeDays, Set.of(), today);
+    }
+
+    /**
+     * Igual, con días en pausa ({@link StreakPause}): uno sin actividad se salta (ni suma, ni corta, ni gasta
+     * comodín, ni cuenta para ganar uno).
+     */
+    public static Run run(Set<LocalDate> activeDays, Set<LocalDate> pausedDays, LocalDate today) {
         if (activeDays.isEmpty()) {
             return new Run(0, 0, List.of());
         }
@@ -48,6 +56,8 @@ public final class StreakFreezes {
                     available = Math.min(MAX_FREEZES, available + 1);
                     sinceFreeze = 0;
                 }
+            } else if (pausedDays.contains(day)) {
+                continue;
             } else if (current > 0 && available > 0) {
                 available--;
                 frozen.add(day);
