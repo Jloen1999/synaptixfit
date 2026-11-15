@@ -42,6 +42,7 @@ class _ProfileView extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     return Scaffold(
       appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: ProfilePaths.home),
         title: Text(l10n.profileTitle),
         actions: [
           IconButton(

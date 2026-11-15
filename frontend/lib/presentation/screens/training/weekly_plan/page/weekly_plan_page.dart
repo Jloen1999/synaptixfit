@@ -12,6 +12,7 @@ import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
 import '../bloc/weekly_plan_bloc.dart';
+import '../../training_routes.dart';
 
 /// Plan semanal de entrenamiento.
 class WeeklyPlanPage extends StatelessWidget {
@@ -41,7 +42,10 @@ class _PlanView extends StatelessWidget {
         final bloc = context.read<WeeklyPlanBloc>();
         final week = state.weekStart;
         return Scaffold(
-          appBar: AppPageBar.reading(title: Text(l10n.trainingWeeklyPlanTitle)),
+          appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: TrainingPaths.root),
+            title: Text(l10n.trainingWeeklyPlanTitle),
+          ),
           body: week == null
               ? const AppSkeletonList(height: TokensSize.skeletonRow)
               : ListView(

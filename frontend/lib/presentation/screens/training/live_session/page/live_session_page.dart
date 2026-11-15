@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../exercise_detail/page/exercise_how_to_sheet.dart';
@@ -31,6 +30,7 @@ import '../../../social/together/widgets/workout_together_progress.dart';
 import 'finish_session_sheet.dart';
 import 'live_focus_view.dart';
 import 'set_record_sheet.dart';
+import '../../training_routes.dart';
 
 /// Sesión de entrenamiento en vivo. Con ejercicios de rutina se entrena de uno
 /// en uno ([LiveExerciseView]): cabecera con el progreso y la tira de
@@ -146,7 +146,7 @@ class _LiveViewState extends State<_LiveView> {
     _bloc.add(const LiveSessionEvent.pauseRequested());
     setState(() => _allowPop = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.pop();
+      if (mounted) context.popOrGo(TrainingPaths.root);
     });
   }
 
@@ -515,6 +515,7 @@ class _LiveViewState extends State<_LiveView> {
             },
             child: Scaffold(
               appBar: AppPageBar(
+                leading: const AppBackButton(fallback: TrainingPaths.root),
                 title: Text(
                   title,
                   maxLines: 1,

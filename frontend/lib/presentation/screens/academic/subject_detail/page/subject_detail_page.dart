@@ -112,7 +112,7 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
         final archivedNow = state.subject?.archived;
         if (state.deleted) {
           context.showSnack(l10n.academicSubjectDeleted);
-          context.pop(true);
+          context.popOrGo(AcademicPaths.root, true);
         } else if (state.actionError != null) {
           context.showSnack(errorMessage(context, state.actionError!));
         } else if (archivedNow == true) {
@@ -130,7 +130,9 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
         final subject = state.subject;
         if (subject == null) {
           return Scaffold(
-            appBar: const AppPageBar(),
+            appBar: const AppPageBar(
+              leading: AppBackButton(fallback: AcademicPaths.root),
+            ),
             body: state.error != null
                 ? AppErrorView(
                     error: state.error!,
@@ -147,6 +149,7 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
           initialIndex: initialTab.index,
           child: Scaffold(
             appBar: AppPageBar(
+              leading: const AppBackButton(fallback: AcademicPaths.root),
               title: Text(
                 subject.name,
                 maxLines: 1,

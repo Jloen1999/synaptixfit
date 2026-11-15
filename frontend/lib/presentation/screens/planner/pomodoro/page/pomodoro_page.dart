@@ -195,7 +195,10 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
         final color = _phaseColor(context, state.phase);
         final phaseLabel = _phaseLabel(context, state.phase);
         return Scaffold(
-          appBar: AppPageBar.reading(title: Text(l10n.plannerPomodoroTitle)),
+          appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: PlannerPaths.root),
+            title: Text(l10n.plannerPomodoroTitle),
+          ),
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(

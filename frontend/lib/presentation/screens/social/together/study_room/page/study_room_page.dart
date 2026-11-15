@@ -18,6 +18,7 @@ import '../../widgets/together_widgets.dart';
 import '../../../../shell/bloc/study_room_bar_bloc.dart';
 import '../../../../shell/widgets/study_room_bar.dart';
 import '../bloc/study_room_bloc.dart';
+import '../../../social_routes.dart';
 
 /// Sala de «Estudiar juntos» (ADR 0045): el temporizador común, quién está,
 /// mis reacciones y mi asignatura (que solo veo yo). Cada ronda terminada
@@ -148,7 +149,7 @@ class _RoomViewState extends State<_RoomView> with ErrorsMessageMixin {
               );
             } else if (state.closed) {
               context.showSnack(l10n.togetherDeclined);
-              Navigator.of(context).maybePop();
+              context.popOrGo(SocialPaths.together);
             }
           },
           builder: (context, state) {
@@ -159,6 +160,7 @@ class _RoomViewState extends State<_RoomView> with ErrorsMessageMixin {
               onChanged: _onRoomChanged,
               child: Scaffold(
                 appBar: AppPageBar.reading(
+                  leading: const AppBackButton(fallback: SocialPaths.together),
                   title: Text(l10n.togetherStudyTitle),
                 ),
                 body: switch (state.status) {

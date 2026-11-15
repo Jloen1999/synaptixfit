@@ -74,7 +74,10 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
         final navigation = state.navigation;
         if (state.deleted) {
           context.showSnack(l10n.academicNoteDeleted);
-          context.pop(true);
+          context.popOrGo(
+            AcademicPaths.subjectOrHome(state.note?.subjectId, notes: true),
+            true,
+          );
         } else if (navigation != null) {
           context.push(
             navigation.practice
@@ -89,7 +92,9 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
         final note = state.note;
         if (note == null) {
           return Scaffold(
-            appBar: const AppPageBar(),
+            appBar: const AppPageBar(
+              leading: AppBackButton(fallback: AcademicPaths.root),
+            ),
             body: state.error != null
                 ? AppErrorView(
                     error: state.error!,
@@ -103,6 +108,12 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
         final updated = note.updatedAt ?? note.createdAt;
         return Scaffold(
           appBar: AppPageBar(
+            leading: AppBackButton(
+              fallback: AcademicPaths.subjectOrHome(
+                note.subjectId,
+                notes: true,
+              ),
+            ),
             title: Text(
               note.title,
               maxLines: 1,

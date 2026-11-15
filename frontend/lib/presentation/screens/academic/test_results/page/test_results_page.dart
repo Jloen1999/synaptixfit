@@ -34,7 +34,10 @@ class _TestResultsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Scaffold(
-      appBar: AppPageBar(title: Text(l10n.academicExamResultsTitle)),
+      appBar: AppPageBar(
+        leading: const AppBackButton(fallback: AcademicPaths.root),
+        title: Text(l10n.academicExamResultsTitle),
+      ),
       body: BlocBuilder<TestResultsBloc, TestResultsState>(
         builder: (context, state) {
           if (state.loading) return const AppLoadingView();
@@ -87,7 +90,8 @@ class _TestResultsView extends StatelessWidget {
                     Expanded(
                       child: AppPrimaryButton(
                         label: l10n.commonBack,
-                        onPressed: () => context.pop(true),
+                        onPressed: () =>
+                            context.popOrGo(AcademicPaths.root, true),
                       ),
                     ),
                   ],

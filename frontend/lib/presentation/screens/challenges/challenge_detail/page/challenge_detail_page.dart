@@ -105,11 +105,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
         context.showSnack(
           challengeFeedbackMessage(context, base: l10n.challengesDeleted),
         );
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go(ChallengesPaths.list);
-        }
+        context.popOrGo(ChallengesPaths.list);
       case ChallengeDetailCloned(:final challengeId):
         context.showSnack(l10n.challengesCloned);
         context.pushReplacement(ChallengesPaths.detail(challengeId));
@@ -188,6 +184,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
         final challenge = state.challenge;
         return Scaffold(
           appBar: AppPageBar(
+            leading: const AppBackButton(fallback: ChallengesPaths.list),
             title: Text(l10n.challengesDetailTitle),
             actions: [
               if (challenge != null && challenge.owned)

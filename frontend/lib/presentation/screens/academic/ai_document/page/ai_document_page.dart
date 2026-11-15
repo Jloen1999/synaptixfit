@@ -41,12 +41,21 @@ class AiDocumentPage extends StatelessWidget {
           type: type,
         ),
       ),
-    child: _AiDocumentView(title: title),
+    child: _AiDocumentView(
+      title: title,
+      back: switch (sourceType) {
+        StudySourceType.note => AcademicPaths.note(sourceId),
+        StudySourceType.file => AcademicPaths.file(sourceId),
+      },
+    ),
   );
 }
 
 class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
-  const _AiDocumentView({required this.title});
+  const _AiDocumentView({required this.title, required this.back});
+
+  /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
+  final String back;
 
   final String title;
 
@@ -69,6 +78,7 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
         final doc = state.document;
         return Scaffold(
           appBar: AppPageBar(
+            leading: AppBackButton(fallback: back),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

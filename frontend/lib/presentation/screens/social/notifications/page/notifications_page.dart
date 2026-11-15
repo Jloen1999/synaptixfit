@@ -58,6 +58,7 @@ class _NotificationsView extends StatelessWidget {
           showSocialFeedback(context, state.feedback!),
       builder: (context, state) => Scaffold(
         appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: SocialExternalPaths.home),
           title: Text(l10n.socialNotificationsTitle),
           actions: [
             if (state.markingAll)

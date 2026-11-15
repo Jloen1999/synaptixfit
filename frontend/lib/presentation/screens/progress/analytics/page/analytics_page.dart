@@ -58,6 +58,7 @@ class _AnalyticsView extends StatelessWidget with ErrorsMessageMixin {
         final loading = state.status == AnalyticsStatus.loading;
         return Scaffold(
           appBar: AppPageBar(
+            leading: const AppBackButton(fallback: ProgressPaths.root),
             title: Text(l10n.progressAnalyticsTitle),
             bottom: loading && report != null
                 ? const PreferredSize(

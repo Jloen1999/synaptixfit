@@ -14,6 +14,7 @@ import '../../widgets/admin_dialogs.dart';
 import '../../widgets/admin_widgets.dart';
 import '../bloc/admin_hub_bloc.dart';
 import '../../../../widgets/widgets.dart';
+import '../../admin_routes.dart';
 
 /// Panel de administración: pestañas KPIs, Usuarios, Contenido, Ejercicios y
 /// Auditoría, con el interruptor del bloqueo global en la cabecera.
@@ -61,6 +62,7 @@ class _AdminHubView extends StatelessWidget with ErrorsMessageMixin {
         length: tabs.length,
         child: Scaffold(
           appBar: AppPageBar.wide(
+            leading: const AppBackButton(fallback: AdminPaths.profile),
             title: Text(l10n.adminTitle),
             actions: const [_LockdownControl()],
             bottom: TabBar(

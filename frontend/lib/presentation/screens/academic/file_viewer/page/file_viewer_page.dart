@@ -71,7 +71,13 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
         final navigation = state.navigation;
         if (state.deleted) {
           context.showSnack(l10n.academicFileDeleted);
-          context.pop(true);
+          context.popOrGo(
+            AcademicPaths.subjectOrHome(
+              state.content?.file.subjectId,
+              notes: true,
+            ),
+            true,
+          );
         } else if (navigation != null) {
           context.push(
             navigation.practice
@@ -86,7 +92,9 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
         final content = state.content;
         if (content == null) {
           return Scaffold(
-            appBar: const AppPageBar(),
+            appBar: const AppPageBar(
+              leading: AppBackButton(fallback: AcademicPaths.root),
+            ),
             body: state.error != null
                 ? AppErrorView(
                     error: state.error!,
@@ -100,6 +108,12 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
         final file = content.file;
         return Scaffold(
           appBar: AppPageBar(
+            leading: AppBackButton(
+              fallback: AcademicPaths.subjectOrHome(
+                file.subjectId,
+                notes: true,
+              ),
+            ),
             title: Text(
               file.fileName,
               maxLines: 1,

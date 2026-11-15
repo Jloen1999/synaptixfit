@@ -17,6 +17,7 @@ import '../../widgets/training_content.dart';
 import '../../widgets/training_dialogs.dart';
 import '../../widgets/training_labels.dart';
 import '../bloc/session_detail_bloc.dart';
+import '../../training_routes.dart';
 
 /// Lo que se pidió hacer con la sesión desde su detalle; lo ejecuta el
 /// historial al volver (así su lista y los récords se ponen al día).
@@ -129,6 +130,7 @@ class _DetailView extends StatelessWidget {
               ).add_Hm().format(session.completedAt ?? session.startedAt);
         return Scaffold(
           appBar: AppPageBar(
+            leading: const AppBackButton(fallback: TrainingPaths.history),
             title: Text(
               _title(context, entry),
               maxLines: 1,
@@ -147,10 +149,13 @@ class _DetailView extends StatelessWidget {
             ),
             SessionDetailStatus.ready => _Content(state: state, date: date),
           },
+          // Las acciones las ejecuta el historial al volver: abierta sin
+          // pila (enlace, recarga en web) no hay quien las haga y se ocultan.
           bottomNavigationBar:
               state.status == SessionDetailStatus.ready &&
                   entry != null &&
-                  entry.session.isCompleted
+                  entry.session.isCompleted &&
+                  Navigator.canPop(context)
               ? SafeArea(
                   top: false,
                   child: Padding(

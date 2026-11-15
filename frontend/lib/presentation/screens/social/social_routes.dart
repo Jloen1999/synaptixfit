@@ -69,6 +69,19 @@ abstract final class SocialExternalPaths {
     '/progress/badges',
   };
 
+  /// Inicio: de ahí cuelgan el muro y los avisos sociales (su flecha sin pila).
+  static const home = '/home';
+
+  /// Perfil (módulo profile): de ahí cuelgan los amigos.
+  static const profile = '/profile';
+
+  /// Progreso › Retos: de ahí cuelga «Con amigos» (es pestaña: con `go`).
+  static const progressChallenges = '/progress?tab=challenges';
+
+  /// Rutina dentro de la pestaña Entreno (con `go`): de ahí sale «Entrenar
+  /// con amigos».
+  static String routine(String routineId) => '/training/routines/$routineId';
+
   /// Apunte compartido (módulo academic).
   static String sharedNote(String noteId) => '/academic/notes/shared/$noteId';
 

@@ -18,6 +18,7 @@ import '../../widgets/admin_multi_select_field.dart';
 import '../../widgets/admin_status.dart';
 import '../../widgets/admin_widgets.dart';
 import '../bloc/admin_exercise_form_bloc.dart';
+import '../../admin_routes.dart';
 
 /// Alta (sin [exerciseId]) o edición de un ejercicio. Al guardar vuelve con `true`.
 class AdminExerciseFormPage extends StatelessWidget {
@@ -179,6 +180,7 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: AdminPaths.root),
             title: Text(
               state.isEditing
                   ? l10n.adminExerciseEditTitle

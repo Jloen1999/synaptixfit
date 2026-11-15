@@ -65,7 +65,10 @@ class _CommunityViewState extends State<_CommunityView> {
       builder: (context, state) {
         final bloc = context.read<CommunityBloc>();
         return Scaffold(
-          appBar: AppPageBar(title: Text(l10n.trainingCommunityTitle)),
+          appBar: AppPageBar(
+            leading: const AppBackButton(fallback: TrainingPaths.root),
+            title: Text(l10n.trainingCommunityTitle),
+          ),
           body: Column(
             children: [
               Padding(

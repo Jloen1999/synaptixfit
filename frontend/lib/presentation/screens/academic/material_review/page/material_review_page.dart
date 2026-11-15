@@ -96,7 +96,10 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
           if (queue.isNotEmpty) {
             _openNext(context, queue);
           } else {
-            context.pop(true);
+            context.popOrGo(
+              AcademicPaths.subjectOrHome(state.material?.subjectId),
+              true,
+            );
           }
           return;
         }
@@ -111,6 +114,9 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
         final material = state.material;
         return Scaffold(
           appBar: AppPageBar(
+            leading: AppBackButton(
+              fallback: AcademicPaths.subjectOrHome(material?.subjectId),
+            ),
             title: Text(l10n.academicReviewTitle),
             actions: [
               if (material != null)
@@ -673,13 +679,31 @@ class _OutcomeCard extends StatelessWidget {
               ),
               const SizedBox(height: TokensSpacing.s),
               TextButton(
-                onPressed: () => context.pop(true),
+                onPressed: () => context.popOrGo(
+                  AcademicPaths.subjectOrHome(
+                    context
+                        .read<MaterialReviewBloc>()
+                        .state
+                        .material
+                        ?.subjectId,
+                  ),
+                  true,
+                ),
                 child: Text(l10n.academicReviewStopQueue),
               ),
             ] else
               AppSecondaryButton(
                 label: l10n.commonBack,
-                onPressed: () => context.pop(true),
+                onPressed: () => context.popOrGo(
+                  AcademicPaths.subjectOrHome(
+                    context
+                        .read<MaterialReviewBloc>()
+                        .state
+                        .material
+                        ?.subjectId,
+                  ),
+                  true,
+                ),
               ),
           ],
         ),

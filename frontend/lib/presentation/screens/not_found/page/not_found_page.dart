@@ -15,7 +15,10 @@ class NotFoundPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Scaffold(
-      appBar: AppPageBar(title: Text(l10n.appName)),
+      appBar: AppPageBar(
+        leading: const AppBackButton(fallback: HomePaths.root),
+        title: Text(l10n.appName),
+      ),
       body: AppEmptyState(
         icon: AppIcons.search,
         title: l10n.errorNotFound,

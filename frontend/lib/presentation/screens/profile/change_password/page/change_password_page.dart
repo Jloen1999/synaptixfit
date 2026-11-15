@@ -12,6 +12,7 @@ import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/change_password_bloc.dart';
+import '../../profile_routes.dart';
 
 /// Cambiar la contraseña, o crearla si la cuenta es solo de Google.
 class ChangePasswordPage extends StatelessWidget {
@@ -65,6 +66,7 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
     final l10n = context.localizations;
     return Scaffold(
       appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: ProfilePaths.settings),
         title: Text(
           _hasPassword
               ? l10n.profilePasswordChangeTitle

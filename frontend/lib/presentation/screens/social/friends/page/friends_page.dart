@@ -62,6 +62,7 @@ class _FriendsViewState extends State<_FriendsView> {
           showSocialFeedback(context, state.feedback!, inFriends: true),
       child: Scaffold(
         appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: SocialExternalPaths.profile),
           title: Text(l10n.socialFriendsTitle),
           actions: [
             IconButton(

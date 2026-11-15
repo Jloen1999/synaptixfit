@@ -62,6 +62,9 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar(
+            leading: AppBackButton(
+              fallback: AcademicPaths.subjectOrHome(state.material?.subjectId),
+            ),
             title: Text(state.material?.title ?? l10n.academicPracticeTitle),
           ),
           body: switch (state) {

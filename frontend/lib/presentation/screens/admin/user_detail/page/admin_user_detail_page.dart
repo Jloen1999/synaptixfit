@@ -20,6 +20,7 @@ import '../bloc/admin_user_detail_bloc.dart';
 import 'admin_user_dialogs.dart';
 import 'admin_user_stats_tab.dart';
 import 'admin_user_timeline_tab.dart';
+import '../../admin_routes.dart';
 
 /// Detalle de un usuario con sub-pestañas Perfil, Estadísticas y Timeline.
 class AdminUserDetailPage extends StatelessWidget {
@@ -81,6 +82,7 @@ class _AdminUserDetailView extends StatelessWidget with ErrorsMessageMixin {
           length: 3,
           child: Scaffold(
             appBar: AppPageBar.wide(
+              leading: const AppBackButton(fallback: AdminPaths.root),
               title: Text(detail?.account.fullName ?? l10n.adminUserTitle),
               actions: [
                 IconButton(

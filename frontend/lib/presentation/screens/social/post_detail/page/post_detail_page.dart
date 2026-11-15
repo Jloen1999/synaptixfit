@@ -94,7 +94,7 @@ class _PostDetailView extends StatelessWidget {
           listenWhen: (_, current) => current.feedback != null,
           listener: (context, state) {
             showSocialFeedback(context, state.feedback!);
-            if (state.deleted) context.pop();
+            if (state.deleted) context.popOrGo(SocialPaths.root);
           },
         ),
         BlocListener<CommentsBloc, CommentsState>(
@@ -114,7 +114,10 @@ class _PostDetailView extends StatelessWidget {
         ),
       ],
       child: Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.socialPostTitle)),
+        appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: SocialPaths.root),
+          title: Text(l10n.socialPostTitle),
+        ),
         body: BlocBuilder<PostDetailBloc, PostDetailState>(
           builder: (context, state) => switch (state.status) {
             SocialLoadStatus.loading => const SocialListSkeleton(

@@ -48,7 +48,12 @@ class _MockExamSetupView extends StatelessWidget {
         final bloc = context.read<MockExamSetupBloc>();
         final ready = state.options != null && state.sources.isNotEmpty;
         return Scaffold(
-          appBar: AppPageBar(title: Text(l10n.academicMockSetupTitle)),
+          appBar: AppPageBar(
+            leading: AppBackButton(
+              fallback: AcademicPaths.subjectOrHome(state.subjectId),
+            ),
+            title: Text(l10n.academicMockSetupTitle),
+          ),
           bottomNavigationBar: ready
               ? SafeArea(
                   child: Padding(
@@ -90,7 +95,9 @@ class _MockExamSetupView extends StatelessWidget {
               action: AppSecondaryButton(
                 label: l10n.academicMockSetupEmptyAction,
                 icon: const Icon(AppIcons.back),
-                onPressed: () => context.pop(),
+                onPressed: () => context.backOr(
+                  AcademicPaths.subjectOrHome(state.subjectId),
+                ),
               ),
             ),
             _ => _Form(state: state),

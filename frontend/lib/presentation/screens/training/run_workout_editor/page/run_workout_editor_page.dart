@@ -10,6 +10,8 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/run_labels.dart';
 import '../bloc/run_workout_editor_bloc.dart';
+import '../../training_routes.dart';
+import '../../widgets/training_section_bar.dart';
 
 /// Crear o cambiar un entreno de carrera por pasos (ADR 0037): pasos
 /// «Calentar», «Correr», «Recuperar» y «Enfriar», por tiempo o por distancia,
@@ -91,6 +93,9 @@ class _EditorViewState extends State<_EditorView> with ErrorsMessageMixin {
         final bloc = context.read<RunWorkoutEditorBloc>();
         return Scaffold(
           appBar: AppPageBar.reading(
+            leading: AppBackButton(
+              fallback: TrainingPaths.section(TrainingSection.run),
+            ),
             title: Text(
               state.workoutId == null
                   ? l10n.runCreateWorkoutTitle

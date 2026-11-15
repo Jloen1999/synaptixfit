@@ -69,7 +69,10 @@ class _InviteView extends StatelessWidget with ErrorsMessageMixin {
         );
       },
       child: Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.togetherStudyWithFriends)),
+        appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: SocialPaths.together),
+          title: Text(l10n.togetherStudyWithFriends),
+        ),
         body: ListView(
           padding: const EdgeInsets.all(TokensSpacing.m),
           children: [

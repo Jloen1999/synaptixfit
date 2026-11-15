@@ -77,7 +77,10 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
     final account = context.select((SessionBloc b) => b.account);
     final hasPassword = account?.hasPassword ?? true;
     return Scaffold(
-      appBar: AppPageBar.reading(title: Text(l10n.profileSettingsTitle)),
+      appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: ProfilePaths.root),
+        title: Text(l10n.profileSettingsTitle),
+      ),
       body: BlocConsumer<SettingsBloc, SettingsState>(
         listenWhen: (a, b) => a.outcome != b.outcome || a.error != b.error,
         listener: (context, state) {

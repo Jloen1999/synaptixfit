@@ -269,6 +269,12 @@ class _PastActivityViewState extends State<_PastActivityView>
     ];
   }
 
+  /// Desde Correr vuelve a Correr; si no, al historial («Actividades y
+  /// partidos»), donde queda lo apuntado.
+  String get _back => widget.from == TrainingSection.run
+      ? TrainingPaths.section(TrainingSection.run)
+      : TrainingPaths.activities;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -293,11 +299,14 @@ class _PastActivityViewState extends State<_PastActivityView>
             );
           }
           _announceSaved(context, xp);
-          context.pop(true);
+          context.popOrGo(_back, true);
         }
       },
       builder: (context, state) => Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.trainingPastActivityTitle)),
+        appBar: AppPageBar.reading(
+          leading: AppBackButton(fallback: _back),
+          title: Text(l10n.trainingPastActivityTitle),
+        ),
         body: AppContentWidth.reading(
           child: ListView(
             padding: const EdgeInsets.all(TokensSpacing.m),

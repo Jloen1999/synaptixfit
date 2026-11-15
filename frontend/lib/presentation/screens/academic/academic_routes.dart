@@ -86,6 +86,15 @@ abstract final class AcademicPaths {
   static String subjectNotes(String subjectId) =>
       _withQuery(subject(subjectId), {'tab': SubjectDetailTab.notes.name});
 
+  /// De dónde cuelga lo que es de la asignatura [subjectId] (la flecha
+  /// sin pila): la asignatura (en «Apuntes y archivos» si [notes]) o, si no
+  /// se sabe, Académico.
+  static String subjectOrHome(String? subjectId, {bool notes = false}) =>
+      switch (subjectId) {
+        null || '' => root,
+        final id => notes ? subjectNotes(id) : subject(id),
+      };
+
   static String editSubject(String subjectId) =>
       '/academic/subjects/$subjectId/edit';
 

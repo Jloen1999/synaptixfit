@@ -45,7 +45,14 @@ class _NoteScanView extends StatelessWidget with ErrorsMessageMixin {
       message: l10n.academicScanLeaveMessage,
       confirmLabel: l10n.academicScanLeaveConfirm,
     );
-    if (ok && context.mounted) context.pop();
+    if (ok && context.mounted) {
+      context.popOrGo(
+        AcademicPaths.subjectOrHome(
+          context.read<NoteScanBloc>().state.subjectId,
+          notes: true,
+        ),
+      );
+    }
   }
 
   @override
@@ -67,6 +74,12 @@ class _NoteScanView extends StatelessWidget with ErrorsMessageMixin {
           },
           child: Scaffold(
             appBar: AppPageBar(
+              leading: AppBackButton(
+                fallback: AcademicPaths.subjectOrHome(
+                  state.subjectId,
+                  notes: true,
+                ),
+              ),
               title: Text(
                 state.draft == null
                     ? l10n.academicScanTitle

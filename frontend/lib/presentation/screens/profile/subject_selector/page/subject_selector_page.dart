@@ -31,6 +31,7 @@ class SubjectSelectorPage extends StatelessWidget {
       child: Builder(
         builder: (context) => Scaffold(
           appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: ProfilePaths.root),
             title: Text(context.localizations.profileSubjectsTitle),
             actions: [
               // Atajo opcional: añadir las asignaturas desde la matrícula.

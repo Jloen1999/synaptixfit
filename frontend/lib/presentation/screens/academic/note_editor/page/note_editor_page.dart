@@ -50,12 +50,26 @@ class NoteEditorPage extends StatelessWidget {
               Visibility.private,
         ),
       ),
-    child: _NoteEditorView(isNew: noteId == null, initialTitle: initialTitle),
+    child: _NoteEditorView(
+      isNew: noteId == null,
+      initialTitle: initialTitle,
+      back: switch (noteId) {
+        final String id => AcademicPaths.note(id),
+        null => AcademicPaths.subjectOrHome(subjectId, notes: true),
+      },
+    ),
   );
 }
 
 class _NoteEditorView extends StatefulWidget {
-  const _NoteEditorView({required this.isNew, this.initialTitle});
+  const _NoteEditorView({
+    required this.isNew,
+    required this.back,
+    this.initialTitle,
+  });
+
+  /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
+  final String back;
 
   final bool isNew;
   final String? initialTitle;
@@ -164,7 +178,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
       context.read<NoteEditorBloc>().add(
         const NoteEditorEvent.draftDiscarded(),
       );
-      context.pop();
+      context.popOrGo(widget.back);
     }
   }
 
@@ -221,7 +235,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
           if (widget.isNew) {
             context.pushReplacement(AcademicPaths.note(state.savedNoteId!));
           } else {
-            context.pop(true);
+            context.popOrGo(widget.back, true);
           }
         } else if (state.saveError != null) {
           context.showSnack(errorMessage(context, state.saveError!));
@@ -233,10 +247,11 @@ class _NoteEditorViewState extends State<_NoteEditorView>
           canPop: state.savedNoteId != null,
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
-            _dirty ? _leave() : context.pop();
+            _dirty ? _leave() : context.popOrGo(widget.back);
           },
           child: Scaffold(
             appBar: AppPageBar(
+              leading: AppBackButton(fallback: widget.back),
               title: Text(
                 widget.isNew ? l10n.academicNoteNew : l10n.academicNoteEdit,
               ),
@@ -263,7 +278,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
               NoteEditorState(loading: true) => const AppLoadingView(),
               NoteEditorState(:final loadError?) => AppErrorView(
                 error: loadError,
-                onRetry: () => context.pop(),
+                onRetry: () => context.popOrGo(widget.back),
               ),
               _ => AcademicBody(
                 child: ListView(

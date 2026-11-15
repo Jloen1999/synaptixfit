@@ -59,16 +59,9 @@ class _SharedView extends StatelessWidget with ErrorsMessageMixin {
         final preview = state.preview;
         return Scaffold(
           appBar: AppPageBar(
+            // Abierta desde el enlace no hay pantalla debajo: lleva a Entreno.
+            leading: const AppBackButton(fallback: TrainingPaths.root),
             title: Text(l10n.trainingSharedTitle),
-            // Abierta desde el enlace no hay pantalla debajo: la flecha lleva a
-            // Entreno en vez de dejar a la persona sin salida.
-            leading: context.canPop()
-                ? null
-                : IconButton(
-                    tooltip: l10n.commonBack,
-                    icon: const BackButtonIcon(),
-                    onPressed: () => context.go(TrainingPaths.root),
-                  ),
           ),
           body: switch (state.status) {
             SharedRoutineStatus.loading => const AppSkeletonList(),

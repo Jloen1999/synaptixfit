@@ -32,7 +32,10 @@ class _AcademicSearchView extends StatelessWidget {
     final l10n = context.localizations;
     final bloc = context.read<AcademicSearchBloc>();
     return Scaffold(
-      appBar: AppPageBar.reading(title: Text(l10n.academicSearchTitle)),
+      appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: AcademicPaths.root),
+        title: Text(l10n.academicSearchTitle),
+      ),
       body: AcademicSearchBody(
         searchField: Padding(
           padding: const EdgeInsets.fromLTRB(

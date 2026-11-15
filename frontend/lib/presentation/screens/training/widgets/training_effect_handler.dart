@@ -6,6 +6,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../mixins/errors_message_mixin.dart';
 import '../../../theme/tokens.g.dart';
+import '../../../widgets/widgets.dart';
 import '../../../../domain/models/training/recommendation.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../training_effect.dart';
@@ -87,11 +88,7 @@ class TrainingEffectHandler with ErrorsMessageMixin {
           );
         }
       case TrainingEffectClose():
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go(TrainingPaths.root);
-        }
+        context.popOrGo(TrainingPaths.root);
       case TrainingEffectAccountChanged(:final account):
         context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
     }

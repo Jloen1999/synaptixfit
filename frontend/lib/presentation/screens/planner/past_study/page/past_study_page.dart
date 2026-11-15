@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
@@ -10,6 +9,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../bloc/past_study_bloc.dart';
+import '../../planner_routes.dart';
 
 /// «Apuntar estudio hecho» (`/planner/past-study`): un rato de estudio que se
 /// hizo sin la app («ayer estudié Cálculo de 17:00 a 18:30»). Se elige
@@ -104,10 +104,13 @@ class _PastStudyViewState extends State<PastStudyView> with ErrorsMessageMixin {
           context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
         }
         context.showSnack(l10n.plannerPastStudySaved);
-        if (context.canPop()) context.pop(true);
+        context.popOrGo(PlannerPaths.root, true);
       },
       builder: (context, state) => Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.plannerPastStudyTitle)),
+        appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: PlannerPaths.root),
+          title: Text(l10n.plannerPastStudyTitle),
+        ),
         body: AppContentWidth.reading(
           child: ListView(
             padding: const EdgeInsets.all(TokensSpacing.m),

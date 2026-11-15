@@ -96,6 +96,7 @@ class _ExplorerViewState extends State<_ExplorerView> {
         final active = state.criteria.activeFilters;
         return Scaffold(
           appBar: AppPageBar(
+            leading: const AppBackButton(fallback: TrainingPaths.root),
             title: Text(
               widget.selectMode
                   ? l10n.trainingPickExercise

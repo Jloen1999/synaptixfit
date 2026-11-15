@@ -45,7 +45,10 @@ class _View extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     return BlocBuilder<EnrollmentImportBloc, EnrollmentImportState>(
       builder: (context, state) => Scaffold(
-        appBar: AppPageBar(title: Text(l10n.profileEnrollmentTitle)),
+        appBar: AppPageBar(
+          leading: const AppBackButton(fallback: ProfilePaths.root),
+          title: Text(l10n.profileEnrollmentTitle),
+        ),
         body: ProfileConstrained(
           child: switch (state.step) {
             EnrollmentStep.reading => Center(

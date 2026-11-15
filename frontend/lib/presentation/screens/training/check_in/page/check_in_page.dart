@@ -88,7 +88,10 @@ class _CheckInView extends StatelessWidget {
       listener: (context, state) =>
           const TrainingEffectHandler().handle(context, state.effect!),
       builder: (context, state) => Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.trainingCheckInTitle)),
+        appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: TrainingPaths.root),
+          title: Text(l10n.trainingCheckInTitle),
+        ),
         body: switch (state.status) {
           CheckInStatus.loading => const AppSkeletonList(
             count: 5,

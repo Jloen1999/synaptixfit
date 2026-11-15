@@ -53,7 +53,10 @@ class _TemplatesView extends StatelessWidget with ErrorsMessageMixin {
       builder: (context, state) {
         final bloc = context.read<ChallengeTemplatesBloc>();
         return Scaffold(
-          appBar: AppPageBar(title: Text(l10n.challengesTemplatesTitle)),
+          appBar: AppPageBar(
+            leading: const AppBackButton(fallback: ChallengesPaths.list),
+            title: Text(l10n.challengesTemplatesTitle),
+          ),
           body: switch (state.status) {
             ChallengeTemplatesStatus.loading => const AppSkeletonList(),
             ChallengeTemplatesStatus.failure => AppErrorView(
@@ -93,9 +96,8 @@ class _TemplatesView extends StatelessWidget with ErrorsMessageMixin {
                           action: AppSecondaryButton(
                             label: l10n.challengesNew,
                             icon: const Icon(AppIcons.add),
-                            onPressed: () => context.pushReplacement(
-                              ChallengesPaths.create,
-                            ),
+                            onPressed: () =>
+                                context.pushReplacement(ChallengesPaths.create),
                           ),
                         )
                       else

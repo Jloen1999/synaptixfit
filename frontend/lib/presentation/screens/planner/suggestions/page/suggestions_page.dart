@@ -78,6 +78,7 @@ class _SuggestionsView extends StatelessWidget with ErrorsMessageMixin {
             state.status == SuggestionsStatus.accepting;
         return Scaffold(
           appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: PlannerPaths.root),
             title: Text(l10n.plannerSuggestionsTitle),
             actions: [
               IconButton(

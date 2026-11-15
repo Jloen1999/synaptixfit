@@ -14,6 +14,7 @@ import '../../session/bloc/session_bloc.dart';
 import '../../widgets/auth_header.dart';
 import '../../widgets/auth_layout.dart';
 import '../bloc/register_bloc.dart';
+import '../../login/page/login_page.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -81,7 +82,9 @@ class _RegisterViewState extends State<_RegisterView> with ErrorsMessageMixin {
       builder: (context, state) {
         final busy = state is RegisterSubmitting;
         return AuthLayout(
-          appBar: const AppPageBar(),
+          appBar: const AppPageBar(
+            leading: AppBackButton(fallback: LoginPage.path),
+          ),
           child: Form(
             key: _formKey,
             child: AutofillGroup(

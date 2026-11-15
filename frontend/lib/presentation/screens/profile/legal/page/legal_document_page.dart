@@ -12,6 +12,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/legal_document_bloc.dart';
+import '../../profile_routes.dart';
 
 /// Política de privacidad, condiciones de uso o cómo borrar la cuenta
 /// (`/legal/:document`). Se abre con o sin sesión (desde el registro) y enseña
@@ -55,6 +56,7 @@ class _LegalDocumentView extends StatelessWidget {
         final document = state.document;
         return Scaffold(
           appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: ProfilePaths.settings),
             title: Text(document?.title ?? _fallbackTitle(context)),
           ),
           body: switch (state) {

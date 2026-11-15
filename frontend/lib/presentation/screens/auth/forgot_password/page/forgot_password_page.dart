@@ -58,8 +58,6 @@ class _ForgotPasswordViewState extends State<_ForgotPasswordView>
     );
   }
 
-  void _back() => context.canPop() ? context.pop() : context.go(LoginPage.path);
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -70,7 +68,9 @@ class _ForgotPasswordViewState extends State<_ForgotPasswordView>
       builder: (context, state) {
         final sentTo = state.sentTo;
         return AuthLayout(
-          appBar: AppPageBar(leading: BackButton(onPressed: _back)),
+          appBar: const AppPageBar(
+            leading: AppBackButton(fallback: LoginPage.path),
+          ),
           child: Form(
             key: _formKey,
             child: AutofillGroup(

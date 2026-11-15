@@ -44,7 +44,10 @@ class _SharedNoteDetailView extends StatelessWidget with ErrorsMessageMixin {
         final note = state.note;
         return Scaffold(
           // El título largo se lee entero en el cuerpo; la barra es genérica.
-          appBar: AppPageBar(title: Text(l10n.academicSharedNoteTitle)),
+          appBar: AppPageBar(
+            leading: const AppBackButton(fallback: AcademicPaths.sharedNotes),
+            title: Text(l10n.academicSharedNoteTitle),
+          ),
           bottomNavigationBar: note == null
               ? null
               : SafeArea(

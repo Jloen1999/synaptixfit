@@ -76,13 +76,14 @@ class _WorkoutView extends StatelessWidget with ErrorsMessageMixin {
             );
           } else if (state.closed) {
             context.showSnack(l10n.togetherDeclined);
-            context.pop();
+            context.popOrGo(SocialPaths.together);
           }
         },
         builder: (context, state) {
           final w = state.workout;
           return Scaffold(
             appBar: AppPageBar.reading(
+              leading: const AppBackButton(fallback: SocialPaths.together),
               title: Text(w?.routineName ?? l10n.togetherWorkoutTitle),
             ),
             body: switch (state.status) {

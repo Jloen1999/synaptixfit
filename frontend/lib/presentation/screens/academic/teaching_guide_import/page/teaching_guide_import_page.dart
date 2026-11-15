@@ -31,7 +31,7 @@ class TeachingGuideImportPage extends StatelessWidget {
     create: (_) =>
         getIt<TeachingGuideImportBloc>()
           ..add(TeachingGuideImportEvent.started(targetSubjectId: subjectId)),
-    child: const _ImportView(),
+    child: _ImportView(back: AcademicPaths.subjectOrHome(subjectId)),
   );
 }
 
@@ -50,7 +50,10 @@ Future<bool> _confirmDiscard(BuildContext context) {
 }
 
 class _ImportView extends StatelessWidget with ErrorsMessageMixin {
-  const _ImportView();
+  const _ImportView({required this.back});
+
+  /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
+  final String back;
 
   /// Los cambios de paso se anuncian: el foco se pierde al cambiar el
   /// contenido y quien usa lector de pantalla no vería que el análisis acabó.
@@ -94,11 +97,13 @@ class _ImportView extends StatelessWidget with ErrorsMessageMixin {
           canPop: !_isDirty(state),
           onPopInvokedWithResult: (didPop, _) async {
             if (didPop) return;
-            final navigator = Navigator.of(context);
-            if (await _confirmDiscard(context)) navigator.pop();
+            if (await _confirmDiscard(context) && context.mounted) {
+              context.popOrGo(back);
+            }
           },
           child: Scaffold(
             appBar: AppPageBar.reading(
+              leading: AppBackButton(fallback: back),
               title: Text(context.localizations.academicImportTitle),
             ),
             body: AcademicBody(

@@ -12,6 +12,7 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../bloc/cycle_bloc.dart';
+import '../../training_routes.dart';
 
 /// «Mi ciclo» (`/training/cycle`, opcional, ADR 0033): explicación y
 /// consentimiento para activarlo; activo, el momento estimado, apuntar el día
@@ -128,7 +129,10 @@ class _CycleView extends StatelessWidget with ErrorsMessageMixin {
             context.read<CycleBloc>().add(CycleEvent.dayLogged(day));
           },
           child: Scaffold(
-            appBar: AppPageBar.reading(title: Text(l10n.trainingCycleTitle)),
+            appBar: AppPageBar.reading(
+              leading: const AppBackButton(fallback: TrainingPaths.checkIn),
+              title: Text(l10n.trainingCycleTitle),
+            ),
             body: AppContentWidth.reading(
               child: switch (state) {
                 CycleState(loading: true, overview: null) =>

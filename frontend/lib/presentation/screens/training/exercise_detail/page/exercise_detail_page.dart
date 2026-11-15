@@ -14,6 +14,7 @@ import '../../widgets/training_labels.dart';
 import '../../exercise_guide/page/exercise_guide_section.dart';
 import '../bloc/exercise_detail_bloc.dart';
 import '../../exercise_progress/page/exercise_progress_section.dart';
+import '../../training_routes.dart';
 
 /// Detalle de un ejercicio: demostración, instrucciones, músculos y MET.
 class ExerciseDetailPage extends StatelessWidget {
@@ -30,6 +31,7 @@ class ExerciseDetailPage extends StatelessWidget {
       child: BlocBuilder<ExerciseDetailBloc, ExerciseDetailState>(
         builder: (context, state) => Scaffold(
           appBar: AppPageBar(
+            leading: const AppBackButton(fallback: TrainingPaths.root),
             title: Text(switch (state) {
               ExerciseDetailLoaded(:final exercise) => exercise.name,
               _ => context.localizations.trainingExerciseTitle,

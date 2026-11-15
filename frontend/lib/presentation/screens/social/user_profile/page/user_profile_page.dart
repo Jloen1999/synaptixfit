@@ -75,6 +75,7 @@ class _UserProfileView extends StatelessWidget {
           showSocialFeedback(context, state.feedback!),
       builder: (context, state) => Scaffold(
         appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: SocialPaths.friends),
           title: Text(state.profile?.fullName ?? l10n.socialProfileTitle),
         ),
         body: switch (state.status) {

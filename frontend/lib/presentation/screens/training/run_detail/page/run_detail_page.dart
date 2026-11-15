@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
@@ -37,13 +36,8 @@ class RunDetailPage extends StatelessWidget {
 class _DetailView extends StatelessWidget with ErrorsMessageMixin {
   const _DetailView();
 
-  void _close(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go(TrainingPaths.section(TrainingSection.run));
-    }
-  }
+  void _close(BuildContext context) =>
+      context.popOrGo(TrainingPaths.section(TrainingSection.run));
 
   void _delete(BuildContext context) {
     final bloc = context.read<RunDetailBloc>()
@@ -105,6 +99,9 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
         final run = state.run;
         return Scaffold(
           appBar: AppPageBar.reading(
+            leading: AppBackButton(
+              fallback: TrainingPaths.section(TrainingSection.run),
+            ),
             title: Text(
               run == null
                   ? l10n.runKindRun

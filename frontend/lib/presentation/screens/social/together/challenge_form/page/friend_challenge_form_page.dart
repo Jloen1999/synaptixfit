@@ -67,7 +67,10 @@ class _FormView extends StatelessWidget with ErrorsMessageMixin {
       builder: (context, state) {
         final bloc = context.read<FriendChallengeFormBloc>();
         return Scaffold(
-          appBar: AppPageBar.reading(title: Text(l10n.togetherNewChallenge)),
+          appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: SocialPaths.together),
+            title: Text(l10n.togetherNewChallenge),
+          ),
           body: switch (state.status) {
             FriendChallengeFormStatus.loading => const AppSkeletonList(),
             FriendChallengeFormStatus.failure => AppErrorView(

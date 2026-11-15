@@ -17,6 +17,7 @@ import '../../widgets/usage_focus_selector.dart';
 import '../../widgets/profile_labels.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/edit_account_bloc.dart';
+import '../../profile_routes.dart';
 
 /// Edición de la cuenta: nombre, avatar, fecha de nacimiento, privacidad y
 /// modo de uso. Al guardar actualiza `SessionBloc` (todas las pantallas lo ven).
@@ -97,7 +98,10 @@ class _EditAccountViewState extends State<_EditAccountView>
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Scaffold(
-      appBar: AppPageBar.reading(title: Text(l10n.profileEditAccountTitle)),
+      appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: ProfilePaths.root),
+        title: Text(l10n.profileEditAccountTitle),
+      ),
       body: BlocConsumer<EditAccountBloc, EditAccountState>(
         listener: (context, state) {
           switch (state) {

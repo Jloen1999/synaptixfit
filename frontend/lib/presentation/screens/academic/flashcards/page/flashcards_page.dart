@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/academic/quiz.dart';
@@ -8,6 +7,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../academic_routes.dart';
 import '../../widgets/academic_widgets.dart';
 import '../../widgets/result_summary.dart';
 import '../bloc/flashcards_bloc.dart';
@@ -22,12 +22,15 @@ class FlashcardsPage extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider(
     create: (_) =>
         getIt<FlashcardsBloc>()..add(FlashcardsEvent.started(materialId)),
-    child: const _FlashcardsView(),
+    child: _FlashcardsView(back: AcademicPaths.practice(materialId)),
   );
 }
 
 class _FlashcardsView extends StatelessWidget with ErrorsMessageMixin {
-  const _FlashcardsView();
+  const _FlashcardsView({required this.back});
+
+  /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
+  final String back;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +55,7 @@ class _FlashcardsView extends StatelessWidget with ErrorsMessageMixin {
         final bloc = context.read<FlashcardsBloc>();
         return Scaffold(
           appBar: AppPageBar.reading(
+            leading: AppBackButton(fallback: back),
             title: Text(l10n.academicFlashcardsTitle),
             actions: [
               if (state.cards.isNotEmpty)
@@ -80,7 +84,7 @@ class _FlashcardsView extends StatelessWidget with ErrorsMessageMixin {
             FlashcardsState(loading: true) => const AppLoadingView(),
             FlashcardsState(:final error?) => AppErrorView(
               error: error,
-              onRetry: () => context.pop(),
+              onRetry: () => context.popOrGo(back),
             ),
             FlashcardsState(finished: true) => _Finished(state: state),
             _ => AcademicBody(
@@ -327,7 +331,12 @@ class _Finished extends StatelessWidget {
             const SizedBox(height: TokensSpacing.s),
             AppSecondaryButton(
               label: l10n.commonBack,
-              onPressed: () => context.pop(true),
+              onPressed: () => context.popOrGo(
+                AcademicPaths.practice(
+                  context.read<FlashcardsBloc>().state.materialId,
+                ),
+                true,
+              ),
             ),
           ],
         ],

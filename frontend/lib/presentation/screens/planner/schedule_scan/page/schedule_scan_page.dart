@@ -139,7 +139,10 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
       listener: (context, state) => _onNotice(context, state.notice!),
       builder: (context, state) {
         return Scaffold(
-          appBar: AppPageBar.reading(title: Text(l10n.plannerScheduleTitle)),
+          appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: PlannerPaths.root),
+            title: Text(l10n.plannerScheduleTitle),
+          ),
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(

@@ -75,7 +75,10 @@ class _TemplatesView extends StatelessWidget {
       builder: (context, state) {
         final bloc = context.read<RoutineTemplatesBloc>();
         return Scaffold(
-          appBar: AppPageBar(title: Text(l10n.trainingTemplatesTitle)),
+          appBar: AppPageBar(
+            leading: const AppBackButton(fallback: TrainingPaths.root),
+            title: Text(l10n.trainingTemplatesTitle),
+          ),
           body: switch (state.status) {
             TemplatesStatus.loading => const AppSkeletonList(),
             TemplatesStatus.failure => AppErrorView(

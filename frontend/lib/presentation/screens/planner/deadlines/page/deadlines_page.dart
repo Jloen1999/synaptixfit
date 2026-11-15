@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
@@ -18,6 +17,7 @@ import '../../../auth/session/bloc/session_bloc.dart';
 import '../../widgets/deadline_form_sheet.dart';
 import '../../widgets/planner_visuals.dart';
 import '../bloc/deadlines_bloc.dart';
+import '../../planner_routes.dart';
 
 /// Qué se sabe ya de la entrega que se va a apuntar al abrir la pantalla con
 /// el formulario abierto (`?new=1`, ver `PlannerPaths.newDeadline`).
@@ -105,8 +105,8 @@ class _DeadlinesViewState extends State<_DeadlinesView>
       bloc.add(DeadlinesEvent.saved(id: deadline?.id, draft: draft));
     } else if (preset != null && context.mounted) {
       // Se vino a apuntar una entrega y se canceló: se vuelve a donde se
-      // estaba, no a una lista que no se pidió.
-      context.pop();
+      // estaba, no a una lista que no se pidió (sin pila, al calendario).
+      context.popOrGo(PlannerPaths.root);
     }
   }
 
@@ -205,7 +205,10 @@ class _DeadlinesViewState extends State<_DeadlinesView>
       },
       builder: (context, state) {
         return Scaffold(
-          appBar: AppPageBar.reading(title: Text(l10n.plannerDeadlinesTitle)),
+          appBar: AppPageBar.reading(
+            leading: const AppBackButton(fallback: PlannerPaths.root),
+            title: Text(l10n.plannerDeadlinesTitle),
+          ),
           // Con la lista vacía el estado vacío ya lleva «Nueva entrega».
           floatingActionButton:
               state.status == DeadlinesStatus.ready &&

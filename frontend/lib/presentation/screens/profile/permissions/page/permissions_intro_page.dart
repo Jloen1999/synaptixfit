@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -38,13 +37,7 @@ class _PermissionsIntroView extends StatelessWidget with ErrorsMessageMixin {
 
   final String nextPath;
 
-  void _leave(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go(nextPath);
-    }
-  }
+  void _leave(BuildContext context) => context.popOrGo(nextPath);
 
   @override
   Widget build(BuildContext context) {

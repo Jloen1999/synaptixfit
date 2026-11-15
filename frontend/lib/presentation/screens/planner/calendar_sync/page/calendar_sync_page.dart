@@ -45,7 +45,10 @@ class _CalendarSyncView extends StatelessWidget with ErrorsMessageMixin {
       listener: (context, state) =>
           context.showSnack(errorMessage(context, state.actionError!)),
       builder: (context, state) => Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.plannerSyncTitle)),
+        appBar: AppPageBar.reading(
+          leading: const AppBackButton(fallback: PlannerPaths.root),
+          title: Text(l10n.plannerSyncTitle),
+        ),
         body: AppContentWidth.reading(
           child: switch (state.status) {
             CalendarSyncStatus.loading => const AppSkeletonList(

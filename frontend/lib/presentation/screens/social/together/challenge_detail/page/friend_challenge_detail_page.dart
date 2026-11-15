@@ -12,6 +12,7 @@ import '../../../../../widgets/widgets.dart';
 import '../../widgets/together_labels.dart';
 import '../../widgets/together_widgets.dart';
 import '../bloc/friend_challenge_detail_bloc.dart';
+import '../../../social_routes.dart';
 
 /// Reto con amigos (ADR 0044): cómo va el grupo (o la clasificación en
 /// competición), quién está y el tablón con reacciones fijas. Salir es un
@@ -67,7 +68,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
               switch (state.effect!) {
                 case FriendChallengeDetailEffect.declined:
                   context.showSnack(l10n.togetherDeclined);
-                  navigator.pop();
+                  context.popOrGo(SocialPaths.together);
                 case FriendChallengeDetailEffect.left:
                   context.showUndoSnack(
                     l10n.togetherLeftChallenge,
@@ -85,6 +86,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
               final c = state.challenge;
               return Scaffold(
                 appBar: AppPageBar.reading(
+                  leading: const AppBackButton(fallback: SocialPaths.together),
                   title: Text(c?.title ?? l10n.togetherChallengeTitle),
                 ),
                 body: switch (state.status) {

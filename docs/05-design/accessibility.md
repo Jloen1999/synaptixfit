@@ -26,6 +26,7 @@ Lo marcado está resuelto en los componentes base o el tema y comprobado por tes
 - [x] Selector de apariencia (Oscuro / Claro / Como el sistema): grupo de radios con nombre de grupo anunciado y radio al final, como el resto de ajustes; los dos temas pasan el test de contraste (1.4.3, 4.1.2).
 - [x] Idioma de la app (español, inglés, francés y portugués, o el del dispositivo) en Ajustes: los nombres de idioma van en su propio idioma y fechas y números usan su formato. Los textos más largos (francés) se prueban con texto al 200 % en Inicio.
 - [x] Editor de bloque: solo se muestran los campos que aplican al tipo (una entrega pide solo la hora de entrega; examen, comida y descanso, inicio y duración); menos campos, menos carga (3.3.2).
+- [x] Navegación coherente (3.2.3): la misma flecha «Volver» (`AppBackButton`, 48 dp, nombre «Volver» en los cuatro idiomas) en toda pantalla que no es pestaña; abierta sin pila (aviso, enlace, recarga en web) lleva a la pantalla de la que cuelga (ADR 0046). Tests: `test/presentation/widgets/app_back_button_test.dart` y `test/presentation/screens/shell/back_button_routes_test.dart`.
 - [x] Orden de foco lógico y navegación completa con teclado en web y escritorio (2.1.1, 2.4.3, 2.4.7, 2.4.11). Ver «Teclado y foco» abajo.
 
 ## Teclado y foco

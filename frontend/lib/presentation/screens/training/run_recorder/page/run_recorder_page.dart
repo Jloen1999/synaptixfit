@@ -288,6 +288,9 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
           },
           child: Scaffold(
             appBar: AppPageBar(
+              leading: AppBackButton(
+                fallback: TrainingPaths.section(TrainingSection.run),
+              ),
               title: Text(
                 state.workout?.name ?? RunLabels.kindName(l10n, state.kind),
               ),

@@ -9,6 +9,7 @@ import '../../../../widgets/widgets.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/permissions_bloc.dart';
 import 'permission_tile.dart';
+import '../../profile_routes.dart';
 
 /// Ajustes › Permisos del móvil (`/profile/settings/permissions`): cómo está
 /// cada permiso y qué hacer. Al volver de los ajustes del sistema se comprueba
@@ -70,7 +71,10 @@ class _PermissionsView extends StatelessWidget with ErrorsMessageMixin {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Scaffold(
-      appBar: AppPageBar.reading(title: Text(l10n.profilePermissionsTitle)),
+      appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: ProfilePaths.settings),
+        title: Text(l10n.profilePermissionsTitle),
+      ),
       body: BlocConsumer<PermissionsBloc, PermissionsState>(
         listenWhen: (a, b) =>
             b.statuses.isNotEmpty && b.error != null && a.error != b.error,

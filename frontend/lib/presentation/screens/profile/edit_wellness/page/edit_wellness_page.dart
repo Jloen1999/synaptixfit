@@ -34,7 +34,10 @@ class _EditWellnessView extends StatelessWidget with ErrorsMessageMixin {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Scaffold(
-      appBar: AppPageBar.reading(title: Text(l10n.profileEditWellnessTitle)),
+      appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: ProfilePaths.root),
+        title: Text(l10n.profileEditWellnessTitle),
+      ),
       body: BlocConsumer<WellnessFormBloc, WellnessFormState>(
         listenWhen: (a, b) =>
             a.saved != b.saved || a.actionError != b.actionError,

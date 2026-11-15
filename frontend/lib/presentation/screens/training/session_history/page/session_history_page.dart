@@ -60,6 +60,7 @@ class _HistoryView extends StatelessWidget {
           initialIndex: activities ? 1 : 0,
           child: Scaffold(
             appBar: AppPageBar(
+              leading: const AppBackButton(fallback: TrainingPaths.root),
               title: Text(l10n.trainingHistoryTitle),
               // Desplazables: con letra grande «Actividades y partidos» no
               // cabe en medio ancho y se cortaría.

@@ -12,6 +12,9 @@ abstract final class AdminPaths {
   static const root = '/admin';
   static const exerciseNew = '/admin/exercises/new';
 
+  /// Perfil (módulo profile): de ahí cuelga el panel de administración.
+  static const profile = '/profile';
+
   static String userDetail(String userId) => '/admin/users/$userId';
 
   static String exerciseEdit(String exerciseId) =>

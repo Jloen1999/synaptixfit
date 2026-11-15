@@ -27,7 +27,10 @@ class SharedNotesPage extends StatelessWidget {
     final author = authorId;
     if (author != null) {
       return Scaffold(
-        appBar: AppPageBar(title: Text(l10n.academicSharedNotesTitle)),
+        appBar: AppPageBar(
+          leading: const AppBackButton(fallback: AcademicPaths.root),
+          title: Text(l10n.academicSharedNotesTitle),
+        ),
         body: _SharedNotesList(scope: SharedNotesScope.all, authorId: author),
       );
     }
@@ -35,6 +38,7 @@ class SharedNotesPage extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppPageBar(
+          leading: const AppBackButton(fallback: AcademicPaths.root),
           title: Text(l10n.academicSharedNotesTitle),
           bottom: TabBar(
             tabs: [

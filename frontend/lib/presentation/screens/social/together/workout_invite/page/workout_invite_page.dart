@@ -61,7 +61,15 @@ class _InviteView extends StatelessWidget with ErrorsMessageMixin {
         context.pushReplacement(SocialPaths.togetherWorkout(state.created!.id));
       },
       child: Scaffold(
-        appBar: AppPageBar.reading(title: Text(l10n.togetherTrainWithFriends)),
+        appBar: AppPageBar.reading(
+          // Sale del ⋮ de la rutina: vuelve a ella (pestaña Entreno, con `go`).
+          leading: AppBackButton(
+            fallback: routineId.isEmpty
+                ? SocialPaths.together
+                : SocialExternalPaths.routine(routineId),
+          ),
+          title: Text(l10n.togetherTrainWithFriends),
+        ),
         body: ListView(
           padding: const EdgeInsets.all(TokensSpacing.m),
           children: [

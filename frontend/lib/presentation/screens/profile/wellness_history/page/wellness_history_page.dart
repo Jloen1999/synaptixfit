@@ -11,6 +11,7 @@ import '../../../../widgets/widgets.dart';
 import '../../widgets/profile_labels.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/wellness_history_bloc.dart';
+import '../../profile_routes.dart';
 
 /// Historial de peso (gráfica) y de objetivos (`/profile/wellness-history`).
 class WellnessHistoryPage extends StatelessWidget {
@@ -34,7 +35,10 @@ class _WellnessHistoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Scaffold(
-      appBar: AppPageBar.reading(title: Text(l10n.profileWellnessHistoryTitle)),
+      appBar: AppPageBar.reading(
+        leading: const AppBackButton(fallback: ProfilePaths.root),
+        title: Text(l10n.profileWellnessHistoryTitle),
+      ),
       body: BlocBuilder<WellnessHistoryBloc, WellnessHistoryState>(
         builder: (context, state) {
           final bloc = context.read<WellnessHistoryBloc>();

@@ -29,6 +29,7 @@ class CommunityChallengesPage extends StatelessWidget {
             ..add(const CommunityChallengesEvent.started()),
       child: Scaffold(
         appBar: AppPageBar(
+          leading: const AppBackButton(fallback: ChallengesPaths.list),
           title: Text(context.localizations.challengesTabCommunity),
         ),
         body: const CommunityChallengesView(),

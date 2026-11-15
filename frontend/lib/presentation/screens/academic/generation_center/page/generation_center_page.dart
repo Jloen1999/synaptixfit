@@ -91,10 +91,17 @@ class _GenerationCenterView extends StatelessWidget with ErrorsMessageMixin {
               message: l10n.academicGenerateLoseEditsMessage,
               confirmLabel: l10n.academicGenerateLoseEditsConfirm,
             );
-            if (ok && context.mounted) context.pop();
+            if (ok && context.mounted) {
+              context.popOrGo(AcademicPaths.subjectOrHome(state.subjectId));
+            }
           },
           child: Scaffold(
-            appBar: AppPageBar(title: Text(l10n.academicGenerateTitle)),
+            appBar: AppPageBar(
+              leading: AppBackButton(
+                fallback: AcademicPaths.subjectOrHome(state.subjectId),
+              ),
+              title: Text(l10n.academicGenerateTitle),
+            ),
             bottomNavigationBar: artifact == null
                 ? _GenerateBar(state: state)
                 : _ResultBar(state: state),

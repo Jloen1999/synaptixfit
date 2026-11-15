@@ -213,6 +213,7 @@ class _DetailViewState extends State<_DetailView> {
         }
         return Scaffold(
           appBar: AppPageBar(
+            leading: const AppBackButton(fallback: TrainingPaths.root),
             title: Text(routine?.name ?? l10n.trainingRoutineTitle),
             actions: [
               if (routine != null && routine.owned)

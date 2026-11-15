@@ -26,12 +26,18 @@ class SubjectFormPage extends StatelessWidget {
     create: (_) =>
         getIt<SubjectFormBloc>()
           ..add(SubjectFormEvent.started(subjectId: subjectId)),
-    child: _SubjectFormView(isNew: subjectId == null),
+    child: _SubjectFormView(
+      isNew: subjectId == null,
+      back: AcademicPaths.subjectOrHome(subjectId),
+    ),
   );
 }
 
 class _SubjectFormView extends StatefulWidget {
-  const _SubjectFormView({required this.isNew});
+  const _SubjectFormView({required this.isNew, required this.back});
+
+  /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
+  final String back;
 
   final bool isNew;
 
@@ -135,7 +141,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
           if (widget.isNew) {
             context.pushReplacement(AcademicPaths.subject(saved));
           } else {
-            context.pop(true);
+            context.popOrGo(widget.back, true);
           }
         } else if (state.saveError != null) {
           context.showSnack(errorMessage(context, state.saveError!));
@@ -144,6 +150,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar.reading(
+            leading: AppBackButton(fallback: widget.back),
             title: Text(
               widget.isNew
                   ? l10n.academicSubjectNewTitle
@@ -154,7 +161,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
             SubjectFormState(loading: true) => const AppLoadingView(),
             SubjectFormState(:final loadError?) => AppErrorView(
               error: loadError,
-              onRetry: () => context.pop(),
+              onRetry: () => context.popOrGo(widget.back),
             ),
             _ => AcademicBody(
               maxWidth: TokensLayout.readingMaxWidth,

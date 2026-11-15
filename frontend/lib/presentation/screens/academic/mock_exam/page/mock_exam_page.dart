@@ -40,13 +40,19 @@ class MockExamPage extends StatelessWidget {
     );
     return BlocProvider(
       create: (_) => getIt<MockExamBloc>()..add(start),
-      child: _MockExamView(start: start),
+      child: _MockExamView(
+        start: start,
+        back: AcademicPaths.practice(materialId),
+      ),
     );
   }
 }
 
 class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
-  const _MockExamView({required this.start});
+  const _MockExamView({required this.start, required this.back});
+
+  /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
+  final String back;
 
   /// Cómo se abrió: «Reintentar» lo repite.
   final MockExamEvent start;
@@ -113,6 +119,7 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
           },
           child: Scaffold(
             appBar: AppPageBar.reading(
+              leading: AppBackButton(fallback: back),
               title: Text(l10n.academicExamTitle),
               actions: [
                 if (session != null)

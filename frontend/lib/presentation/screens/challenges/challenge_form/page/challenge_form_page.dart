@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart' hide Visibility;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/challenge_difficulty.dart';
@@ -54,6 +53,11 @@ class ChallengeFormPage extends StatelessWidget {
           ),
         ),
       child: _FormView(
+        // Editar tareas cuelga del reto; uno nuevo, de Progreso › Retos.
+        back: switch (editChallengeId) {
+          final String id => ChallengesPaths.detail(id),
+          null => ChallengesPaths.list,
+        },
         initialTitle: args.title ?? '',
         initialSessionTarget: args.sessionTarget,
       ),
@@ -62,7 +66,14 @@ class ChallengeFormPage extends StatelessWidget {
 }
 
 class _FormView extends StatefulWidget {
-  const _FormView({required this.initialTitle, this.initialSessionTarget});
+  const _FormView({
+    required this.back,
+    required this.initialTitle,
+    this.initialSessionTarget,
+  });
+
+  /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
+  final String back;
 
   final String initialTitle;
   final int? initialSessionTarget;
@@ -106,11 +117,7 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
                 : l10n.challengesCreated,
           ),
         );
-        if (context.canPop()) {
-          context.pop(challengeId);
-        } else {
-          context.go(ChallengesPaths.detail(challengeId));
-        }
+        context.popOrGo(ChallengesPaths.detail(challengeId), challengeId);
       case ChallengeFormSaveFailed(:final error):
         context.showSnack(errorMessage(context, error));
     }
@@ -186,6 +193,7 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
         final saving = state.status == ChallengeFormStatus.saving;
         return Scaffold(
           appBar: AppPageBar(
+            leading: AppBackButton(fallback: widget.back),
             title: Text(
               editing
                   ? l10n.challengesFormEditTasksTitle
