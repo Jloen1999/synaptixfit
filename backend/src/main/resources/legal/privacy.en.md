@@ -17,7 +17,7 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 
 ## Which data we use
 
-- Your account: name, email, password (stored encrypted, nobody can read it), profile photo if you add one and, if you sign in with Google, your Google identifier.
+- Your account: name, email, password (stored encrypted, nobody can read it), profile photo if you add one (stored cropped and without location data, seen by those who can see your name in the app and deleted when you remove it or delete your account) and, if you sign in with Google, your Google identifier.
 - Your studies: university, degree, year, subjects, timetable, classes, assignments, exams, study sessions in your calendar, notes, files you upload, review questions and your answers.
 - Your training: routines, sessions, sets, weights, times, activities and matches you log, running workouts, challenges, streaks, level and badges.
 - Your precise location, only while you record a run with GPS (also with the screen off, with an ongoing "Recording your run" notice on the phone): the route you take, with the time and altitude of each point, to calculate distance, pace, elevation gain and per-kilometre splits and to draw the map. Location is never used when you are not recording.
@@ -25,7 +25,7 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 - Your wellbeing profile, if you fill it in: sex, weight, height, activity level and, if you gave it before the date of birth existed, your age.
 - Your daily check-in, only if you give your permission: how you slept, stress, energy, soreness and areas with pain.
 - "My cycle", only if you turn it on: period days, energy and discomfort you log and your notes.
-- Photos of paper notes: we read them to turn them into text and do not keep the photo. Only the note you decide to save is stored.
+- Photos of paper notes: we read them on our server to turn them into text and do not keep the photo. If our reader cannot read a photo well, we send it to Google (Gemini) only to turn it into text, already rotated and without location data. Only the note you decide to save is stored.
 - What you share in the community: posts, comments, shared notes, friendships and visible badges.
 - What you do «With friends», if you use it: the challenges, streaks, workouts and study rooms with friends you take part in (and, in each room, the subject you choose), the reactions you give and the people you report.
 - Reminders: your reminder preferences and, if you turn it on, the weekly summary email.
@@ -74,6 +74,8 @@ We do not sell your data or use it for advertising.
 
 Some features use DeepSeek, an artificial intelligence provider: generating routines, summaries and review questions, tidying the text of note photos, reading timetables or enrolments and suggesting goals. We only send what each request needs and never your name or your email. When suggesting a routine, for example, we send your age (worked out, never your date of birth), sex, weight, height, activity level, your study hours and, if you gave the daily check-in permission, how you are today (sleep, stress, areas with pain). "My cycle" data is never sent.
 
+Photos of notes that our reader cannot read well are sent to Gemini, Google's artificial intelligence, only to turn them into text. Only the photo is sent, without your name or email.
+
 ## Who it is shared with
 
 Only with companies we need for the app to work, which work for us and do not use your data for anything else:
@@ -81,7 +83,7 @@ Only with companies we need for the app to work, which work for us and do not us
 - Our server, rented from OVH in France, where the database and the app live.
 - Cloudflare: protects and speeds up the connection to the app and stores the files you upload.
 - DeepSeek: artificial intelligence, as explained above. Its servers may be outside the European Union, including China.
-- Google: only if you sign in with your Google account, to check who you are.
+- Google: if you sign in with your Google account, to check who you are; and Gemini, only to turn into text the photos of notes that our reader cannot read well.
 - Resend: sends the password recovery and weekly summary emails.
 - MapTiler: serves the images of the Running map; it receives the area of the map shown, not your route.
 
@@ -107,7 +109,7 @@ If you think we do not handle your data properly, you can complain to the Spanis
 
 ## Phone permissions
 
-The app only asks for permissions when they are needed and explains first what for: notifications (reminders), on-time reminders (so reminders arrive at the exact minute), camera (photographing notes) and location (recording runs: only while you record, even with the screen off; never when you are not recording). You can refuse or remove them in the phone settings: the app keeps working without them.
+The app only asks for permissions when they are needed and explains first what for: notifications (reminders), on-time reminders (so reminders arrive at the exact minute), camera (photographing notes or taking your profile photo) and location (recording runs: only while you record, even with the screen off; never when you are not recording). You can refuse or remove them in the phone settings: the app keeps working without them.
 
 ## Minors
 

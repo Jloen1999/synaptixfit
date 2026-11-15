@@ -150,6 +150,7 @@ abstract class ScannedNoteDraftDto with _$ScannedNoteDraftDto {
     @Default('') String markdown,
     @Default(false) bool tidied,
     @Default(1) int pages,
+    @Default(false) bool unclear,
   }) = _ScannedNoteDraftDto;
 
   const ScannedNoteDraftDto._();
@@ -162,5 +163,6 @@ abstract class ScannedNoteDraftDto with _$ScannedNoteDraftDto {
     markdown: markdown,
     tidied: tidied,
     pages: pages,
+    unclear: unclear,
   );
 }

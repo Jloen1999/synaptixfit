@@ -44,6 +44,21 @@ class AccountRepository implements AccountRepositoryContract {
       '${d.day.toString().padLeft(2, '0')}';
 
   @override
+  Future<AppResult<Account>> uploadAvatar({
+    required List<int> bytes,
+    required String fileName,
+    required String mimeType,
+  }) => RepositoryErrorHandler.guard(
+    () async =>
+        (await _remote.uploadAvatar(bytes, fileName, mimeType)).toDomain(),
+  );
+
+  @override
+  Future<AppResult<Account>> removeAvatar() => RepositoryErrorHandler.guard(
+    () async => (await _remote.removeAvatar()).toDomain(),
+  );
+
+  @override
   Future<AppResult<Unit>> changePassword({
     String? currentPassword,
     required String newPassword,

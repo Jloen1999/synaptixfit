@@ -2,6 +2,7 @@ package com.synaptixfit.domain.model.academic;
 
 import com.synaptixfit.domain.exception.academic.NoteScanTooLargeException;
 import com.synaptixfit.domain.exception.academic.NoteScanUnsupportedFileException;
+import com.synaptixfit.domain.model.shared.ImageHeader;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;

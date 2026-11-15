@@ -17,17 +17,23 @@ import '../../widgets/usage_focus_selector.dart';
 import '../../widgets/profile_labels.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/edit_account_bloc.dart';
+import '../bloc/profile_photo_bloc.dart';
+import 'profile_photo_section.dart';
 import '../../profile_routes.dart';
 
-/// Edición de la cuenta: nombre, avatar, fecha de nacimiento, privacidad y
-/// modo de uso. Al guardar actualiza `SessionBloc` (todas las pantallas lo ven).
+/// Edición de la cuenta: foto, nombre, fecha de nacimiento, privacidad y modo
+/// de uso. Al guardar actualiza `SessionBloc` (todas las pantallas lo ven). La
+/// foto se guarda al momento con su propio bloc ([ProfilePhotoSection]).
 class EditAccountPage extends StatelessWidget {
   const EditAccountPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<EditAccountBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => getIt<EditAccountBloc>()),
+        BlocProvider(create: (_) => getIt<ProfilePhotoBloc>()),
+      ],
       child: const _EditAccountView(),
     );
   }
@@ -44,7 +50,6 @@ class _EditAccountViewState extends State<_EditAccountView>
     with ErrorsMessageMixin {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
-  late final TextEditingController _avatar;
   late Visibility _privacy;
   late UsageFocus _focus;
   DateTime? _birthDate;
@@ -55,28 +60,17 @@ class _EditAccountViewState extends State<_EditAccountView>
     super.initState();
     final account = context.read<SessionBloc>().account;
     _name = TextEditingController(text: account?.fullName ?? '');
-    _avatar = TextEditingController(text: account?.avatarUrl ?? '');
     _privacy = account?.privacy ?? Visibility.private;
     _focus = account?.usageFocus ?? UsageFocus.both;
     _birthDate = account?.birthDate;
     _hadBirthDate = _birthDate != null;
-    _avatar.addListener(() => setState(() {}));
     _name.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _name.dispose();
-    _avatar.dispose();
     super.dispose();
-  }
-
-  String? _validateUrl(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty) return null;
-    final uri = Uri.tryParse(text);
-    final ok = uri != null && uri.hasScheme && uri.host.isNotEmpty;
-    return ok ? null : context.localizations.profileAvatarUrlInvalid;
   }
 
   void _submit() {
@@ -84,7 +78,6 @@ class _EditAccountViewState extends State<_EditAccountView>
     context.read<EditAccountBloc>().add(
       EditAccountEvent.submitted(
         fullName: _name.text,
-        avatarUrl: _avatar.text,
         privacy: _privacy,
         usageFocus: _focus,
         birthDate: _birthDate,
@@ -120,15 +113,7 @@ class _EditAccountViewState extends State<_EditAccountView>
         builder: (context, state) {
           return ProfileScrollBody(
             children: [
-              Center(
-                child: AppAvatar(
-                  name: _name.text.isEmpty ? '?' : _name.text,
-                  imageUrl: _validateUrl(_avatar.text) == null
-                      ? _avatar.text.trim()
-                      : null,
-                  radius: 44,
-                ),
-              ),
+              Center(child: ProfilePhotoSection(name: _name.text)),
               const SizedBox(height: TokensSpacing.l),
               Form(
                 key: _formKey,
@@ -142,15 +127,6 @@ class _EditAccountViewState extends State<_EditAccountView>
                       textInputAction: TextInputAction.next,
                       validator: (v) =>
                           Validators.minLength(v, 2)?.text(context),
-                    ),
-                    const SizedBox(height: TokensSpacing.m),
-                    AppTextField(
-                      label: l10n.profileFieldAvatarUrl,
-                      hint: l10n.profileFieldAvatarUrlHint,
-                      controller: _avatar,
-                      icon: Icons.image_outlined,
-                      keyboardType: TextInputType.url,
-                      validator: _validateUrl,
                     ),
                   ],
                 ),

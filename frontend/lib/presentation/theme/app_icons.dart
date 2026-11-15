@@ -174,4 +174,11 @@ abstract final class AppIcons {
   static const IconData tabTrainingSelected = Icons.fitness_center_rounded;
   static const IconData tabProgress = Icons.insights_outlined;
   static const IconData tabProgressSelected = Icons.insights_rounded;
+
+  // Fotos (apuntes y foto de perfil, ADR 0051 y 0052).
+  static const IconData camera = Icons.photo_camera_rounded;
+  static const IconData gallery = Icons.photo_library_outlined;
+  static const IconData imageUnavailable = Icons.image_not_supported_outlined;
+  static const IconData zoomIn = Icons.zoom_in_rounded;
+  static const IconData zoomOut = Icons.zoom_out_rounded;
 }

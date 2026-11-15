@@ -7,8 +7,10 @@ import java.util.stream.Collectors;
 /**
  * Borrador de apunte leído de fotos: lo revisa la persona antes de guardarlo (no se guarda solo).
  * {@code tidied} indica si la IA lo ordenó; si no estaba disponible, es el texto tal como se leyó.
+ * {@code unclear}: alguna página no se pudo leer bien (ver {@link PageReading#unclear()}); la pantalla lo avisa
+ * para que la persona compare con la foto y complete lo que falte (ADR 0051).
  */
-public record ScannedNoteDraft(String title, String markdown, boolean tidied, int pages) {
+public record ScannedNoteDraft(String title, String markdown, boolean tidied, int pages, boolean unclear) {
 
     /** Menos letras o cifras que esto es ruido de la foto (sombras, bordes), no apuntes. */
     static final int MIN_READABLE_CHARS = 12;
@@ -41,14 +43,14 @@ public record ScannedNoteDraft(String title, String markdown, boolean tidied, in
     }
 
     /** Sin IA: el texto leído tal cual y, como título, su primera línea con contenido. */
-    public static ScannedNoteDraft untidied(String text, int pages) {
-        return new ScannedNoteDraft(firstLineTitle(text), text, false, pages);
+    public static ScannedNoteDraft untidied(String text, int pages, boolean unclear) {
+        return new ScannedNoteDraft(firstLineTitle(text), text, false, pages, unclear);
     }
 
-    /** Con IA: si no dio título, se usa la primera línea del texto ordenado. */
+    /** Con IA (solo con una lectura clara): si no dio título, se usa la primera línea del texto ordenado. */
     public static ScannedNoteDraft tidied(String title, String markdown, int pages) {
         String t = title == null || title.isBlank() ? firstLineTitle(markdown) : shorten(title.strip());
-        return new ScannedNoteDraft(t, markdown, true, pages);
+        return new ScannedNoteDraft(t, markdown, true, pages, false);
     }
 
     /** Primera línea con letras, sin marcas de Markdown; {@code null} si no hay ninguna. */

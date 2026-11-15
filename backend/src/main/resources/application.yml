@@ -74,6 +74,20 @@ synaptixfit:
   # Vídeos e imágenes de los ejercicios por el dominio de la app (nginx /media/ → bucket público); vacío: tal cual.
   media:
     public-base-url: ${MEDIA_PUBLIC_BASE_URL:}
+  # Lector con visión de Google (ADR 0051): solo cuando Tesseract no lee bien una foto de apuntes. Sin clave queda
+  # desactivado. La clave es secreta: solo en el entorno, nunca aquí.
+  vision:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-3.8-flash}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+    timeout: ${GEMINI_TIMEOUT:30s}
+    max-side: ${GEMINI_MAX_SIDE:2048}
+    # Copiar texto no necesita razonar. Vacío si el modelo elegido no admite thinkingLevel (anteriores a Gemini 3).
+    thinking-level: ${GEMINI_THINKING_LEVEL:MINIMAL}
+  # Fotos de perfil (ADR 0052): se sirven en <base>/api/v1/avatars/...; vacía, la dirección pública de la app
+  # (mail.app-url: en producción nginx reenvía /api/ al backend). En local conviene el propio backend (:8080).
+  avatars:
+    base-url: ${AVATAR_BASE_URL:}
   mail:
     resend-api-key: ${RESEND_API_KEY:}
     from: ${MAIL_FROM:SynaptixFit <no-reply@notifications.jloenit.dev>}

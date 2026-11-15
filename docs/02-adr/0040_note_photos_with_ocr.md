@@ -1,6 +1,7 @@
 # 0040. Fotografiar apuntes: OCR con Tesseract en el backend y orden con la IA
 
-* **Estado:** Aprobado
+* **Estado:** Aprobado (ampliado por el ADR 0051: foto girada según EXIF, confianza del OCR, freno a la IA y
+  lector con visión de Gemini como respaldo)
 * **Fecha:** 2026-11-04
 * **Autores:** SynaptixFit
 

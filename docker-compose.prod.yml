@@ -22,6 +22,10 @@ services:
       GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      # Lector con visión (Gemini) para las fotos de apuntes que Tesseract no lee bien (ADR 0051). Opcional:
+      # vacía, queda desactivado. Secreta.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
       # Sin token de R2 la app arranca igual (solo falla la subida de archivos). Una variable vacía
       # anularía el valor por defecto de application.yml, por eso se repite aquí.
       R2_ENDPOINT: ${R2_ENDPOINT:-https://r2-no-configurado.invalid}

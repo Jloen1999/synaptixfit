@@ -104,6 +104,13 @@
             <artifactId>pdfbox</artifactId>
             <version>${pdfbox.version}</version>
         </dependency>
+        <!-- Abre fotos WEBP en Java (ImageIO solo trae JPEG y PNG) para girarlas antes del OCR y para la foto de
+             perfil. Java puro, unos 400 KB con sus dependencias (ADR 0051). -->
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+            <version>3.15.3</version>
+        </dependency>
 
         <!-- Tests -->
         <dependency>

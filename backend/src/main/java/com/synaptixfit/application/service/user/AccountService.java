@@ -4,8 +4,10 @@ import com.synaptixfit.application.port.input.user.GetAgeTodayUseCase;
 import com.synaptixfit.application.port.input.user.GetCurrentUserUseCase;
 import com.synaptixfit.application.port.input.user.UpdateAccountUseCase;
 import com.synaptixfit.domain.event.user.UserPrivacyChanged;
+import com.synaptixfit.domain.exception.user.AvatarInvalidImageException;
 import com.synaptixfit.domain.exception.user.UserNotFoundException;
 import com.synaptixfit.domain.model.insights.TimeZones;
+import com.synaptixfit.domain.model.user.ProfilePhoto;
 import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
@@ -52,7 +54,12 @@ public class AccountService implements GetCurrentUserUseCase, UpdateAccountUseCa
         if (command.fullName() != null) {
             user.rename(command.fullName());
         }
-        if (command.avatarUrl() != null) {
+        // Dirección escrita a mano (versiones antiguas de la app). Una foto subida a la app solo se cambia o se
+        // quita con /me/avatar, que también borra el archivo (ADR 0052); por aquí quedaría suelto en R2.
+        if (ProfilePhoto.belongsToAnother(command.avatarUrl(), user.id())) {
+            throw new AvatarInvalidImageException();
+        }
+        if (command.avatarUrl() != null && ProfilePhoto.storedKey(user.avatarUrl(), user.id()).isEmpty()) {
             user.changeAvatar(command.avatarUrl().isBlank() ? null : command.avatarUrl());
         }
         boolean privacyChanged = command.privacy() != null && command.privacy() != user.privacy();

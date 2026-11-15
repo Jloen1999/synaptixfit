@@ -159,7 +159,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
     try {
       final photo = await takeNotePhoto();
       if (photo != null) bloc.add(NoteScanEvent.photosAdded([photo]));
-    } on NotePhotoCameraUnavailable catch (e) {
+    } on PhotoCameraUnavailable catch (e) {
       bloc.add(NoteScanEvent.cameraUnavailable(denied: e.denied));
     }
   }
@@ -260,7 +260,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                 const SizedBox(height: TokensSpacing.l),
                 if (state.photos.isEmpty)
                   AppEmptyState(
-                    icon: Icons.photo_camera_outlined,
+                    icon: AppIcons.camera,
                     title: l10n.academicScanEmptyTitle,
                     message: l10n.academicScanEmptyMessage,
                   )
@@ -300,7 +300,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                           )
                         : TextButton.icon(
                             onPressed: _changePhotos,
-                            icon: const Icon(Icons.photo_library_outlined),
+                            icon: const Icon(AppIcons.gallery),
                             label: Text(l10n.academicScanChangePhotos),
                           ),
                   ),
@@ -332,7 +332,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                   children: [
                     AppSecondaryButton(
                       label: l10n.academicScanCamera,
-                      icon: const Icon(Icons.photo_camera_rounded),
+                      icon: const Icon(AppIcons.camera),
                       // Solo se desactiva si el móvil no tiene cámara: si se
                       // negó el permiso, pulsarla explica cómo darlo.
                       onPressed:
@@ -343,7 +343,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                     ),
                     AppSecondaryButton(
                       label: l10n.academicScanGallery,
-                      icon: const Icon(Icons.photo_library_outlined),
+                      icon: const Icon(AppIcons.gallery),
                       onPressed: state.canAddMore ? _gallery : null,
                     ),
                   ],
@@ -415,7 +415,7 @@ class _PhotoThumb extends StatelessWidget {
                 child: ColoredBox(
                   color: context.colors.surfaceContainerHigh,
                   child: Icon(
-                    Icons.image_not_supported_outlined,
+                    AppIcons.imageUnavailable,
                     semanticLabel: l10n.academicScanPageUnreadable,
                   ),
                 ),
@@ -509,7 +509,9 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
               children: [
                 Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: widget.draft.tidied
+                  // Con una lectura dudosa no se dice «Ordenado para ti»: chocaría
+                  // con el aviso de abajo.
+                  child: widget.draft.tidied && !widget.draft.unclear
                       ? AppPill(
                           label: l10n.academicScanTidied,
                           color: context.palette.success,
@@ -522,14 +524,26 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                         ),
                 ),
                 const SizedBox(height: TokensSpacing.s),
-                Text(
-                  widget.draft.tidied
-                      ? l10n.academicScanTidiedHint
-                      : l10n.academicScanRawHint,
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
+                // Con una lectura dudosa, el aviso sustituye a la pista: dice
+                // qué hacer (comparar con la foto y completar).
+                if (widget.draft.unclear)
+                  AppInlineMessage(
+                    tone: AppMessageTone.warning,
+                    message: l10n.academicScanUnclear,
+                  )
+                else
+                  Text(
+                    widget.draft.tidied
+                        ? l10n.academicScanTidiedHint
+                        : l10n.academicScanRawHint,
+                    style: context.textStyles.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
                   ),
-                ),
+                if (state.photos.isNotEmpty) ...[
+                  const SizedBox(height: TokensSpacing.m),
+                  _ReviewPhotos(photos: state.photos),
+                ],
                 const SizedBox(height: TokensSpacing.m),
                 AppTextField(
                   controller: _title,
@@ -614,6 +628,237 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Las fotos junto al texto para comparar (ADR 0051): miniaturas que se abren
+/// en grande con zoom. Es lo que el servidor leyó, así se ve qué falta.
+class _ReviewPhotos extends StatelessWidget {
+  const _ReviewPhotos({required this.photos});
+
+  final List<NotePhotoUpload> photos;
+
+  Future<void> _open(BuildContext context, int index) => showDialog<void>(
+    context: context,
+    builder: (_) => Dialog.fullscreen(
+      child: _PhotoViewer(photos: photos, initial: index),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.academicScanYourPhotos, style: context.textStyles.titleSmall),
+        const SizedBox(height: TokensSpacing.xs),
+        // Wrap y no una lista horizontal de alto fijo: con el texto grande
+        // el número de página no se corta.
+        Wrap(
+          spacing: TokensSpacing.s,
+          runSpacing: TokensSpacing.s,
+          children: [
+            for (var i = 0; i < photos.length; i++)
+              // Un solo botón para el lector (con su acción de tocar) y foco
+              // visible con teclado; la tinta se pinta encima de la foto.
+              Semantics(
+                container: true,
+                button: true,
+                label: l10n.academicScanZoomPage(i + 1),
+                child: AppFocusOutline(
+                  borderRadius: BorderRadius.circular(TokensRadius.m),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(TokensRadius.m),
+                    onTap: () => _open(context, i),
+                    child: ExcludeSemantics(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Material(
+                            type: MaterialType.transparency,
+                            clipBehavior: Clip.antiAlias,
+                            borderRadius: BorderRadius.circular(TokensRadius.m),
+                            child: Ink.image(
+                              // Miniatura: se descodifica pequeña para no
+                              // gastar memoria con fotos de 2400 px.
+                              image: ResizeImage(
+                                MemoryImage(
+                                  Uint8List.fromList(photos[i].bytes),
+                                ),
+                                width: (TokensSize.medallion * 3).round(),
+                              ),
+                              width: TokensSize.medallion,
+                              height: TokensSize.medallion,
+                              fit: BoxFit.cover,
+                              onImageError: (_, _) {},
+                              child: const SizedBox.shrink(),
+                            ),
+                          ),
+                          Text(
+                            l10n.academicScanPage(i + 1),
+                            style: context.textStyles.labelMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Las fotos en grande para comparar con el texto: se amplía pellizcando o con
+/// «Acercar»/«Alejar» (sin gesto de dos dedos, WCAG 2.5.1) y se pasa de página
+/// sin cerrar.
+class _PhotoViewer extends StatefulWidget {
+  const _PhotoViewer({required this.photos, required this.initial});
+
+  final List<NotePhotoUpload> photos;
+  final int initial;
+
+  @override
+  State<_PhotoViewer> createState() => _PhotoViewerState();
+}
+
+class _PhotoViewerState extends State<_PhotoViewer> {
+  static const _minScale = 1.0;
+  static const _maxScale = 5.0;
+  static const _step = 1.5;
+
+  late final PageController _pages = PageController(
+    initialPage: widget.initial,
+  );
+  final _zoom = TransformationController();
+  late int _index = widget.initial;
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    _zoom.dispose();
+    super.dispose();
+  }
+
+  double get _scale => _zoom.value.getMaxScaleOnAxis();
+
+  /// Acerca o aleja respecto al centro de lo que se ve.
+  void _zoomBy(double factor) {
+    final target = (_scale * factor).clamp(_minScale, _maxScale);
+    final size = context.size ?? Size.zero;
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    setState(() {
+      _zoom.value = Matrix4.translationValues(cx, cy, 0)
+        ..multiply(Matrix4.diagonal3Values(target, target, 1))
+        ..multiply(Matrix4.translationValues(-cx, -cy, 0));
+    });
+  }
+
+  void _goTo(int page) => _pages.animateToPage(
+    page,
+    duration: context.reduceMotion ? Duration.zero : TokensDuration.normal,
+    curve: Curves.easeOut,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final count = widget.photos.length;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.academicScanPage(_index + 1)),
+        leading: IconButton(
+          tooltip: l10n.commonClose,
+          icon: const Icon(AppIcons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            tooltip: l10n.academicScanZoomOut,
+            icon: const Icon(AppIcons.zoomOut),
+            onPressed: _scale <= _minScale ? null : () => _zoomBy(1 / _step),
+          ),
+          IconButton(
+            tooltip: l10n.academicScanZoomIn,
+            icon: const Icon(AppIcons.zoomIn),
+            onPressed: _scale >= _maxScale ? null : () => _zoomBy(_step),
+          ),
+        ],
+      ),
+      body: PageView.builder(
+        controller: _pages,
+        itemCount: count,
+        // Con la foto ampliada, deslizar mueve la foto, no la página.
+        physics: _scale > _minScale
+            ? const NeverScrollableScrollPhysics()
+            : null,
+        onPageChanged: (i) => setState(() {
+          _index = i;
+          _zoom.value = Matrix4.identity();
+        }),
+        itemBuilder: (context, i) => InteractiveViewer(
+          transformationController: i == _index ? _zoom : null,
+          minScale: _minScale,
+          maxScale: _maxScale,
+          onInteractionEnd: (_) => setState(() {}),
+          child: Center(
+            child: Image.memory(
+              Uint8List.fromList(widget.photos[i].bytes),
+              fit: BoxFit.contain,
+              semanticLabel: l10n.academicScanPage(i + 1),
+              errorBuilder: (_, _, _) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    AppIcons.imageUnavailable,
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: TokensSpacing.xs),
+                  Text(
+                    l10n.academicScanPageUnreadable,
+                    style: context.textStyles.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: count < 2
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(TokensSpacing.s),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      tooltip: l10n.academicScanPrevPage,
+                      icon: const Icon(AppIcons.previous),
+                      onPressed: _index == 0 ? null : () => _goTo(_index - 1),
+                    ),
+                    Text(
+                      l10n.academicScanPageOf(_index + 1, count),
+                      style: context.textStyles.labelLarge,
+                    ),
+                    IconButton(
+                      tooltip: l10n.academicScanNextPage,
+                      icon: const Icon(AppIcons.next),
+                      onPressed: _index == count - 1
+                          ? null
+                          : () => _goTo(_index + 1),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

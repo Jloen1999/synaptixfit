@@ -7,6 +7,8 @@ String? profileErrorMessage(AppLocalizations l10n, String code) =>
       'PROFILE_ACADEMIC_NOT_FOUND' => l10n.profileErrorAcademicNotFound,
       'PROFILE_INVALID_CLASS_DATES' => l10n.profileErrorInvalidClassDates,
       'INVALID_BIRTH_DATE' => l10n.profileErrorInvalidBirthDate,
+      'AVATAR_INVALID_IMAGE' => l10n.profileErrorAvatarInvalid,
+      'AVATAR_TOO_LARGE' => l10n.profileErrorAvatarTooLarge,
       'PROFILE_ONBOARDING_WELLNESS_REQUIRED' =>
         l10n.profileErrorOnboardingWellnessRequired,
       'CATALOG_UNIVERSITY_NOT_FOUND' => l10n.profileErrorUniversityNotFound,

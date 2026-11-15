@@ -508,6 +508,9 @@
   "academicScanBackMessage": "The changes you made to the text will be lost.",
   "academicScanPageRemoved": "Page {page} removed",
   "academicScanPageUnreadable": "This photo couldn't be opened",
+  "academicScanUnclear": "Part of the text wasn't read well. Compare it with your photos and type what's missing.",
+  "academicScanYourPhotos": "Your photos",
+  "academicScanZoomPage": "See page {page} full size",
   "academicMockSetupAllFirst": "Pick the first {max}",
   "academicMockSetupMaxReached": "{questions} · Remove one to pick this",
   "academicGenerateCardRemoved": "Card removed",
@@ -549,5 +552,10 @@
   "academicSubjectMoreActions": "More actions for “{name}”",
   "academicNewDeadline": "New deadline",
   "academicSubjectFocusHere": "Focus on this subject",
-  "academicExamResumeLater": "The practice exam is still in progress: open it again to carry on where you left off."
+  "academicExamResumeLater": "The practice exam is still in progress: open it again to carry on where you left off.",
+  "academicScanZoomIn": "Zoom in",
+  "academicScanZoomOut": "Zoom out",
+  "academicScanPrevPage": "Previous page",
+  "academicScanNextPage": "Next page",
+  "academicScanPageOf": "{page} of {total}"
 }

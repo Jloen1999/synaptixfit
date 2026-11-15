@@ -100,6 +100,9 @@ class DataChangeInterceptor extends Interceptor {
       DataTopic.planner,
     },
     '/api/v1/profile': {DataTopic.profile, DataTopic.training},
+    // La foto de perfil (ADR 0052) solo se ve en el perfil y en lo social;
+    // antes que `/me`, que refresca mucho más (privacidad).
+    '/api/v1/me/avatar': {DataTopic.profile, DataTopic.social},
     '/api/v1/me': {
       DataTopic.profile,
       DataTopic.training,

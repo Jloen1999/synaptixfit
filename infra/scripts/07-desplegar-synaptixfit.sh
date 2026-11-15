@@ -115,7 +115,7 @@ def read(path):
             k, v = line.split("=", 1)
             out[k.strip()] = v.strip().strip('"').strip("'")
     return out
-secret_keys = {"DB_PASSWORD", "JWT_SECRET", "DEEPSEEK_API_KEY", "R2_ACCESS_KEY", "R2_SECRET_KEY"}
+secret_keys = {"DB_PASSWORD", "JWT_SECRET", "DEEPSEEK_API_KEY", "GEMINI_API_KEY", "R2_ACCESS_KEY", "R2_SECRET_KEY"}
 values = {**read(sys.argv[1]), **read(sys.argv[2])}
 # Coolify crea las variables del compose vacías y una vacía anula el valor por defecto: sin token de
 # R2 se manda un endpoint de relleno para que la app arranque (solo fallará la subida de archivos).

@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.privacy;
 import com.synaptixfit.domain.event.privacy.UserDataErased;
 import com.synaptixfit.domain.model.privacy.ErasureMode;
 import com.synaptixfit.domain.model.privacy.ErasureReport;
+import com.synaptixfit.domain.model.user.ProfilePhoto;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.privacy.UserDataErasurePort;
 import com.synaptixfit.domain.port.output.storage.FileStoragePort;
@@ -57,8 +58,23 @@ public class UserDataEraser {
         List<String> objectKeys = erasure.storedObjectKeys(userId);
         int deletedRows = eraseRows.getAsInt();
         int failed = deleteObjects(userId, objectKeys);
+        // La foto de perfil es un dato personal: se va al anonimizar o eliminar (al vaciar, la cuenta la sigue
+        // usando). Se vacía su carpeta entera para no dejar fotos sueltas (ADR 0052).
+        if (mode != ErasureMode.CONTENT_WIPED && !deleteProfilePhotos(userId)) {
+            failed++;
+        }
         events.publish(new UserDataErased(userId, mode, clock.instant()));
         return new ErasureReport(userId, mode, deletedRows, objectKeys.size(), failed);
+    }
+
+    private boolean deleteProfilePhotos(UUID userId) {
+        try {
+            storage.deleteFolder(ProfilePhoto.folder(userId));
+            return true;
+        } catch (RuntimeException e) {
+            LOG.log(Level.WARNING, "Could not delete profile photos of user {0}: {1}", userId, e.getMessage());
+            return false;
+        }
     }
 
     private int deleteObjects(UUID userId, List<String> objectKeys) {

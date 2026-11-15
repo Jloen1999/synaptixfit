@@ -11,6 +11,8 @@ import '../use_cases/auth/request_password_reset_use_case.dart';
 import '../use_cases/auth/reset_password_use_case.dart';
 import '../use_cases/account/get_account_use_case.dart';
 import '../use_cases/account/update_account_use_case.dart';
+import '../use_cases/account/upload_avatar_use_case.dart';
+import '../use_cases/account/remove_avatar_use_case.dart';
 import '../use_cases/account/change_password_use_case.dart';
 import '../use_cases/sync/publish_data_changes_use_case.dart';
 import '../use_cases/sync/watch_data_changes_use_case.dart';
@@ -58,6 +60,12 @@ void registerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<UpdateAccountUseCaseContract>(
       () => UpdateAccountUseCase(getIt()),
+    )
+    ..registerLazySingleton<UploadAvatarUseCaseContract>(
+      () => UploadAvatarUseCase(getIt()),
+    )
+    ..registerLazySingleton<RemoveAvatarUseCaseContract>(
+      () => RemoveAvatarUseCase(getIt()),
     )
     ..registerLazySingleton<ChangePasswordUseCaseContract>(
       () => ChangePasswordUseCase(getIt()),

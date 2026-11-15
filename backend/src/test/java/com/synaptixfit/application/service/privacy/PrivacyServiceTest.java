@@ -116,6 +116,26 @@ class PrivacyServiceTest {
     }
 
     @Test
+    void deletingTheAccountEmptiesItsProfilePhotoFolder() {
+        User user = users.add(AdminTestFixtures.user("photo@example.com", Role.USER));
+
+        service.deleteMyAccount(new DeleteMyAccountUseCase.Command(user.id(), "secret123", false));
+
+        assertThat(storage.deletedFolders).containsExactly("avatares/" + user.id() + "/");
+    }
+
+    @Test
+    void aStorageFailureWithThePhotosIsCountedButDoesNotBlockTheDeletion() {
+        User user = users.add(AdminTestFixtures.user("photo-down@example.com", Role.USER));
+        storage.failing.add("avatares/" + user.id() + "/");
+
+        service.deleteMyAccount(new DeleteMyAccountUseCase.Command(user.id(), "secret123", false));
+
+        assertThat(users.store).doesNotContainKey(user.id());
+        assertThat(audit.entries.get(0).details()).containsEntry("failedFileDeletions", 1);
+    }
+
+    @Test
     void theLastActiveAdminCannotLeave() {
         User admin = users.add(AdminTestFixtures.user("boss@example.com", Role.ADMIN));
 

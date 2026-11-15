@@ -71,6 +71,9 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `AUTH_RESET_TOKEN_INVALID` | 400 | El enlace para restablecer la contraseña no existe, ya se usó o caducó | Este enlace ya no sirve: caduca a los 30 minutos y solo se puede usar una vez. Pide otro. | Activo |
 | `AUTH_WEAK_PASSWORD` | 400 | Contraseña fuera de la política (≥ 8, letras y números) | La contraseña debe tener al menos 8 caracteres, con letras y números. | Activo |
 | `USER_NOT_FOUND` | 404 | El usuario no existe | No hemos encontrado lo que buscas. | Activo |
+| `AVATAR_INVALID_IMAGE` | 400 | Foto de perfil (`POST /me/avatar`): vacía o que no es un JPG, PNG o WEBP que se pueda abrir (se mira la firma, no el nombre) | Esa foto no se puede usar. Elige otra en JPG, PNG o WEBP. | Activo |
+| `AVATAR_TOO_LARGE` | 400 | La foto de perfil pesa más de 10 MB o tiene más de 40 megapíxeles | La foto pesa demasiado. Elige otra más pequeña. | Activo |
+| `AVATAR_NOT_FOUND` | 404 | `GET /avatars/{usuario}/{foto}.jpg`: no es la foto de perfil actual de esa cuenta (ADR 0052) | — (la pinta una imagen; sin texto) | Activo |
 | `GOOGLE_SIGN_IN_CANCELLED` | — (cliente) | El usuario cerró el diálogo de Google | Has cancelado el inicio de sesión con Google. | Activo |
 | `GOOGLE_SIGN_IN_FAILED` | — (cliente) | Fallo del SDK de Google o sin ID token | No se ha podido iniciar sesión con Google. | Activo |
 
@@ -236,7 +239,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `NOTE_SCAN_UNSUPPORTED_FILE` | 400 | Fotos de apuntes (`POST /notes/scan-drafts`): ninguna, más de 5, vacías, de un tipo distinto de JPG/PNG/WEBP o que no se pueden abrir | Envía de 1 a 5 fotos en JPG, PNG o WEBP. | Activo |
 | `NOTE_SCAN_TOO_LARGE` | 400 | Una foto supera 10 MB o todas juntas 20 MB | Las fotos pesan demasiado. Prueba con menos páginas a la vez. | Activo |
 | `NOTE_SCAN_NOTHING_FOUND` | 422 | El OCR no encontró texto legible en las fotos | No hemos podido leer texto en las fotos. Prueba con más luz y la hoja recta. | Activo |
-| `NOTE_SCAN_UNAVAILABLE` | 503 | El lector de texto (Tesseract) no está instalado, está ocupado o falló (ADR 0040) | Ahora mismo no podemos leer fotos. Inténtalo en un rato. | Activo |
+| `NOTE_SCAN_UNAVAILABLE` | 503 | El lector de texto (Tesseract) no está instalado, está ocupado o falló (ADR 0040). El lector con visión (Gemini, ADR 0051) usa el mismo `code` por dentro, pero su fallo no llega al cliente: se sigue con lo que leyó Tesseract | Ahora mismo no podemos leer fotos. Inténtalo en un rato. | Activo |
 | `TEACHING_GUIDE_IMPORT_ALREADY_APPLIED` | 409 | El plan docente ya se aplicó a una asignatura | Este plan docente ya está aplicado. | Activo |
 | `STUDY_MATERIAL_NOT_FOUND` | 404 | El material no existe o no es tuyo | No encontramos ese material de estudio. | Activo |
 | `QUIZ_BANK_NOT_FOUND` | 404 | El banco no existe o el material no tiene banco | Este material aún no tiene preguntas. | Activo |

@@ -10,8 +10,11 @@ public final class LegalTerms {
      * Fecha de la versión vigente (ISO). Cambiarla obliga a aceptar de nuevo. 2026-11-07: la política suma la
      * ubicación exacta mientras se graba una carrera (ADR 0037). 2026-11-15: enlaces de rutina y «Con amigos»
      * (retos, rachas, entrenar y estudiar juntos, denuncias): otras personas ven parte de la actividad (ADR 0043-0045).
+     * 2026-11-16: las fotos de apuntes que el lector propio no lee bien van a Google (Gemini) para pasarlas a texto, y
+     * la foto de perfil se sube desde el móvil (ADR 0051 y 0052). Lleva la fecha del día siguiente porque la versión
+     * del 15 ya estaba publicada y la versión es una fecha (la app la enseña como «Versión del …»).
      */
-    public static final String CURRENT_VERSION = "2026-11-15";
+    public static final String CURRENT_VERSION = "2026-11-16";
 
     private LegalTerms() {
     }

@@ -15,6 +15,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import com.synaptixfit.domain.exception.user.AvatarInvalidImageException;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -76,5 +78,23 @@ class AccountServiceTest {
         assertThatThrownBy(() -> service.updateAccount(new UpdateAccountUseCase.Command(ana.id(), null, null, null,
                 null, LocalDate.of(2030, 1, 1), false)))
                 .isInstanceOf(InvalidBirthDateException.class);
+    }
+
+    @Test
+    void anUploadedPhotoIsNotReplacedByAnOldClientSendingAnAddress() {
+        String uploaded = "https://app.test/api/v1/avatars/" + ana.id() + "/" + java.util.UUID.randomUUID() + ".jpg";
+        users.store.get(ana.id()).changeAvatar(uploaded);
+
+        service.updateAccount(new UpdateAccountUseCase.Command(ana.id(), null, "", null, null, null, false));
+
+        assertThat(users.store.get(ana.id()).avatarUrl()).isEqualTo(uploaded);
+    }
+
+    @Test
+    void anotherAccountsPhotoCannotBeSetAsYours() {
+        String other = "https://synaptixfit.jloenit.dev/api/v1/avatars/" + UUID.randomUUID() + "/"
+                + UUID.randomUUID() + ".jpg";
+        assertThatThrownBy(() -> service.updateAccount(new UpdateAccountUseCase.Command(ana.id(), null, other, null,
+                null, null, false))).isInstanceOf(AvatarInvalidImageException.class);
     }
 }

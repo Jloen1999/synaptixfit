@@ -17,7 +17,7 @@ Esta política explica qué datos tuyos usa SynaptixFit, para qué, con quién s
 
 ## Qué datos usamos
 
-- Tu cuenta: nombre, correo, contraseña (guardada cifrada, nadie puede leerla), foto de perfil si la pones y, si entras con Google, tu identificador de Google.
+- Tu cuenta: nombre, correo, contraseña (guardada cifrada, nadie puede leerla), foto de perfil si la pones (se guarda recortada y sin datos de ubicación, la ven quienes pueden ver tu nombre en la app y se borra al quitarla o al eliminar tu cuenta) y, si entras con Google, tu identificador de Google.
 - Tus estudios: universidad, carrera, curso, asignaturas, horario, clases, entregas, exámenes, eventos de estudio del calendario, apuntes, archivos que subes, preguntas de repaso y tus respuestas.
 - Tu entrenamiento: rutinas, sesiones, series, pesos, tiempos, actividades y partidos que apuntas, entrenos de carrera, retos, rachas, nivel e insignias.
 - Tu ubicación exacta, solo mientras grabas una carrera con el GPS (también con la pantalla apagada, con un aviso fijo «Grabando tu carrera» en el móvil): la ruta que haces, con la hora de cada punto y la altitud, para calcular la distancia, el ritmo, el desnivel y los tramos por kilómetro y dibujar el mapa. Nunca se usa la ubicación cuando no estás grabando.
@@ -25,7 +25,7 @@ Esta política explica qué datos tuyos usa SynaptixFit, para qué, con quién s
 - Tu perfil de bienestar, si lo rellenas: sexo, peso, altura, nivel de actividad y, si la diste antes de existir la fecha de nacimiento, tu edad.
 - Tu registro diario, solo si das tu permiso: cómo dormiste, estrés, energía, agujetas y zonas con dolor.
 - «Mi ciclo», solo si lo activas: días de regla, energía y molestias que apuntes y tus notas.
-- Fotos de apuntes en papel: las leemos para pasarlas a texto y no guardamos la foto. Solo se guarda el apunte que tú decidas guardar.
+- Fotos de apuntes en papel: las leemos en nuestro servidor para pasarlas a texto y no guardamos la foto. Si nuestro lector no consigue leer bien una foto, la enviamos a Google (Gemini) solo para que la pase a texto, ya girada y sin datos de ubicación. Solo se guarda el apunte que tú decidas guardar.
 - Lo que compartes en la comunidad: publicaciones, comentarios, apuntes compartidos, amistades e insignias visibles.
 - Lo que haces «Con amigos», si lo usas: los retos, rachas, entrenos y salas de estudio con amigos en los que estás (y, en cada sala, la asignatura que eliges), las reacciones que pones y las personas que denuncias.
 - Avisos: tus preferencias de recordatorios y, si lo activas, el resumen semanal por correo.
@@ -74,6 +74,8 @@ No vendemos tus datos ni los usamos para publicidad.
 
 Algunas funciones usan DeepSeek, un proveedor de inteligencia artificial: generar rutinas, resúmenes y preguntas de repaso, ordenar el texto de fotos de apuntes, leer horarios o matrículas y sugerir objetivos. Solo le enviamos lo necesario para cada petición y nunca tu nombre ni tu correo. Al proponerte una rutina, por ejemplo, enviamos tu edad (calculada, nunca tu fecha de nacimiento), sexo, peso, altura, nivel de actividad, tus horas de estudio y, si diste el permiso del registro diario, cómo estás hoy (sueño, estrés, zonas con dolor). Los datos de «Mi ciclo» no se envían nunca.
 
+Las fotos de apuntes que nuestro lector no puede leer bien se envían a Gemini, la inteligencia artificial de Google, solo para pasarlas a texto. Solo va la foto, sin tu nombre ni tu correo.
+
 ## Con quién se comparten
 
 Solo con empresas que necesitamos para que la app funcione y que trabajan para nosotros, sin usar tus datos para nada más:
@@ -81,7 +83,7 @@ Solo con empresas que necesitamos para que la app funcione y que trabajan para n
 - Nuestro servidor, alquilado a OVH en Francia, donde están la base de datos y la app.
 - Cloudflare: protege y acelera la conexión con la app y guarda los archivos que subes.
 - DeepSeek: inteligencia artificial, como se explica arriba. Sus servidores pueden estar fuera de la Unión Europea, incluida China.
-- Google: solo si entras con tu cuenta de Google, para comprobar quién eres.
+- Google: si entras con tu cuenta de Google, para comprobar quién eres; y Gemini, solo para pasar a texto las fotos de apuntes que nuestro lector no puede leer bien.
 - Resend: envía los correos de recuperar la contraseña y del resumen semanal.
 - MapTiler: sirve las imágenes del mapa de Correr; recibe la zona del mapa que se ve, no tu ruta.
 
@@ -107,7 +109,7 @@ Si crees que no tratamos bien tus datos, puedes reclamar ante la Agencia Españo
 
 ## Permisos del móvil
 
-La app solo pide permisos cuando hacen falta y explica antes para qué: notificaciones (recordatorios), avisos a su hora (que los recordatorios lleguen en el minuto exacto), cámara (fotografiar apuntes) y ubicación (grabar carreras: solo mientras grabas, aunque apagues la pantalla; nunca cuando no estás grabando). Puedes negarlos o quitarlos en los ajustes del móvil: la app sigue funcionando sin ellos.
+La app solo pide permisos cuando hacen falta y explica antes para qué: notificaciones (recordatorios), avisos a su hora (que los recordatorios lleguen en el minuto exacto), cámara (fotografiar apuntes o hacerte la foto de perfil) y ubicación (grabar carreras: solo mientras grabas, aunque apagues la pantalla; nunca cuando no estás grabando). Puedes negarlos o quitarlos en los ajustes del móvil: la app sigue funcionando sin ellos.
 
 ## Menores
 

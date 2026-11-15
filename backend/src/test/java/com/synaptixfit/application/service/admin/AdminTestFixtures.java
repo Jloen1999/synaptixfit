@@ -111,15 +111,35 @@ public final class AdminTestFixtures {
     public static final class FakeStorage implements FileStoragePort {
         public final List<String> deleted = new ArrayList<>();
         public final Set<String> failing = new HashSet<>();
+        public final java.util.Map<String, byte[]> stored = new java.util.HashMap<>();
+        public final List<String> deletedFolders = new ArrayList<>();
 
         @Override public PresignedUrl presignUpload(String k, String c, long s, Duration v) { throw new UnsupportedOperationException(); }
         @Override public PresignedUrl presignDownload(String k, Duration v) { throw new UnsupportedOperationException(); }
-        @Override public byte[] download(String k) { throw new UnsupportedOperationException(); }
+        @Override public byte[] download(String k) {
+            byte[] content = stored.get(k);
+            if (content == null) {
+                throw new UnsupportedOperationException("no object " + k);
+            }
+            return content;
+        }
+        @Override public void put(String key, byte[] content, String contentType) {
+            if (failing.contains(key)) {
+                throw new IllegalStateException("R2 down");
+            }
+            stored.put(key, content);
+        }
         @Override public void delete(String key) {
             if (failing.contains(key)) {
                 throw new IllegalStateException("R2 down");
             }
             deleted.add(key);
+        }
+        @Override public void deleteFolder(String prefix) {
+            if (failing.contains(prefix)) {
+                throw new IllegalStateException("R2 down");
+            }
+            deletedFolders.add(prefix);
         }
         @Override public String publicUrl(String k) { return null; }
     }

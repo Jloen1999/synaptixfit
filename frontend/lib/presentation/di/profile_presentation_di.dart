@@ -14,6 +14,7 @@ import '../screens/profile/change_password/bloc/change_password_bloc.dart';
 import '../screens/profile/degrees/bloc/degrees_bloc.dart';
 import '../screens/profile/edit_academic/bloc/academic_form_bloc.dart';
 import '../screens/profile/edit_account/bloc/edit_account_bloc.dart';
+import '../screens/profile/edit_account/bloc/profile_photo_bloc.dart';
 import '../screens/profile/edit_wellness/bloc/wellness_form_bloc.dart';
 import '../screens/profile/notification_settings/bloc/device_reminders_bloc.dart';
 import '../screens/profile/notification_settings/bloc/weekly_email_bloc.dart';
@@ -74,6 +75,7 @@ void registerProfilePresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(() => EditAccountBloc(updateAccount: getIt()))
+    ..registerFactory(() => ProfilePhotoBloc(upload: getIt(), remove: getIt()))
     ..registerFactory(
       () => WellnessFormBloc(
         getSummary: getIt(),

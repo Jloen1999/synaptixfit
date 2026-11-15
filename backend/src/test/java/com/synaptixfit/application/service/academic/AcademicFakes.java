@@ -339,7 +339,9 @@ final class AcademicFakes {
             return new PresignedUrl("https://storage.test/" + key + "?sig", "GET", Map.of(), NOW.plus(validity));
         }
         public byte[] download(String key) { return objects.getOrDefault(key, new byte[]{1, 2, 3}); }
+        public void put(String key, byte[] content, String contentType) { objects.put(key, content); }
         public void delete(String key) { deletedObjects.add(key); }
+        public void deleteFolder(String prefix) { deletedObjects.add(prefix); }
         public String publicUrl(String key) { return null; }
     };
 

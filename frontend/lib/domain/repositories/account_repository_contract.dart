@@ -19,6 +19,16 @@ abstract interface class AccountRepositoryContract {
     bool clearBirthDate = false,
   });
 
+  /// Sube la foto de perfil (`POST /me/avatar`) y devuelve la cuenta.
+  Future<AppResult<Account>> uploadAvatar({
+    required List<int> bytes,
+    required String fileName,
+    required String mimeType,
+  });
+
+  /// Quita la foto de perfil (`DELETE /me/avatar`) y devuelve la cuenta.
+  Future<AppResult<Account>> removeAvatar();
+
   Future<AppResult<Unit>> changePassword({
     String? currentPassword,
     required String newPassword,

@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "C:/Users/JLOel/Desktop/synaptixfit/app/windows"
+    "cmake.sourceDirectory": "C:/Users/JLOel/Desktop/synaptixfit/app/windows",
+    // No importar frontend/android como proyecto Gradle: arranca daemons de Gradle (~1 GB) sin hacer falta;
+    // flutter run/build lanza Gradle por su cuenta. El backend sigue con Maven.
+    "java.import.gradle.enabled": false
 }

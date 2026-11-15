@@ -74,6 +74,9 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | `GOOGLE_CLIENT_IDS` | `xxx.apps.googleusercontent.com` | no | IDs OAuth aceptados |
 | `DEEPSEEK_API_KEY` | `***` | **sí** | IA generativa (DeepSeek) |
 | `DEEPSEEK_MODEL` | `deepseek-chat` | no | modelo de DeepSeek |
+| `GEMINI_API_KEY` | `***` | **sí** | **opcional**: lector con visión de Google (Gemini) para las fotos de apuntes que Tesseract no lee bien (ADR 0051). Vacía: desactivado (solo Tesseract). Se guarda con `infra/scripts/guardar-secreto.sh` y el despliegue la marca como secreta. Conviene un proyecto de Google con facturación: en el plan gratuito Google puede usar los datos para mejorar sus modelos |
+| `GEMINI_MODEL` | `gemini-3.8-flash` | no | opcional: modelo «flash» estable de Gemini. Con un modelo anterior a Gemini 3, dejar `GEMINI_THINKING_LEVEL` vacía |
+| `AVATAR_BASE_URL` | *(vacío)* | no | opcional: base de las direcciones de las fotos de perfil (`<base>/api/v1/avatars/…`, ADR 0052). Vacía o sin poner: `APP_PUBLIC_URL` (nginx reenvía `/api/` al backend). En producción no hace falta (no está en `docker-compose.prod.yml`); en local, `http://localhost:8080` |
 | `R2_ENDPOINT` | `https://<cuenta>.r2.cloudflarestorage.com` | no | |
 | `R2_BUCKET` | `synaptixfit` | no | |
 | `R2_ACCESS_KEY` / `R2_SECRET_KEY` | `***` | **sí** | credenciales S3 de R2 |

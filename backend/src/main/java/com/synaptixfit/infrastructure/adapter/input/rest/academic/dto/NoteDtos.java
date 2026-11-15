@@ -30,12 +30,13 @@ public final class NoteDtos {
 
     /**
      * Borrador leído de fotos de apuntes. {@code tidied}: la IA lo ordenó; si es falso, es el texto
-     * tal como se leyó. {@code title} puede ser nulo (el cliente propone uno).
+     * tal como se leyó. {@code title} puede ser nulo (el cliente propone uno). {@code unclear}: alguna
+     * página no se pudo leer bien; la app pide revisarla con la foto al lado (ADR 0051).
      */
-    public record ScannedNoteDraftResponse(String title, String markdown, boolean tidied, int pages) {
+    public record ScannedNoteDraftResponse(String title, String markdown, boolean tidied, int pages, boolean unclear) {
 
         public static ScannedNoteDraftResponse from(ScannedNoteDraft d) {
-            return new ScannedNoteDraftResponse(d.title(), d.markdown(), d.tidied(), d.pages());
+            return new ScannedNoteDraftResponse(d.title(), d.markdown(), d.tidied(), d.pages(), d.unclear());
         }
     }
 

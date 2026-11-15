@@ -69,6 +69,37 @@ class AuthRemoteDataSource {
     return AccountDto.fromJson(response.data!);
   }
 
+  /// Foto de perfil (campo `file`); el servidor la prepara y devuelve la
+  /// cuenta con su dirección nueva (ADR 0052).
+  Future<AccountDto> uploadAvatar(
+    List<int> bytes,
+    String fileName,
+    String mimeType,
+  ) async {
+    final form = FormData.fromMap({
+      'file': MultipartFile.fromBytes(
+        bytes,
+        filename: fileName,
+        contentType: DioMediaType.parse(mimeType),
+      ),
+    });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/me/avatar',
+      queryParameters: {'zone': deviceZoneOffset()},
+      data: form,
+      options: Options(contentType: Headers.multipartFormDataContentType),
+    );
+    return AccountDto.fromJson(response.data!);
+  }
+
+  Future<AccountDto> removeAvatar() async {
+    final response = await _dio.delete<Map<String, dynamic>>(
+      '/api/v1/me/avatar',
+      queryParameters: {'zone': deviceZoneOffset()},
+    );
+    return AccountDto.fromJson(response.data!);
+  }
+
   Future<void> requestPasswordReset(String email) =>
       _dio.post<void>('/api/v1/auth/password-reset', data: {'email': email});
 

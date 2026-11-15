@@ -269,19 +269,14 @@ void main() {
     setUp(() => update = _MockUpdateAccount());
 
     blocTest<EditAccountBloc, EditAccountState>(
-      'guarda nombre, avatar y privacidad',
+      'guarda nombre y privacidad (la foto va aparte, ADR 0052)',
       setUp: () => when(
-        () => update(
-          fullName: 'Ana',
-          avatarUrl: 'https://img.es/a.png',
-          privacy: Visibility.public,
-        ),
+        () => update(fullName: 'Ana', privacy: Visibility.public),
       ).thenAnswer((_) async => const Success(testAccount)),
       build: () => EditAccountBloc(updateAccount: update),
       act: (bloc) => bloc.add(
         const EditAccountEvent.submitted(
           fullName: ' Ana ',
-          avatarUrl: ' https://img.es/a.png ',
           privacy: Visibility.public,
         ),
       ),
@@ -296,7 +291,6 @@ void main() {
       setUp: () => when(
         () => update(
           fullName: any(named: 'fullName'),
-          avatarUrl: any(named: 'avatarUrl'),
           privacy: any(named: 'privacy'),
         ),
       ).thenAnswer((_) async => const Failure(AppError.validation())),
@@ -304,7 +298,6 @@ void main() {
       act: (bloc) => bloc.add(
         const EditAccountEvent.submitted(
           fullName: 'A',
-          avatarUrl: '',
           privacy: Visibility.private,
         ),
       ),

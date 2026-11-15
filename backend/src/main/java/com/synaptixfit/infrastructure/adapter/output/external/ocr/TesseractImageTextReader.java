@@ -3,7 +3,10 @@ package com.synaptixfit.infrastructure.adapter.output.external.ocr;
 import com.synaptixfit.domain.exception.academic.NoteScanUnavailableException;
 import com.synaptixfit.domain.exception.academic.NoteScanUnsupportedFileException;
 import com.synaptixfit.domain.model.academic.NotePhoto;
+import com.synaptixfit.domain.model.academic.PageReading;
+import com.synaptixfit.domain.model.shared.ImageHeader;
 import com.synaptixfit.domain.port.output.academic.ImageTextReaderPort;
+import com.synaptixfit.infrastructure.adapter.output.external.image.ImagePixels;
 import com.synaptixfit.infrastructure.i18n.RequestLanguage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,11 +28,17 @@ import org.springframework.stereotype.Component;
  * Docker del backend; ADR 0040). La foto entra por la entrada estándar y el texto sale por la salida
  * estándar: no se escribe nada en disco.
  *
+ * <p>Antes de leer, la foto se gira según su orientación EXIF, se pasa a gris y se manda en PNG: Tesseract no
+ * mira la orientación y una foto vertical del móvil le llegaba tumbada, con lo que leía basura (ADR 0051). Pide
+ * la salida en TSV para saber la confianza de cada palabra ({@link PageReading}).
+ *
  * <p>Cada lectura es un proceso aparte (100-200 MB de memoria y unos segundos de CPU), así que se
  * limitan las lecturas a la vez, cada una usa un solo hilo ({@code OMP_THREAD_LIMIT=1}) y, si se
  * configura, se lanza con un tope de memoria ({@code prlimit --as}): si una imagen rara se escapa a las
  * comprobaciones, el sistema corta solo a Tesseract y no a la JVM, que comparte el contenedor.
  */
+// Hay dos lectores del mismo puerto (Tesseract y Gemini): este es el principal si alguien inyecta el puerto a secas.
+@Primary
 @Component
 public class TesseractImageTextReader implements ImageTextReaderPort {
 
@@ -50,8 +60,11 @@ public class TesseractImageTextReader implements ImageTextReaderPort {
         this.slots = new Semaphore(Math.max(1, maxConcurrent));
     }
 
+    /** Lado mayor con el que se abre la foto: el cliente ya la manda a 2400 px y más no lee mejor. */
+    static final int MAX_SIDE = 3000;
+
     @Override
-    public String read(NotePhoto photo) {
+    public PageReading read(NotePhoto photo) {
         boolean acquired;
         try {
             // Espera corta: si el lector está ocupado, es mejor decirlo pronto que dejar a la persona
@@ -65,9 +78,61 @@ public class TesseractImageTextReader implements ImageTextReaderPort {
             throw new NoteScanUnavailableException("OCR is busy");
         }
         try {
-            return run(photo.content());
+            // Dentro del hueco: la foto abierta ocupa memoria y así se prepara una cada vez.
+            return parseTsv(run(prepare(photo.content())));
         } finally {
             slots.release();
+        }
+    }
+
+    /**
+     * Foto derecha, en gris y en PNG. Si Java no sabe abrirla (p. ej. un JPEG en CMYK), se manda tal cual: es lo
+     * que se hacía antes y Tesseract quizá sí pueda.
+     */
+    static byte[] prepare(byte[] content) {
+        int orientation = ImageHeader.read(content).map(ImageHeader::orientation).orElse(ImageHeader.UPRIGHT);
+        return ImagePixels.decode(content, MAX_SIDE)
+                .map(image -> ImagePixels.png(ImagePixels.orient(ImagePixels.gray(image), orientation)))
+                .orElse(content);
+    }
+
+    /**
+     * Salida TSV de Tesseract: una fila por elemento, con columnas {@code level page_num block_num par_num
+     * line_num word_num left top width height conf text}. Las palabras son el nivel 5. Se rehace el texto con
+     * saltos de línea entre líneas y una línea en blanco entre bloques o párrafos.
+     */
+    static PageReading parseTsv(String tsv) {
+        StringBuilder text = new StringBuilder();
+        List<PageReading.Word> words = new ArrayList<>();
+        String lastBlock = null;
+        String lastLine = null;
+        for (String row : tsv.split("\\R")) {
+            String[] cols = row.split("\t", -1);
+            if (cols.length < 12 || !"5".equals(cols[0])) {
+                continue;
+            }
+            String word = cols[11].strip();
+            if (word.isEmpty()) {
+                continue;
+            }
+            String block = cols[1] + "." + cols[2] + "." + cols[3];
+            String line = block + "." + cols[4];
+            if (lastBlock != null) {
+                text.append(!block.equals(lastBlock) ? "\n\n" : !line.equals(lastLine) ? "\n" : " ");
+            }
+            text.append(word);
+            words.add(new PageReading.Word(word, confidence(cols[10])));
+            lastBlock = block;
+            lastLine = line;
+        }
+        return PageReading.of(text.toString(), words);
+    }
+
+    private static int confidence(String value) {
+        try {
+            return (int) Math.round(Double.parseDouble(value.strip()));
+        } catch (NumberFormatException e) {
+            return -1;
         }
     }
 
@@ -114,14 +179,15 @@ public class TesseractImageTextReader implements ImageTextReaderPort {
 
     /**
      * Orden a ejecutar, sin shell y con argumentos fijos. {@code --psm 3}: página con columnas y
-     * párrafos (lo normal en unos apuntes). Con tope de memoria, se antepone {@code prlimit}.
+     * párrafos (lo normal en unos apuntes); {@code tsv}: una fila por palabra con su confianza. Con tope de
+     * memoria, se antepone {@code prlimit}.
      */
     static List<String> commandLine(String command, long memoryLimitMb, String languages) {
         List<String> args = new ArrayList<>();
         if (memoryLimitMb > 0) {
             args.addAll(List.of("prlimit", "--as=" + memoryLimitMb * 1024 * 1024, "--"));
         }
-        args.addAll(List.of(command, "stdin", "stdout", "-l", languages, "--psm", "3"));
+        args.addAll(List.of(command, "stdin", "stdout", "-l", languages, "--psm", "3", "tsv"));
         return args;
     }
 

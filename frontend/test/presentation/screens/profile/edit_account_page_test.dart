@@ -15,10 +15,12 @@ import 'package:synaptixfit/domain/use_cases/account/update_account_use_case.dar
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/auth/session/bloc/session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/profile/edit_account/bloc/edit_account_bloc.dart';
+import 'package:synaptixfit/presentation/screens/profile/edit_account/bloc/profile_photo_bloc.dart';
 import 'package:synaptixfit/presentation/screens/profile/edit_account/page/edit_account_page.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 import 'profile_fixtures.dart';
+import 'profile_photo_bloc_test.dart' show FakeRemoveAvatar, FakeUploadAvatar;
 
 class _MockSessionBloc extends MockBloc<SessionEvent, SessionState>
     implements SessionBloc {}
@@ -57,6 +59,7 @@ class _FakeUpdateAccount implements UpdateAccountUseCaseContract {
 void main() {
   late _MockSessionBloc session;
   late _FakeUpdateAccount update;
+  late FakeUploadAvatar uploadAvatar;
 
   setUp(() {
     session = _MockSessionBloc();
@@ -68,9 +71,17 @@ void main() {
     getIt.registerFactory<EditAccountBloc>(
       () => EditAccountBloc(updateAccount: update),
     );
+    uploadAvatar = FakeUploadAvatar();
+    getIt.registerFactory<ProfilePhotoBloc>(
+      () => ProfilePhotoBloc(upload: uploadAvatar, remove: FakeRemoveAvatar()),
+    );
   });
 
-  tearDown(() => getIt.unregister<EditAccountBloc>());
+  tearDown(() {
+    getIt
+      ..unregister<EditAccountBloc>()
+      ..unregister<ProfilePhotoBloc>();
+  });
 
   Future<void> pump(WidgetTester tester) async {
     // Móvil pequeño: la pantalla no cabe entera y hay que bajar.
@@ -146,4 +157,46 @@ void main() {
     expect(update.fullName, 'Ana López');
     expect(update.privacy, Visibility.public);
   });
+
+  testWidgets(
+    'la foto es un botón y la elegida se ve antes de subirla (ADR 0052)',
+    (tester) async {
+      await pump(tester);
+      // Ya no se pide una dirección de internet a mano.
+      expect(find.text('URL de la foto de perfil'), findsNothing);
+      expect(find.bySemanticsLabel('Poner foto'), findsOneWidget);
+
+      final bloc = tester
+          .element(find.text('Poner foto'))
+          .read<ProfilePhotoBloc>();
+      bloc.add(
+        const ProfilePhotoEvent.picked((
+          bytes: [1, 2, 3],
+          fileName: 'selfie.jpg',
+          mimeType: 'image/jpeg',
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Usar esta foto'), findsOneWidget);
+      expect(find.text('Elegir otra'), findsOneWidget);
+      expect(uploadAvatar.uploads, isEmpty);
+
+      await tester.tap(find.text('Usar esta foto'));
+      await tester.pumpAndSettle();
+
+      expect(uploadAvatar.uploads, ['selfie.jpg']);
+      verify(
+        () => session.add(
+          SessionEvent.accountUpdated(
+            testAccount.copyWith(
+              avatarUrl: 'https://app.test/api/v1/avatars/u/f.jpg',
+            ),
+          ),
+        ),
+      ).called(1);
+      expect(find.text('Foto guardada'), findsOneWidget);
+      expect(find.text('Usar esta foto'), findsNothing);
+    },
+  );
 }

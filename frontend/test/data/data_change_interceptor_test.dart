@@ -142,6 +142,15 @@ void main() {
       );
     });
 
+    test('cambiar o quitar la foto de perfil refresca perfil y social', () {
+      for (final method in ['POST', 'DELETE']) {
+        expect(DataChangeInterceptor.topicsFor(method, '/api/v1/me/avatar'), {
+          DataTopic.profile,
+          DataTopic.social,
+        });
+      }
+    });
+
     test('aceptar la política no refresca ninguna pantalla', () {
       expect(
         DataChangeInterceptor.topicsFor('PUT', '/api/v1/me/legal-acceptance'),

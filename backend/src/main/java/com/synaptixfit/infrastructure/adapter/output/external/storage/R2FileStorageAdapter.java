@@ -6,6 +6,7 @@ import com.synaptixfit.domain.port.output.storage.PresignedUrl;
 import com.synaptixfit.infrastructure.config.AppProperties;
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +14,17 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
@@ -97,12 +104,47 @@ public class R2FileStorageAdapter implements FileStoragePort {
     }
 
     @Override
+    public void put(String objectKey, byte[] content, String contentType) {
+        requireConfigured();
+        try {
+            s3.putObject(PutObjectRequest.builder().bucket(config.bucket()).key(objectKey).contentType(contentType)
+                    .contentLength((long) content.length).build(), RequestBody.fromBytes(content));
+        } catch (SdkException e) {
+            throw unavailable("Could not store object", e);
+        }
+    }
+
+    @Override
     public void delete(String objectKey) {
         requireConfigured();
         try {
             s3.deleteObject(DeleteObjectRequest.builder().bucket(config.bucket()).key(objectKey).build());
         } catch (SdkException e) {
             throw unavailable("Could not delete object", e);
+        }
+    }
+
+    /** Lista la carpeta por páginas (hasta 1000 claves) y borra cada página de una vez. */
+    @Override
+    public void deleteFolder(String prefix) {
+        requireConfigured();
+        if (prefix == null || prefix.isBlank() || !prefix.endsWith("/")) {
+            // Nunca un prefijo vacío o a medias: borraría el bucket entero o carpetas de otras personas.
+            throw new IllegalArgumentException("A folder prefix must end with /");
+        }
+        try {
+            for (ListObjectsV2Response page : s3.listObjectsV2Paginator(
+                    ListObjectsV2Request.builder().bucket(config.bucket()).prefix(prefix).build())) {
+                List<ObjectIdentifier> keys = page.contents().stream()
+                        .map(o -> ObjectIdentifier.builder().key(o.key()).build())
+                        .toList();
+                if (!keys.isEmpty()) {
+                    s3.deleteObjects(DeleteObjectsRequest.builder().bucket(config.bucket())
+                            .delete(Delete.builder().objects(keys).quiet(true).build()).build());
+                }
+            }
+        } catch (SdkException e) {
+            throw unavailable("Could not delete folder", e);
         }
     }
 

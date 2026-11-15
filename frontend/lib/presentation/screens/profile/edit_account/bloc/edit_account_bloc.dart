@@ -11,7 +11,7 @@ part 'edit_account_bloc.freezed.dart';
 part 'edit_account_event.dart';
 part 'edit_account_state.dart';
 
-/// Edición de la cuenta: nombre, avatar, privacidad, modo de uso y fecha de
+/// Edición de la cuenta: nombre, privacidad, modo de uso y fecha de
 /// nacimiento. Al guardar, la página pasa la cuenta nueva a `SessionBloc` para
 /// que todas las pantallas la vean sin reiniciar.
 class EditAccountBloc extends Bloc<EditAccountEvent, EditAccountState> {
@@ -27,11 +27,9 @@ class EditAccountBloc extends Bloc<EditAccountEvent, EditAccountState> {
     Emitter<EditAccountState> emit,
   ) async {
     emit(const EditAccountState.submitting());
-    final avatar = event.avatarUrl.trim();
+    // La foto no va aquí: se sube o se quita al momento (ProfilePhotoBloc).
     final result = await _updateAccount(
       fullName: event.fullName.trim(),
-      // Cadena vacía = quitar el avatar.
-      avatarUrl: avatar,
       privacy: event.privacy,
       usageFocus: event.usageFocus,
       birthDate: event.birthDate,

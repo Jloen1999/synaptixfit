@@ -1177,6 +1177,16 @@
     }
   },
   "academicScanPageUnreadable": "No se pudo abrir esta foto",
+  "academicScanUnclear": "Parte del texto no se ha leído bien. Compáralo con tus fotos y escribe lo que falte.",
+  "academicScanYourPhotos": "Tus fotos",
+  "academicScanZoomPage": "Ver la página {page} en grande",
+  "@academicScanZoomPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
   "academicMockSetupAllFirst": "Elegir los {max} primeros",
   "@academicMockSetupAllFirst": {
     "placeholders": {
@@ -1312,5 +1322,20 @@
   },
   "academicNewDeadline": "Nueva entrega",
   "academicSubjectFocusHere": "Concentrarme en esta asignatura",
-  "academicExamResumeLater": "El simulacro sigue en curso: al volver a abrirlo, sigues donde lo dejaste."
+  "academicExamResumeLater": "El simulacro sigue en curso: al volver a abrirlo, sigues donde lo dejaste.",
+  "academicScanZoomIn": "Acercar",
+  "academicScanZoomOut": "Alejar",
+  "academicScanPrevPage": "Página anterior",
+  "academicScanNextPage": "Página siguiente",
+  "academicScanPageOf": "{page} de {total}",
+  "@academicScanPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

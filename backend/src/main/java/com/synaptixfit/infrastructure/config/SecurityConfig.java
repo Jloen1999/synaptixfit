@@ -67,6 +67,9 @@ public class SecurityConfig {
                                 "/api/v1/notifications/weekly-email/unsubscribe").permitAll()
                         // Política de privacidad, condiciones y borrado de cuenta: públicos (Google Play, ADR 0034).
                         .requestMatchers(HttpMethod.GET, "/api/v1/legal/*", "/api/v1/legal/*/page").permitAll()
+                        // Fotos de perfil: se pintan como una imagen normal, sin sesión; el nombre es aleatorio y
+                        // solo se sirve la foto actual de cada cuenta (ADR 0052).
+                        .requestMatchers(HttpMethod.GET, "/api/v1/avatars/*/*").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
