@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../domain/enums/home_day_state.dart';
 import '../../../../domain/enums/home_event_kind.dart';
 import '../../../../domain/enums/home_event_type.dart';
 import '../../../../domain/enums/item_time_status.dart';
@@ -34,8 +35,12 @@ class TodayHeroCard extends StatefulWidget {
     this.completingIds = const {},
     this.nextDeadline,
     this.onOpenDeadline,
+    this.onOpenAgenda,
     this.now,
   });
+
+  /// Lleva a la agenda de hoy («y 2 más» cuando algo se quedó sin hacer).
+  final VoidCallback? onOpenAgenda;
 
   /// Próximo examen o entrega pendiente: cuenta atrás siempre a la vista.
   final HomeNextDeadline? nextDeadline;
@@ -112,16 +117,18 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final blocks = dashboard.todayEvents
-        .where((e) => e.kind == HomeEventKind.block)
-        .toList();
-    // Las clases no cuentan en el anillo: nadie las marca como hechas y el día
-    // se quedaba en «1/5» aunque hubieras ido a todas. Se nombran aparte.
-    final counted = blocks.where((e) => !isClassEvent(e)).toList();
-    final classes = blocks.length - counted.length;
-    final done = counted.where((e) => e.completed).length;
-    final next = dashboard.todayEvents.nextUp;
-    final action = TodayAction.of(next);
+    // El anillo, lo que queda y qué se destaca vienen del servidor (ADR 0050),
+    // así «Tu día» y la agenda nunca se contradicen. Las clases no cuentan
+    // (nadie las marca como hechas): solo se nombran aparte.
+    final summary = dashboard.todaySummary;
+    final classes = dashboard.todayEvents.where(isClassEvent).length;
+    final next = dashboard.nextUp;
+    final action = dashboard.todayAction;
+    final somethingMissed =
+        summary.state == HomeDayState.missedLeft || summary.missed > 0;
+    final moreCount = next == null || !somethingMissed
+        ? 0
+        : summary.total - summary.done - 1;
     final colors = context.colors;
     final deadline = focus.includesAcademic ? widget.nextDeadline : null;
     void act() {
@@ -177,13 +184,17 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _ProgressRing(done: done, total: counted.length),
+              _ProgressRing(done: summary.done, total: summary.total),
               const SizedBox(width: TokensSpacing.m),
               Expanded(
-                child: _NextUp(
-                  next: next,
-                  hasBlocks: blocks.isNotEmpty,
-                  classes: classes,
+                // «Te queda: Repasar Álgebra, 16:00 – 17:00, sin hacer» se
+                // oye como una sola frase.
+                child: MergeSemantics(
+                  child: _NextUp(
+                    summary: summary,
+                    next: next,
+                    classes: classes,
+                  ),
                 ),
               ),
             ],
@@ -208,6 +219,23 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
                   : button,
             ),
           ],
+          // El resto de lo pendiente, después del botón: una línea que lleva
+          // a la agenda; solo si algo de hoy ya se pasó (si no, lo siguiente
+          // basta).
+          if (moreCount > 0 && widget.onOpenAgenda != null)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Semantics(
+                hint: l10n.homeTodayMoreHint,
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, TokensLayout.minTouchTarget),
+                  ),
+                  onPressed: widget.onOpenAgenda,
+                  child: Text(l10n.homeTodayMore(moreCount)),
+                ),
+              ),
+            ),
           if (deadline != null) ...[
             const SizedBox(height: TokensSpacing.s),
             _Countdown(
@@ -280,17 +308,13 @@ class _ProgressRing extends StatelessWidget {
 }
 
 class _NextUp extends StatelessWidget {
-  const _NextUp({
-    required this.next,
-    required this.hasBlocks,
-    this.classes = 0,
-  });
+  const _NextUp({required this.summary, required this.next, this.classes = 0});
 
+  final HomeTodaySummary summary;
   final HomeTodayEvent? next;
 
   /// Clases de hoy, que van fuera del anillo: se dicen en una línea aparte.
   final int classes;
-  final bool hasBlocks;
 
   @override
   Widget build(BuildContext context) {
@@ -307,15 +331,27 @@ class _NextUp extends StatelessWidget {
               color: context.colors.onSurfaceVariant,
             ),
           );
-    if (event == null) {
+    // «Has terminado» solo si el servidor lo dice: con algo sin hacer, nunca.
+    final headline = switch (summary.state) {
+      HomeDayState.allDone => l10n.homeTodayAllDone,
+      HomeDayState.nothingPlanned when classes > 0 => l10n.homeTodayOnlyClasses(
+        classes,
+      ),
+      HomeDayState.nothingPlanned => l10n.homeTodayEmpty,
+      _ => null,
+    };
+    if (headline != null || event == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            hasBlocks ? l10n.homeTodayAllDone : l10n.homeTodayEmpty,
+            headline ?? l10n.homeTodayEmpty,
             style: context.textStyles.titleSmall,
           ),
-          ?classesNote,
+          // «Hoy solo tienes 2 clases» ya las nombra.
+          if (summary.state != HomeDayState.nothingPlanned &&
+              classesNote != null)
+            classesNote,
         ],
       );
     }
@@ -329,16 +365,26 @@ class _NextUp extends StatelessWidget {
         ? time.format(start)
         : l10n.homeAgendaTimeRange(time.format(start), time.format(end));
     final now = event.status == ItemTimeStatus.inProgress;
+    final missedLeft = summary.state == HomeDayState.missedLeft;
+    final missedEvent = event.status == ItemTimeStatus.missed;
+    // Lo que quedó sin hacer se nombra («Te queda: Repasar Álgebra») y se
+    // dice en aviso, como en la agenda («Sin hacer»).
+    final (label, labelColor) = missedLeft
+        ? (l10n.homeTodayLeft, context.palette.warning)
+        : now
+        ? (l10n.homeTodayNow, context.colors.primary)
+        : (l10n.homeTodayNext, context.colors.onSurfaceVariant);
+    final whenText = !missedEvent
+        ? when
+        : when == null
+        ? l10n.homeAgendaMissed
+        : l10n.homeTodayMissedAt(when);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          now ? l10n.homeTodayNow : l10n.homeTodayNext,
-          style: context.textStyles.labelLarge?.copyWith(
-            color: now
-                ? context.colors.primary
-                : context.colors.onSurfaceVariant,
-          ),
+          label,
+          style: context.textStyles.labelLarge?.copyWith(color: labelColor),
         ),
         const SizedBox(height: TokensSpacing.xxs),
         Row(
@@ -359,7 +405,7 @@ class _NextUp extends StatelessWidget {
             ),
           ],
         ),
-        if (when != null) Text(when, style: muted),
+        if (whenText != null) Text(whenText, style: muted),
         ?classesNote,
       ],
     );

@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../enums/cognitive_level.dart';
 import '../../enums/home_acwr_zone.dart';
 import '../../enums/home_banner_type.dart';
+import '../../enums/home_day_state.dart';
 import '../../enums/home_event_kind.dart';
 import '../../enums/home_event_type.dart';
 import '../../enums/planner_enums.dart';
@@ -35,7 +36,25 @@ abstract class HomeDashboard with _$HomeDashboard {
     /// «Hoy toca: suave / normal / fuerte»; nulo si hoy no hay entreno por
     /// hacer (lo decide el servidor, ADR 0042).
     TodayIntensity? todayIntensity,
+
+    /// Resumen de «Tu día» (anillo, lo sin hacer y qué se destaca); lo
+    /// calcula el servidor con los mismos eventos que la agenda (ADR 0050).
+    @Default(HomeTodaySummary()) HomeTodaySummary todaySummary,
   }) = _HomeDashboard;
+}
+
+/// Resumen de «Tu día» (`todaySummary`, ADR 0050): [done] de [total] (sin
+/// clases y con las entregas de hoy), [missed] que pasaron sin hacerse, el
+/// evento que se destaca ([nextEventId], uno de `todayEvents`) y [state].
+@freezed
+abstract class HomeTodaySummary with _$HomeTodaySummary {
+  const factory HomeTodaySummary({
+    @Default(0) int done,
+    @Default(0) int total,
+    @Default(0) int missed,
+    String? nextEventId,
+    @Default(HomeDayState.nothingPlanned) HomeDayState state,
+  }) = _HomeTodaySummary;
 }
 
 /// Entrega o examen de la cuenta atrás de «Tu día».

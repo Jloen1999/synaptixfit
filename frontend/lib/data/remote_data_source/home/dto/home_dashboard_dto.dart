@@ -5,6 +5,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../domain/enums/cognitive_level.dart';
 import '../../../../domain/enums/home_acwr_zone.dart';
 import '../../../../domain/enums/home_banner_type.dart';
+import '../../../../domain/enums/home_day_state.dart';
 import '../../../../domain/enums/home_event_kind.dart';
 import '../../../../domain/enums/home_event_type.dart';
 import '../../../../domain/enums/planner_enums.dart';
@@ -34,6 +35,7 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     HomeBannerDto? banner,
     HomeNextDeadlineDto? nextDeadline,
     String? todayIntensity,
+    HomeTodaySummaryDto? todaySummary,
   }) = _HomeDashboardDto;
 
   const HomeDashboardDto._();
@@ -56,6 +58,32 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     banner: (banner ?? const HomeBannerDto()).toDomain(),
     nextDeadline: nextDeadline?.toDomain(),
     todayIntensity: TodayIntensity.fromApi(todayIntensity),
+    todaySummary: (todaySummary ?? const HomeTodaySummaryDto()).toDomain(),
+  );
+}
+
+/// Resumen de «Tu día» (`todaySummary`, ADR 0050).
+@freezed
+abstract class HomeTodaySummaryDto with _$HomeTodaySummaryDto {
+  const factory HomeTodaySummaryDto({
+    @Default(0) int done,
+    @Default(0) int total,
+    @Default(0) int missed,
+    String? nextEventId,
+    String? state,
+  }) = _HomeTodaySummaryDto;
+
+  const HomeTodaySummaryDto._();
+
+  factory HomeTodaySummaryDto.fromJson(Map<String, dynamic> json) =>
+      _$HomeTodaySummaryDtoFromJson(json);
+
+  HomeTodaySummary toDomain() => HomeTodaySummary(
+    done: done,
+    total: total,
+    missed: missed,
+    nextEventId: nextEventId,
+    state: HomeDayState.fromApi(state),
   );
 }
 

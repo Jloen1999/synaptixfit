@@ -374,7 +374,6 @@ class _DayStrip extends StatelessWidget {
     final l10n = context.localizations;
     final weekday = DateFormat.E();
     final longDay = DateFormat.MMMMEEEEd();
-    final colors = context.colors;
     return SizedBox(
       height: context.scaled(TokensSize.dayChipHeight),
       child: ListView.separated(
@@ -384,72 +383,19 @@ class _DayStrip extends StatelessWidget {
         itemBuilder: (context, i) {
           final day = days[i];
           final isSelected = i == selected;
-          final foreground = isSelected ? colors.onPrimary : colors.onSurface;
-          return Semantics(
-            button: true,
+          return AppDayChip(
+            caption: i == 0 ? l10n.homeAgendaToday : weekday.format(day),
+            dayNumber: day.day,
             selected: isSelected,
-            label: _label(
+            today: i == 0,
+            semanticLabel: _label(
               l10n,
               i == 0 ? l10n.homeAgendaToday : longDay.format(day),
               events[i],
             ),
-            // El contenido se excluye dentro del InkWell: así se conservan su
-            // acción y su foco en web y con lector de pantalla.
-            child: AppFocusOutline(
-              borderRadius: BorderRadius.circular(TokensRadius.l),
-              child: Material(
-                color: isSelected ? colors.primary : colors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(TokensRadius.l),
-                  side: BorderSide(
-                    color: isSelected ? colors.primary : colors.outlineVariant,
-                  ),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(TokensRadius.l),
-                  onTap: () => onSelected(i),
-                  child: ExcludeSemantics(
-                    child: SizedBox(
-                      width: context.scaled(TokensSize.dayChipWidth),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // «Aujourd'hui» no cabe en el chip: se reduce, no se parte.
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: TokensSpacing.xxs,
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                i == 0
-                                    ? l10n.homeAgendaToday
-                                    : weekday.format(day),
-                                maxLines: 1,
-                                style: context.textStyles.labelSmall?.copyWith(
-                                  color: foreground,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '${day.day}',
-                            style: context.textStyles.titleMedium?.copyWith(
-                              color: foreground,
-                            ),
-                          ),
-                          const SizedBox(height: TokensSpacing.xxs),
-                          _DayDots(
-                            events: events[i],
-                            onSelectedChip: isSelected,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            width: context.scaled(TokensSize.dayChipWidth),
+            onTap: () => onSelected(i),
+            marker: _DayDots(events: events[i], onSelectedChip: isSelected),
           );
         },
       ),

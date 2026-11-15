@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -103,5 +105,98 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
     expect(newStart, DateTime(2025, 10, 15, 12));
+  });
+
+  group('a 360 px (ADR 0050)', () {
+    const phone = Size(360, 800);
+
+    testWidgets('la tira lleva a los 7 días y marca el que se ve', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pump(tester, blocks: const [], size: phone);
+
+      const labels = [
+        'Lunes 13',
+        'Martes 14',
+        'Hoy, miércoles 15',
+        'Jueves 16',
+        'Viernes 17',
+        'Sábado 18',
+        'Domingo 19',
+      ];
+      const headers = [
+        'lun 13',
+        'mar 14',
+        'mié 15',
+        'jue 16',
+        'vie 17',
+        'sáb 18',
+        'dom 19',
+      ];
+      // Abre en hoy, marcado.
+      bool selected(String label) =>
+          tester
+              .getSemantics(find.bySemanticsLabel(label))
+              .flagsCollection
+              .isSelected ==
+          Tristate.isTrue;
+      expect(selected(labels[2]), isTrue);
+      // Cada día llega a la zona de toque de 48 dp, también a 360.
+      for (final label in labels) {
+        final size = tester.getSize(find.bySemanticsLabel(label));
+        expect(size.width, greaterThanOrEqualTo(48), reason: label);
+        expect(size.height, greaterThanOrEqualTo(48), reason: label);
+      }
+      for (final (i, label) in labels.indexed) {
+        await tester.tap(find.bySemanticsLabel(label));
+        await tester.pumpAndSettle();
+        final header = tester.getRect(find.text(headers[i]));
+        expect(
+          header.left >= WeekCanvas.axisWidth && header.right <= phone.width,
+          isTrue,
+          reason: '$label se ve tras tocarlo',
+        );
+        expect(selected(label), isTrue);
+      }
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+
+    testWidgets('un evento a las 2:00 se ve al subir', (tester) async {
+      await pump(
+        tester,
+        blocks: [block(start: DateTime(2025, 10, 15, 2))],
+        size: phone,
+      );
+      final title = find.text('Cálculo');
+      // Se abre una hora antes de ahora (10:00): la madrugada queda arriba.
+      expect(title.hitTestable(), findsNothing);
+
+      await tester.scrollUntilVisible(
+        title,
+        -200,
+        scrollable: find.byWidgetPredicate(
+          (w) =>
+              w is Scrollable &&
+              w.axisDirection == AxisDirection.down &&
+              w.physics is! NeverScrollableScrollPhysics,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(title.hitTestable(), findsOneWidget);
+    });
+
+    testWidgets('lo que cruza la medianoche se pinta en sus dos días', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        blocks: [block(start: DateTime(2025, 10, 15, 23), minutes: 120)],
+        size: const Size(1400, 900),
+      );
+      expect(find.byType(TimeBlockTile), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    });
   });
 }

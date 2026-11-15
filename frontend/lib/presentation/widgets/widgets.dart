@@ -13,6 +13,7 @@ export 'app_content_width.dart';
 export 'app_cover_card.dart';
 export 'app_cycle_progress.dart';
 export 'app_date_block.dart';
+export 'app_day_chip.dart';
 export 'app_effort_dialog.dart';
 export 'app_effort_slider.dart';
 export 'app_empty_state.dart';

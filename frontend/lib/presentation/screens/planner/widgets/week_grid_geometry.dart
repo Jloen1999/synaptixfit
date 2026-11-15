@@ -6,17 +6,22 @@ typedef TimeRange = ({DateTime start, DateTime end});
 /// Carril asignado a un bloque cuando se solapa con otros en el mismo día.
 typedef LaneSlot = ({int lane, int lanes});
 
+/// Tramo de un evento dentro de un día de la semana (0 = lunes).
+typedef DayPart = ({int day, TimeRange part});
+
 /// Matemática pura del lienzo semanal (hora ↔ píxel, día ↔ columna, ajuste a la
 /// media hora). No depende de Flutter para poder probarla con tests unitarios.
 ///
 /// El eje vertical empieza en [startHour] (y = 0) y termina en [endHour]; cada
-/// columna mide [dayWidth] y la semana empieza el lunes ([weekStart]).
+/// columna mide [dayWidth] y la semana empieza el lunes ([weekStart]). Por
+/// defecto el día entero, de 0:00 a 24:00 (ADR 0050): lo de madrugada o de
+/// noche también se ve, se crea y se mueve.
 class WeekGridGeometry {
   const WeekGridGeometry({
     required this.dayWidth,
     this.hourHeight = 64,
-    this.startHour = 6,
-    this.endHour = 23,
+    this.startHour = 0,
+    this.endHour = 24,
     this.snapMinutes = 30,
     this.minDurationMinutes = 30,
   }) : assert(endHour > startHour),
@@ -88,6 +93,33 @@ class WeekGridGeometry {
     );
   }
 
+  /// Tramos de [range] en cada día de la semana que toca: un evento que
+  /// cruza la medianoche se pinta en sus dos días. Los tramos fuera de la
+  /// semana no salen. Los días se cuentan en el reloj local (con cambio de
+  /// hora, cada fecha sigue siendo un día).
+  List<DayPart> dayParts(TimeRange range, DateTime weekStart) {
+    final monday = DateTime(weekStart.year, weekStart.month, weekStart.day);
+    final weekEnd = DateTime(monday.year, monday.month, monday.day + 7);
+    final first = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    var dayStart = first.isBefore(monday) ? monday : first;
+    final parts = <DayPart>[];
+    while (dayStart.isBefore(range.end) && dayStart.isBefore(weekEnd)) {
+      final next = DateTime(dayStart.year, dayStart.month, dayStart.day + 1);
+      final from = range.start.isAfter(dayStart) ? range.start : dayStart;
+      final to = range.end.isBefore(next) ? range.end : next;
+      final day = dayIndexOf(dayStart, weekStart);
+      if (day != null && to.isAfter(from)) {
+        parts.add((day: day, part: (start: from, end: to)));
+      }
+      dayStart = next;
+    }
+    return parts;
+  }
+
   // ------------------------------------------------------------- horizontal
 
   /// Índice del día (0 = lunes … 6 = domingo) o `null` si no es de esta semana.
@@ -148,14 +180,17 @@ class WeekGridGeometry {
   }
 
   /// Nuevo fin al tirar del borde inferior [dy] píxeles: ajustado, con duración
-  /// mínima [minDurationMinutes] y sin pasar de [endHour].
+  /// mínima [minDurationMinutes] y sin pasar de [endHour] (las 24:00 son la
+  /// medianoche del día siguiente). Es la hora del reloj que se ve en la
+  /// rejilla, también el día del cambio de hora.
   DateTime resizeEndBy(TimeRange original, {required double dy}) {
-    final startMin = minutesOfDay(original.start);
-    final duration = original.end.difference(original.start).inMinutes;
+    final start = original.start;
+    final startMin = minutesOfDay(start);
+    final duration = original.end.difference(start).inMinutes;
     final rawEnd = startMin + duration + dy / pixelsPerMinute;
     final limit = math.max(endMinutes, startMin + duration);
     final end = snap(rawEnd).clamp(startMin + minDurationMinutes, limit);
-    return original.start.add(Duration(minutes: end - startMin));
+    return DateTime(start.year, start.month, start.day, 0, end);
   }
 
   // ------------------------------------------------------------- solapes

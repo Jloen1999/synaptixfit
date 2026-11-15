@@ -28,7 +28,17 @@ class TimeBlockTile extends StatelessWidget {
     required this.onResizeUpdate,
     required this.onResizeEnd,
     required this.onLockedTouched,
+    this.draggable = true,
+    this.resizable = true,
   });
+
+  /// Se mueve con pulsación larga. No en el tramo del día siguiente de un
+  /// evento que cruza la medianoche: se mueve desde su primer día.
+  final bool draggable;
+
+  /// Lleva el asa de la duración. No en un tramo que no acaba donde acaba el
+  /// evento (cruza la medianoche): el asa estiraría desde otra hora.
+  final bool resizable;
 
   final CalendarBlock block;
   final String title;
@@ -48,7 +58,7 @@ class TimeBlockTile extends StatelessWidget {
   final VoidCallback onResizeEnd;
   final VoidCallback onLockedTouched;
 
-  bool get _movable => !block.isLocked && !block.completed;
+  bool get _movable => draggable && !block.isLocked && !block.completed;
   bool get _missed => block.timeStatus == ItemTimeStatus.missed;
 
   @override
@@ -76,7 +86,9 @@ class TimeBlockTile extends StatelessWidget {
       // El toque va en el InkWell (enfocable, con resaltado de foco); aquí solo
       // queda la pulsación larga que inicia el arrastre.
       child: GestureDetector(
-        onLongPressStart: (_) => _movable ? onDragStart() : onLockedTouched(),
+        onLongPressStart: !draggable
+            ? null
+            : (_) => _movable ? onDragStart() : onLockedTouched(),
         onLongPressMoveUpdate: _movable
             ? (d) => onDragUpdate(d.offsetFromOrigin)
             : null,
@@ -129,7 +141,7 @@ class TimeBlockTile extends StatelessWidget {
                             ),
                             child: _content(context, color, timeText, compact),
                           ),
-                          if (_movable && !compact)
+                          if (_movable && resizable && !compact)
                             Positioned(
                               left: 0,
                               right: 0,

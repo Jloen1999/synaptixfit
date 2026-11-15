@@ -8,7 +8,7 @@ Guía para publicar la app Android de SynaptixFit. Se basa en lo que hace de ver
 |---|---|---|
 | Política de privacidad pública | Lista al desplegar | `https://synaptixfit.jloenit.dev/privacidad` (en inglés, `/privacy`) |
 | URL para pedir el borrado de la cuenta | Lista al desplegar | `https://synaptixfit.jloenit.dev/eliminar-cuenta` (en inglés, `/delete-account`) |
-| Responsable y correo de privacidad | **Pendiente** | Variables `LEGAL_CONTROLLER_NAME` y `LEGAL_CONTACT_EMAIL` en Coolify. Sin ellas, las páginas dicen «pendiente de indicar» y **no se debe publicar** |
+| Responsable y correo de privacidad | Hecho (15 nov 2026) | Variables `LEGAL_CONTROLLER_NAME` y `LEGAL_CONTACT_EMAIL` en `/root/synaptixfit/app-secrets.env` del VPS (el despliegue las sube a Coolify cada vez). Sin ellas, las páginas dicen «pendiente de indicar» y **no se debe publicar** |
 | Revisión jurídica de los textos | Recomendada | `backend/src/main/resources/legal/` (bases legales, transferencias a DeepSeek, edad mínima) |
 | Paquete AAB firmado con clave de subida | **Pendiente** | Hoy `android/app/build.gradle.kts` firma `release` con la clave de depuración, así que no vale para Play (punto 5) |
 | `targetSdk` | 36 | Lo fija Flutter (`flutter.targetSdkVersion`); Play exige el último o el anterior |

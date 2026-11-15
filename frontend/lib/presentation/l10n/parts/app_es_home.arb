@@ -614,5 +614,31 @@
   "homeTodayIntensityEasyHelp": "Hoy haces menos series: llegas con cansancio, tienes un examen cerca o vienes de días muy cargados.",
   "homeTodayIntensityNormalHelp": "Entrena como lo tienes previsto.",
   "homeTodayIntensityHardHelp": "Dormiste bien, tienes energía y no tienes agujetas: buen día para apretar.",
-  "homeTodayIntensityAbout": "Hoy toca"
+  "homeTodayIntensityAbout": "Hoy toca",
+  "homeTodayOnlyClasses": "{count, plural, =1{Hoy solo tienes 1 clase} other{Hoy solo tienes {count} clases}}",
+  "@homeTodayOnlyClasses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTodayLeft": "Te queda:",
+  "homeTodayMissedAt": "{time}, sin hacer",
+  "@homeTodayMissedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayMore": "{count, plural, =1{y 1 más} other{y {count} más}}",
+  "@homeTodayMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTodayMoreHint": "Ver en la agenda"
 }

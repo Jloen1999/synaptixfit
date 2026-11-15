@@ -2,9 +2,108 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:synaptixfit/presentation/screens/planner/widgets/week_grid_geometry.dart';
 
 void main() {
-  // 6:00-23:00, 60 px por hora (1 px por minuto) y columnas de 100 px.
-  const g = WeekGridGeometry(dayWidth: 100, hourHeight: 60);
+  // Franja recortada (6:00-23:00) para probar los límites; el lienzo usa el
+  // día entero (ver «día completo»). 60 px por hora (1 px por minuto) y
+  // columnas de 100 px.
+  const g = WeekGridGeometry(
+    dayWidth: 100,
+    hourHeight: 60,
+    startHour: 6,
+    endHour: 23,
+  );
   final monday = DateTime(2025, 10, 13);
+
+  group('día completo, 0:00-24:00 (ADR 0050)', () {
+    const day = WeekGridGeometry(dayWidth: 100, hourHeight: 60);
+    final week = DateTime(2026, 11, 9);
+
+    test('por defecto la rejilla va de 0:00 a 24:00', () {
+      expect(day.startHour, 0);
+      expect(day.endHour, 24);
+      expect(day.gridHeight, 24 * 60);
+      expect(day.yToSlotStartMinutes(0), 0);
+      // La última franja empieza a las 23:30.
+      expect(day.yToSlotStartMinutes(99999), 23 * 60 + 30);
+    });
+
+    test('lo de madrugada y lo de noche se ve', () {
+      expect(
+        day.verticalExtent((
+          start: DateTime(2026, 11, 10, 5),
+          end: DateTime(2026, 11, 10, 6),
+        )),
+        (top: 5 * 60.0, height: 60.0),
+      );
+      expect(
+        day.verticalExtent((
+          start: DateTime(2026, 11, 10, 23, 30),
+          end: DateTime(2026, 11, 11),
+        )),
+        (top: 23 * 60 + 30.0, height: 30.0),
+      );
+    });
+
+    test('lo que cruza la medianoche sale en sus dos días', () {
+      final parts = day.dayParts((
+        start: DateTime(2026, 11, 10, 23),
+        end: DateTime(2026, 11, 11, 1, 30),
+      ), week);
+
+      expect(parts.map((p) => p.day), [1, 2]);
+      expect(day.verticalExtent(parts[0].part), (top: 23 * 60.0, height: 60.0));
+      expect(day.verticalExtent(parts[1].part), (top: 0.0, height: 90.0));
+    });
+
+    test('un tramo fuera de la semana no sale', () {
+      final parts = day.dayParts((
+        start: DateTime(2026, 11, 15, 22),
+        end: DateTime(2026, 11, 16, 2),
+      ), week);
+
+      expect(parts.map((p) => p.day), [6]);
+    });
+
+    test(
+      'con el cambio de hora (25/10/2026) la semana tiene 7 días distintos',
+      () {
+        final dstWeek = DateTime(2026, 10, 19);
+        final days = [
+          for (var i = 0; i < 7; i++)
+            WeekGridGeometry.dateTimeAt(dstWeek, i, 0),
+        ];
+
+        expect(days.map((d) => d.day).toSet(), {19, 20, 21, 22, 23, 24, 25});
+        for (final (i, d) in days.indexed) {
+          expect(day.dayIndexOf(d, dstWeek), i);
+        }
+        // Todo el domingo del cambio es un solo tramo del día 6.
+        final sunday = day.dayParts((
+          start: DateTime(2026, 10, 25),
+          end: DateTime(2026, 10, 26),
+        ), dstWeek);
+        expect(sunday.map((p) => p.day), [6]);
+      },
+    );
+
+    test('estirar llega hasta las 24:00 y no más', () {
+      final late = (
+        start: DateTime(2026, 11, 10, 22),
+        end: DateTime(2026, 11, 10, 23),
+      );
+      expect(day.resizeEndBy(late, dy: 5000), DateTime(2026, 11, 11));
+    });
+
+    test('arrastrar llega a la madrugada y al final del día', () {
+      final block = (
+        start: DateTime(2026, 11, 10, 9),
+        end: DateTime(2026, 11, 10, 10),
+      );
+      final up = day.moveBy(block, week, dx: 0, dy: -5000);
+      expect(up.start, DateTime(2026, 11, 10));
+      final down = day.moveBy(block, week, dx: 0, dy: 5000);
+      expect(down.end, DateTime(2026, 11, 11));
+    });
+  });
 
   group('eje vertical', () {
     test('dimensiones de la rejilla', () {

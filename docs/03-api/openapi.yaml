@@ -16790,6 +16790,8 @@ components:
           - EASY
           - NORMAL
           - HARD
+        todaySummary:
+          $ref: "#/components/schemas/TodaySummaryResponse"
     DashboardWeekResponse:
       type: object
       properties:
@@ -17003,6 +17005,28 @@ components:
         physicalLoad:
           type: number
           format: double
+    TodaySummaryResponse:
+      type: object
+      properties:
+        done:
+          type: integer
+          format: int32
+        total:
+          type: integer
+          format: int32
+        missed:
+          type: integer
+          format: int32
+        nextEventId:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum:
+          - NOTHING_PLANNED
+          - PENDING
+          - MISSED_LEFT
+          - ALL_DONE
     PageResponseChallengeResponse:
       type: object
       properties:

@@ -381,5 +381,6 @@
   "plannerOpensDeadlineForm": "Opens the deadline form",
   "plannerSubjectArchived": "Archived subject",
   "plannerDeadlinesSwipeHint": "Swipe a deadline left to delete it.",
-  "plannerPomodoroWithFriends": "Study with friends"
+  "plannerPomodoroWithFriends": "Study with friends",
+  "plannerShortcutDeadlines": "Deadlines"
 }

@@ -148,6 +148,10 @@ class InsightsFlowIT {
                 .andExpect(jsonPath("$.wellbeing.checkInDone").value(false))
                 .andExpect(jsonPath("$.planWeek.length()").value(7))
                 .andExpect(jsonPath("$.todayEvents[0].type").value("STUDY"))
+                // «Tu día» (ADR 0050): el único evento que cuenta está hecho.
+                .andExpect(jsonPath("$.todaySummary.done").value(1))
+                .andExpect(jsonPath("$.todaySummary.total").value(1))
+                .andExpect(jsonPath("$.todaySummary.state").value("ALL_DONE"))
                 .andExpect(jsonPath("$.banner.type").value("PHYSICAL_OVERLOAD"))
                 .andExpect(jsonPath("$.banner.params.maxStudyMinutes").value(71));
 

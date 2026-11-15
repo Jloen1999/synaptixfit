@@ -178,5 +178,10 @@
   "homeTodayIntensityEasyHelp": "You do fewer sets today: you're tired, an exam is close or the last days were very heavy.",
   "homeTodayIntensityNormalHelp": "Train as planned.",
   "homeTodayIntensityHardHelp": "You slept well, have energy and no soreness: a good day to push.",
-  "homeTodayIntensityAbout": "Today's workout"
+  "homeTodayIntensityAbout": "Today's workout",
+  "homeTodayOnlyClasses": "{count, plural, =1{Just 1 class today} other{Just {count} classes today}}",
+  "homeTodayLeft": "Still to do:",
+  "homeTodayMissedAt": "{time}, not done",
+  "homeTodayMore": "{count, plural, =1{and 1 more} other{and {count} more}}",
+  "homeTodayMoreHint": "See in the agenda"
 }

@@ -298,6 +298,10 @@ class _HomeContentState extends State<_HomeContent> {
   /// al ocultar «Termina de preparar tu app» con «Ahora no» (WCAG 2.4.3).
   final _afterSetupFocus = FocusNode(debugLabel: 'home-after-setup');
 
+  /// Título de la agenda cuando «Tu semana» se ve (si no, es
+  /// [_afterSetupFocus]): «y 2 más» de «Tu día» lleva aquí.
+  final _agendaFocus = FocusNode(debugLabel: 'home-agenda');
+
   HomeDashboard get dashboard => widget.dashboard;
   HomeDashboardState get state => widget.state;
   ValueChanged<String> get onNavigate => widget.onNavigate;
@@ -305,6 +309,7 @@ class _HomeContentState extends State<_HomeContent> {
   @override
   void dispose() {
     _afterSetupFocus.dispose();
+    _agendaFocus.dispose();
     super.dispose();
   }
 
@@ -354,7 +359,7 @@ class _HomeContentState extends State<_HomeContent> {
     // «Entrenar» de «Tu día» empieza el día de rutina del bloque que toca
     // ahora (lo que dice el calendario); sin enlace, el próximo de la rutina.
     void trainTodayBlock() {
-      final event = dashboard.todayEvents.nextUp;
+      final event = dashboard.nextUp;
       final routineId = event?.routineId;
       final dayId = event?.routineDayId;
       if (routineId != null && dayId != null) {
@@ -372,7 +377,7 @@ class _HomeContentState extends State<_HomeContent> {
     // «Concentrarme» se liga al bloque que toca: sus fases cuentan para él y
     // para su asignatura.
     void focusOnNext() {
-      final event = dashboard.todayEvents.nextUp;
+      final event = dashboard.nextUp;
       onNavigate(
         event == null
             ? HomeExternalPaths.pomodoro
@@ -385,6 +390,11 @@ class _HomeContentState extends State<_HomeContent> {
 
     // «Tu día»: lo primero que se ve, con lo que toca ahora y su único botón.
     final nextDeadline = dashboard.nextDeadline;
+    // Sin «Tu semana», el título de la agenda es también el destino de «Ahora
+    // no» (un nodo de foco por widget).
+    final agendaFocus = dashboard.planWeek.isEmpty
+        ? _afterSetupFocus
+        : _agendaFocus;
     final hero = TodayHeroCard(
       dashboard: dashboard,
       focus: focus,
@@ -395,6 +405,8 @@ class _HomeContentState extends State<_HomeContent> {
           ? null
           : () => onNavigate(HomeExternalPaths.deadline(nextDeadline.id)),
       onMarkDone: (event) => _setCompleted(context, event, completed: true),
+      // Lleva el foco (y la vista) al título de la agenda de hoy.
+      onOpenAgenda: () => AppFocusAnchor.focusSoon(agendaFocus),
       onAction: (action) {
         switch (action) {
           case TodayAction.focus:
@@ -410,13 +422,12 @@ class _HomeContentState extends State<_HomeContent> {
       },
     );
     // Si «Tu día» ya ofrece «Empezar», la tarjeta del entreno no lo repite.
-    final heroTrains =
-        TodayAction.of(dashboard.todayEvents.nextUp) == TodayAction.train;
+    final heroTrains = dashboard.todayAction == TodayAction.train;
     final setup = state.setup;
     final main = <Widget>[
       AgendaSection(
         // Sin «Tu semana», «Ahora no» devuelve el foco aquí (WCAG 2.4.3).
-        headerFocusNode: dashboard.planWeek.isEmpty ? _afterSetupFocus : null,
+        headerFocusNode: agendaFocus,
         events: dashboard.todayEvents,
         upcoming: state.upcoming,
         focus: focus,

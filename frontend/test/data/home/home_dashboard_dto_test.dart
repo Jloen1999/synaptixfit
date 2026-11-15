@@ -6,8 +6,10 @@ import 'package:synaptixfit/data/remote_data_source/home/dto/home_dashboard_dto.
 import 'package:synaptixfit/data/remote_data_source/home/dto/home_due_review_dto.dart';
 import 'package:synaptixfit/domain/enums/home_acwr_zone.dart';
 import 'package:synaptixfit/domain/enums/home_banner_type.dart';
+import 'package:synaptixfit/domain/enums/home_day_state.dart';
 import 'package:synaptixfit/domain/enums/home_event_kind.dart';
 import 'package:synaptixfit/domain/enums/home_event_type.dart';
+import 'package:synaptixfit/domain/models/home/home_dashboard.dart';
 
 void main() {
   final json = <String, dynamic>{
@@ -119,6 +121,13 @@ void main() {
       'subjectName': 'Histología',
     },
     'todayIntensity': 'EASY',
+    'todaySummary': {
+      'done': 1,
+      'total': 3,
+      'missed': 2,
+      'nextEventId': 'b9',
+      'state': 'MISSED_LEFT',
+    },
   };
 
   test('mapea el resumen del inicio al dominio', () {
@@ -163,6 +172,17 @@ void main() {
     // «Hoy toca» lo decide el servidor (ADR 0042).
     expect(dashboard.todayIntensity, TodayIntensity.easy);
     expect(dashboard.nextDeadline!.dueAt.isUtc, isFalse);
+    // «Tu día» lo resume el servidor (ADR 0050).
+    expect(
+      dashboard.todaySummary,
+      const HomeTodaySummary(
+        done: 1,
+        total: 3,
+        missed: 2,
+        nextEventId: 'b9',
+        state: HomeDayState.missedLeft,
+      ),
+    );
   });
 
   test('tolera bloques ausentes y tipos desconocidos', () {
@@ -183,6 +203,12 @@ void main() {
     expect(dashboard.todayEvents.single.kind, HomeEventKind.block);
     expect(dashboard.todayEvents.single.type, HomeEventType.other);
     expect(dashboard.activeChallenges, isEmpty);
+    // Sin resumen (servidor antiguo): nada planificado.
+    expect(dashboard.todaySummary, const HomeTodaySummary());
+    expect(
+      HomeTodaySummaryDto.fromJson({'state': 'NEW_STATE'}).toDomain().state,
+      HomeDayState.nothingPlanned,
+    );
   });
 
   test('mapea los repasos', () {

@@ -46,6 +46,11 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
                 planWeek, todayEvents, banner, nextDeadline, null);
     }
 
+    /** Resumen de «Tu día» (ADR 0050): sale de los mismos eventos que la agenda, así nunca se contradicen. */
+    public TodaySummary todaySummary() {
+        return TodaySummary.of(todayEvents);
+    }
+
     /**
      * ¿Hay entreno hoy por hacer? (ADR 0042: solo entonces sale «Hoy toca» en «Tu día»). Sí si el próximo día de la
      * rutina toca hoy o va con retraso, o si hoy hay un evento de deporte sin marcar.

@@ -1,18 +1,23 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../domain/models/planner/calendar_block.dart';
 import '../../../../domain/models/planner/planner_week.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
+import '../../../widgets/widgets.dart';
 import 'planner_visuals.dart';
 import 'time_block_tile.dart';
 import 'time_grid_painter.dart';
 import 'week_grid_geometry.dart';
 
 /// Lienzo continuo de la semana: cabecera de días y eje horario fijos, y una
-/// rejilla desplazable en ambos ejes con los bloques posicionados.
+/// rejilla desplazable en ambos ejes con los bloques posicionados. El día va
+/// entero, de 0:00 a 24:00, y lo que cruza la medianoche se pinta en sus dos
+/// días (ADR 0050). Si los 7 días no caben, una tira arriba lleva a cualquiera
+/// y marca el que se ve.
 ///
 /// Toda la conversión hora ↔ píxel la hace [WeekGridGeometry]; aquí solo se
 /// guarda el estado efímero del gesto (vista previa del arrastre).
@@ -25,6 +30,8 @@ class WeekCanvas extends StatefulWidget {
     required this.busyIds,
     required this.now,
     this.focusAt,
+    this.focusDay,
+    this.onVisibleDayChanged,
     required this.onSlotTap,
     required this.onBlockTap,
     required this.onReschedule,
@@ -40,6 +47,14 @@ class WeekCanvas extends StatefulWidget {
   /// Momento en el que se coloca la vista al abrir (un bloque pedido); sin él,
   /// en «ahora».
   final DateTime? focusAt;
+
+  /// Día en que se abre (p. ej. desde «Tu semana»), sin hora concreta: se
+  /// coloca en su primer evento.
+  final DateTime? focusDay;
+
+  /// Día de la semana que se ve (0 = lunes) cuando no caben los 7; nulo si
+  /// caben todos. La página lo usa para enseñar «Hoy» solo cuando hace falta.
+  final ValueChanged<int?>? onVisibleDayChanged;
   final ValueChanged<DateTime> onSlotTap;
   final ValueChanged<CalendarBlock> onBlockTap;
   final void Function(CalendarBlock block, DateTime start, DateTime end)
@@ -68,6 +83,19 @@ class _WeekCanvasState extends State<WeekCanvas> {
   TimeRange? _preview;
   bool _initialScrollDone = false;
 
+  /// Geometría del último dibujo (la usan la tira y el desplazamiento).
+  WeekGridGeometry? _geometry;
+
+  /// Día marcado en la tira: el elegido o, al desplazarse, el primero visible.
+  int _selectedDay = 0;
+
+  /// Se está yendo a un día de la tira: el desplazamiento no cambia la marca.
+  bool _jumpingToDay = false;
+
+  /// Lo último avisado con [WeekCanvas.onVisibleDayChanged].
+  int? _reportedDay;
+  bool _reported = false;
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +104,56 @@ class _WeekCanvasState extends State<WeekCanvas> {
     });
     _horizontal.addListener(() {
       if (_header.hasClients) _header.jumpTo(_horizontal.offset);
+      _syncSelectedDay();
+    });
+  }
+
+  /// Al desplazarse a mano, la tira marca el primer día visible (si el marcado
+  /// ya no se ve).
+  void _syncSelectedDay() {
+    final g = _geometry;
+    if (g == null || _jumpingToDay || !_horizontal.hasClients) return;
+    final offset = _horizontal.offset;
+    final viewport = _horizontal.position.viewportDimension;
+    final first = (offset / g.dayWidth).round().clamp(0, 6);
+    final last = ((offset + viewport) / g.dayWidth).round().clamp(1, 7) - 1;
+    if (_selectedDay >= first && _selectedDay <= last) return;
+    setState(() => _selectedDay = first);
+  }
+
+  /// Toque en la tira: lleva la columna de ese día al principio de la vista.
+  Future<void> _goToDay(int day) async {
+    final g = _geometry;
+    setState(() => _selectedDay = day);
+    if (g == null || !_horizontal.hasClients) return;
+    final target = g
+        .dayLeft(day)
+        .clamp(0.0, _horizontal.position.maxScrollExtent);
+    _jumpingToDay = true;
+    try {
+      if (context.reduceMotion) {
+        _horizontal.jumpTo(target);
+      } else {
+        await _horizontal.animateTo(
+          target,
+          duration: context.motion(TokensDuration.normal),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    } finally {
+      _jumpingToDay = false;
+    }
+  }
+
+  /// Avisa a la página del día visible (después del dibujo: no se cambia el
+  /// estado de otro widget mientras se construye este).
+  void _report(int? day) {
+    final onChanged = widget.onVisibleDayChanged;
+    if (onChanged == null || (_reported && _reportedDay == day)) return;
+    _reported = true;
+    _reportedDay = day;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) onChanged(day);
     });
   }
 
@@ -88,26 +166,67 @@ class _WeekCanvasState extends State<WeekCanvas> {
     super.dispose();
   }
 
-  /// Al abrir la semana: una hora antes de ahora (como pronto, las 7:00) y,
-  /// si hoy cae en ella, con hoy como primera columna visible: los días ya
-  /// pasados quedan a la izquierda, a un desplazamiento.
-  void _scrollToNow(WeekGridGeometry g) {
+  /// Sin eventos en el día que se abre, la vista empieza por la mañana.
+  static const _morningMinutes = 7 * 60;
+
+  /// Margen por encima de lo que se enseña al abrir.
+  static const _leadMinutes = 60;
+
+  /// Día que se abre: el del bloque pedido, el pedido, hoy (si cae en esta
+  /// semana) o el lunes.
+  int _initialDay(WeekGridGeometry g) =>
+      g.dayIndexOf(
+        widget.focusAt ?? widget.focusDay ?? widget.now,
+        widget.weekStart,
+      ) ??
+      0;
+
+  /// Minuto en que se coloca la vista al abrir: una hora antes del bloque
+  /// pedido o, hoy, de ahora (sin tope: a las 2:00 se ve la madrugada); otro
+  /// día, una hora antes de su primer evento y, sin eventos, por la mañana.
+  int _initialMinutes(WeekGridGeometry g, int day) {
+    final focus = widget.focusAt;
+    if (focus != null) {
+      return WeekGridGeometry.minutesOfDay(focus) - _leadMinutes;
+    }
+    if (g.dayIndexOf(widget.now, widget.weekStart) == day) {
+      return WeekGridGeometry.minutesOfDay(widget.now) - _leadMinutes;
+    }
+    final starts = [
+      for (final b in widget.blocks)
+        for (final p in g.dayParts((
+          start: b.start,
+          end: b.end,
+        ), widget.weekStart))
+          if (p.day == day) WeekGridGeometry.minutesOfDay(p.part.start),
+    ];
+    if (starts.isEmpty) return _morningMinutes;
+    return starts.reduce(math.min) - _leadMinutes;
+  }
+
+  /// Al abrir la semana se coloca en el día que toca ([_initialDay]) como
+  /// primera columna visible (los anteriores quedan a la izquierda, a un toque
+  /// en la tira) y a su hora ([_initialMinutes]).
+  void _scrollInitially(WeekGridGeometry g) {
     if (_initialScrollDone) return;
     _initialScrollDone = true;
+    final day = _initialDay(g);
+    _selectedDay = day;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final anchor = widget.focusAt ?? widget.now;
+      if (!mounted) return;
       if (_vertical.hasClients) {
-        final nowMin = WeekGridGeometry.minutesOfDay(anchor);
-        final target = math.max(7 * 60, nowMin - 60);
         _vertical.jumpTo(
-          g.minutesToY(target).clamp(0.0, _vertical.position.maxScrollExtent),
+          g
+              .minutesToY(math.max(0, _initialMinutes(g, day)))
+              .clamp(0.0, _vertical.position.maxScrollExtent),
         );
       }
-      final today = g.dayIndexOf(anchor, widget.weekStart);
-      if (today != null && _horizontal.hasClients) {
+      if (_horizontal.hasClients) {
+        _jumpingToDay = true;
         _horizontal.jumpTo(
-          g.dayLeft(today).clamp(0.0, _horizontal.position.maxScrollExtent),
+          g.dayLeft(day).clamp(0.0, _horizontal.position.maxScrollExtent),
         );
+        _jumpingToDay = false;
       }
     });
   }
@@ -146,13 +265,25 @@ class _WeekCanvasState extends State<WeekCanvas> {
           WeekCanvas.headerHeight * 2,
         );
         final available = constraints.maxWidth - axisWidth;
+        // Si los 7 días no caben, cada uno conserva su ancho mínimo y la tira
+        // de arriba lleva a cualquiera.
+        final narrow = available / 7 < WeekCanvas.minDayWidth;
         final geometry = WeekGridGeometry(
           dayWidth: math.max(available / 7, WeekCanvas.minDayWidth),
           hourHeight: WeekCanvas.hourHeight,
         );
-        _scrollToNow(geometry);
+        _geometry = geometry;
+        _scrollInitially(geometry);
+        _report(narrow ? _selectedDay : null);
         return Column(
           children: [
+            if (narrow)
+              _WeekDayStrip(
+                weekStart: widget.weekStart,
+                now: widget.now,
+                selected: _selectedDay,
+                onSelected: _goToDay,
+              ),
             SizedBox(
               height: headerHeight,
               child: Row(
@@ -225,54 +356,74 @@ class _WeekCanvasState extends State<WeekCanvas> {
     final children = <Widget>[];
     CalendarBlock? active;
 
-    // Bloques por día, repartidos en carriles si se solapan.
-    final byDay = <int, List<CalendarBlock>>{};
+    // Tramos por día (lo que cruza la medianoche, en sus dos días),
+    // repartidos en carriles si se solapan.
+    final byDay = <int, List<(CalendarBlock, TimeRange, bool)>>{};
     for (final b in widget.blocks) {
-      final day = g.dayIndexOf(b.start, widget.weekStart);
-      if (day == null) continue;
-      (byDay[day] ??= []).add(b);
+      if (b.id == _activeId) {
+        active = b;
+        continue;
+      }
+      final parts = g.dayParts((start: b.start, end: b.end), widget.weekStart);
+      for (final (i, p) in parts.indexed) {
+        (byDay[p.day] ??= []).add((b, p.part, i == 0));
+      }
     }
     for (final entry in byDay.entries) {
-      final dayBlocks = entry.value;
+      final dayParts = entry.value;
       final lanes = WeekGridGeometry.assignLanes([
-        for (final b in dayBlocks) (start: b.start, end: b.end),
+        for (final (_, part, _) in dayParts) part,
       ]);
-      for (var i = 0; i < dayBlocks.length; i++) {
-        final block = dayBlocks[i];
-        if (block.id == _activeId) {
-          active = block;
-          continue;
-        }
-        final extent = g.verticalExtent((start: block.start, end: block.end));
+      for (var i = 0; i < dayParts.length; i++) {
+        final (block, part, primary) = dayParts[i];
+        final extent = g.verticalExtent(part);
         if (extent == null) continue;
         final laneWidth = g.dayWidth / lanes[i].lanes;
         children.add(
           Positioned(
-            key: ValueKey(block.id),
+            key: primary
+                ? ValueKey(block.id)
+                : ValueKey('${block.id}@${entry.key}'),
             left: g.dayLeft(entry.key) + lanes[i].lane * laneWidth + 2,
             top: extent.top + 1,
             width: laneWidth - 4,
             height: math.max(extent.height - 2, 18),
-            child: _ordered(block, _tile(block, g, block.start, block.end)),
+            child: _part(
+              block,
+              g,
+              (start: block.start, end: block.end),
+              primary: primary,
+              resizable: part.end == block.end,
+            ),
           ),
         );
       }
     }
 
-    // El bloque que se arrastra se pinta encima, a todo el ancho del día.
+    // El bloque que se arrastra se pinta encima, a todo el ancho del día (y
+    // en sus dos días si la vista previa cruza la medianoche). Las claves son
+    // las mismas que en reposo: el tramo que se arrastra no se desmonta.
     if (active != null) {
       final range = _preview ?? (start: active.start, end: active.end);
-      final day = g.dayIndexOf(range.start, widget.weekStart) ?? 0;
-      final extent = g.verticalExtent(range);
-      if (extent != null) {
+      for (final (i, p) in g.dayParts(range, widget.weekStart).indexed) {
+        final extent = g.verticalExtent(p.part);
+        if (extent == null) continue;
         children.add(
           Positioned(
-            key: ValueKey(active.id),
-            left: g.dayLeft(day) + 2,
+            key: i == 0
+                ? ValueKey(active.id)
+                : ValueKey('${active.id}@${p.day}'),
+            left: g.dayLeft(p.day) + 2,
             top: extent.top + 1,
             width: g.dayWidth - 4,
             height: math.max(extent.height - 2, 18),
-            child: _ordered(active, _tile(active, g, range.start, range.end)),
+            child: _part(
+              active,
+              g,
+              range,
+              primary: i == 0,
+              resizable: p.part.end == range.end,
+            ),
           ),
         );
       }
@@ -325,13 +476,42 @@ class _WeekCanvasState extends State<WeekCanvas> {
     child: child,
   );
 
+  /// Un tramo del bloque en un día, con el horario [shown] (el del evento
+  /// entero o la vista previa). El primer tramo es el bloque: foco, lector y
+  /// arrastre. El del día siguiente de algo que cruza la medianoche solo se ve
+  /// y se toca (el lector y el teclado ya lo tienen en el primero). El asa de
+  /// la duración ([resizable]) solo va en el tramo donde acaba el evento.
+  Widget _part(
+    CalendarBlock block,
+    WeekGridGeometry g,
+    TimeRange shown, {
+    required bool primary,
+    required bool resizable,
+  }) {
+    final tile = _tile(
+      block,
+      g,
+      shown.start,
+      shown.end,
+      draggable: primary,
+      resizable: resizable,
+    );
+    return primary
+        ? _ordered(block, tile)
+        : ExcludeFocus(child: ExcludeSemantics(child: tile));
+  }
+
   Widget _tile(
     CalendarBlock block,
     WeekGridGeometry g,
     DateTime start,
-    DateTime end,
-  ) {
+    DateTime end, {
+    bool draggable = true,
+    bool resizable = true,
+  }) {
     return TimeBlockTile(
+      draggable: draggable,
+      resizable: resizable,
       block: block,
       title:
           widget.titles[block.id] ??
@@ -460,6 +640,67 @@ class _HourAxis extends StatelessWidget {
               right: TokensSpacing.s,
               child: Text(PlannerFormats.minutes(h * 60), style: style),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tira de los 7 días de la semana, encima del lienzo cuando no caben todos
+/// (ADR 0050): lleva a cualquier día y marca el que se ve. Usa el mismo chip
+/// de día que la agenda de Inicio ([AppDayChip]).
+class _WeekDayStrip extends StatelessWidget {
+  const _WeekDayStrip({
+    required this.weekStart,
+    required this.now,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final DateTime weekStart;
+  final DateTime now;
+  final int selected;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final weekday = DateFormat.E();
+    final weekdayLong = DateFormat.EEEE();
+    // Margen y separación mínimos: a 360 dp cada chip llega a los 48 de toque.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        TokensSpacing.xs,
+        0,
+        TokensSpacing.xs,
+        TokensSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < 7; i++) ...[
+            if (i > 0) const SizedBox(width: TokensSpacing.xxs),
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  final day = PlannerWeek.dayOf(weekStart, i);
+                  final isToday = PlannerWeek.isSameDay(day, now);
+                  // «Lunes 16»; hoy, «Hoy, lunes 16».
+                  final name = '${weekdayLong.format(day)} ${day.day}';
+                  return AppDayChip(
+                    // Como en la agenda de Inicio: hoy se llama «Hoy».
+                    caption: isToday ? l10n.plannerToday : weekday.format(day),
+                    dayNumber: day.day,
+                    selected: i == selected,
+                    today: isToday,
+                    semanticLabel: isToday
+                        ? l10n.plannerTodayDate(name)
+                        : toBeginningOfSentenceCase(name),
+                    onTap: () => onSelected(i),
+                  );
+                },
+              ),
+            ),
+          ],
         ],
       ),
     );

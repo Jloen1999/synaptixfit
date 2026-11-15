@@ -7,6 +7,7 @@ import com.synaptixfit.domain.model.dashboard.Dashboard;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
 import com.synaptixfit.domain.model.dashboard.SmartBanner;
+import com.synaptixfit.domain.model.dashboard.TodaySummary;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.Modality;
@@ -32,7 +33,8 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                                 WellbeingResponse wellbeing, NextTrainingDayResponse nextTrainingDay,
                                 List<ChallengeResponse> activeChallenges, List<PlanDayResponse> planWeek,
                                 List<TodayEventResponse> todayEvents, BannerResponse banner,
-                                NextDeadlineResponse nextDeadline, TodayIntensity todayIntensity) {
+                                NextDeadlineResponse nextDeadline, TodayIntensity todayIntensity,
+                                TodaySummaryResponse todaySummary) {
 
     private static final Map<String, String> CODES = Map.ofEntries(
             // tipo_actividad de horarios_academicos
@@ -144,6 +146,18 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
         }
     }
 
+    /**
+     * Resumen de «Tu día» (ADR 0050): el anillo ({@code done} de {@code total}, sin clases y con las entregas de hoy),
+     * lo que quedó sin hacer ({@code missed}), el evento que se destaca ({@code nextEventId}, uno de {@code todayEvents};
+     * nulo si no queda nada) y {@code state}: NOTHING_PLANNED, PENDING, MISSED_LEFT o ALL_DONE.
+     */
+    public record TodaySummaryResponse(int done, int total, int missed, UUID nextEventId, TodaySummary.State state) {
+
+        static TodaySummaryResponse from(TodaySummary s) {
+            return new TodaySummaryResponse(s.done(), s.total(), s.missed(), s.nextEventId(), s.state());
+        }
+    }
+
     /** {@code labels}: textos del usuario que el aviso cita (p. ej. el bloque sin hacer). */
     public record BannerResponse(SmartBanner.Type type, Map<String, Number> params, Map<String, String> labels) {
     }
@@ -173,6 +187,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                         e.tracksPhysicalLoad())).toList(),
                 new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()),
                 NextDeadlineResponse.from(d.nextDeadline()),
-                d.todayIntensity());
+                d.todayIntensity(),
+                TodaySummaryResponse.from(d.todaySummary()));
     }
 }

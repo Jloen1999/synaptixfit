@@ -1,3 +1,4 @@
+import 'package:synaptixfit/domain/enums/home_day_state.dart';
 import 'package:synaptixfit/domain/enums/home_acwr_zone.dart';
 import 'package:synaptixfit/domain/enums/home_banner_type.dart';
 import 'package:synaptixfit/domain/enums/home_event_kind.dart';
@@ -90,6 +91,13 @@ final homeDashboardFixture = HomeDashboard(
       completed: true,
     ),
   ],
+  // Lo que diría el servidor de esos eventos (ADR 0050).
+  todaySummary: const HomeTodaySummary(
+    done: 1,
+    total: 2,
+    nextEventId: 'e1',
+    state: HomeDayState.pending,
+  ),
   banner: const HomeSmartBanner(
     type: HomeBannerType.upcomingDeadlines,
     params: {'count': 2, 'daysUntilNext': 3},
