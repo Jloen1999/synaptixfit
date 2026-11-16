@@ -22,6 +22,14 @@ class StudyInviteBloc extends Bloc<StudyInviteEvent, StudyInviteState> {
     on<StudyInviteRoundsChosen>(
       (e, emit) => emit(state.copyWith(rounds: e.rounds)),
     );
+    on<StudyInviteLimitsKnown>(
+      (e, emit) => emit(
+        state.copyWith(
+          times: state.times.within(e.limits),
+          rounds: state.rounds.clamp(1, e.limits.studyRoomRounds),
+        ),
+      ),
+    );
     on<StudyInviteSubmitted>(_onSubmitted);
   }
 

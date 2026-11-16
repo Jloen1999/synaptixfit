@@ -565,6 +565,54 @@ void main() {
       },
     );
 
+    testWidgets('con letra al 200 % la cabecera va en vertical: las series '
+        'arriba y el reloj ⏱ debajo', (tester) async {
+      when(() => bloc.state).thenReturn(ready());
+      await pump(
+        tester,
+        const LiveSessionPage(sessionId: 's1'),
+        textScale: 2,
+        height: 800,
+      );
+      expect(tester.takeException(), isNull);
+      final series = tester.getRect(find.text('1 de 7 series'));
+      final pill = tester.getRect(find.byType(LiveClockPill));
+      expect(pill.top, greaterThanOrEqualTo(series.bottom));
+      expect(pill.left, moreOrLessEquals(series.left, epsilon: 1));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('haciendo una serie, la fila dice «En curso» sin repetir la '
+        'cifra del reloj', (tester) async {
+      when(() => bloc.state).thenReturn(
+        ready().copyWith(
+          timerExerciseId: 'p1',
+          timerSet: 2,
+          timerSince: DateTime.now().subtract(const Duration(seconds: 42)),
+        ),
+      );
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      expect(find.text('En curso'), findsOneWidget);
+      expect(find.textContaining('En curso ·'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('la sesión libre descansa con el mismo panel que la rutina', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(
+        ready(rest: 75).copyWith(exercises: const [], dayNumber: null),
+      );
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      expect(tester.takeException(), isNull);
+      expect(find.byType(LiveRestPanel), findsOneWidget);
+      expect(find.text('1:15'), findsOneWidget);
+      expect(find.text('−15 s'), findsOneWidget);
+      expect(find.text('+15 s'), findsOneWidget);
+      expect(find.text('Saltar descanso'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('el descanso dice qué serie se hizo y qué viene, sin '
         '«Deshacer»', (tester) async {
       when(

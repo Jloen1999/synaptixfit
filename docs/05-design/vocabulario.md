@@ -77,8 +77,8 @@ Decisión del propietario: «la aplicación debe ir al grano, facilitar al usuar
   - **Eliminar**: borra para siempre.
   - **Terminar**: guarda; nunca es rojo.
   - **Descartar**: no guarda; separado de Terminar y confirmado.
-  - **Saltar descanso** y **Saltar este día**: nunca «Saltar» a secas.
-- **Sin explicaciones que interrumpan.** Nada de hojas o diálogos de «cómo funciona». Si hace falta, una línea o un «?» opcional que se abre al tocarlo.
+  - **Saltar descanso**, **Saltar este día** y **Saltar guía**: nunca «Saltar» a secas.
+- **Sin explicaciones que interrumpan.** Nada de hojas o diálogos de «cómo funciona». Si hace falta, una línea o un «?» opcional que se abre al tocarlo. Única excepción: la **guía la primera vez** de cada pantalla principal (ADR 0049), que sale una sola vez, señala la parte real (título + una frase) y se cierra con «Saltar guía»; avanza con «Siguiente (n de N)» y termina con «Entendido».
 - **Rellenar por la persona:** lo de la última vez, la hora siguiente libre, la asignatura del contexto. Lo que se puede calcular no se pregunta (p. ej. las repeticiones que faltaron = objetivo − hechas).
 - **Cifras técnicas solo donde aportan.**
   - El **XP** se ve en Progreso (nivel y barra) y en los momentos de celebración (subir de nivel, insignia nueva). No aparece en botones, avisos de «hecho», tarjetas de Inicio ni diálogos.

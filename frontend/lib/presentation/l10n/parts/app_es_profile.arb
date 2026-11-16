@@ -715,5 +715,9 @@
   "profileBirthDateAdd": "Añadir",
   "profileErrorInvalidBirthDate": "Revisa la fecha de nacimiento: no puede ser futura y la edad debe estar entre 14 y 100 años.",
   "profileEnrollmentShort": "Importar matrícula",
-  "profileLogoutUnsentMessage": "Tienes series o una carrera sin subir. Si cierras sesión ahora, se perderán."
+  "profileLogoutUnsentMessage": "Tienes series o una carrera sin subir. Si cierras sesión ahora, se perderán.",
+  "profileSettingsHelpGroup": "Ayuda",
+  "profileGuidesReset": "Ver las guías otra vez",
+  "profileGuidesResetHint": "Vuelven a salir al entrar en cada pantalla.",
+  "profileGuidesResetDone": "Listo: las guías saldrán otra vez."
 }

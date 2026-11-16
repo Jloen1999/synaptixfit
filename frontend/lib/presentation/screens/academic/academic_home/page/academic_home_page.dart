@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/guide_id.dart';
 import '../../../../../domain/models/academic/note.dart';
 import '../../../../../domain/models/academic/study_material.dart';
 import '../../../../../domain/models/academic/subject.dart';
@@ -10,6 +11,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../shell/widgets/first_time_guide.dart';
 import '../../academic_routes.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
@@ -32,8 +34,41 @@ class AcademicHomePage extends StatelessWidget {
   );
 }
 
-class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
+class _AcademicHomeView extends StatefulWidget {
   const _AcademicHomeView();
+
+  @override
+  State<_AcademicHomeView> createState() => _AcademicHomeViewState();
+}
+
+class _AcademicHomeViewState extends State<_AcademicHomeView>
+    with ErrorsMessageMixin {
+  /// Partes que señala la guía la primera vez (ADR 0049).
+  final _addKey = GlobalKey(debugLabel: 'guide-academic-add');
+  final _reviewsKey = GlobalKey(debugLabel: 'guide-academic-reviews');
+  final _searchKey = GlobalKey(debugLabel: 'guide-academic-search');
+
+  List<AppGuideStep> _guideSteps(BuildContext context) {
+    final l10n = context.localizations;
+    return [
+      // «Añadir» también lleva a crear tests y tarjetas con IA: un solo paso.
+      AppGuideStep(
+        target: _addKey,
+        title: l10n.guideAcademicAddTitle,
+        body: l10n.guideAcademicAddBody,
+      ),
+      AppGuideStep(
+        target: _reviewsKey,
+        title: l10n.guideAcademicReviewsTitle,
+        body: l10n.guideAcademicReviewsBody,
+      ),
+      AppGuideStep(
+        target: _searchKey,
+        title: l10n.guideAcademicSearchTitle,
+        body: l10n.guideAcademicSearchBody,
+      ),
+    ];
+  }
 
   /// Abre una ruta y recarga al volver.
   Future<void> _open(BuildContext context, String location) async {
@@ -142,213 +177,230 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return Scaffold(
-      appBar: AppPageBar(title: Text(l10n.tabAcademic)),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddSheet(context),
-        icon: const Icon(AppIcons.add),
-        label: Text(l10n.academicAdd),
-      ),
-      body: BlocConsumer<AcademicHomeBloc, AcademicHomeState>(
-        listenWhen: (a, b) => b.notice != null && a.notice != b.notice,
-        listener: (context, state) {
-          final notice = state.notice!;
-          context.read<AcademicHomeBloc>().add(
-            const AcademicHomeEvent.noticeHandled(),
-          );
-          switch (notice) {
-            // Dice dónde queda el apunte y lleva allí.
-            case AcademicHomeNoticeNoteMoved(
-              :final subjectName,
-              :final subjectId,
-            ):
-              context.showActionSnack(
-                l10n.academicInboxMoved(subjectName),
-                actionLabel: l10n.commonView,
-                onAction: () =>
-                    _open(context, AcademicPaths.subjectNotes(subjectId)),
-              );
-            case AcademicHomeNoticeFailed(:final error):
-              context.showSnack(errorMessage(context, error));
-          }
-        },
-        builder: (context, state) {
-          if (state.loading && state.subjects.isEmpty) {
-            return const AppSkeletonList(count: 6, height: 120);
-          }
-          if (state.error != null && state.subjects.isEmpty) {
-            return AppErrorView(
-              error: state.error!,
-              onRetry: () => context.read<AcademicHomeBloc>().add(
-                const AcademicHomeEvent.started(),
-              ),
+    final ready = context.select<AcademicHomeBloc, bool>((b) {
+      final s = b.state;
+      return s.subjects.isNotEmpty || (!s.loading && s.error == null);
+    });
+    return FirstTimeGuide(
+      guide: GuideId.academic,
+      ready: ready,
+      steps: _guideSteps,
+      child: Scaffold(
+        appBar: AppPageBar(title: Text(l10n.tabAcademic)),
+        floatingActionButton: FloatingActionButton.extended(
+          key: _addKey,
+          onPressed: () => _showAddSheet(context),
+          icon: const Icon(AppIcons.add),
+          label: Text(l10n.academicAdd),
+        ),
+        body: BlocConsumer<AcademicHomeBloc, AcademicHomeState>(
+          listenWhen: (a, b) => b.notice != null && a.notice != b.notice,
+          listener: (context, state) {
+            final notice = state.notice!;
+            context.read<AcademicHomeBloc>().add(
+              const AcademicHomeEvent.noticeHandled(),
             );
-          }
-          return RefreshIndicator(
-            onRefresh: () async => context.read<AcademicHomeBloc>().add(
-              const AcademicHomeEvent.refreshed(),
-            ),
-            child: AcademicBody(
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  // El buscador, lo primero: encuentra cualquier asignatura,
-                  // apunte, archivo o entrega sin bajar por las listas.
-                  SliverToBoxAdapter(
-                    child: _SearchEntry(
-                      onTap: () => context.push(AcademicPaths.search),
-                    ),
-                  ),
-                  // Lo de cada día, a un toque: apuntar una entrega y ponerse
-                  // a estudiar (ADR 0039; antes, en el ⋮ del calendario).
-                  if (!state.showArchived)
+            switch (notice) {
+              // Dice dónde queda el apunte y lleva allí.
+              case AcademicHomeNoticeNoteMoved(
+                :final subjectName,
+                :final subjectId,
+              ):
+                context.showActionSnack(
+                  l10n.academicInboxMoved(subjectName),
+                  actionLabel: l10n.commonView,
+                  onAction: () =>
+                      _open(context, AcademicPaths.subjectNotes(subjectId)),
+                );
+              case AcademicHomeNoticeFailed(:final error):
+                context.showSnack(errorMessage(context, error));
+            }
+          },
+          builder: (context, state) {
+            if (state.loading && state.subjects.isEmpty) {
+              return const AppSkeletonList(count: 6, height: 120);
+            }
+            if (state.error != null && state.subjects.isEmpty) {
+              return AppErrorView(
+                error: state.error!,
+                onRetry: () => context.read<AcademicHomeBloc>().add(
+                  const AcademicHomeEvent.started(),
+                ),
+              );
+            }
+            return RefreshIndicator(
+              onRefresh: () async => context.read<AcademicHomeBloc>().add(
+                const AcademicHomeEvent.refreshed(),
+              ),
+              child: AcademicBody(
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    // El buscador, lo primero: encuentra cualquier asignatura,
+                    // apunte, archivo o entrega sin bajar por las listas.
                     SliverToBoxAdapter(
-                      child: _QuickActions(
-                        onNewDeadline: () =>
-                            _open(context, AcademicPaths.newDeadline()),
-                        onFocus: () => context.push(AcademicPaths.focus),
-                        // Con texto: el icono de personas solo parecía
-                        // «Amigos», y en la barra recortaba el título.
-                        onSharedNotes: () =>
-                            context.push(AcademicPaths.sharedNotes),
+                      child: _SearchEntry(
+                        key: _searchKey,
+                        onTap: () => context.push(AcademicPaths.search),
                       ),
                     ),
-                  if (state.due.isNotEmpty && !state.showArchived)
-                    SliverToBoxAdapter(
-                      child: _DueReviews(
-                        due: state.due,
-                        onOpen: (m) =>
-                            _open(context, AcademicPaths.review(m.id)),
-                        onReviewAll: () => _open(
-                          context,
-                          AcademicPaths.review(
-                            state.due.first.id,
-                            queue: [for (final m in state.due.skip(1)) m.id],
+                    // Lo de cada día, a un toque: apuntar una entrega y ponerse
+                    // a estudiar (ADR 0039; antes, en el ⋮ del calendario).
+                    if (!state.showArchived)
+                      SliverToBoxAdapter(
+                        child: _QuickActions(
+                          onNewDeadline: () =>
+                              _open(context, AcademicPaths.newDeadline()),
+                          onFocus: () => context.push(AcademicPaths.focus),
+                          // Con texto: el icono de personas solo parecía
+                          // «Amigos», y en la barra recortaba el título.
+                          onSharedNotes: () =>
+                              context.push(AcademicPaths.sharedNotes),
+                        ),
+                      ),
+                    if (state.due.isNotEmpty && !state.showArchived)
+                      SliverToBoxAdapter(
+                        child: _DueReviews(
+                          key: _reviewsKey,
+                          due: state.due,
+                          onOpen: (m) =>
+                              _open(context, AcademicPaths.review(m.id)),
+                          onReviewAll: () => _open(
+                            context,
+                            AcademicPaths.review(
+                              state.due.first.id,
+                              queue: [for (final m in state.due.skip(1)) m.id],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  if (state.inbox.isNotEmpty && !state.showArchived)
-                    SliverToBoxAdapter(
-                      child: _NotesInbox(
-                        notes: state.inbox,
-                        subjects: state.subjects,
-                        moving: state.movingNoteIds,
-                        onOpen: (note) =>
-                            _open(context, AcademicPaths.note(note.id)),
-                        onMove: (note, subjectId) =>
-                            context.read<AcademicHomeBloc>().add(
-                              AcademicHomeEvent.noteMoved(
-                                noteId: note.id,
-                                subjectId: subjectId,
-                              ),
-                            ),
-                      ),
-                    ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      TokensSpacing.m,
-                      TokensSpacing.m,
-                      TokensSpacing.m,
-                      TokensSpacing.s,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l10n.academicSubjectsTitle,
-                              style: context.textStyles.titleMedium,
-                            ),
-                          ),
-                          SegmentedButton<bool>(
-                            showSelectedIcon: false,
-                            segments: [
-                              ButtonSegment(
-                                value: false,
-                                label: Text(l10n.academicFilterActive),
-                              ),
-                              ButtonSegment(
-                                value: true,
-                                label: Text(l10n.academicFilterArchived),
-                              ),
-                            ],
-                            selected: {state.showArchived},
-                            onSelectionChanged: (s) =>
-                                context.read<AcademicHomeBloc>().add(
-                                  AcademicHomeEvent.archivedToggled(
-                                    archived: s.first,
-                                  ),
+                    if (state.inbox.isNotEmpty && !state.showArchived)
+                      SliverToBoxAdapter(
+                        child: _NotesInbox(
+                          notes: state.inbox,
+                          subjects: state.subjects,
+                          moving: state.movingNoteIds,
+                          onOpen: (note) =>
+                              _open(context, AcademicPaths.note(note.id)),
+                          onMove: (note, subjectId) =>
+                              context.read<AcademicHomeBloc>().add(
+                                AcademicHomeEvent.noteMoved(
+                                  noteId: note.id,
+                                  subjectId: subjectId,
                                 ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (state.loading)
-                    const SliverToBoxAdapter(child: LinearProgressIndicator()),
-                  if (state.subjects.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: AppEmptyState(
-                        icon: state.showArchived
-                            ? AppIcons.archive
-                            : Icons.school_outlined,
-                        title: state.showArchived
-                            ? l10n.academicArchivedEmptyTitle
-                            : l10n.academicEmptyTitle,
-                        message: state.showArchived
-                            ? null
-                            : l10n.academicEmptyMessage,
-                        action: state.showArchived
-                            ? null
-                            : AppPrimaryButton(
-                                label: l10n.academicImportEntry,
-                                icon: Icons.description_rounded,
-                                onPressed: () =>
-                                    _open(context, AcademicPaths.importGuide()),
                               ),
+                        ),
                       ),
-                    )
-                  else
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(
                         TokensSpacing.m,
-                        0,
                         TokensSpacing.m,
-                        TokensSpacing.xxl * 2,
+                        TokensSpacing.m,
+                        TokensSpacing.s,
                       ),
-                      sliver: SliverGrid.builder(
-                        // El alto y el ancho crecen con el texto: al 200 %
-                        // la tarjeta no se desborda (una columna en móvil).
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: context.scaled(
-                            TokensSize.subjectCardMaxWidth,
-                          ),
-                          mainAxisExtent: context.scaled(
-                            TokensSize.subjectCardHeight,
-                          ),
-                          crossAxisSpacing: TokensSpacing.s,
-                          mainAxisSpacing: TokensSpacing.s,
-                        ),
-                        itemCount: state.subjects.length,
-                        itemBuilder: (context, index) {
-                          final subject = state.subjects[index];
-                          return SubjectCard(
-                            subject: subject,
-                            onTap: () => _open(
-                              context,
-                              AcademicPaths.subject(subject.id),
+                      sliver: SliverToBoxAdapter(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                l10n.academicSubjectsTitle,
+                                style: context.textStyles.titleMedium,
+                              ),
                             ),
-                          );
-                        },
+                            SegmentedButton<bool>(
+                              showSelectedIcon: false,
+                              segments: [
+                                ButtonSegment(
+                                  value: false,
+                                  label: Text(l10n.academicFilterActive),
+                                ),
+                                ButtonSegment(
+                                  value: true,
+                                  label: Text(l10n.academicFilterArchived),
+                                ),
+                              ],
+                              selected: {state.showArchived},
+                              onSelectionChanged: (s) =>
+                                  context.read<AcademicHomeBloc>().add(
+                                    AcademicHomeEvent.archivedToggled(
+                                      archived: s.first,
+                                    ),
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                ],
+                    if (state.loading)
+                      const SliverToBoxAdapter(
+                        child: LinearProgressIndicator(),
+                      ),
+                    if (state.subjects.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: AppEmptyState(
+                          icon: state.showArchived
+                              ? AppIcons.archive
+                              : Icons.school_outlined,
+                          title: state.showArchived
+                              ? l10n.academicArchivedEmptyTitle
+                              : l10n.academicEmptyTitle,
+                          message: state.showArchived
+                              ? null
+                              : l10n.academicEmptyMessage,
+                          action: state.showArchived
+                              ? null
+                              : AppPrimaryButton(
+                                  label: l10n.academicImportEntry,
+                                  icon: Icons.description_rounded,
+                                  onPressed: () => _open(
+                                    context,
+                                    AcademicPaths.importGuide(),
+                                  ),
+                                ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          TokensSpacing.m,
+                          0,
+                          TokensSpacing.m,
+                          TokensSpacing.xxl * 2,
+                        ),
+                        sliver: SliverGrid.builder(
+                          // El alto y el ancho crecen con el texto: al 200 %
+                          // la tarjeta no se desborda (una columna en móvil).
+                          gridDelegate:
+                              SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: context.scaled(
+                                  TokensSize.subjectCardMaxWidth,
+                                ),
+                                mainAxisExtent: context.scaled(
+                                  TokensSize.subjectCardHeight,
+                                ),
+                                crossAxisSpacing: TokensSpacing.s,
+                                mainAxisSpacing: TokensSpacing.s,
+                              ),
+                          itemCount: state.subjects.length,
+                          itemBuilder: (context, index) {
+                            final subject = state.subjects[index];
+                            return SubjectCard(
+                              subject: subject,
+                              onTap: () => _open(
+                                context,
+                                AcademicPaths.subject(subject.id),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -404,6 +456,7 @@ class _QuickActions extends StatelessWidget {
 
 class _DueReviews extends StatelessWidget {
   const _DueReviews({
+    super.key,
     required this.due,
     required this.onOpen,
     required this.onReviewAll,
@@ -737,7 +790,7 @@ class _InboxRow extends StatelessWidget {
 /// Entrada al buscador de Académico: parece un campo de búsqueda y abre la
 /// pantalla del buscador (ADR 0036).
 class _SearchEntry extends StatelessWidget {
-  const _SearchEntry({required this.onTap});
+  const _SearchEntry({super.key, required this.onTap});
 
   final VoidCallback onTap;
 

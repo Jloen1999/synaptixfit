@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/home_banner_type.dart';
+import '../../../../../domain/enums/guide_id.dart';
 import '../../../../../domain/enums/home_event_kind.dart';
 import '../../../../../domain/enums/usage_focus.dart';
 import '../../../../../domain/models/home/home_dashboard.dart';
@@ -17,6 +18,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../profile/legal/bloc/legal_acceptance_bloc.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../../shell/widgets/first_time_guide.dart';
 import '../../home_external_paths.dart';
 import '../../widgets/active_challenges_section.dart';
 import '../../widgets/agenda_section.dart';
@@ -71,8 +73,16 @@ class HomeDashboardPage extends StatelessWidget {
 }
 
 /// Vista del inicio (separada para poder probarla con un bloc simulado).
-class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
+class HomeDashboardView extends StatefulWidget {
   const HomeDashboardView({super.key});
+
+  @override
+  State<HomeDashboardView> createState() => _HomeDashboardViewState();
+}
+
+class _HomeDashboardViewState extends State<HomeDashboardView>
+    with ErrorsMessageMixin {
+  final _guide = _HomeGuideKeys();
 
   /// Navega a otra pantalla. Lo que vive en otra pestaña se abre cambiando
   /// de pestaña; el resto se apila. No hace falta refrescar al volver: el
@@ -160,119 +170,152 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
   @override
   Widget build(BuildContext context) {
     // Ctrl+Z (Cmd+Z) deshace lo último marcado, como «Deshacer» del aviso.
-    return AppUndoShortcut(
-      onUndo: () {
-        final bloc = context.read<HomeDashboardBloc>();
-        if (bloc.state.lastUndoable == null) return;
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        bloc.add(const HomeDashboardEvent.undoRequested());
-      },
-      child: Scaffold(
-        body: SafeArea(
-          child: BlocConsumer<HomeDashboardBloc, HomeDashboardState>(
-            listenWhen: (previous, current) =>
-                (current.onboardingRequired && !previous.onboardingRequired) ||
-                (current.permissionsIntroRequired &&
-                    !previous.permissionsIntroRequired) ||
-                (current.openSessionId != null &&
-                    current.openSessionId != previous.openSessionId) ||
-                (current.trainingError != null &&
-                    current.trainingError != previous.trainingError) ||
-                (current.bannerNotice != null &&
-                    current.bannerNotice != previous.bannerNotice) ||
-                (current.completionNotice != null &&
-                    current.completionNotice != previous.completionNotice) ||
-                (current.error != null &&
-                    current.error != previous.error &&
-                    current.dashboard != null),
-            listener: (context, state) {
-              final completionNotice = state.completionNotice;
-              if (completionNotice != null) {
-                context.read<HomeDashboardBloc>().add(
-                  const HomeDashboardEvent.completionNoticeHandled(),
-                );
-                _showCompletionNotice(context, completionNotice);
-                return;
-              }
-              final bannerNotice = state.bannerNotice;
-              if (bannerNotice != null) {
-                context.read<HomeDashboardBloc>().add(
-                  const HomeDashboardEvent.bannerNoticeHandled(),
-                );
-                _showBannerNotice(context, bannerNotice);
-                return;
-              }
-              final sessionId = state.openSessionId;
-              final trainingError = state.trainingError;
-              if (sessionId != null || trainingError != null) {
-                context.read<HomeDashboardBloc>().add(
-                  const HomeDashboardEvent.trainingHandled(),
-                );
-                if (sessionId != null) {
-                  _navigate(context, HomeExternalPaths.session(sessionId));
-                } else {
-                  context.showSnack(errorMessage(context, trainingError!));
+    // La guía, con Inicio ya cargado (ADR 0049); montada desde el principio
+    // para saber si se llegó desde un aviso.
+    return FirstTimeGuide(
+      guide: GuideId.home,
+      ready: context.select<HomeDashboardBloc, bool>(
+        (b) => b.state.dashboard != null,
+      ),
+      steps: _guide.steps,
+      child: AppUndoShortcut(
+        onUndo: () {
+          final bloc = context.read<HomeDashboardBloc>();
+          if (bloc.state.lastUndoable == null) return;
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          bloc.add(const HomeDashboardEvent.undoRequested());
+        },
+        child: Scaffold(
+          body: SafeArea(
+            child: BlocConsumer<HomeDashboardBloc, HomeDashboardState>(
+              listenWhen: (previous, current) =>
+                  (current.onboardingRequired &&
+                      !previous.onboardingRequired) ||
+                  (current.permissionsIntroRequired &&
+                      !previous.permissionsIntroRequired) ||
+                  (current.openSessionId != null &&
+                      current.openSessionId != previous.openSessionId) ||
+                  (current.trainingError != null &&
+                      current.trainingError != previous.trainingError) ||
+                  (current.bannerNotice != null &&
+                      current.bannerNotice != previous.bannerNotice) ||
+                  (current.completionNotice != null &&
+                      current.completionNotice != previous.completionNotice) ||
+                  (current.error != null &&
+                      current.error != previous.error &&
+                      current.dashboard != null),
+              listener: (context, state) {
+                final completionNotice = state.completionNotice;
+                if (completionNotice != null) {
+                  context.read<HomeDashboardBloc>().add(
+                    const HomeDashboardEvent.completionNoticeHandled(),
+                  );
+                  _showCompletionNotice(context, completionNotice);
+                  return;
                 }
-                return;
-              }
-              if (state.onboardingRequired) {
-                context.read<HomeDashboardBloc>().add(
-                  const HomeDashboardEvent.onboardingHandled(),
-                );
-                _navigate(context, HomeExternalPaths.onboarding);
-                return;
-              }
-              if (state.permissionsIntroRequired) {
-                context.read<HomeDashboardBloc>().add(
-                  const HomeDashboardEvent.permissionsIntroHandled(),
-                );
-                _navigate(context, HomeExternalPaths.permissionsIntro);
-                return;
-              }
-              final error = state.error;
-              if (error != null) {
-                context.showSnack(
-                  '${context.localizations.homeRefreshFailed} '
-                  '${errorMessage(context, error)}',
-                );
-              }
-            },
-            builder: (context, state) {
-              final dashboard = state.dashboard;
-              final Widget content;
-              if (dashboard != null) {
-                content = _HomeContent(
-                  dashboard: dashboard,
-                  state: state,
-                  onNavigate: (path) => _navigate(context, path),
-                );
-              } else if (state.status == HomeDashboardStatus.failure &&
-                  state.error != null) {
-                content = Padding(
-                  padding: const EdgeInsets.only(top: TokensSpacing.xxl),
-                  child: AppErrorView(
-                    error: state.error!,
-                    onRetry: () => context.read<HomeDashboardBloc>().add(
-                      const HomeDashboardEvent.refreshed(),
+                final bannerNotice = state.bannerNotice;
+                if (bannerNotice != null) {
+                  context.read<HomeDashboardBloc>().add(
+                    const HomeDashboardEvent.bannerNoticeHandled(),
+                  );
+                  _showBannerNotice(context, bannerNotice);
+                  return;
+                }
+                final sessionId = state.openSessionId;
+                final trainingError = state.trainingError;
+                if (sessionId != null || trainingError != null) {
+                  context.read<HomeDashboardBloc>().add(
+                    const HomeDashboardEvent.trainingHandled(),
+                  );
+                  if (sessionId != null) {
+                    _navigate(context, HomeExternalPaths.session(sessionId));
+                  } else {
+                    context.showSnack(errorMessage(context, trainingError!));
+                  }
+                  return;
+                }
+                if (state.onboardingRequired) {
+                  context.read<HomeDashboardBloc>().add(
+                    const HomeDashboardEvent.onboardingHandled(),
+                  );
+                  _navigate(context, HomeExternalPaths.onboarding);
+                  return;
+                }
+                if (state.permissionsIntroRequired) {
+                  context.read<HomeDashboardBloc>().add(
+                    const HomeDashboardEvent.permissionsIntroHandled(),
+                  );
+                  _navigate(context, HomeExternalPaths.permissionsIntro);
+                  return;
+                }
+                final error = state.error;
+                if (error != null) {
+                  context.showSnack(
+                    '${context.localizations.homeRefreshFailed} '
+                    '${errorMessage(context, error)}',
+                  );
+                }
+              },
+              builder: (context, state) {
+                final dashboard = state.dashboard;
+                final Widget content;
+                if (dashboard != null) {
+                  content = _HomeContent(
+                    guide: _guide,
+                    dashboard: dashboard,
+                    state: state,
+                    onNavigate: (path) => _navigate(context, path),
+                  );
+                } else if (state.status == HomeDashboardStatus.failure &&
+                    state.error != null) {
+                  content = Padding(
+                    padding: const EdgeInsets.only(top: TokensSpacing.xxl),
+                    child: AppErrorView(
+                      error: state.error!,
+                      onRetry: () => context.read<HomeDashboardBloc>().add(
+                        const HomeDashboardEvent.refreshed(),
+                      ),
                     ),
+                  );
+                } else {
+                  content = const HomeSkeleton();
+                }
+                return RefreshIndicator(
+                  onRefresh: () => _refresh(context),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(TokensSpacing.m),
+                    children: [AppContentWidth.wide(child: content)],
                   ),
                 );
-              } else {
-                content = const HomeSkeleton();
-              }
-              return RefreshIndicator(
-                onRefresh: () => _refresh(context),
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(TokensSpacing.m),
-                  children: [AppContentWidth.wide(child: content)],
-                ),
-              );
-            },
+              },
+            ),
           ),
         ),
       ),
     );
+  }
+}
+
+/// «Tu día» y «Tu semana», que señala la guía la primera vez (ADR 0049).
+class _HomeGuideKeys {
+  final day = GlobalKey(debugLabel: 'guide-home-day');
+  final week = GlobalKey(debugLabel: 'guide-home-week');
+
+  List<AppGuideStep> steps(BuildContext context) {
+    final l10n = context.localizations;
+    return [
+      AppGuideStep(
+        target: day,
+        title: l10n.guideHomeDayTitle,
+        body: l10n.guideHomeDayBody,
+      ),
+      AppGuideStep(
+        target: week,
+        title: l10n.guideHomeWeekTitle,
+        body: l10n.guideHomeWeekBody,
+      ),
+    ];
   }
 }
 
@@ -281,11 +324,13 @@ class _HomeContent extends StatefulWidget {
     required this.dashboard,
     required this.state,
     required this.onNavigate,
+    required this.guide,
   });
 
   final HomeDashboard dashboard;
   final HomeDashboardState state;
   final ValueChanged<String> onNavigate;
+  final _HomeGuideKeys guide;
 
   @override
   State<_HomeContent> createState() => _HomeContentState();
@@ -396,6 +441,7 @@ class _HomeContentState extends State<_HomeContent> {
         ? _afterSetupFocus
         : _agendaFocus;
     final hero = TodayHeroCard(
+      key: widget.guide.day,
       dashboard: dashboard,
       focus: focus,
       starting: state.startingTraining,
@@ -491,6 +537,7 @@ class _HomeContentState extends State<_HomeContent> {
         ),
       if (dashboard.planWeek.isNotEmpty)
         PlanWeekBar(
+          key: widget.guide.week,
           days: dashboard.planWeek,
           week: dashboard.week,
           focus: focus,

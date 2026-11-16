@@ -183,5 +183,9 @@
   "homeTodayLeft": "Still to do:",
   "homeTodayMissedAt": "{time}, not done",
   "homeTodayMore": "{count, plural, =1{and 1 more} other{and {count} more}}",
-  "homeTodayMoreHint": "See in the agenda"
+  "homeTodayMoreHint": "See in the agenda",
+  "guideHomeDayTitle": "Your day",
+  "guideHomeDayBody": "What's next for you, with one button to do it.",
+  "guideHomeWeekTitle": "Your week",
+  "guideHomeWeekBody": "Tap a day to see it in the calendar."
 }

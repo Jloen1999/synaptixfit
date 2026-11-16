@@ -557,5 +557,17 @@
   "academicScanZoomOut": "Zoom out",
   "academicScanPrevPage": "Previous page",
   "academicScanNextPage": "Next page",
-  "academicScanPageOf": "{page} of {total}"
+  "academicScanPageOf": "{page} of {total}",
+  "guideAcademicAddTitle": "Add",
+  "guideAcademicAddBody": "Subjects, notes (also from a photo) and AI questions or flashcards: it all starts here.",
+  "guideAcademicReviewsTitle": "Reviews pending",
+  "guideAcademicReviewsBody": "What to review today so you don't forget it.",
+  "guideAcademicSearchTitle": "Search",
+  "guideAcademicSearchBody": "Find any subject, note, file or deadline.",
+  "guideSubjectProgressTitle": "Progress",
+  "guideSubjectProgressBody": "What's coming up, your syllabus and your grades.",
+  "guideSubjectNotesTitle": "Notes & files",
+  "guideSubjectNotesBody": "Your notes and files. From each one you can review or practise.",
+  "guideSubjectPracticeTitle": "Practise",
+  "guideSubjectPracticeBody": "Take a practice exam with questions from your notes to see how ready you are."
 }

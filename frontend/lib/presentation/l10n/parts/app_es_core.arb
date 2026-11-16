@@ -293,5 +293,40 @@
     "description": "Guía de XP: regla de la XP de planificar la semana, sin botón."
   },
   "commonShowLess": "Ver menos",
-  "commonGoHome": "Ir a Inicio"
+  "commonGoHome": "Ir a Inicio",
+  "guideNext": "Siguiente ({current} de {total})",
+  "@guideNext": {
+    "description": "Guía la primera vez: botón para pasar al paso siguiente (ADR 0049).",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "guideSkip": "Saltar guía",
+  "@guideSkip": {
+    "description": "Guía la primera vez: cerrarla sin verla entera."
+  },
+  "guideDone": "Entendido",
+  "@guideDone": {
+    "description": "Guía la primera vez: botón del último paso."
+  },
+  "guideStepLabel": "Guía, paso {current} de {total}: {title}",
+  "@guideStepLabel": {
+    "description": "Nombre de la guía para el lector de pantalla (se lee como un diálogo).",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

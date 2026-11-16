@@ -11,6 +11,7 @@ import '../../social/social_routes.dart';
 import '../../social/together/widgets/together_labels.dart';
 import '../../training/training_routes.dart';
 import '../bloc/together_live_bloc.dart';
+import 'first_time_guide.dart';
 
 /// Canal en directo de «Con amigos» (ADR 0047), montado en `AchievementsHost`:
 /// lo abre con la app en primer plano y lo cierra en segundo plano (y al cerrar
@@ -77,6 +78,8 @@ class _TogetherLiveHostState extends State<TogetherLiveHost> {
   void _onOpenOnLaunch(TogetherLiveOpen open) {
     final router = GoRouter.of(context);
     if (_location() != HomePaths.root || router.canPop()) return;
+    // Se abre sola, no la eligió la persona: su guía espera (ADR 0049).
+    GuideScope.maybeOf(context)?.markExternalArrival();
     unawaited(
       context.push<void>(switch (open) {
         TogetherLiveOpenSession(:final sessionId) => TrainingPaths.session(

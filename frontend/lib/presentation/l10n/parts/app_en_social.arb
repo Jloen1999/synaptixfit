@@ -380,5 +380,7 @@
   "togetherStudyTimesTitle": "Room times",
   "togetherStudyTimesHint": "Everyone in the room will see the change right away.",
   "togetherStudyChangeTimes": "Change times",
-  "togetherStudyTimesChanged": "Now: {focus} min of focus and {rest} min of break"
+  "togetherStudyTimesChanged": "Now: {focus} min of focus and {rest} min of break",
+  "togetherStudyTimesTooLate": "The room has already started: the times can't be changed now.",
+  "togetherStudyLengthOptionSpoken": "{focus} minutes of study and {rest} minutes of break"
 }

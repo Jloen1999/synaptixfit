@@ -1752,14 +1752,6 @@
       }
     }
   },
-  "trainingSetRowRunning": "En curso · {time}",
-  "@trainingSetRowRunning": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "trainingSetRowPaused": "En pausa",
   "trainingDurationSpokenSec": "{seconds, plural, =1{1 segundo} other{{seconds} segundos}}",
   "@trainingDurationSpokenSec": {
@@ -3260,5 +3252,26 @@
         "type": "String"
       }
     }
-  }
+  },
+  "guideGymStartTitle": "Tu próximo entreno",
+  "guideGymStartBody": "Empiézalo o continúalo con un toque.",
+  "guideGymRoutinesTitle": "Mis rutinas",
+  "guideGymRoutinesBody": "Aquí están tus rutinas. Con «Nueva rutina» creas otra.",
+  "guideGymTemplatesTitle": "Plantillas listas",
+  "guideGymTemplatesBody": "Rutinas ya hechas para empezar sin pensar.",
+  "guideLiveStartTitle": "Empezar serie",
+  "guideLiveStartBody": "Tócalo al empezar y «Serie hecha» al acabar; si ya la hiciste, «Ya la hice».",
+  "guideLivePhotoTitle": "Cómo se hace",
+  "guideLivePhotoBody": "Toca la foto para ver cómo se hace el ejercicio.",
+  "guideLiveClockTitle": "Tiempo haciendo series",
+  "guideLiveClockBody": "El reloj ⏱ solo corre mientras haces una serie.",
+  "guideLiveFiguresTitle": "Cambiar cifras",
+  "guideLiveFiguresBody": "Toca un número de la tabla para cambiar repeticiones o kilos antes de marcar la serie.",
+  "trainingSetRowInProgress": "En curso",
+  "@trainingSetRowInProgress": {
+    "description": "Fila de la serie que se está haciendo: sin la cifra, que ya está en el reloj ⏱ de arriba."
+  },
+  "guideGymRoutinesEmptyBody": "Aquí saldrán tus rutinas. Crea la primera con uno de estos botones.",
+  "guideGymStartEmptyTitle": "Tu entreno de hoy",
+  "guideGymStartEmptyBody": "Cuando tengas una rutina, aquí sale el entreno que te toca."
 }

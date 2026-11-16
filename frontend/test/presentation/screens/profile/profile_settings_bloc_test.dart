@@ -10,6 +10,7 @@ import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/account/change_password_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/auth/has_unsent_data_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/guides/reset_guides_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/add_subjects_from_catalog_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/delete_my_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/export_my_data_use_case.dart';
@@ -28,6 +29,8 @@ class _MockExport extends Mock implements ExportMyDataUseCaseContract {}
 class _MockDelete extends Mock implements DeleteMyAccountUseCaseContract {}
 
 class _MockUnsent extends Mock implements HasUnsentDataUseCaseContract {}
+
+class _MockResetGuides extends Mock implements ResetGuidesUseCaseContract {}
 
 class _MockChangePassword extends Mock
     implements ChangePasswordUseCaseContract {}
@@ -51,12 +54,30 @@ void main() {
     late _MockExport export;
     late _MockDelete delete;
     late _MockUnsent unsent;
+    late _MockResetGuides resetGuides;
 
     setUp(() {
       export = _MockExport();
       delete = _MockDelete();
       unsent = _MockUnsent();
+      resetGuides = _MockResetGuides();
     });
+
+    blocTest<SettingsBloc, SettingsState>(
+      '«Ver las guías otra vez» las olvida para la cuenta y lo dice (ADR 0049)',
+      setUp: () => when(
+        () => resetGuides(accountId: 'u1'),
+      ).thenAnswer((_) async => const Success(unit)),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+        resetGuides: resetGuides,
+      ),
+      act: (bloc) => bloc.add(const SettingsEvent.guidesResetRequested('u1')),
+      expect: () => const [SettingsState(outcome: SettingsOutcome.guidesReset)],
+      verify: (_) => verify(() => resetGuides(accountId: 'u1')).called(1),
+    );
 
     blocTest<SettingsBloc, SettingsState>(
       'cerrar sesión sin nada por subir cierra sin preguntar',
@@ -66,6 +87,7 @@ void main() {
         exportMyData: export,
         deleteMyAccount: delete,
         hasUnsentData: unsent,
+        resetGuides: resetGuides,
       ),
       act: (bloc) => bloc.add(const SettingsEvent.logoutRequested()),
       expect: () => const [SettingsState(outcome: SettingsOutcome.loggedOut)],
@@ -80,6 +102,7 @@ void main() {
         exportMyData: export,
         deleteMyAccount: delete,
         hasUnsentData: unsent,
+        resetGuides: resetGuides,
       ),
       act: (bloc) => bloc.add(const SettingsEvent.logoutRequested()),
       expect: () => const [
@@ -95,6 +118,7 @@ void main() {
         exportMyData: export,
         deleteMyAccount: delete,
         hasUnsentData: unsent,
+        resetGuides: resetGuides,
       ),
       act: (bloc) => bloc.add(const SettingsEvent.exportRequested()),
       expect: () => const [
@@ -111,6 +135,7 @@ void main() {
         exportMyData: export,
         deleteMyAccount: delete,
         hasUnsentData: unsent,
+        resetGuides: resetGuides,
       ),
       act: (bloc) => bloc.add(const SettingsEvent.exportRequested()),
       expect: () => const [
@@ -128,6 +153,7 @@ void main() {
         exportMyData: export,
         deleteMyAccount: delete,
         hasUnsentData: unsent,
+        resetGuides: resetGuides,
       ),
       act: (bloc) => bloc.add(
         const SettingsEvent.deleteRequested(
@@ -150,6 +176,7 @@ void main() {
         exportMyData: export,
         deleteMyAccount: delete,
         hasUnsentData: unsent,
+        resetGuides: resetGuides,
       ),
       act: (bloc) => bloc.add(
         const SettingsEvent.deleteRequested(password: '  ', confirm: true),
@@ -174,6 +201,7 @@ void main() {
         exportMyData: export,
         deleteMyAccount: delete,
         hasUnsentData: unsent,
+        resetGuides: resetGuides,
       ),
       act: (bloc) => bloc.add(
         const SettingsEvent.deleteRequested(password: 'mala', confirm: true),

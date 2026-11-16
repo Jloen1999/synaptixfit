@@ -640,5 +640,9 @@
       }
     }
   },
-  "homeTodayMoreHint": "Ver en la agenda"
+  "homeTodayMoreHint": "Ver en la agenda",
+  "guideHomeDayTitle": "Tu día",
+  "guideHomeDayBody": "Lo que te toca ahora, con un botón para hacerlo.",
+  "guideHomeWeekTitle": "Tu semana",
+  "guideHomeWeekBody": "Toca un día para verlo en el calendario."
 }

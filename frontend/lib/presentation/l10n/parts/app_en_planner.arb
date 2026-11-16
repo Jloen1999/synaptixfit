@@ -393,5 +393,19 @@
   "plannerPomodoroLongBreakMinutes": "Long break minutes",
   "plannerPomodoroMinutesRecommended": "{minutes} min · Recommended",
   "plannerPomodoroBreaksRemembered": "They'll also be used next time.",
-  "plannerPomodoroBreaksSaved": "Breaks: {short} min, and {long} min for the long one"
+  "plannerPomodoroBreaksSaved": "Breaks: {short} min, and {long} min for the long one",
+  "guideCalendarAddTitle": "Add to calendar",
+  "guideCalendarAddBody": "Add classes, study time, workouts or anything else.",
+  "guideCalendarDoneTitle": "Mark as done",
+  "guideCalendarDoneBody": "What you add shows up here: tap it to mark it as done.",
+  "guideCalendarDeadlinesTitle": "Deadlines and exams",
+  "guideCalendarDeadlinesBody": "All your deadlines and exams, with the days left.",
+  "guideFocusStartTitle": "Start focusing",
+  "guideFocusStartBody": "Starts the timer. It keeps going even if you leave this screen.",
+  "guideFocusFriendsTitle": "Study with friends",
+  "guideFocusFriendsBody": "Study at the same time, with the same timer for everyone.",
+  "guideFocusSubjectTitle": "What you're studying",
+  "guideFocusSubjectBody": "Choose the subject: the time counts towards it.",
+  "guideFocusMinutesTitle": "How many minutes",
+  "guideFocusMinutesBody": "Set how long to focus before you start."
 }

@@ -207,15 +207,37 @@ class StudyRoomBloc extends Bloc<StudyRoomEvent, StudyRoomState>
     Emitter<StudyRoomState> emit,
   ) => _run(emit, () => _start(_id));
 
+  /// El servidor dice que la sala ya no está esperando (alguien la empezó
+  /// mientras se elegían los minutos).
+  static const _notWaiting = AppError.business('TOGETHER_INVALID_STATE');
+
   Future<void> _onTimesChanged(
     StudyRoomTimesChanged event,
     Emitter<StudyRoomState> emit,
   ) async {
     final change = _changeTimes;
-    if (change == null || event.times == state.room?.times) return;
-    emit(state.copyWith(changingTimes: true));
-    await _run(emit, () => change(_id, event.times));
-    emit(state.copyWith(changingTimes: false));
+    if (change == null || event.times == state.room?.times || state.busy) {
+      return;
+    }
+    emit(state.copyWith(busy: true, changingTimes: true));
+    final result = await change(_id, event.times);
+    switch (result) {
+      case Success(:final value):
+        emit(_with(value).copyWith(busy: false, changingTimes: false));
+      // Se dice con su propio texto (no el genérico de «ya no se puede») y
+      // se vuelve a leer la sala, que ya enseña la ronda en marcha.
+      case Failure(:final error) when error == _notWaiting:
+        emit(
+          state.copyWith(busy: false, changingTimes: false, timesTooLate: true),
+        );
+        emit(state.copyWith(timesTooLate: false));
+        add(const StudyRoomEvent.polled(live: true));
+      case Failure(:final error):
+        emit(
+          state.copyWith(busy: false, changingTimes: false, actionError: error),
+        );
+        emit(state.copyWith(actionError: null));
+    }
   }
 
   Future<void> _onSubject(

@@ -27,7 +27,12 @@ import 'presentation/screens/social/social_routes.dart';
 import 'presentation/screens/admin/admin_routes.dart';
 
 /// Navegación de la app. Cada módulo declara sus rutas en `<modulo>_routes.dart`.
-GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
+/// [observers] miran el navegador raíz (p. ej. las guías, ADR 0049).
+GoRouter buildRouter(
+  SessionBloc session,
+  LegalAcceptanceBloc legal, {
+  List<NavigatorObserver> observers = const [],
+}) {
   const publicPaths = {
     LoginPage.path,
     RegisterPage.path,
@@ -51,6 +56,7 @@ GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
 
   return GoRouter(
     initialLocation: SplashPage.path,
+    observers: observers,
     // Una dirección desconocida no enseña la página de error de go_router.
     errorBuilder: (_, _) => const NotFoundPage(),
     refreshListenable: Listenable.merge([

@@ -26,6 +26,7 @@ import 'admin_data_di.dart';
 import 'reminders_data_di.dart';
 import 'run_data_di.dart';
 import 'wellbeing_data_di.dart';
+import 'guides_data_di.dart';
 
 /// Registra la capa data. Cada módulo registra lo suyo en `<modulo>_data_di.dart`.
 void registerData(GetIt getIt, AppConfig config) {
@@ -76,4 +77,5 @@ void registerData(GetIt getIt, AppConfig config) {
   registerRemindersData(getIt);
   registerWellbeingData(getIt);
   registerRunData(getIt);
+  registerGuidesData(getIt);
 }

@@ -104,6 +104,8 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
               context.read<SessionBloc>().add(
                 const SessionEvent.logoutRequested(),
               );
+            case SettingsOutcome.guidesReset:
+              context.showSnack(l10n.profileGuidesResetDone);
             case null:
               break;
           }
@@ -134,6 +136,24 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
               ),
               const _AppearanceGroup(),
               const _LanguageGroup(),
+              _Group(
+                title: l10n.profileSettingsHelpGroup,
+                children: [
+                  AppFocusOutline(
+                    child: ListTile(
+                      leading: const Icon(Icons.lightbulb_outline_rounded),
+                      title: Text(l10n.profileGuidesReset),
+                      subtitle: Text(l10n.profileGuidesResetHint),
+                      // Sin cuenta no hay guías que olvidar.
+                      onTap: account == null
+                          ? null
+                          : () => context.read<SettingsBloc>().add(
+                              SettingsEvent.guidesResetRequested(account.id),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
               _Group(
                 title: l10n.profileSettingsAccountGroup,
                 children: [

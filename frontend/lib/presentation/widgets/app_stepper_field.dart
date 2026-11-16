@@ -71,6 +71,18 @@ class _AppStepperFieldState extends State<AppStepperField> {
   // Sin salirse de los límites: el último paso se queda en el mínimo o máximo.
   int _clamped(int v) => v.clamp(widget.min, widget.max);
 
+  /// El paso lleva al múltiplo de [AppStepperField.step] siguiente (o
+  /// anterior): de 52, «+» da 55 y «−» da 50, no 57 y 47. Así los minutos
+  /// quedan redondos aunque se partiera de una cifra suelta.
+  int _stepped(int direction) {
+    final step = widget.step;
+    final value = widget.value;
+    final next = direction > 0
+        ? ((value / step).floor() + 1) * step
+        : ((value / step).ceil() - 1) * step;
+    return _clamped(next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -84,9 +96,7 @@ class _AppStepperFieldState extends State<AppStepperField> {
           IconButton.outlined(
             focusNode: _decrease,
             tooltip: l10n.commonDecrease(AppStepperField.inSentence(w.label)),
-            onPressed: _canDecrease
-                ? () => w.onChanged(_clamped(w.value - w.step))
-                : null,
+            onPressed: _canDecrease ? () => w.onChanged(_stepped(-1)) : null,
             icon: const Icon(AppIcons.decrease),
           ),
           SizedBox(
@@ -106,9 +116,7 @@ class _AppStepperFieldState extends State<AppStepperField> {
           IconButton.outlined(
             focusNode: _increase,
             tooltip: l10n.commonIncrease(AppStepperField.inSentence(w.label)),
-            onPressed: _canIncrease
-                ? () => w.onChanged(_clamped(w.value + w.step))
-                : null,
+            onPressed: _canIncrease ? () => w.onChanged(_stepped(1)) : null,
             icon: const Icon(AppIcons.increase),
           ),
         ],

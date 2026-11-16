@@ -380,5 +380,7 @@
   "togetherStudyTimesTitle": "Tempos da sala",
   "togetherStudyTimesHint": "Todos na sala verão a alteração no momento.",
   "togetherStudyChangeTimes": "Alterar tempos",
-  "togetherStudyTimesChanged": "Agora: {focus} min de concentração e {rest} min de pausa"
+  "togetherStudyTimesChanged": "Agora: {focus} min de concentração e {rest} min de pausa",
+  "togetherStudyTimesTooLate": "A sala já começou: os tempos já não se podem mudar.",
+  "togetherStudyLengthOptionSpoken": "{focus} minutos de estudo e {rest} de pausa"
 }

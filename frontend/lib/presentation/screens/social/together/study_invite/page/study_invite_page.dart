@@ -127,59 +127,81 @@ class _InviteView extends StatelessWidget with ErrorsMessageMixin {
 }
 
 /// Minutos de cada ronda y cuántas rondas: los atajos, los límites y el máximo
-/// de rondas los manda el servidor (`/together/limits`); hasta que llegan no se
-/// enseñan.
+/// de rondas los manda el servidor (`/together/limits`); mientras llegan, un
+/// esqueleto con su forma (si fallan, la lista de amigos ya dice el error).
 class _Options extends StatelessWidget {
   const _Options();
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final limits = context.select<FriendPickerBloc, TogetherLimits?>(
-      (b) => b.state.limits,
-    );
-    if (limits == null) return const SizedBox.shrink();
-    final maxRounds = limits.studyRoomRounds;
+    final (limits, failed) = context
+        .select<FriendPickerBloc, (TogetherLimits?, bool)>(
+          (b) => (b.state.limits, b.state.status == FriendPickerStatus.failure),
+        );
     // Lo que llega del Pomodoro o de un enlace se acota a los límites del
-    // servidor en cuanto se conocen: así nunca se manda algo que no vale.
+    // servidor en cuanto se conocen (lo hace el bloc): así nunca se manda algo
+    // que no vale.
     return BlocListener<FriendPickerBloc, FriendPickerState>(
       listenWhen: (p, c) => c.limits != null && p.limits != c.limits,
-      listener: (context, picker) {
-        final bloc = context.read<StudyInviteBloc>();
-        final fitted = StudyRoomTimesPicker.clamp(
-          bloc.state.times,
-          picker.limits!,
-        );
-        if (fitted != bloc.state.times) {
-          bloc.add(StudyInviteEvent.timesChosen(fitted));
-        }
-      },
-      child: BlocBuilder<StudyInviteBloc, StudyInviteState>(
-        builder: (context, state) {
-          final bloc = context.read<StudyInviteBloc>();
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              StudyRoomTimesPicker(
-                limits: limits,
-                value: state.times,
-                onChanged: (t) => bloc.add(StudyInviteEvent.timesChosen(t)),
-              ),
-              if (maxRounds > 1) ...[
-                const SizedBox(height: TokensSpacing.m),
-                AppSegmentedChoice<int>(
-                  label: l10n.togetherStudyRounds,
-                  values: [for (var i = 1; i <= maxRounds; i++) i],
-                  selected: state.rounds.clamp(1, maxRounds),
-                  labelOf: (n) => '$n',
-                  onChanged: (n) {
-                    if (n != null) bloc.add(StudyInviteEvent.roundsChosen(n));
-                  },
-                ),
-              ],
-            ],
-          );
-        },
+      listener: (context, picker) => context.read<StudyInviteBloc>().add(
+        StudyInviteEvent.limitsKnown(picker.limits!),
+      ),
+      child: limits == null
+          ? (failed ? const SizedBox.shrink() : const _OptionsSkeleton())
+          : BlocBuilder<StudyInviteBloc, StudyInviteState>(
+              builder: (context, state) {
+                final bloc = context.read<StudyInviteBloc>();
+                final maxRounds = limits.studyRoomRounds;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    StudyRoomTimesPicker(
+                      limits: limits,
+                      value: state.times,
+                      onChanged: (t) =>
+                          bloc.add(StudyInviteEvent.timesChosen(t)),
+                    ),
+                    if (maxRounds > 1) ...[
+                      const SizedBox(height: TokensSpacing.m),
+                      AppSegmentedChoice<int>(
+                        label: l10n.togetherStudyRounds,
+                        values: [for (var i = 1; i <= maxRounds; i++) i],
+                        selected: state.rounds,
+                        labelOf: (n) => '$n',
+                        onChanged: (n) {
+                          if (n != null) {
+                            bloc.add(StudyInviteEvent.roundsChosen(n));
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+    );
+  }
+}
+
+/// Forma de [_Options] mientras llegan los límites: los atajos y los dos
+/// ajustes de minutos.
+class _OptionsSkeleton extends StatelessWidget {
+  const _OptionsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final height = context.scaled(TokensSize.controlHeight);
+    // El lector oye «Cargando» una vez (los bloques son mudos).
+    return AppSkeletonGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < 3; i++) ...[
+            if (i > 0) const SizedBox(height: TokensSpacing.s),
+            AppSkeleton(height: height),
+          ],
+        ],
       ),
     );
   }

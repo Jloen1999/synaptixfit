@@ -557,5 +557,17 @@
   "academicScanZoomOut": "Afastar",
   "academicScanPrevPage": "Página anterior",
   "academicScanNextPage": "Página seguinte",
-  "academicScanPageOf": "{page} de {total}"
+  "academicScanPageOf": "{page} de {total}",
+  "guideAcademicAddTitle": "Adicionar",
+  "guideAcademicAddBody": "Disciplinas, apontamentos (também com foto) e perguntas ou cartões com IA: tudo começa aqui.",
+  "guideAcademicReviewsTitle": "Revisões pendentes",
+  "guideAcademicReviewsBody": "O que tens de rever hoje para não esquecer.",
+  "guideAcademicSearchTitle": "Pesquisar",
+  "guideAcademicSearchBody": "Encontra qualquer disciplina, apontamento, ficheiro ou entrega.",
+  "guideSubjectProgressTitle": "Progresso",
+  "guideSubjectProgressBody": "O que vem aí, o teu programa e as tuas notas.",
+  "guideSubjectNotesTitle": "Apontamentos e ficheiros",
+  "guideSubjectNotesBody": "Os teus apontamentos e ficheiros. A partir de cada um podes rever ou praticar.",
+  "guideSubjectPracticeTitle": "Praticar",
+  "guideSubjectPracticeBody": "Faz uma simulação com perguntas dos teus apontamentos para ver como chegas ao exame."
 }

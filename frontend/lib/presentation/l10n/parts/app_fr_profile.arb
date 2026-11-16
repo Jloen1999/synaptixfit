@@ -419,5 +419,9 @@
   "profileBirthDateAdd": "Ajouter",
   "profileErrorInvalidBirthDate": "Vérifie ta date de naissance : elle ne peut pas être future et l'âge doit être compris entre 14 et 100 ans.",
   "profileEnrollmentShort": "Importer l’inscription",
-  "profileLogoutUnsentMessage": "Tu as des séries ou une course pas encore envoyées. Si tu te déconnectes maintenant, elles seront perdues."
+  "profileLogoutUnsentMessage": "Tu as des séries ou une course pas encore envoyées. Si tu te déconnectes maintenant, elles seront perdues.",
+  "profileSettingsHelpGroup": "Aide",
+  "profileGuidesReset": "Revoir les guides",
+  "profileGuidesResetHint": "Ils réapparaissent quand tu ouvres chaque écran.",
+  "profileGuidesResetDone": "C'est fait : les guides vont réapparaître."
 }

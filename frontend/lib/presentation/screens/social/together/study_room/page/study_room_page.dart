@@ -141,9 +141,12 @@ class _RoomViewState extends State<_RoomView> with ErrorsMessageMixin {
           listenWhen: (p, c) =>
               (c.closed && !p.closed) ||
               (c.left && !p.left) ||
+              (c.timesTooLate && !p.timesTooLate) ||
               (c.actionError != null && c.actionError != p.actionError),
           listener: (context, state) {
-            if (state.actionError case final error?) {
+            if (state.timesTooLate) {
+              context.showSnack(l10n.togetherStudyTimesTooLate);
+            } else if (state.actionError case final error?) {
               context.showSnack(errorMessage(context, error));
             } else if (state.left) {
               context.showUndoSnack(

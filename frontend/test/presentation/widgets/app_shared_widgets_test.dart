@@ -183,4 +183,59 @@ void main() {
       expect(decrease, findsOneWidget);
     },
   );
+
+  testWidgets('AppStepperField: de 5 en 5 va a los múltiplos (52 → 55 → 50)', (
+    tester,
+  ) async {
+    var value = 52;
+    await pump(
+      tester,
+      StatefulBuilder(
+        builder: (context, setState) => AppStepperField(
+          label: 'Minutos',
+          value: value,
+          min: 15,
+          max: 57,
+          step: 5,
+          onChanged: (v) => setState(() => value = v),
+        ),
+      ),
+    );
+    await tester.tap(find.byTooltip('Aumentar minutos'));
+    await tester.pump();
+    expect(value, 55, reason: 'de 52 al múltiplo siguiente, no a 57');
+    await tester.tap(find.byTooltip('Aumentar minutos'));
+    await tester.pump();
+    expect(value, 57, reason: 'el último paso se queda en el máximo');
+    await tester.tap(find.byTooltip('Reducir minutos'));
+    await tester.pump();
+    expect(value, 55);
+    await tester.tap(find.byTooltip('Reducir minutos'));
+    await tester.pump();
+    expect(value, 50);
+  });
+
+  testWidgets(
+    'AppSegmentedChoice: cada opción puede decir otra cosa al lector',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(
+        tester,
+        AppSegmentedChoice<int>(
+          label: 'Duración',
+          values: const [25, 50],
+          selected: 25,
+          labelOf: (m) => '$m + 5 min',
+          spokenLabelOf: (m) => '$m minutos de estudio y 5 de descanso',
+          onChanged: (_) {},
+        ),
+      );
+      expect(
+        find.bySemanticsLabel(RegExp('25 minutos de estudio y 5 de descanso')),
+        findsOneWidget,
+      );
+      expect(find.text('25 + 5 min'), findsOneWidget);
+      handle.dispose();
+    },
+  );
 }

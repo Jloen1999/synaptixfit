@@ -15,6 +15,10 @@ sealed class StudyInviteEvent with _$StudyInviteEvent {
   const factory StudyInviteEvent.roundsChosen(int rounds) =
       StudyInviteRoundsChosen;
 
+  /// Llegan los topes del servidor: minutos y rondas se ajustan a ellos.
+  const factory StudyInviteEvent.limitsKnown(TogetherLimits limits) =
+      StudyInviteLimitsKnown;
+
   const factory StudyInviteEvent.submitted(List<String> friendIds) =
       StudyInviteSubmitted;
 }

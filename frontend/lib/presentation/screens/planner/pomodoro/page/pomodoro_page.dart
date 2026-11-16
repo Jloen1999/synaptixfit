@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/guide_id.dart';
 import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/models/planner/focus.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -15,6 +16,7 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../../shell/widgets/first_time_guide.dart';
 import '../../planner_routes.dart';
 import '../../widgets/pomodoro_ring_painter.dart';
 import '../bloc/pomodoro_bloc.dart';
@@ -50,6 +52,9 @@ class _PomodoroPageState extends State<PomodoroPage> {
   /// bloque?», que desaparece (WCAG 2.4.3).
   final _mainControl = FocusNode();
 
+  /// Partes que señala la guía la primera vez (ADR 0049).
+  final _guide = _FocusGuideKeys();
+
   @override
   void dispose() {
     _mainControl.dispose();
@@ -76,8 +81,47 @@ class _PomodoroPageState extends State<PomodoroPage> {
   @override
   Widget build(BuildContext context) => BlocProvider.value(
     value: _bloc,
-    child: _PomodoroView(title: widget.title, mainControl: _mainControl),
+    child: _PomodoroView(
+      title: widget.title,
+      mainControl: _mainControl,
+      guide: _guide,
+    ),
   );
+}
+
+/// «Empezar», la asignatura, los minutos y «Estudiar con amigos» para la guía
+/// (sin selector de asignatura, ese paso se salta solo).
+class _FocusGuideKeys {
+  final start = GlobalKey(debugLabel: 'guide-focus-start');
+  final subject = GlobalKey(debugLabel: 'guide-focus-subject');
+  final minutes = GlobalKey(debugLabel: 'guide-focus-minutes');
+  final friends = GlobalKey(debugLabel: 'guide-focus-friends');
+
+  List<AppGuideStep> steps(BuildContext context) {
+    final l10n = context.localizations;
+    return [
+      AppGuideStep(
+        target: start,
+        title: l10n.guideFocusStartTitle,
+        body: l10n.guideFocusStartBody,
+      ),
+      AppGuideStep(
+        target: subject,
+        title: l10n.guideFocusSubjectTitle,
+        body: l10n.guideFocusSubjectBody,
+      ),
+      AppGuideStep(
+        target: minutes,
+        title: l10n.guideFocusMinutesTitle,
+        body: l10n.guideFocusMinutesBody,
+      ),
+      AppGuideStep(
+        target: friends,
+        title: l10n.guideFocusFriendsTitle,
+        body: l10n.guideFocusFriendsBody,
+      ),
+    ];
+  }
 }
 
 /// Textos del aviso de fin de fase y de la notificación fija, en el idioma de
@@ -102,10 +146,15 @@ PomodoroAlertTexts pomodoroAlertTexts(BuildContext context) {
 }
 
 class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
-  const _PomodoroView({this.title, required this.mainControl});
+  const _PomodoroView({
+    this.title,
+    required this.mainControl,
+    required this.guide,
+  });
 
   final String? title;
   final FocusNode mainControl;
+  final _FocusGuideKeys guide;
 
   static String _phaseLabel(BuildContext context, FocusPhase phase) {
     final l10n = context.localizations;
@@ -198,130 +247,146 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
         final config = bloc.config;
         final color = _phaseColor(context, state.phase);
         final phaseLabel = _phaseLabel(context, state.phase);
-        return Scaffold(
-          appBar: AppPageBar.reading(
-            leading: const AppBackButton(fallback: PlannerPaths.root),
-            title: Text(l10n.plannerPomodoroTitle),
-          ),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: TokensLayout.readingMaxWidth,
-              ),
-              child: ListView(
-                padding: const EdgeInsets.all(TokensSpacing.m),
-                children: [
-                  if (title != null && title!.isNotEmpty) ...[
-                    Text(
-                      l10n.plannerPomodoroStudying(title!),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.textStyles.titleMedium,
-                    ),
-                    const SizedBox(height: TokensSpacing.s),
-                  ],
-                  if (state.blockCheck == BlockCheck.asking ||
-                      state.blockCheck == BlockCheck.saving) ...[
-                    _BlockDoneCard(
-                      mainControl: mainControl,
-                      title: title,
-                      saving: state.blockCheck == BlockCheck.saving,
-                    ),
-                    const SizedBox(height: TokensSpacing.m),
-                  ],
-                  // Sin bloque, se elige a qué asignatura cuentan las fases.
-                  if (state.blockId == null && state.subjects.isNotEmpty) ...[
-                    _SubjectPicker(state: state),
-                    const SizedBox(height: TokensSpacing.m),
-                  ],
-                  _PhaseHeader(
-                    phase: state.phase,
-                    color: color,
-                    text: _phaseHeader(context, state, config),
-                  ),
-                  const SizedBox(height: TokensSpacing.m),
-                  Center(
-                    child: Semantics(
-                      liveRegion: false,
-                      label: l10n.plannerTimeRemaining(
-                        phaseLabel,
-                        _clock(state.remainingSeconds),
+        final subjectPicker =
+            state.blockId == null && state.subjects.isNotEmpty;
+        // La guía, antes de empezar y con el plan del día ya cargado.
+        return FirstTimeGuide(
+          guide: GuideId.focus,
+          ready: state.plan != null && state.untouched,
+          steps: guide.steps,
+          child: Scaffold(
+            appBar: AppPageBar.reading(
+              leading: const AppBackButton(fallback: PlannerPaths.root),
+              title: Text(l10n.plannerPomodoroTitle),
+            ),
+            body: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: TokensLayout.readingMaxWidth,
+                ),
+                child: ListView(
+                  padding: const EdgeInsets.all(TokensSpacing.m),
+                  children: [
+                    if (title != null && title!.isNotEmpty) ...[
+                      Text(
+                        l10n.plannerPomodoroStudying(title!),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.textStyles.titleMedium,
                       ),
-                      excludeSemantics: true,
-                      child: SizedBox.square(
-                        dimension: TokensSize.pomodoroRing,
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(end: state.remainingFraction),
-                          duration: MediaQuery.disableAnimationsOf(context)
-                              ? Duration.zero
-                              : TokensDuration.slow,
-                          builder: (context, value, child) => CustomPaint(
-                            painter: PomodoroRingPainter(
-                              fraction: value,
-                              color: color,
-                              trackColor: color.withValues(
-                                alpha: AppPill.tintAlpha,
-                              ),
-                            ),
-                            child: child,
-                          ),
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    _clock(state.remainingSeconds),
-                                    style: context.textStyles.displayMedium
-                                        ?.copyWith(
-                                          fontFeatures: const [
-                                            FontFeature.tabularFigures(),
-                                          ],
-                                        ),
-                                  ),
+                      const SizedBox(height: TokensSpacing.s),
+                    ],
+                    if (state.blockCheck == BlockCheck.asking ||
+                        state.blockCheck == BlockCheck.saving) ...[
+                      _BlockDoneCard(
+                        mainControl: mainControl,
+                        title: title,
+                        saving: state.blockCheck == BlockCheck.saving,
+                      ),
+                      const SizedBox(height: TokensSpacing.m),
+                    ],
+                    // Sin bloque, se elige a qué asignatura cuentan las fases.
+                    if (subjectPicker) ...[
+                      KeyedSubtree(
+                        key: guide.subject,
+                        child: _SubjectPicker(state: state),
+                      ),
+                      const SizedBox(height: TokensSpacing.m),
+                    ],
+                    _PhaseHeader(
+                      phase: state.phase,
+                      color: color,
+                      text: _phaseHeader(context, state, config),
+                    ),
+                    const SizedBox(height: TokensSpacing.m),
+                    Center(
+                      child: Semantics(
+                        liveRegion: false,
+                        label: l10n.plannerTimeRemaining(
+                          phaseLabel,
+                          _clock(state.remainingSeconds),
+                        ),
+                        excludeSemantics: true,
+                        child: SizedBox.square(
+                          dimension: TokensSize.pomodoroRing,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(end: state.remainingFraction),
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : TokensDuration.slow,
+                            builder: (context, value, child) => CustomPaint(
+                              painter: PomodoroRingPainter(
+                                fraction: value,
+                                color: color,
+                                trackColor: color.withValues(
+                                  alpha: AppPill.tintAlpha,
                                 ),
-                              ],
+                              ),
+                              child: child,
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _clock(state.remainingSeconds),
+                                      style: context.textStyles.displayMedium
+                                          ?.copyWith(
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  if (state.canAdjust) ...[
-                    const SizedBox(height: TokensSpacing.m),
-                    _DurationAdjuster(
-                      minutes: config.focusMinutes,
-                      min: config.minFocusMinutes,
-                      max: config.maxFocusMinutes,
-                      limitedByFatigue: state.plan?.limitedByFatigue ?? false,
-                    ),
-                  ],
-                  // Los descansos se eligen antes de empezar cada fase
-                  // (ADR 0053); «Pasar al descanso» y «Saltar» siguen igual.
-                  if (state.status == PomodoroStatus.idle &&
-                      state.plan != null) ...[
-                    const SizedBox(height: TokensSpacing.s),
-                    _BreaksRow(plan: state.plan!, config: config),
-                  ],
-                  const SizedBox(height: TokensSpacing.l),
-                  _Controls(state: state, mainControl: mainControl),
-                  // Con una fase en marcha, salir no la para: se dice para que
-                  // nadie se quede en esta pantalla «por si acaso».
-                  if (state.status == PomodoroStatus.running) ...[
-                    const SizedBox(height: TokensSpacing.s),
-                    Text(
-                      l10n.plannerPomodoroKeepsRunning,
-                      textAlign: TextAlign.center,
-                      style: context.textStyles.bodySmall?.copyWith(
-                        color: context.colors.onSurfaceVariant,
+                    if (state.canAdjust) ...[
+                      const SizedBox(height: TokensSpacing.m),
+                      _DurationAdjuster(
+                        key: guide.minutes,
+                        minutes: config.focusMinutes,
+                        min: config.minFocusMinutes,
+                        max: config.maxFocusMinutes,
+                        limitedByFatigue: state.plan?.limitedByFatigue ?? false,
                       ),
+                    ],
+                    // Los descansos se eligen antes de empezar cada fase
+                    // (ADR 0053); «Pasar al descanso» y «Saltar» siguen igual.
+                    if (state.status == PomodoroStatus.idle &&
+                        state.plan != null) ...[
+                      const SizedBox(height: TokensSpacing.s),
+                      _BreaksRow(plan: state.plan!, config: config),
+                    ],
+                    const SizedBox(height: TokensSpacing.l),
+                    _Controls(
+                      state: state,
+                      mainControl: mainControl,
+                      guide: guide,
                     ),
+                    // Con una fase en marcha, salir no la para: se dice para que
+                    // nadie se quede en esta pantalla «por si acaso».
+                    if (state.status == PomodoroStatus.running) ...[
+                      const SizedBox(height: TokensSpacing.s),
+                      Text(
+                        l10n.plannerPomodoroKeepsRunning,
+                        textAlign: TextAlign.center,
+                        style: context.textStyles.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: TokensSpacing.xl),
+                    _StatsSection(state: state),
                   ],
-                  const SizedBox(height: TokensSpacing.xl),
-                  _StatsSection(state: state),
-                ],
+                ),
               ),
             ),
           ),
@@ -450,10 +515,15 @@ class _SubjectPicker extends StatelessWidget {
 }
 
 class _Controls extends StatelessWidget {
-  const _Controls({required this.state, required this.mainControl});
+  const _Controls({
+    required this.state,
+    required this.mainControl,
+    required this.guide,
+  });
 
   final PomodoroState state;
   final FocusNode mainControl;
+  final _FocusGuideKeys guide;
 
   @override
   Widget build(BuildContext context) {
@@ -496,17 +566,21 @@ class _Controls extends StatelessWidget {
             onPressed: () => bloc.add(event),
           )
         else
-          AppPrimaryButton(
-            label: label,
-            icon: icon,
-            focusNode: mainControl,
-            onPressed: () => bloc.add(event),
+          KeyedSubtree(
+            key: guide.start,
+            child: AppPrimaryButton(
+              label: label,
+              icon: icon,
+              focusNode: mainControl,
+              onPressed: () => bloc.add(event),
+            ),
           ),
         // Antes de empezar, la otra forma de concentrarse: con amigos, en una
         // sala con temporizador común (secundaria, ADR 0045).
         if (state.untouched && !asking) ...[
           const SizedBox(height: TokensSpacing.s),
           TextButton.icon(
+            key: guide.friends,
             onPressed: () => context.push(
               PlannerExternalPaths.studyWithFriends(
                 subjectId: state.subjectId,
@@ -686,6 +760,7 @@ class _TotalsRow extends StatelessWidget {
 /// en 5, y por qué es esa.
 class _DurationAdjuster extends StatelessWidget {
   const _DurationAdjuster({
+    super.key,
     required this.minutes,
     required this.min,
     required this.max,

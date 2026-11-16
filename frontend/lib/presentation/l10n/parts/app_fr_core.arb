@@ -144,5 +144,9 @@
   "xpGuidePlanning": "Planifier la semaine",
   "xpGuidePlanningDetail": "3 événements prévus dans la semaine : 100 XP + 5 par événement. Une fois par semaine.",
   "commonShowLess": "Voir moins",
-  "commonGoHome": "Aller à l'accueil"
+  "commonGoHome": "Aller à l'accueil",
+  "guideNext": "Suivant ({current} sur {total})",
+  "guideSkip": "Passer le guide",
+  "guideDone": "Compris",
+  "guideStepLabel": "Guide, étape {current} sur {total} : {title}"
 }

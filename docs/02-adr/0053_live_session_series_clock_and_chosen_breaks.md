@@ -79,6 +79,20 @@ Fase 2A del plan de mejoras.
   eran `LONG` y a 25 + 5 si no) y se quita `duracion`.
 - «Estudiar con amigos» desde el Pomodoro llega con sus minutos (`?focus=…&break=…`).
 
+### Actualización 2026-11-16 (Fase 2B)
+
+- **Un solo reloj con cifra a la vista por cosa:** la fila de la serie en marcha dice «En curso» (o «En pausa») sin
+  repetir los segundos, que están en el panel; en la sesión libre, el ⏱ de la cabecera es el único.
+- Con letra grande la cabecera va en vertical: «N de M series» arriba y la píldora ⏱ debajo, alineadas a la izquierda.
+- **La sesión libre descansa con el mismo panel** que la de rutina (`LiveRestPanel` dentro de `LiveBottomPanel`), en
+  vez de la franja de arriba; el foco pasa a «+15 s» y vuelve a «Apuntar serie», como en la rutina.
+- Los ajustes de minutos (`AppStepperField` con paso de 5, 15…) van al múltiplo siguiente o anterior: de 52, «+» da 55.
+- Sala de estudio: si se intentan cambiar los tiempos y la sala ya ha empezado (`TOGETHER_INVALID_STATE` en ese
+  momento), el cliente dice «La sala ya ha empezado: los tiempos ya no se pueden cambiar.» y vuelve a leerla; los
+  atajos se leen «25 minutos de estudio y 5 de descanso»; «Estudiar con amigos» enseña un esqueleto mientras llegan
+  los límites (y acota los minutos en cuanto llegan).
+- El color de la píldora ⏱ no cambia (acento aprobado).
+
 ## Consecuencias
 
 - La sesión dice qué hacer con una palabra por botón; el reloj de arriba ya no parece una serie en marcha.

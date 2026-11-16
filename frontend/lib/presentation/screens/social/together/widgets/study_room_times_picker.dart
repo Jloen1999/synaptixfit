@@ -23,13 +23,6 @@ class StudyRoomTimesPicker extends StatelessWidget {
   final StudyRoomTimes value;
   final ValueChanged<StudyRoomTimes> onChanged;
 
-  /// [times] dentro de los límites de [limits] (p. ej. los de un enlace).
-  static StudyRoomTimes clamp(StudyRoomTimes times, TogetherLimits limits) =>
-      StudyRoomTimes(
-        focusMinutes: limits.studyRoomFocusMinutes.clamp(times.focusMinutes),
-        breakMinutes: limits.studyRoomBreakMinutes.clamp(times.breakMinutes),
-      );
-
   /// La concentración se ajusta de 5 en 5 (como el Pomodoro); el descanso,
   /// minuto a minuto.
   static const _focusStep = 5;
@@ -52,6 +45,10 @@ class StudyRoomTimesPicker extends StatelessWidget {
             selected: presets.contains(value) ? value : null,
             labelOf: (t) =>
                 l10n.togetherStudyLengthOption(t.focusMinutes, t.breakMinutes),
+            spokenLabelOf: (t) => l10n.togetherStudyLengthOptionSpoken(
+              t.focusMinutes,
+              t.breakMinutes,
+            ),
             onChanged: (t) {
               if (t != null) onChanged(t);
             },

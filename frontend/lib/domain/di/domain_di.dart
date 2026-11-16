@@ -28,6 +28,7 @@ import 'admin_domain_di.dart';
 import 'reminders_domain_di.dart';
 import 'run_domain_di.dart';
 import 'wellbeing_domain_di.dart';
+import 'guides_domain_di.dart';
 
 /// Registra los casos de uso. Cada módulo registra los suyos en `<modulo>_domain_di.dart`.
 void registerDomain(GetIt getIt) {
@@ -89,4 +90,5 @@ void registerDomain(GetIt getIt) {
   registerRemindersDomain(getIt);
   registerWellbeingDomain(getIt);
   registerRunDomain(getIt);
+  registerGuidesDomain(getIt);
 }

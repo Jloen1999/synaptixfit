@@ -1337,5 +1337,17 @@
         "type": "int"
       }
     }
-  }
+  },
+  "guideAcademicAddTitle": "Añadir",
+  "guideAcademicAddBody": "Asignaturas, apuntes (también con foto) y preguntas o tarjetas con IA: todo empieza aquí.",
+  "guideAcademicReviewsTitle": "Repasos pendientes",
+  "guideAcademicReviewsBody": "Lo que toca repasar hoy para no olvidarlo.",
+  "guideAcademicSearchTitle": "Buscar",
+  "guideAcademicSearchBody": "Encuentra cualquier asignatura, apunte, archivo o entrega.",
+  "guideSubjectProgressTitle": "Progreso",
+  "guideSubjectProgressBody": "Lo que viene, tu temario y tus notas.",
+  "guideSubjectNotesTitle": "Apuntes y archivos",
+  "guideSubjectNotesBody": "Tus apuntes y archivos. Desde cada uno puedes repasar o practicar.",
+  "guideSubjectPracticeTitle": "Practicar",
+  "guideSubjectPracticeBody": "Haz un simulacro con preguntas de tus apuntes para ver cómo llegas al examen."
 }

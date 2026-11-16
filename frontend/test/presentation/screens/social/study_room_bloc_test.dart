@@ -114,9 +114,15 @@ class _ChangeTimes implements ChangeStudyRoomTimesUseCaseContract {
   final _Get get;
   StudyRoomTimes? sent;
 
+  /// La sala ya ha empezado: el servidor contesta «ya no se puede».
+  bool started = false;
+
   @override
   Future<AppResult<StudyRoom>> call(String id, StudyRoomTimes times) async {
     sent = times;
+    if (started) {
+      return const Failure(AppError.business('TOGETHER_INVALID_STATE'));
+    }
     get.room = get.room.copyWith(
       focusMinutes: times.focusMinutes,
       breakMinutes: times.breakMinutes,
@@ -258,6 +264,32 @@ void main() {
       await bloc.close();
     });
 
+    test('si la sala empezó mientras se elegían, lo dice con su texto y la '
+        'vuelve a leer', () async {
+      final get = _Get(_room(phase: StudyRoomPhase.waiting));
+      final change = _ChangeTimes(get)..started = true;
+      final bloc = _bloc(get, changeTimes: change)
+        ..add(const StudyRoomEvent.started('r1'));
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      final states = <StudyRoomState>[];
+      final sub = bloc.stream.listen(states.add);
+      final readsBefore = get.calls;
+      bloc.add(
+        const StudyRoomEvent.timesChanged(
+          StudyRoomTimes(focusMinutes: 40, breakMinutes: 8),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      // Su propio aviso, no el error genérico.
+      expect(states.any((s) => s.timesTooLate), isTrue);
+      expect(states.any((s) => s.actionError != null), isFalse);
+      expect(bloc.state.busy, isFalse);
+      expect(bloc.state.changingTimes, isFalse);
+      expect(get.calls, greaterThan(readsBefore), reason: 'se vuelve a leer');
+      await sub.cancel();
+      await bloc.close();
+    });
+
     test('una sala empezada ya no deja cambiar los minutos', () {
       expect(_room().canChangeTimes, isFalse);
       expect(
@@ -295,6 +327,28 @@ void main() {
         await bloc.close();
       },
     );
+
+    test('al llegar los topes, minutos y rondas se ajustan a ellos', () async {
+      final bloc = StudyInviteBloc(create: _Create())
+        ..add(
+          const StudyInviteEvent.started(
+            times: StudyRoomTimes(focusMinutes: 120, breakMinutes: 0),
+          ),
+        )
+        ..add(const StudyInviteEvent.roundsChosen(9));
+      final limits = (await _Limits()()).valueOrNull!;
+      bloc.add(StudyInviteEvent.limitsKnown(limits));
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        bloc.state.times,
+        StudyRoomTimes(
+          focusMinutes: limits.studyRoomFocusMinutes.max,
+          breakMinutes: limits.studyRoomBreakMinutes.min,
+        ),
+      );
+      expect(bloc.state.rounds, limits.studyRoomRounds);
+      await bloc.close();
+    });
 
     test('los topes, los límites de minutos y los atajos llegan del '
         'servidor (ADR 0053)', () {

@@ -13,6 +13,7 @@ import '../presentation/screens/profile/legal/bloc/legal_acceptance_bloc.dart';
 import '../presentation/screens/auth/session/bloc/session_bloc.dart';
 import '../presentation/screens/profile/appearance/bloc/appearance_bloc.dart';
 import '../presentation/screens/profile/language/bloc/language_bloc.dart';
+import '../presentation/screens/shell/widgets/first_time_guide.dart';
 import '../presentation/theme/app_theme.dart';
 import '../presentation/theme/tokens.g.dart';
 import '../presentation/widgets/widgets.dart';
@@ -41,7 +42,14 @@ class _SynaptixFitAppState extends State<SynaptixFitApp> {
     ..add(const SessionEvent.started());
   // Puerta de la política (ADR 0034): una sola instancia que consulta el router.
   late final LegalAcceptanceBloc _legal = getIt<LegalAcceptanceBloc>();
-  late final GoRouter _router = buildRouter(_session, _legal);
+  // Guías la primera vez (ADR 0049): el router le cuenta los diálogos y las
+  // hojas abiertos.
+  late final GuideCoordinator _guides = getIt<GuideCoordinator>();
+  late final GoRouter _router = buildRouter(
+    _session,
+    _legal,
+    observers: [_guides.observer],
+  );
   StreamSubscription<SessionState>? _sessionChanges;
   String? _checkedAccount;
 
@@ -126,7 +134,10 @@ class _SynaptixFitAppState extends State<SynaptixFitApp> {
             // Accept-Language que se envía a la API).
             builder: (context, child) {
               Intl.defaultLocale = Localizations.localeOf(context).languageCode;
-              return AppFocusGroup(child: child!);
+              return GuideScope(
+                coordinator: _guides,
+                child: AppFocusGroup(child: child!),
+              );
             },
             scrollBehavior: const AppScrollBehavior(),
             locale: language.languageCode == null

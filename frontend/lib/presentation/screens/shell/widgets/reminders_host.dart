@@ -20,6 +20,7 @@ import '../../progress/progress_routes.dart';
 import '../../training/training_routes.dart';
 import '../../training/widgets/training_section_bar.dart';
 import '../bloc/reminders_bloc.dart';
+import 'first_time_guide.dart';
 import 'l10n_reminder_texts.dart';
 
 /// Envuelve el armazón de pestañas con [RemindersBloc]: programa los avisos
@@ -63,6 +64,8 @@ class _RemindersListener extends StatelessWidget {
   /// El resumen de la mañana abre Inicio («Tu día»).
   /// «Empezar» en un bloque de estudio abre el Pomodoro de ese bloque.
   void _open(BuildContext context, OpenedReminder opened) {
+    // Lo que abre un aviso no enseña su guía esta vez (ADR 0049).
+    GuideScope.maybeOf(context)?.markExternalArrival();
     final ref = opened.refId;
     switch (opened.kind) {
       case ReminderKind.dueReviews:

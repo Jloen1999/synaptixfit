@@ -25,6 +25,10 @@ abstract class StudyRoomState with _$StudyRoomState {
     /// carga como si arrancara la sala.
     @Default(false) bool changingTimes,
 
+    /// Se quisieron cambiar los minutos con la sala ya empezada (efecto de un
+    /// solo uso: aviso «La sala ya ha empezado…»).
+    @Default(false) bool timesTooLate,
+
     /// Ha dicho que no a la invitación: la pantalla se cierra.
     @Default(false) bool closed,
 

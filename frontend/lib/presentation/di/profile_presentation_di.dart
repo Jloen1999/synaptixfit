@@ -111,6 +111,7 @@ void registerProfilePresentation(GetIt getIt) {
     )
     ..registerFactory(
       () => SettingsBloc(
+        resetGuides: getIt(),
         exportMyData: getIt(),
         deleteMyAccount: getIt(),
         hasUnsentData: getIt(),

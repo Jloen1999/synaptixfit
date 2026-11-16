@@ -17,6 +17,7 @@ class AppSegmentedChoice<T extends Object> extends StatelessWidget {
     required this.labelOf,
     required this.onChanged,
     this.allowEmpty = false,
+    this.spokenLabelOf,
   });
 
   /// Nombre del grupo («Prioridad»): se pinta encima y el lector lo anuncia
@@ -27,6 +28,13 @@ class AppSegmentedChoice<T extends Object> extends StatelessWidget {
   final String Function(T value) labelOf;
   final ValueChanged<T?> onChanged;
   final bool allowEmpty;
+
+  /// Lo que dice el lector de cada opción si el texto corto no se entiende
+  /// oído («25 + 5 min» → «25 minutos de estudio y 5 de descanso»).
+  final String Function(T value)? spokenLabelOf;
+
+  Widget _label(T value) =>
+      Text(labelOf(value), semanticsLabel: spokenLabelOf?.call(value));
 
   void _tap(T value) =>
       onChanged(allowEmpty && value == selected ? null : value);
@@ -59,7 +67,7 @@ class AppSegmentedChoice<T extends Object> extends StatelessWidget {
           children: [
             for (final v in values)
               ChoiceChip(
-                label: Text(labelOf(v)),
+                label: _label(v),
                 selected: v == selected,
                 onSelected: (_) => _tap(v),
               ),
@@ -75,7 +83,7 @@ class AppSegmentedChoice<T extends Object> extends StatelessWidget {
           emptySelectionAllowed: allowEmpty || selected == null,
           segments: [
             for (final v in values)
-              ButtonSegment<T>(value: v, label: Text(labelOf(v))),
+              ButtonSegment<T>(value: v, label: _label(v)),
           ],
           selected: {?selected},
           onSelectionChanged: (s) => onChanged(s.isEmpty ? null : s.first),

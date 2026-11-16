@@ -1043,5 +1043,18 @@
         "type": "int"
       }
     }
+  },
+  "togetherStudyTimesTooLate": "La sala ya ha empezado: los tiempos ya no se pueden cambiar.",
+  "togetherStudyLengthOptionSpoken": "{focus} minutos de estudio y {rest} de descanso",
+  "@togetherStudyLengthOptionSpoken": {
+    "description": "Lo que dice el lector en el atajo «25 + 5 min» de la sala de estudio.",
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "rest": {
+        "type": "int"
+      }
+    }
   }
 }

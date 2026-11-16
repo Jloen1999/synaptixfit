@@ -101,14 +101,25 @@ void openHowTo(BuildContext context, PlannedExercise exercise) => unawaited(
   ),
 );
 
+/// Partes de la sesión en vivo que señala su guía la primera vez (ADR 0049):
+/// «Empezar serie», la foto («Cómo se hace»), el reloj ⏱ y las cifras de la
+/// serie que toca. Las crea la página y las reparte a cada parte.
+class LiveGuideKeys {
+  final start = GlobalKey(debugLabel: 'guide-live-start');
+  final photo = GlobalKey(debugLabel: 'guide-live-photo');
+  final clock = GlobalKey(debugLabel: 'guide-live-clock');
+  final figures = GlobalKey(debugLabel: 'guide-live-figures');
+}
+
 /// Cabecera fija de la sesión (ADR 0053): «N de M series» con el reloj ⏱ de
 /// las series, la barra de avance, «Entreno: N min · te quedan ≈ M min» y la
 /// tira con los ejercicios para saltar entre ellos. Con letra grande la tira
 /// se cambia por «Ejercicio 2 de 6» con anterior y siguiente.
 class LiveSessionHeader extends StatelessWidget {
-  const LiveSessionHeader({super.key, required this.state});
+  const LiveSessionHeader({super.key, required this.state, this.guideKeys});
 
   final LiveSessionState state;
+  final LiveGuideKeys? guideKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +144,7 @@ class LiveSessionHeader extends StatelessWidget {
             children: [
               LiveClockSummary(
                 state: s,
+                clockKey: guideKeys?.clock,
                 leading: Text(
                   l10n.trainingLiveSetsCount(s.loggedSets, s.plannedSets),
                   style: context.textStyles.labelLarge,
@@ -301,10 +313,14 @@ class LiveExerciseView extends StatelessWidget {
     this.onUnswap,
     this.onWarmup,
     this.header = const [],
+    this.guideKeys,
   });
 
   final LiveSessionState state;
   final SetDrafts drafts;
+
+  /// La fila de la serie que toca lleva la clave de las cifras de la guía.
+  final LiveGuideKeys? guideKeys;
 
   /// Celdas con un valor fuera de rango (claves de [LiveSessionState.draftKey]).
   final Set<String> invalid;
@@ -481,25 +497,28 @@ class LiveExerciseView extends StatelessWidget {
                       if (!stacked)
                         _TableHeader(fields: fields, number: number),
                       for (var n = 1; n <= rows; n++)
-                        _LiveSetRow(
-                          key: ValueKey('${e.id}-$n'),
-                          state: s,
-                          exercise: e,
-                          setNumber: n,
-                          fields: fields,
-                          logged: sets
-                              .where((x) => x.setNumber == n)
-                              .firstOrNull,
-                          current: n == current,
-                          stacked: stacked,
-                          number: number,
-                          drafts: drafts,
-                          invalid: invalid,
-                          onDraft: onDraft,
-                          onValidity: onValidity,
-                          onLog: onLog,
-                          onUnmark: onUnmark,
-                          onCorrect: onCorrect,
+                        _guideRow(
+                          n == (current ?? 1) ? guideKeys?.figures : null,
+                          _LiveSetRow(
+                            key: ValueKey('${e.id}-$n'),
+                            state: s,
+                            exercise: e,
+                            setNumber: n,
+                            fields: fields,
+                            logged: sets
+                                .where((x) => x.setNumber == n)
+                                .firstOrNull,
+                            current: n == current,
+                            stacked: stacked,
+                            number: number,
+                            drafts: drafts,
+                            invalid: invalid,
+                            onDraft: onDraft,
+                            onValidity: onValidity,
+                            onLog: onLog,
+                            onUnmark: onUnmark,
+                            onCorrect: onCorrect,
+                          ),
                         ),
                     ],
                   );
@@ -521,6 +540,10 @@ class LiveExerciseView extends StatelessWidget {
     );
   }
 }
+
+/// La fila con [key] (la que señala la guía) o tal cual.
+Widget _guideRow(GlobalKey? key, Widget row) =>
+    key == null ? row : KeyedSubtree(key: key, child: row);
 
 /// «Solo hoy haces X en lugar de Y»: el ejercicio se cambió solo para esta
 /// sesión (la rutina no cambia) y se puede volver al de la rutina.
@@ -934,12 +957,14 @@ class _LiveSetRow extends StatelessWidget {
         fontWeight: FontWeight.w700,
       ),
     );
+    // Con la serie en marcha, la fila ya dice «En curso»: sin «Ahora».
+    final showNow = current && done == null && !state.timerOn(e, n);
     final Widget body;
     if (stacked) {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (current && done == null) nowMark,
+          if (showNow) nowMark,
           Text(
             l10n.trainingSetWithTarget(n, target),
             style: context.textStyles.titleSmall?.copyWith(
@@ -978,7 +1003,7 @@ class _LiveSetRow extends StatelessWidget {
           SizedBox(width: number, child: numberText),
           Expanded(
             flex: 2,
-            child: current && done == null
+            child: showNow
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -1019,11 +1044,11 @@ class _LiveSetRow extends StatelessWidget {
                   const SizedBox(width: TokensSpacing.xs),
                   Expanded(
                     child: Text(
+                      // Sin la cifra: el tiempo se ve en un solo sitio, el
+                      // reloj de la serie del panel de abajo (ADR 0053).
                       timerPaused
                           ? l10n.trainingSetRowPaused
-                          : l10n.trainingSetRowRunning(
-                              formatClock(state.timerSeconds),
-                            ),
+                          : l10n.trainingSetRowInProgress,
                       style: context.textStyles.labelMedium?.copyWith(
                         color: statusColor,
                         fontWeight: FontWeight.w700,
@@ -1254,9 +1279,13 @@ class LiveClockSummary extends StatelessWidget {
     required this.state,
     this.leading,
     this.bar,
+    this.clockKey,
   });
 
   final LiveSessionState state;
+
+  /// Clave de la píldora ⏱, para señalarla en la guía (ADR 0049).
+  final GlobalKey? clockKey;
 
   /// Lo que va a la izquierda de la píldora (en la rutina, las series).
   final Widget? leading;
@@ -1270,23 +1299,39 @@ class LiveClockSummary extends StatelessWidget {
     final minutes = state.workoutMinutes;
     final left = state.remainingEstimatedMinutes;
     final hasLeft = left != null && left > 0;
+    final pill = KeyedSubtree(
+      key: clockKey,
+      child: LiveClockPill(
+        seconds: state.seriesSeconds,
+        mode: state.seriesClock,
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Wrap(
-          spacing: TokensSpacing.s,
-          runSpacing: TokensSpacing.xs,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          alignment: WrapAlignment.spaceBetween,
-          children: [
-            ?leading,
-            LiveClockPill(
-              seconds: state.seriesSeconds,
-              mode: state.seriesClock,
-            ),
-          ],
-        ),
+        // Con letra grande, en vertical: las series arriba y el reloj debajo,
+        // alineados a la izquierda (al 200 % no caben en una fila).
+        if (context.largeText)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(height: TokensSpacing.xs),
+              ],
+              pill,
+            ],
+          )
+        else
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.spaceBetween,
+            children: [?leading, pill],
+          ),
         if (bar != null) ...[const SizedBox(height: TokensSpacing.xs), bar!],
         const SizedBox(height: TokensSpacing.xxs),
         Text(
@@ -1472,6 +1517,7 @@ class LiveSessionBottomBar extends StatefulWidget {
     required this.invalid,
     required this.onLog,
     required this.onFinish,
+    this.guideKeys,
   });
 
   final LiveSessionState state;
@@ -1480,6 +1526,9 @@ class LiveSessionBottomBar extends StatefulWidget {
   final void Function(PlannedExercise e, int set, Map<SetField, num?> values)
   onLog;
   final VoidCallback? onFinish;
+
+  /// «Empezar serie» y la foto llevan las claves de la guía.
+  final LiveGuideKeys? guideKeys;
 
   @override
   State<LiveSessionBottomBar> createState() => _LiveSessionBottomBarState();
@@ -1573,6 +1622,47 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
   Widget build(BuildContext context) {
     final s = widget.state;
     final resting = s.restRemaining != null;
+    return LiveBottomPanel(
+      resting: resting,
+      child: Focus(
+        focusNode: _barFocus,
+        child: resting
+            ? LiveRestPanel(
+                state: s,
+                drafts: widget.drafts,
+                restFocus: _restFocus,
+              )
+            : _NextPanel(
+                state: s,
+                drafts: widget.drafts,
+                invalid: widget.invalid,
+                onLog: widget.onLog,
+                onFinish: widget.onFinish,
+                focus: _actionFocus,
+                toggleFocus: _toggleFocus,
+                guideKeys: widget.guideKeys,
+              ),
+      ),
+    );
+  }
+}
+
+/// Fondo y medidas de la barra inferior de la sesión, igual en la de rutina
+/// ([LiveSessionBottomBar]) y en la libre: en el descanso, el color del
+/// descanso. Con letra muy grande no tapa la tabla: tiene un alto máximo y su
+/// contenido se desplaza.
+class LiveBottomPanel extends StatelessWidget {
+  const LiveBottomPanel({
+    super.key,
+    required this.resting,
+    required this.child,
+  });
+
+  final bool resting;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: resting
@@ -1582,8 +1672,6 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
       ),
       child: SafeArea(
         top: false,
-        // Con letra muy grande la barra no tapa la tabla: tiene un alto
-        // máximo y su contenido se desplaza.
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight:
@@ -1592,26 +1680,7 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
           ),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(TokensSpacing.m),
-            child: TrainingContent(
-              child: Focus(
-                focusNode: _barFocus,
-                child: resting
-                    ? _RestPanel(
-                        state: s,
-                        drafts: widget.drafts,
-                        restFocus: _restFocus,
-                      )
-                    : _NextPanel(
-                        state: s,
-                        drafts: widget.drafts,
-                        invalid: widget.invalid,
-                        onLog: widget.onLog,
-                        onFinish: widget.onFinish,
-                        focus: _actionFocus,
-                        toggleFocus: _toggleFocus,
-                      ),
-              ),
-            ),
+            child: TrainingContent(child: child),
           ),
         ),
       ),
@@ -1710,6 +1779,7 @@ class _NextPanel extends StatelessWidget {
     required this.onFinish,
     required this.focus,
     required this.toggleFocus,
+    this.guideKeys,
   });
 
   final LiveSessionState state;
@@ -1720,6 +1790,7 @@ class _NextPanel extends StatelessWidget {
   final VoidCallback? onFinish;
   final FocusNode focus;
   final FocusNode toggleFocus;
+  final LiveGuideKeys? guideKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -1786,6 +1857,7 @@ class _NextPanel extends StatelessWidget {
                 onStart: () =>
                     bloc.add(LiveSessionEvent.setTimerStarted(viewed.id, set)),
                 onAlreadyDone: canLog ? log : null,
+                guideKeys: guideKeys,
               ),
       );
     } else if (following != null) {
@@ -1912,6 +1984,7 @@ class _BeforeSet extends StatelessWidget {
     required this.focus,
     required this.onStart,
     required this.onAlreadyDone,
+    this.guideKeys,
   });
 
   final LiveSessionState state;
@@ -1923,6 +1996,7 @@ class _BeforeSet extends StatelessWidget {
   final FocusNode focus;
   final VoidCallback onStart;
   final VoidCallback? onAlreadyDone;
+  final LiveGuideKeys? guideKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -1948,7 +2022,10 @@ class _BeforeSet extends StatelessWidget {
       children: [
         Row(
           children: [
-            _ExerciseThumbButton(exercise: exercise),
+            KeyedSubtree(
+              key: guideKeys?.photo,
+              child: _ExerciseThumbButton(exercise: exercise),
+            ),
             const SizedBox(width: TokensSpacing.s),
             Expanded(
               child: Column(
@@ -1976,24 +2053,26 @@ class _BeforeSet extends StatelessWidget {
           ],
         ),
         const SizedBox(height: TokensSpacing.s),
-        // Con letra grande, uno debajo del otro: «Empezar serie» no se parte.
-        if (context.largeText)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              start,
-              const SizedBox(height: TokensSpacing.xs),
-              done,
-            ],
-          )
-        else
-          Row(
-            children: [
-              Expanded(child: start),
-              const SizedBox(width: TokensSpacing.xs),
-              done,
-            ],
-          ),
+        KeyedSubtree(
+          key: guideKeys?.start,
+          // Con letra grande, uno debajo del otro: «Empezar serie» no se parte.
+          child: context.largeText
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    start,
+                    const SizedBox(height: TokensSpacing.xs),
+                    done,
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: start),
+                    const SizedBox(width: TokensSpacing.xs),
+                    done,
+                  ],
+                ),
+        ),
       ],
     );
   }
@@ -2142,9 +2221,11 @@ class _DoingSet extends StatelessWidget {
 
 /// Descanso en grande: «Serie 2 hecha · descansa», la cuenta atrás y qué viene
 /// después («Después: serie 3 · 8 × 60 kg» o el ejercicio siguiente). Sin
-/// «Deshacer»: si se marcó sin querer, se quita con el ✓ verde de la fila.
-class _RestPanel extends StatelessWidget {
-  const _RestPanel({
+/// «Deshacer»: si se marcó sin querer, se quita con el ✓ verde de la fila. Lo
+/// usan la sesión de rutina y la libre (ahí no hay «después»).
+class LiveRestPanel extends StatelessWidget {
+  const LiveRestPanel({
+    super.key,
     required this.state,
     required this.drafts,
     required this.restFocus,

@@ -869,5 +869,19 @@
         "type": "int"
       }
     }
-  }
+  },
+  "guideCalendarAddTitle": "Añadir al calendario",
+  "guideCalendarAddBody": "Apunta clases, estudio, entrenos o lo que quieras.",
+  "guideCalendarDoneTitle": "Marcar como hecho",
+  "guideCalendarDoneBody": "Lo que apuntes sale aquí: tócalo para marcarlo como hecho.",
+  "guideCalendarDeadlinesTitle": "Entregas y exámenes",
+  "guideCalendarDeadlinesBody": "Todas tus entregas y exámenes, con los días que faltan.",
+  "guideFocusStartTitle": "Empezar a concentrarme",
+  "guideFocusStartBody": "Pone en marcha el reloj. Sigue contando aunque salgas de aquí.",
+  "guideFocusFriendsTitle": "Estudiar con amigos",
+  "guideFocusFriendsBody": "Estudiad a la vez, con el mismo reloj para todos.",
+  "guideFocusSubjectTitle": "Qué estudias",
+  "guideFocusSubjectBody": "Elige la asignatura: el tiempo cuenta para ella.",
+  "guideFocusMinutesTitle": "Cuántos minutos",
+  "guideFocusMinutesBody": "Ajusta el tiempo de concentración antes de empezar."
 }

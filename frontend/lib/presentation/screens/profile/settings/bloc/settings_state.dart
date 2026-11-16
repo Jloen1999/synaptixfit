@@ -1,13 +1,15 @@
 part of 'settings_bloc.dart';
 
 /// [confirmLogout]: hay datos sin subir y la página pregunta antes de cerrar
-/// sesión; [loggedOut]: se cierra sin preguntar.
+/// sesión; [loggedOut]: se cierra sin preguntar; [guidesReset]: las guías
+/// volverán a salir.
 enum SettingsOutcome {
   exported,
   exportCancelled,
   deleted,
   confirmLogout,
   loggedOut,
+  guidesReset,
 }
 
 @freezed

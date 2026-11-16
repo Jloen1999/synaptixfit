@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/guide_id.dart';
 import '../../../../../domain/models/account/account.dart';
 import '../../../../../domain/models/planner/calendar_block.dart';
 import '../../../../../domain/models/planner/planner_week.dart';
@@ -13,6 +14,7 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../../shell/widgets/first_time_guide.dart';
 import '../../block_editor/bloc/block_editor_bloc.dart';
 import '../../block_editor/page/block_editor_sheet.dart';
 import '../../planner_routes.dart';
@@ -100,6 +102,32 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   /// Rango de la semana: recibe el foco tras «Hoy».
   final _weekFocus = FocusNode(debugLabel: 'planner-week');
 
+  /// Partes que señala la guía la primera vez (ADR 0049).
+  final _addKey = GlobalKey(debugLabel: 'guide-calendar-add');
+  final _weekKey = GlobalKey(debugLabel: 'guide-calendar-week');
+  final _deadlinesKey = GlobalKey(debugLabel: 'guide-calendar-deadlines');
+
+  List<AppGuideStep> _guideSteps(BuildContext context) {
+    final l10n = context.localizations;
+    return [
+      AppGuideStep(
+        target: _addKey,
+        title: l10n.guideCalendarAddTitle,
+        body: l10n.guideCalendarAddBody,
+      ),
+      AppGuideStep(
+        target: _weekKey,
+        title: l10n.guideCalendarDoneTitle,
+        body: l10n.guideCalendarDoneBody,
+      ),
+      AppGuideStep(
+        target: _deadlinesKey,
+        title: l10n.guideCalendarDeadlinesTitle,
+        body: l10n.guideCalendarDeadlinesBody,
+      ),
+    ];
+  }
+
   /// Día de la semana que enseña el lienzo cuando no caben los 7 (nulo si
   /// caben): con él se sabe si hace falta «Hoy».
   int? _visibleDay;
@@ -136,7 +164,8 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   /// crear un evento en el próximo hueco.
   void _showPendingBlock(CalendarState state) {
     if (_pendingCreate && state.status == CalendarStatus.ready) {
-      _pendingCreate = false;
+      // Con estado: la guía (ADR 0049) espera a que se haya enseñado.
+      setState(() => _pendingCreate = false);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_openEditor(start: _nextSlot(state.weekStart)));
       });
@@ -144,7 +173,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
     }
     final id = _pendingBlockId;
     if (id == null || state.status != CalendarStatus.ready) return;
-    _pendingBlockId = null;
+    setState(() => _pendingBlockId = null);
     final block = state.blocks.where((b) => b.id == id).firstOrNull;
     if (block == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -380,40 +409,52 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         }
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppPageBar(
-            title: Text(l10n.plannerTitle),
-            actions: [
-              // «Hoy» va junto a la semana (‹ ›), no aquí: un icono de
-              // calendario suelto no se entendía.
-              _PlannerMenu(
-                onReturn: () => _bloc.add(const CalendarEvent.refreshed()),
-              ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: 'planner-add-block',
-            onPressed: () => _openEditor(start: _nextSlot(state.weekStart)),
-            icon: const Icon(AppIcons.add),
-            label: Text(l10n.plannerAddBlock),
-          ),
-          body: SafeArea(
-            child: Column(
-              children: [
-                _WeekNavigator(
-                  focusNode: _weekFocus,
-                  weekStart: state.weekStart,
-                  onShift: (o) => _bloc.add(CalendarEvent.weekShifted(o)),
-                  onToday: _showToday(state.weekStart) ? _goToday : null,
+        // Si se abrió para enseñar un evento o añadir uno (Inicio, un aviso),
+        // la guía espera: primero va lo pedido.
+        return FirstTimeGuide(
+          guide: GuideId.calendar,
+          ready:
+              state.status == CalendarStatus.ready &&
+              _pendingBlockId == null &&
+              !_pendingCreate,
+          steps: _guideSteps,
+          child: Scaffold(
+            appBar: AppPageBar(
+              title: Text(l10n.plannerTitle),
+              actions: [
+                // «Hoy» va junto a la semana (‹ ›), no aquí: un icono de
+                // calendario suelto no se entendía.
+                _PlannerMenu(
+                  onReturn: () => _bloc.add(const CalendarEvent.refreshed()),
                 ),
-                _Shortcuts(
-                  onOpen: (path) async {
-                    await context.push(path);
-                    _bloc.add(const CalendarEvent.refreshed());
-                  },
-                ),
-                Expanded(child: _body(context, state)),
               ],
+            ),
+            floatingActionButton: FloatingActionButton.extended(
+              key: _addKey,
+              heroTag: 'planner-add-block',
+              onPressed: () => _openEditor(start: _nextSlot(state.weekStart)),
+              icon: const Icon(AppIcons.add),
+              label: Text(l10n.plannerAddBlock),
+            ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  _WeekNavigator(
+                    focusNode: _weekFocus,
+                    weekStart: state.weekStart,
+                    onShift: (o) => _bloc.add(CalendarEvent.weekShifted(o)),
+                    onToday: _showToday(state.weekStart) ? _goToday : null,
+                  ),
+                  _Shortcuts(
+                    deadlinesKey: _deadlinesKey,
+                    onOpen: (path) async {
+                      await context.push(path);
+                      _bloc.add(const CalendarEvent.refreshed());
+                    },
+                  ),
+                  Expanded(child: _body(context, state)),
+                ],
+              ),
             ),
           ),
         );
@@ -478,40 +519,43 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
               ),
             ),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  _bloc.add(const CalendarEvent.refreshed());
-                  await _bloc.stream.first.timeout(
-                    const Duration(seconds: 10),
-                    onTimeout: () => _bloc.state,
-                  );
-                },
-                child: WeekCanvas(
-                  key: ValueKey((state.weekStart, _todayTick)),
-                  weekStart: state.weekStart,
-                  blocks: state.visibleBlocks,
-                  titles: state.blockTitles,
-                  busyIds: state.busyBlockIds,
-                  now: _now,
-                  focusAt: _focusOf(state),
-                  focusDay: _focusDayOf(),
-                  onVisibleDayChanged: (day) {
-                    if (mounted && day != _visibleDay) {
-                      setState(() => _visibleDay = day);
-                    }
+              child: KeyedSubtree(
+                key: _weekKey,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    _bloc.add(const CalendarEvent.refreshed());
+                    await _bloc.stream.first.timeout(
+                      const Duration(seconds: 10),
+                      onTimeout: () => _bloc.state,
+                    );
                   },
-                  onSlotTap: (start) =>
-                      _bloc.add(CalendarEvent.slotTapped(start)),
-                  onBlockTap: (b) => _openEditor(block: b),
-                  onReschedule: (b, start, end) => _bloc.add(
-                    CalendarEvent.blockRescheduled(
-                      blockId: b.id,
-                      start: start,
-                      end: end,
+                  child: WeekCanvas(
+                    key: ValueKey((state.weekStart, _todayTick)),
+                    weekStart: state.weekStart,
+                    blocks: state.visibleBlocks,
+                    titles: state.blockTitles,
+                    busyIds: state.busyBlockIds,
+                    now: _now,
+                    focusAt: _focusOf(state),
+                    focusDay: _focusDayOf(),
+                    onVisibleDayChanged: (day) {
+                      if (mounted && day != _visibleDay) {
+                        setState(() => _visibleDay = day);
+                      }
+                    },
+                    onSlotTap: (start) =>
+                        _bloc.add(CalendarEvent.slotTapped(start)),
+                    onBlockTap: (b) => _openEditor(block: b),
+                    onReschedule: (b, start, end) => _bloc.add(
+                      CalendarEvent.blockRescheduled(
+                        blockId: b.id,
+                        start: start,
+                        end: end,
+                      ),
                     ),
+                    onLockedBlockTouched: (b) =>
+                        _bloc.add(CalendarEvent.lockedBlockTouched(b.id)),
                   ),
-                  onLockedBlockTouched: (b) =>
-                      _bloc.add(CalendarEvent.lockedBlockTouched(b.id)),
                 ),
               ),
             ),
@@ -593,14 +637,18 @@ class _WeekNavigator extends StatelessWidget {
 /// «Entregas y exámenes» y «Concentrarme» (Pomodoro), en una sola fila
 /// compacta para no robar alto a la semana (ADR 0050).
 class _Shortcuts extends StatelessWidget {
-  const _Shortcuts({required this.onOpen});
+  const _Shortcuts({required this.onOpen, this.deadlinesKey});
 
   final ValueChanged<String> onOpen;
+
+  /// «Entregas» lleva la clave de la guía (ADR 0049).
+  final GlobalKey? deadlinesKey;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final deadlines = _ShortcutButton(
+      key: deadlinesKey,
       icon: AppIcons.delivery,
       label: l10n.plannerShortcutDeadlines,
       semanticLabel: l10n.plannerMenuDeadlines,
@@ -641,6 +689,7 @@ class _Shortcuts extends StatelessWidget {
 /// texto se acorta) empieza por el texto visible (WCAG 2.5.3).
 class _ShortcutButton extends StatelessWidget {
   const _ShortcutButton({
+    super.key,
     required this.icon,
     required this.label,
     required this.onPressed,

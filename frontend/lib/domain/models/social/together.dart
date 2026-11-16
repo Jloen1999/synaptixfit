@@ -234,6 +234,15 @@ abstract class StudyRoomTimes with _$StudyRoomTimes {
     required int focusMinutes,
     required int breakMinutes,
   }) = _StudyRoomTimes;
+
+  const StudyRoomTimes._();
+
+  /// Estos minutos dentro de los límites de [limits] (p. ej. los que llegan
+  /// del Pomodoro o de un enlace): nunca se manda algo que no vale.
+  StudyRoomTimes within(TogetherLimits limits) => StudyRoomTimes(
+    focusMinutes: limits.studyRoomFocusMinutes.clamp(focusMinutes),
+    breakMinutes: limits.studyRoomBreakMinutes.clamp(breakMinutes),
+  );
 }
 
 /// Valores permitidos, ambos incluidos.

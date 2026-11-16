@@ -393,5 +393,19 @@
   "plannerPomodoroLongBreakMinutes": "Minutos da pausa longa",
   "plannerPomodoroMinutesRecommended": "{minutes} min · Recomendado",
   "plannerPomodoroBreaksRemembered": "Também serão usadas da próxima vez.",
-  "plannerPomodoroBreaksSaved": "Pausas: {short} min, e {long} min a longa"
+  "plannerPomodoroBreaksSaved": "Pausas: {short} min, e {long} min a longa",
+  "guideCalendarAddTitle": "Adicionar ao calendário",
+  "guideCalendarAddBody": "Adiciona aulas, estudo, treinos ou o que quiseres.",
+  "guideCalendarDoneTitle": "Marcar como feito",
+  "guideCalendarDoneBody": "O que adicionares aparece aqui: toca para o marcar como feito.",
+  "guideCalendarDeadlinesTitle": "Entregas e exames",
+  "guideCalendarDeadlinesBody": "Todas as tuas entregas e exames, com os dias que faltam.",
+  "guideFocusStartTitle": "Começar a concentrar-me",
+  "guideFocusStartBody": "Põe o relógio a contar. Continua mesmo que saias daqui.",
+  "guideFocusFriendsTitle": "Estudar com amigos",
+  "guideFocusFriendsBody": "Estudem ao mesmo tempo, com o mesmo relógio para todos.",
+  "guideFocusSubjectTitle": "O que estudas",
+  "guideFocusSubjectBody": "Escolhe a disciplina: o tempo conta para ela.",
+  "guideFocusMinutesTitle": "Quantos minutos",
+  "guideFocusMinutesBody": "Ajusta o tempo de concentração antes de começar."
 }

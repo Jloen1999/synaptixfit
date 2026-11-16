@@ -557,5 +557,17 @@
   "academicScanZoomOut": "Réduire",
   "academicScanPrevPage": "Page précédente",
   "academicScanNextPage": "Page suivante",
-  "academicScanPageOf": "{page} sur {total}"
+  "academicScanPageOf": "{page} sur {total}",
+  "guideAcademicAddTitle": "Ajouter",
+  "guideAcademicAddBody": "Matières, notes (aussi en photo) et questions ou fiches avec l’IA : tout commence ici.",
+  "guideAcademicReviewsTitle": "Révisions en attente",
+  "guideAcademicReviewsBody": "Ce qu'il faut réviser aujourd'hui pour ne pas l'oublier.",
+  "guideAcademicSearchTitle": "Rechercher",
+  "guideAcademicSearchBody": "Trouve n'importe quelle matière, note, fichier ou rendu.",
+  "guideSubjectProgressTitle": "Progression",
+  "guideSubjectProgressBody": "Ce qui arrive, ton programme et tes résultats.",
+  "guideSubjectNotesTitle": "Notes et fichiers",
+  "guideSubjectNotesBody": "Tes notes et fichiers. Depuis chacun, tu peux réviser ou t’entraîner.",
+  "guideSubjectPracticeTitle": "S'entraîner",
+  "guideSubjectPracticeBody": "Fais un examen blanc avec des questions de tes notes pour voir où tu en es."
 }

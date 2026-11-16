@@ -21,7 +21,10 @@ import '../bloc/subject_progress_bloc.dart';
 
 /// Pestaña Progreso del detalle de asignatura.
 class ProgressTab extends StatelessWidget with ErrorsMessageMixin {
-  const ProgressTab({super.key});
+  const ProgressTab({super.key, this.practiceKey});
+
+  /// El simulacro lleva la clave de la guía de la asignatura (ADR 0049).
+  final GlobalKey? practiceKey;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +64,7 @@ class ProgressTab extends StatelessWidget with ErrorsMessageMixin {
                 ),
                 if (state.materials.isNotEmpty) ...[
                   const SizedBox(height: TokensSpacing.l),
-                  _MockExamCard(subjectId: state.subjectId),
+                  _MockExamCard(key: practiceKey, subjectId: state.subjectId),
                 ],
                 const SizedBox(height: TokensSpacing.l),
                 if (guide == null)
@@ -693,7 +696,7 @@ class _BibliographySection extends StatelessWidget {
 /// Invita a un simulacro con varios temas de la asignatura: la mejor manera
 /// de saber si se llega al examen.
 class _MockExamCard extends StatelessWidget {
-  const _MockExamCard({required this.subjectId});
+  const _MockExamCard({super.key, required this.subjectId});
 
   final String subjectId;
 

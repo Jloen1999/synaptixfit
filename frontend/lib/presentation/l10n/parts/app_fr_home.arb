@@ -183,5 +183,9 @@
   "homeTodayLeft": "Il te reste :",
   "homeTodayMissedAt": "{time}, pas fait",
   "homeTodayMore": "{count, plural, =0{et {count} de plus} =1{et 1 de plus} other{et {count} de plus}}",
-  "homeTodayMoreHint": "Voir dans l’agenda"
+  "homeTodayMoreHint": "Voir dans l’agenda",
+  "guideHomeDayTitle": "Ta journée",
+  "guideHomeDayBody": "Ce qui t'attend maintenant, avec un bouton pour le faire.",
+  "guideHomeWeekTitle": "Ta semaine",
+  "guideHomeWeekBody": "Touche un jour pour le voir dans le calendrier."
 }

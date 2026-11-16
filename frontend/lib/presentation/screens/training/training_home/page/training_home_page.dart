@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/guide_id.dart';
 import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/recommendation.dart';
 import '../../../../../domain/models/training/routine.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../shell/widgets/first_time_guide.dart';
 import '../../quick_check_in/page/quick_check_in_card.dart';
 import '../../training_routes.dart';
 import '../../widgets/continue_session_target.dart';
@@ -36,7 +38,7 @@ class TrainingHomePage extends StatelessWidget {
   }
 }
 
-class _TrainingHomeView extends StatelessWidget {
+class _TrainingHomeView extends StatefulWidget {
   const _TrainingHomeView();
 
   /// Abre una pantalla y recarga al volver (los datos pueden haber cambiado).
@@ -45,6 +47,16 @@ class _TrainingHomeView extends StatelessWidget {
     await context.push(location);
     if (!bloc.isClosed) bloc.add(const TrainingHomeEvent.refreshed());
   }
+
+  @override
+  State<_TrainingHomeView> createState() => _TrainingHomeViewState();
+}
+
+class _TrainingHomeViewState extends State<_TrainingHomeView> {
+  final _guide = _GymGuideKeys();
+
+  static Future<void> open(BuildContext context, String location) =>
+      _TrainingHomeView.open(context, location);
 
   Future<void> _newRoutine(BuildContext context) async {
     final l10n = context.localizations;
@@ -130,54 +142,114 @@ class _TrainingHomeView extends StatelessWidget {
         );
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppPageBar(
-            title: Text(l10n.tabTraining),
-            bottom: const TrainingSectionBar(current: TrainingSection.gym),
-            actions: [
-              IconButton(
-                tooltip: l10n.trainingHistoryTitle,
-                onPressed: () => open(context, TrainingPaths.history),
-                icon: const Icon(AppIcons.history),
+        // La guía, con Gimnasio ya cargado (ADR 0049).
+        _guide.empty = state.routines.isEmpty;
+        return FirstTimeGuide(
+          guide: GuideId.gym,
+          ready: state.status == HomeStatus.ready,
+          steps: _guide.steps,
+          child: Scaffold(
+            appBar: AppPageBar(
+              title: Text(l10n.tabTraining),
+              bottom: const TrainingSectionBar(current: TrainingSection.gym),
+              actions: [
+                IconButton(
+                  tooltip: l10n.trainingHistoryTitle,
+                  onPressed: () => open(context, TrainingPaths.history),
+                  icon: const Icon(AppIcons.history),
+                ),
+              ],
+            ),
+            body: switch (state.status) {
+              HomeStatus.loading => const AppSkeletonList(
+                height: TokensSize.skeletonCard,
               ),
-            ],
+              HomeStatus.failure => AppErrorView(
+                error: state.error!,
+                onRetry: () => context.read<TrainingHomeBloc>().add(
+                  const TrainingHomeEvent.started(),
+                ),
+              ),
+              HomeStatus.ready => RefreshIndicator(
+                onRefresh: () async {
+                  final bloc = context.read<TrainingHomeBloc>()
+                    ..add(const TrainingHomeEvent.refreshed());
+                  await bloc.stream.firstWhere((s) => !s.refreshing);
+                },
+                child: _HomeContent(
+                  guide: _guide,
+                  state: state,
+                  onNewRoutine: () => _newRoutine(context),
+                ),
+              ),
+            },
           ),
-          body: switch (state.status) {
-            HomeStatus.loading => const AppSkeletonList(
-              height: TokensSize.skeletonCard,
-            ),
-            HomeStatus.failure => AppErrorView(
-              error: state.error!,
-              onRetry: () => context.read<TrainingHomeBloc>().add(
-                const TrainingHomeEvent.started(),
-              ),
-            ),
-            HomeStatus.ready => RefreshIndicator(
-              onRefresh: () async {
-                final bloc = context.read<TrainingHomeBloc>()
-                  ..add(const TrainingHomeEvent.refreshed());
-                await bloc.stream.firstWhere((s) => !s.refreshing);
-              },
-              child: _HomeContent(
-                state: state,
-                onNewRoutine: () => _newRoutine(context),
-              ),
-            ),
-          },
         );
       },
     );
   }
 }
 
+/// Partes de Gimnasio que señala la guía la primera vez (ADR 0049): el
+/// próximo entreno, «Mis rutinas» y las plantillas. Van por clave: si
+/// Gimnasio se reordena, cada clave se mueve con su parte.
+class _GymGuideKeys {
+  final start = GlobalKey(debugLabel: 'guide-gym-start');
+  final routines = GlobalKey(debugLabel: 'guide-gym-routines');
+  final templates = GlobalKey(debugLabel: 'guide-gym-templates');
+
+  /// Sin rutinas aún, cada paso dice lo que hay de verdad (no «Continuar» ni
+  /// «Nueva rutina», que todavía no salen).
+  bool empty = false;
+
+  List<AppGuideStep> steps(BuildContext context) {
+    final l10n = context.localizations;
+    return [
+      AppGuideStep(
+        target: start,
+        title: empty ? l10n.guideGymStartEmptyTitle : l10n.guideGymStartTitle,
+        body: empty ? l10n.guideGymStartEmptyBody : l10n.guideGymStartBody,
+      ),
+      AppGuideStep(
+        target: routines,
+        title: l10n.guideGymRoutinesTitle,
+        body: empty
+            ? l10n.guideGymRoutinesEmptyBody
+            : l10n.guideGymRoutinesBody,
+      ),
+      AppGuideStep(
+        target: templates,
+        title: l10n.guideGymTemplatesTitle,
+        body: l10n.guideGymTemplatesBody,
+      ),
+    ];
+  }
+}
+
 /// Lo que se ve en Gimnasio, de arriba abajo: el próximo entreno, «¿Qué tal
 /// estás hoy?» plegado, tus rutinas (con «Nueva rutina» en su cabecera, no
-/// flotando sobre los botones) y, plegadas, las sugerencias (ADR 0039).
-class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.state, required this.onNewRoutine});
+/// flotando sobre los botones) y, plegadas, las sugerencias (ADR 0039). La
+/// guía la primera vez señala sus partes por clave (ADR 0049): si Gimnasio se
+/// reordena, basta con mover cada clave con su parte.
+class _HomeContent extends StatefulWidget {
+  const _HomeContent({
+    required this.state,
+    required this.onNewRoutine,
+    required this.guide,
+  });
 
   final TrainingHomeState state;
   final VoidCallback onNewRoutine;
+  final _GymGuideKeys guide;
+
+  @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<_HomeContent> {
+  TrainingHomeState get state => widget.state;
+  VoidCallback get onNewRoutine => widget.onNewRoutine;
+  _GymGuideKeys get _guide => widget.guide;
 
   @override
   Widget build(BuildContext context) {
@@ -236,6 +308,7 @@ class _HomeContent extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.m),
               ],
               _PendingDayCard(
+                key: _guide.start,
                 pendingDay: state.pendingDay,
                 starting: state.startingSession,
                 busy: state.working,
@@ -263,6 +336,8 @@ class _HomeContent extends StatelessWidget {
               const QuickCheckInCard(),
               const SizedBox(height: TokensSpacing.l),
               AppSectionHeader(
+                // Sin rutinas, la guía señala la tarjeta con los botones.
+                key: state.routines.isEmpty ? null : _guide.routines,
                 title: l10n.trainingMyRoutines,
                 actionLabel: state.routines.isEmpty
                     ? null
@@ -271,6 +346,7 @@ class _HomeContent extends StatelessWidget {
               ),
               if (state.routines.isEmpty)
                 AppCard(
+                  key: _guide.routines,
                   child: AppEmptyState.compact(
                     icon: Icons.fitness_center_rounded,
                     title: l10n.trainingNoRoutinesTitle,
@@ -338,6 +414,7 @@ class _HomeContent extends StatelessWidget {
               const SizedBox(height: TokensSpacing.l),
               AppSectionHeader(title: l10n.trainingMoreTools),
               _QuickAccess(
+                templatesKey: _guide.templates,
                 onOpen: (path) => _TrainingHomeView.open(context, path),
               ),
             ],
@@ -350,6 +427,7 @@ class _HomeContent extends StatelessWidget {
 
 class _PendingDayCard extends StatelessWidget {
   const _PendingDayCard({
+    super.key,
     required this.pendingDay,
     required this.starting,
     required this.busy,
@@ -666,9 +744,12 @@ class _RecommendationsState extends State<_Recommendations> {
 }
 
 class _QuickAccess extends StatelessWidget {
-  const _QuickAccess({required this.onOpen});
+  const _QuickAccess({required this.onOpen, this.templatesKey});
 
   final ValueChanged<String> onOpen;
+
+  /// El acceso a las plantillas lleva la clave de la guía (ADR 0049).
+  final GlobalKey? templatesKey;
 
   @override
   Widget build(BuildContext context) {
@@ -697,6 +778,7 @@ class _QuickAccess extends StatelessWidget {
       children: [
         for (final (icon, label, path) in items)
           AppCard(
+            key: path == TrainingPaths.templates ? templatesKey : null,
             onTap: () => onOpen(path),
             child: Row(
               children: [

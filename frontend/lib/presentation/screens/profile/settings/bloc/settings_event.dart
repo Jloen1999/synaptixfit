@@ -7,6 +7,10 @@ sealed class SettingsEvent with _$SettingsEvent {
   /// «Cerrar sesión»: el bloc mira si hay datos sin subir antes.
   const factory SettingsEvent.logoutRequested() = SettingsLogoutRequested;
 
+  /// «Ver las guías otra vez» de la cuenta [accountId] (ADR 0049).
+  const factory SettingsEvent.guidesResetRequested(String accountId) =
+      SettingsGuidesResetRequested;
+
   /// Baja de la cuenta: contraseña si la tiene, o confirmación explícita si es
   /// solo de Google.
   const factory SettingsEvent.deleteRequested({

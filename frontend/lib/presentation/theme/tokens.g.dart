@@ -206,6 +206,7 @@ abstract final class TokensOpacity {
   static const double coverTintDark = 0.14;
   static const double disabled = 0.5;
   static const double blinkMin = 0.25;
+  static const double guideScrim = 0.72;
 }
 
 abstract final class TokensFont {

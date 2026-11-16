@@ -183,5 +183,9 @@
   "homeTodayLeft": "Falta:",
   "homeTodayMissedAt": "{time}, por fazer",
   "homeTodayMore": "{count, plural, =0{e mais {count}} =1{e mais 1} other{e mais {count}}}",
-  "homeTodayMoreHint": "Ver na agenda"
+  "homeTodayMoreHint": "Ver na agenda",
+  "guideHomeDayTitle": "O teu dia",
+  "guideHomeDayBody": "O que tens agora, com um botão para o fazer.",
+  "guideHomeWeekTitle": "A tua semana",
+  "guideHomeWeekBody": "Toca num dia para o ver no calendário."
 }

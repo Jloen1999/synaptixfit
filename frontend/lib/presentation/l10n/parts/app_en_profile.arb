@@ -419,5 +419,9 @@
   "profileBirthDateAdd": "Add",
   "profileErrorInvalidBirthDate": "Check your date of birth: it can't be in the future and your age must be between 14 and 100.",
   "profileEnrollmentShort": "Import enrolment",
-  "profileLogoutUnsentMessage": "You have sets or a run that haven't been uploaded. If you sign out now, they'll be lost."
+  "profileLogoutUnsentMessage": "You have sets or a run that haven't been uploaded. If you sign out now, they'll be lost.",
+  "profileSettingsHelpGroup": "Help",
+  "profileGuidesReset": "Show the guides again",
+  "profileGuidesResetHint": "They show up again when you open each screen.",
+  "profileGuidesResetDone": "Done: the guides will show up again."
 }
