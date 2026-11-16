@@ -272,7 +272,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `CYCLE_TRACKING_OFF` | 409 | Apuntar un día del ciclo con el seguimiento desactivado | Activa el seguimiento del ciclo para apuntar días. | Activo |
 | `CYCLE_DAY_OUT_OF_RANGE` | 422 | Día del ciclo del futuro o de hace más de un año | Solo puedes apuntar hoy o días del último año. | Activo |
 | `SESSION_NOT_FOUND` | 404 | La sesión no existe o es ajena | No encontramos esa sesión. | Activo |
-| `SESSION_SET_NOT_FOUND` | 404 | La serie no existe en la sesión | Esa serie no existe. | Activo |
+| `SESSION_SET_NOT_FOUND` | 404 | La serie no existe en la sesión (también al calibrar una serie que aún no se ha guardado o que no se calibra: no es la primera serie de un ejercicio nuevo, o la sesión está abandonada; ADR 0054) | Esa serie no existe. | Activo |
 | `SESSION_ALREADY_COMPLETED` | 409 | Modificar una sesión finalizada | Esta sesión ya está finalizada. | Activo |
 | `SESSION_NOT_COMPLETED` | 409 | Desmarcar o corregir una sesión no finalizada | Esta sesión no está finalizada. | Activo |
 | `SESSION_DAY_MISMATCH` | 400 | Día sin rutina o de otra rutina | Ese día no pertenece a la rutina. | Activo |

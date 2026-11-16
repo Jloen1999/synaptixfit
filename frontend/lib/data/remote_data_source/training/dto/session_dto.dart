@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'routine_dto.dart' show blankToNull;
 import '../../../../domain/enums/training_enums.dart';
+import '../../../../domain/models/training/exercise_calibration.dart';
 import '../../../../domain/models/training/load_suggestion.dart';
 import '../../../../domain/models/training/session.dart';
 import '../../../../domain/models/training/session_adaptation.dart';
@@ -243,6 +244,33 @@ abstract class PastSessionResponseDto with _$PastSessionResponseDto {
   PastSessionResult toDomain() => PastSessionResult(
     session: session.toDomain(),
     experience: experience.toDomain(),
+  );
+}
+
+/// Ejercicio que se calibra (`GET|POST /sessions/{id}/calibrations`, ADR 0054).
+@freezed
+abstract class CalibrationTargetDto with _$CalibrationTargetDto {
+  const factory CalibrationTargetDto({
+    required String plannedExerciseId,
+    required String exerciseId,
+    String? answer,
+    int? setNumber,
+    String? step,
+    double? nextWeightKg,
+  }) = _CalibrationTargetDto;
+
+  const CalibrationTargetDto._();
+
+  factory CalibrationTargetDto.fromJson(Map<String, dynamic> json) =>
+      _$CalibrationTargetDtoFromJson(json);
+
+  ExerciseCalibration toDomain() => ExerciseCalibration(
+    plannedExerciseId: plannedExerciseId,
+    exerciseId: exerciseId,
+    answer: CalibrationAnswer.fromApi(answer),
+    setNumber: setNumber,
+    step: CalibrationStep.fromApi(step),
+    nextWeightKg: nextWeightKg,
   );
 }
 

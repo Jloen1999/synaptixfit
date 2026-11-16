@@ -8,6 +8,7 @@ import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.MeasurementType;
 import com.synaptixfit.domain.model.training.Modality;
 import com.synaptixfit.domain.model.training.PlannedExercise;
+import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.domain.model.training.generation.CompletedSessionSummary.PerformedSet;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** Propuesta de carga dentro de la sesión («Hoy prueba 42 kg (+5 %)»), desde la última vez. */
+/** Propuesta de carga dentro de la sesión («Hoy prueba 42,5 kg»), desde la última vez. */
 class LoadSuggestionsTest {
 
     private static final Instant NOW = Instant.parse("2026-11-02T10:00:00Z");
@@ -47,7 +48,7 @@ class LoadSuggestionsTest {
     }
 
     @Test
-    void atTheTopOfTheRepRangeWithLowEffortProposesFivePercentMoreWeight() {
+    void atTheTopOfTheRepRangeWithLowEffortProposesOneMaterialStepMoreWeight() {
         PlannedExercise p = bench(15, 40.0);
 
         List<LoadSuggestion> s = LoadSuggestions.forDay(List.of(p),
@@ -57,8 +58,8 @@ class LoadSuggestionsTest {
             assertThat(x.plannedExerciseId()).isEqualTo(p.id());
             assertThat(x.metric()).isEqualTo(Metric.WEIGHT);
             assertThat(x.previous()).isEqualTo(40.0);
-            assertThat(x.suggested()).isEqualTo(42.0);
-            assertThat(x.changePercent()).isEqualTo(5);
+            assertThat(x.suggested()).isEqualTo(42.5);
+            assertThat(x.changePercent()).isEqualTo(6);
             assertThat(x.reason()).isEqualTo(AdjustmentReason.LOW_RPE_MORE_WEIGHT);
             assertThat(x.lastRpe()).isEqualTo(6);
             assertThat(x.increases()).isTrue();
@@ -73,7 +74,7 @@ class LoadSuggestionsTest {
         List<LoadSuggestion> s = LoadSuggestions.forDay(List.of(pyramid),
                 List.of(session(BENCH, 3, 6, 3, 15, 40.0, 0, null)), HYPERTROPHY, NOW);
 
-        assertThat(s).singleElement().satisfies(x -> assertThat(x.perSet()).containsExactly(21.0, 31.5, 42.0));
+        assertThat(s).singleElement().satisfies(x -> assertThat(x.perSet()).containsExactly(21.5, 32.0, 42.5));
     }
 
     @Test
@@ -114,9 +115,23 @@ class LoadSuggestionsTest {
     }
 
     @Test
+    void withARepRangeTwoSessionsInARowBelowTheMinimumLowerTenPercent() {
+        PlannedExercise ranged = new PlannedExercise(UUID.randomUUID(), BENCH, new ExerciseParameters(3, 8, 90, 40.0,
+                null, null, null, null, null, null, new RepRange(8, 12, 2)), 1, null);
+
+        assertThat(LoadSuggestions.forDay(List.of(ranged), List.of(session(BENCH, 2, 8, 3, 6, 40.0, 0, null)),
+                HYPERTROPHY, NOW)).isEmpty();
+        assertThat(LoadSuggestions.forDay(List.of(ranged), List.of(session(BENCH, 2, 8, 3, 6, 40.0, 0, null),
+                session(BENCH, 5, 8, 3, 7, 40.0, 0, null)), HYPERTROPHY, NOW)).singleElement().satisfies(x -> {
+                    assertThat(x.suggested()).isEqualTo(36.0);
+                    assertThat(x.reason()).isEqualTo(AdjustmentReason.FAILED_REPS);
+                });
+    }
+
+    @Test
     void noSuggestionWhenTheRoutineAlreadyAsksForIt() {
-        // La sugerencia de después de la sesión ya se aplicó: la rutina pide 42 kg.
-        assertThat(LoadSuggestions.forDay(List.of(bench(15, 42.0)),
+        // La sugerencia de después de la sesión ya se aplicó: la rutina pide 42,5 kg.
+        assertThat(LoadSuggestions.forDay(List.of(bench(15, 42.5)),
                 List.of(session(BENCH, 3, 6, 3, 15, 40.0, 0, null)), HYPERTROPHY, NOW)).isEmpty();
     }
 

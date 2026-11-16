@@ -87,6 +87,8 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
     static final int PAST_SESSION_MAX_DAYS = 7;
     /** Hora a la que se fecha una sesión pasada de otro día (la del día no se conoce). */
     static final LocalTime PAST_SESSION_TIME = LocalTime.NOON;
+    /** Sesiones anteriores que se miran para la doble progresión: basta con encontrar la anterior de cada ejercicio. */
+    static final int RECENT_FOR_PROGRESSION = 20;
 
     private final TrainingSessionRepositoryPort sessions;
     private final RoutineRepositoryPort routines;
@@ -249,7 +251,9 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         Map<UUID, PlannedExercise> plannedById = planned.stream()
                 .collect(Collectors.toMap(PlannedExercise::id, Function.identity()));
         TrainingGoal goal = routine.map(Routine::goal).orElse(TrainingGoal.HYPERTROPHY);
-        List<Recommendation> suggestions = SessionFeedback.afterSession(saved, plannedById, GoalParameters.of(goal), now);
+        // Las sesiones anteriores deciden «dos seguidas sin llegar al mínimo del rango» (ADR 0054).
+        List<Recommendation> suggestions = SessionFeedback.afterSession(saved, plannedById, GoalParameters.of(goal),
+                now, sessions.recentCompleted(c.userId(), RECENT_FOR_PROGRESSION));
         recommendations.saveAll(suggestions);
 
         events.publish(new TrainingSessionCompletionChanged(c.userId(), saved.id(), day, c.rpe(),

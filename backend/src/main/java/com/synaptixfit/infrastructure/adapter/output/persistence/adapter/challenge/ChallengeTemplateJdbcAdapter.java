@@ -18,8 +18,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
 /**
- * Implementa {@link ChallengeTemplateRepositoryPort} sobre {@code plantillas_reto} y sus textos (V1062). Los textos se
- * toman en el idioma pedido y, si faltan, en español.
+ * Implementa {@link ChallengeTemplateRepositoryPort} sobre {@code plantillas_reto} y sus textos (V1062; retiradas con
+ * {@code activa}, V1072). Los textos se toman en el idioma pedido y, si faltan, en español.
  */
 @Component
 public class ChallengeTemplateJdbcAdapter implements ChallengeTemplateRepositoryPort {
@@ -32,19 +32,20 @@ public class ChallengeTemplateJdbcAdapter implements ChallengeTemplateRepository
         this.jdbc = jdbc;
     }
 
-    private record Head(UUID id, String code, ChallengeType type, Difficulty difficulty, int days, ChallengeRule rule) {
+    private record Head(UUID id, String code, ChallengeType type, Difficulty difficulty, int days, ChallengeRule rule,
+                        boolean active) {
     }
 
     @Override
     public List<ChallengeTemplate> findAll(String language) {
         List<Head> heads = jdbc.sql("SELECT id, codigo, tipo, dificultad, dias, metrica, unidad, por_unidad, objetivo,"
-                        + " solo_laborables FROM plantillas_reto ORDER BY orden, codigo")
+                        + " solo_laborables, activa FROM plantillas_reto ORDER BY orden, codigo")
                 .query((rs, n) -> new Head(rs.getObject("id", UUID.class), rs.getString("codigo"),
                         ChallengeType.valueOf(rs.getString("tipo").toUpperCase(Locale.ROOT)),
                         ChallengePersistenceMapper.difficultyToDomain(rs.getString("dificultad")), rs.getInt("dias"),
                         new ChallengeRule(RuleMetric.valueOf(rs.getString("metrica")),
                                 RuleUnit.valueOf(rs.getString("unidad")), rs.getInt("por_unidad"),
-                                rs.getInt("objetivo"), rs.getBoolean("solo_laborables"))))
+                                rs.getInt("objetivo"), rs.getBoolean("solo_laborables")), rs.getBoolean("activa")))
                 .list();
         if (heads.isEmpty()) {
             return List.of();
@@ -65,7 +66,7 @@ public class ChallengeTemplateJdbcAdapter implements ChallengeTemplateRepository
         return heads.stream()
                 .filter(h -> texts.containsKey(h.id()))
                 .map(h -> new ChallengeTemplate(h.id(), h.code(), h.type(), h.difficulty(), h.days(), h.rule(),
-                        texts.get(h.id())[0], texts.get(h.id())[1]))
+                        texts.get(h.id())[0], texts.get(h.id())[1], h.active()))
                 .toList();
     }
 

@@ -4,6 +4,7 @@ import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.MeasurementType;
 import com.synaptixfit.domain.model.training.PlannedExercise;
+import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.generation.CompletedSessionSummary.PerformedSet;
 import com.synaptixfit.domain.model.training.generation.LoadSuggestion.Metric;
@@ -26,6 +27,8 @@ import java.util.Optional;
  *   <li>La base es lo que se hizo de verdad (la serie de más peso, el aguante, tiempo o distancia más
  *       largos), no lo planificado: si alguien subió por su cuenta, se progresa desde ahí.</li>
  *   <li>Solo cambia la carga de hoy; las series no (quitar una serie es cosa de la sugerencia de la rutina).</li>
+ *   <li>Con rango de repeticiones (ADR 0054), doble progresión con el escalón del material; «dos sesiones seguidas
+ *       sin llegar al mínimo» mira también la sesión anterior a la última.</li>
  *   <li>Sin propuesta si la última vez fue hace más de {@value ProgressionCalculator#INACTIVITY_DAYS} días
  *       (manda la descarga por inactividad), si no hubo RPE o si la rutina ya pide esa cifra (la sugerencia
  *       se aplicó: proponerla otra vez la duplicaría).</li>
@@ -58,11 +61,11 @@ public final class LoadSuggestions {
                 || Duration.between(last.completedAt(), now).toDays() > ProgressionCalculator.INACTIVITY_DAYS) {
             return Optional.empty();
         }
-        List<SessionSet> sets = last.sets().stream().filter(x -> sameExercise(x, p)).map(PerformedSet::set)
-                .toList();
+        List<SessionSet> sets = setsOf(last, p);
         Collection<MeasurementType> types = p.exercise().measurementTypes();
         ExerciseParameters base = performed(p.parameters(), types, sets);
-        ProgressionCalculator.Result r = ProgressionCalculator.progress(base, types, last.rpe(), sets, goal);
+        ProgressionCalculator.Result r = ProgressionCalculator.progress(base, types, last.rpe(), sets, goal,
+                p.exercise().load(), belowMinBefore(recent, last, p));
         if (r.reason() == null) {
             return Optional.empty();
         }
@@ -99,6 +102,24 @@ public final class LoadSuggestions {
         };
     }
 
+    private static List<SessionSet> setsOf(CompletedSessionSummary session, PlannedExercise p) {
+        return session.sets().stream().filter(x -> sameExercise(x, p)).map(PerformedSet::set).toList();
+    }
+
+    /** ¿La sesión con este ejercicio anterior a {@code last} tampoco llegó al mínimo del rango? */
+    static boolean belowMinBefore(List<CompletedSessionSummary> recent, CompletedSessionSummary last,
+                                  PlannedExercise p) {
+        RepRange range = p.parameters().repRange();
+        if (range == null) {
+            return false;
+        }
+        return recent.stream().dropWhile(s -> s != last).skip(1)
+                .filter(s -> s.sets().stream().anyMatch(x -> sameExercise(x, p)))
+                .findFirst()
+                .map(s -> setsOf(s, p).stream().anyMatch(x -> x.repsDone() != null && x.repsDone() < range.min()))
+                .orElse(false);
+    }
+
     private static boolean sameExercise(PerformedSet x, PlannedExercise p) {
         return Objects.equals(x.exerciseId(), p.exerciseId());
     }
@@ -127,7 +148,7 @@ public final class LoadSuggestions {
         Integer duration = !isometric && longest != null && plan.targetDurationSeconds() != null
                 ? longest : plan.targetDurationSeconds();
         return ExerciseParameters.clamped(plan.sets(), reps, plan.restSeconds(), weight, null, duration, distance,
-                iso);
+                iso).withRepRange(plan.repRange());
     }
 
     /**

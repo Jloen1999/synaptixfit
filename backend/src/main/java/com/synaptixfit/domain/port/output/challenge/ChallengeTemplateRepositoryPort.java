@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Catálogo de plantillas de reto (solo lectura, ADR 0043), con los textos en el idioma pedido o en español. */
+/**
+ * Catálogo de plantillas de reto (solo lectura, ADR 0043), con los textos en el idioma pedido o en español. Devuelve
+ * también las retiradas ({@code active} falso, ADR 0054): ofrecerlas o no lo decide {@code availableFor}.
+ */
 public interface ChallengeTemplateRepositoryPort {
 
     List<ChallengeTemplate> findAll(String language);

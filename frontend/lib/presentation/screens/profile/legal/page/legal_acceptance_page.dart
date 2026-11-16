@@ -34,10 +34,13 @@ class _LegalAcceptanceViewState extends State<_LegalAcceptanceView>
   final _formKey = GlobalKey<FormState>();
   bool _leaving = false;
 
+  /// Casilla opcional del texto nuevo del permiso de salud; empieza sin marcar.
+  bool _healthUpdate = false;
+
   void _accept() {
     if (!_formKey.currentState!.validate()) return;
     context.read<LegalAcceptanceBloc>().add(
-      const LegalAcceptanceEvent.accepted(),
+      LegalAcceptanceEvent.accepted(healthUpdate: _healthUpdate),
     );
   }
 
@@ -99,6 +102,37 @@ class _LegalAcceptanceViewState extends State<_LegalAcceptanceView>
                           autofocus: true,
                           requiredMessage: l10n.profileLegalCheckboxRequired,
                         ),
+                        if (state.offerHealthUpdate) ...[
+                          const SizedBox(height: TokensSpacing.l),
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              l10n.profileLegalHealthUpdateTitle,
+                              style: context.textStyles.titleMedium,
+                            ),
+                          ),
+                          const SizedBox(height: TokensSpacing.xs),
+                          Text(
+                            l10n.profileLegalHealthUpdateBody,
+                            style: context.textStyles.bodyMedium,
+                          ),
+                          AppFocusOutline(
+                            child: CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              value: _healthUpdate,
+                              onChanged: busy
+                                  ? null
+                                  : (value) => setState(
+                                      () => _healthUpdate = value ?? false,
+                                    ),
+                              title: Text(
+                                l10n.profileLegalHealthUpdateCheckbox,
+                                style: context.textStyles.bodyMedium,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (state.error case final error?) ...[
                           const SizedBox(height: TokensSpacing.s),
                           AppInlineMessage(

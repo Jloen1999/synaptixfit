@@ -3,6 +3,8 @@ package com.synaptixfit.application.service.training;
 import com.synaptixfit.application.port.input.insights.GetCognitiveStateUseCase;
 import com.synaptixfit.application.port.input.insights.GetCrossRegulationUseCase;
 import com.synaptixfit.application.port.input.training.GenerateRoutineProposalUseCase;
+import com.synaptixfit.application.port.input.training.GetStartingLoadsUseCase;
+import com.synaptixfit.domain.model.training.TemplateLevel;
 import com.synaptixfit.application.port.input.training.RefineRoutineProposalUseCase;
 import com.synaptixfit.domain.exception.ExternalServiceException;
 import com.synaptixfit.domain.exception.training.NoCompatibleExercisesException;
@@ -74,6 +76,7 @@ public class RoutineGenerationService implements GenerateRoutineProposalUseCase,
     private final RoutineGeneratorPort generator;
     private final GetCognitiveStateUseCase cognitiveState;
     private final GetCrossRegulationUseCase crossRegulation;
+    private final GetStartingLoadsUseCase startingLoads;
     private final Clock clock;
     private final ZoneId zone;
 
@@ -84,7 +87,9 @@ public class RoutineGenerationService implements GenerateRoutineProposalUseCase,
     public RoutineGenerationService(TrainingContextPort context, ExerciseRepositoryPort exercises,
                                     TrainingSessionRepositoryPort sessions, DailyCheckInRepositoryPort checkIns,
                                     RoutineGeneratorPort generator, GetCognitiveStateUseCase cognitiveState,
-                                    GetCrossRegulationUseCase crossRegulation, Clock clock, ZoneId zone) {
+                                    GetCrossRegulationUseCase crossRegulation, GetStartingLoadsUseCase startingLoads,
+                                    Clock clock, ZoneId zone) {
+        this.startingLoads = startingLoads;
         this.context = context;
         this.exercises = exercises;
         this.sessions = sessions;
@@ -124,6 +129,7 @@ public class RoutineGenerationService implements GenerateRoutineProposalUseCase,
         days = ContextAdjuster.filterByCheckIn(days, in.checkIn(), in.catalog());
         days = GoalTransition.apply(days, transition);
         days = progress(days, in, template.parameters());
+        days = withStartingLoads(c.userId(), days, in.profile());
 
         List<String> reasons = new ArrayList<>(adjustment.reasons());
         if (transition.reason() != null) {
@@ -221,6 +227,25 @@ public class RoutineGenerationService implements GenerateRoutineProposalUseCase,
             return e.withParameters(ProgressionCalculator.progress(e.parameters(), exercise.measurementTypes(),
                     perf.rpe(), perf.lastSets(), params).parameters());
         })).toList();
+    }
+
+    /**
+     * Peso de partida (ADR 0054) en los ejercicios con kilos que aún no lo tienen, con la misma regla que las
+     * plantillas: historial, fracción del peso corporal (solo con consentimiento de salud) o peso por defecto, redondeo
+     * al material y topes. Quien declara una actividad moderada o alta cuenta como quien ya entrena: sin historial, lo
+     * ajusta la calibración.
+     */
+    private List<ProposedDay> withStartingLoads(UUID userId, List<ProposedDay> days, TrainingProfile profile) {
+        List<UUID> ids = days.stream().flatMap(d -> d.exercises().stream())
+                .filter(e -> e.parameters().weightKg() == null).map(ProposedExercise::exerciseId).distinct().toList();
+        TemplateLevel level = TemplateLevel.forActivity(profile.activityLevel());
+        Map<UUID, Double> weights = startingLoads.startingLoads(userId, ids, level);
+        if (weights.isEmpty()) {
+            return days;
+        }
+        return days.stream().map(d -> d.mapExercises(e -> e.parameters().weightKg() == null
+                && weights.containsKey(e.exerciseId())
+                ? e.withParameters(e.parameters().withUniformWeight(weights.get(e.exerciseId()))) : e)).toList();
     }
 
     private static Map<UUID, Exercise> exercisesOf(List<ProposedDay> days, Map<UUID, Exercise> catalogById) {

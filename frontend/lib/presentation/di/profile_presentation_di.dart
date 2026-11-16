@@ -41,7 +41,12 @@ void registerProfilePresentation(GetIt getIt) {
     ..registerFactory(() => LegalDocumentBloc(getDocument: getIt()))
     // Una sola puerta para toda la app: la consulta el router (ADR 0034).
     ..registerLazySingleton(
-      () => LegalAcceptanceBloc(getAcceptance: getIt(), accept: getIt()),
+      () => LegalAcceptanceBloc(
+        getAcceptance: getIt(),
+        accept: getIt(),
+        getHealthConsent: getIt(),
+        giveHealthConsent: getIt(),
+      ),
     )
     ..registerFactory(() => EnrollmentImportBloc(read: getIt(), apply: getIt()))
     ..registerFactoryParam<LanguageBloc, AppLanguage?, void>(

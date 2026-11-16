@@ -74,6 +74,16 @@ abstract class LiveSessionState with _$LiveSessionState {
     @Default(<String, LoadSuggestion>{})
     Map<String, LoadSuggestion> loadSuggestions,
 
+    /// Ejercicios que se calibran en su primera serie (ADR 0054), por id de
+    /// ejercicio planificado, con la respuesta y el peso siguiente si ya se
+    /// dio.
+    @Default(<String, ExerciseCalibration>{})
+    Map<String, ExerciseCalibration> calibrations,
+
+    /// Huecos cuya respuesta de calibración no llegó al servidor (sin
+    /// conexión, serie aún sin subir): el peso no cambia y se dice.
+    @Default(<String>{}) Set<String> calibrationFailed,
+
     /// Calentamiento y vuelta a la calma sugeridos para los ejercicios del día.
     SessionBookends? bookends,
 
@@ -189,6 +199,50 @@ abstract class LiveSessionState with _$LiveSessionState {
   static String draftKey(String exerciseId, int set, SetField field) =>
       '$exerciseId/$set/${field.name}';
 
+  /// Pregunta de calibración pendiente tras la serie [set] de [e]: solo tras
+  /// la primera serie de trabajo de un ejercicio que se calibra y aún sin
+  /// respuesta (ADR 0054).
+  bool asksCalibration(PlannedExercise e, int set) {
+    final c = calibrations[e.id];
+    return c != null && !c.answered && set == 1;
+  }
+
+  /// Serie de trabajo dueña del descanso en curso (nula sin descanso o si se
+  /// puso a mano).
+  SessionSet? get restOwner => restForSet == null
+      ? null
+      : session?.sets
+            .where(
+              (x) =>
+                  LiveSessionBloc.restKey(x.plannedExerciseId, x.setNumber) ==
+                  restForSet,
+            )
+            .firstOrNull;
+
+  /// Ejercicio planificado de la serie dueña del descanso.
+  PlannedExercise? get restExercise {
+    final owner = restOwner;
+    return owner == null
+        ? null
+        : exercises.where((e) => e.id == owner.plannedExerciseId).firstOrNull;
+  }
+
+  /// En este descanso toca preguntar «¿Cuántas repeticiones más…?».
+  bool get asksCalibrationNow {
+    final e = restExercise;
+    final owner = restOwner;
+    return e != null && owner != null && asksCalibration(e, owner.setNumber);
+  }
+
+  /// Calibración ya respondida tras la serie de este descanso (nula si no).
+  ExerciseCalibration? get restCalibration {
+    final e = restExercise;
+    final c = e == null ? null : calibrations[e.id];
+    return c != null && c.answered && c.setNumber == restOwner?.setNumber
+        ? c
+        : null;
+  }
+
   /// Cifra de partida de la serie [set] de [e] en el campo [f]: una sola, sin
   /// cifras que compitan (la fila, la barra y el descanso enseñan esta).
   ///
@@ -204,6 +258,16 @@ abstract class LiveSessionState with _$LiveSessionState {
         .where((x) => x.setNumber == set - 1)
         .firstOrNull;
     final load = loadSuggestions[e.id];
+    // La calibración (ADR 0054) fija el peso de la serie que sigue a la
+    // respondida; las demás siguen lo real de la serie anterior.
+    final calibrated = calibrations[e.id];
+    if (f == SetField.weight &&
+        calibrated?.nextWeightKg != null &&
+        calibrated?.setNumber != null &&
+        set == calibrated!.setNumber! + 1 &&
+        p.weightsKg == null) {
+      return calibrated.nextWeightKg;
+    }
     final planPerSet = switch (f) {
       SetField.reps => p.repsPerSet != null,
       SetField.weight => p.weightsKg != null,

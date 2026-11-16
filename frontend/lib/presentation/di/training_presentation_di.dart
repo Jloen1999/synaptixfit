@@ -120,6 +120,8 @@ void registerTrainingPresentation(GetIt getIt) {
         getBookends: getIt(),
         getAdaptation: getIt(),
         getLoadSuggestions: getIt(),
+        getCalibrations: getIt(),
+        calibrate: getIt(),
         loadPending: getIt(),
         savePending: getIt(),
         pauseSession: getIt(),

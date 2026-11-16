@@ -84,10 +84,9 @@ public final class Periodization {
         }
         int sets = Math.max(1, (int) Math.round(p.sets() * setFactor));
         Double weight = p.weightKg() == null ? null : p.weightKg() * loadFactor;
-        List<Double> perSet = weight != null && weight > 0 ? ProgressionCalculator.warmupWeights(weight, sets) : null;
         Integer duration = p.targetDurationSeconds() == null ? null : (int) Math.round(p.targetDurationSeconds() * timeFactor);
         Integer distance = p.distanceMeters() == null ? null : (int) Math.round(p.distanceMeters() * timeFactor);
-        return e.withParameters(ExerciseParameters.clamped(sets, p.reps(), p.restSeconds(), weight, perSet, duration,
-                distance, p.isometricSeconds()));
+        return e.withParameters(ExerciseParameters.clamped(sets, p.reps(), p.restSeconds(), weight, null, duration,
+                distance, p.isometricSeconds()).withRepRange(p.repRange()));
     }
 }

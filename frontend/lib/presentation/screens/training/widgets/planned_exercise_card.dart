@@ -278,6 +278,10 @@ String plannedSummary(
       range([
         for (final n in sets) p.holdForSet(n) ?? 0,
       ], l10n.trainingSecondsUnit)
+    // Con rango (plantillas, ADR 0054) se enseña el rango: la cifra de cada
+    // serie va en su fila.
+    else if (p.hasRepRange && p.repsPerSet == null)
+      range([p.repMin!, p.repMax!], l10n.trainingRepsUnit)
     else
       range([for (final n in sets) p.repsForSet(n)], l10n.trainingRepsUnit),
     if (fields.has(SetField.weight) && weights.isNotEmpty)

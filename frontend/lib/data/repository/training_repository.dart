@@ -1,6 +1,7 @@
 import '../../domain/errors/app_error.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/models/result/result.dart';
+import '../../domain/models/training/exercise_calibration.dart';
 import '../../domain/models/training/recommendation.dart';
 import '../../domain/models/training/routine.dart';
 import '../../domain/models/training/session.dart';
@@ -62,6 +63,31 @@ class TrainingRepository implements TrainingRepositoryContract {
       for (final dto in await _remote.getLoadSuggestions(sessionId))
         ?dto.toDomain(),
     ],
+  );
+
+  @override
+  Future<AppResult<List<ExerciseCalibration>>> getCalibrations(
+    String sessionId,
+  ) => RepositoryErrorHandler.guard(
+    () async => [
+      for (final dto in await _remote.getCalibrations(sessionId))
+        dto.toDomain(),
+    ],
+  );
+
+  @override
+  Future<AppResult<ExerciseCalibration>> calibrate({
+    required String sessionId,
+    required String plannedExerciseId,
+    required int setNumber,
+    required CalibrationAnswer answer,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.calibrate(
+      sessionId,
+      plannedExerciseId: plannedExerciseId,
+      setNumber: setNumber,
+      answer: answer.api,
+    )).toDomain(),
   );
 
   @override

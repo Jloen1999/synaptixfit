@@ -51,6 +51,7 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM rachas_amigo WHERE solicitante_id = :id OR receptor_id = :id",
             "DELETE FROM denuncias_usuario WHERE denunciante_id = :id OR denunciado_id = :id",
             "DELETE FROM notas_ejercicio WHERE usuario_id = :id",
+            "DELETE FROM calibraciones_ejercicio WHERE usuario_id = :id",
             "DELETE FROM sesiones_focus WHERE usuario_id = :id",
             "DELETE FROM entregas_examenes WHERE usuario_id = :id",
             "DELETE FROM planes_estudio WHERE usuario_id = :id",

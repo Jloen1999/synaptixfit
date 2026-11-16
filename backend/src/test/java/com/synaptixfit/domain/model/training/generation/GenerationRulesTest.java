@@ -57,7 +57,8 @@ class GenerationRulesTest {
         ExerciseParameters bumped = ProgressionCalculator.progress(top, REPS_WEIGHT, 6, List.of(set(0)), HYP).parameters();
         assertThat(bumped.weightKg()).isEqualTo(52.5);
         assertThat(bumped.reps()).isEqualTo(6);
-        assertThat(bumped.weightsKg()).containsExactly(26.5, 39.5, 52.5);
+        // Sin rampa 50/75/100 %: el calentamiento va aparte (ADR 0031, 0054).
+        assertThat(bumped.weightsKg()).isNull();
         assertThat(ProgressionCalculator.progress(p, REPS_WEIGHT, 4, List.of(), HYP).parameters().weightKg()).isEqualTo(55.0);
         assertThat(ProgressionCalculator.progress(p, REPS_WEIGHT, 10, List.of(), HYP).parameters().weightKg()).isEqualTo(42.5);
         ProgressionCalculator.Result failed = ProgressionCalculator.progress(new ExerciseParameters(4, 10, 90, 50.0, null,
@@ -159,7 +160,8 @@ class GenerationRulesTest {
         assertThat(template.days()).singleElement().satisfies(d -> {
             assertThat(d.dayNumber()).isEqualTo(2);
             assertThat(d.exercises()).extracting(ProposedExercise::exerciseName).containsExactly("Zancada");
-            assertThat(d.exercises().getFirst().parameters().weightKg()).isEqualTo(8.5);
+            // El peso de partida lo pone el caso de uso con StartingLoad (ADR 0054), no el motor de reglas.
+            assertThat(d.exercises().getFirst().parameters().weightKg()).isNull();
         });
         var onlyRecent = RoutineRuleEngine.generate(user, List.of(a), HYP, history);
         assertThat(onlyRecent.exerciseCount()).isEqualTo(1);
@@ -272,7 +274,7 @@ class GenerationRulesTest {
         assertThat(repaired.get(0).parameters().sets()).isEqualTo(4);
         assertThat(repaired.get(0).parameters().restSeconds()).isEqualTo(30);
         assertThat(repaired.get(0).parameters().weightKg()).isEqualTo(40.0);
-        assertThat(repaired.get(0).parameters().weightsKg()).hasSize(4);
+        assertThat(repaired.get(0).parameters().weightsKg()).isNull();
         assertThat(repaired.get(1)).isEqualTo(base);
         assertThat(repaired.get(2)).isEqualTo(base);
         assertThat(repaired.get(3)).isEqualTo(base);

@@ -67,7 +67,7 @@ public class RunWorkoutService implements ListRunWorkoutsUseCase, ListRunWorkout
     @Override
     public RunWorkout createWorkout(CreateRunWorkoutUseCase.Command command) {
         String template = command.templateCode();
-        if (template != null && RunWorkoutTemplates.ALL.stream().noneMatch(t -> t.code().equals(template))) {
+        if (template != null && RunWorkoutTemplates.find(template).isEmpty()) {
             throw new FieldValidationException("templateCode", "INVALID", "unknown run workout template");
         }
         Instant now = clock.instant();

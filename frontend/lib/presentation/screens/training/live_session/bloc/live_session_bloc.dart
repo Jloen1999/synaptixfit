@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../../domain/models/training/exercise.dart';
+import '../../../../../domain/models/training/exercise_calibration.dart';
 import '../../../../../domain/models/training/load_suggestion.dart';
 import '../../../../../domain/models/training/session_history.dart';
 import '../../../../../domain/errors/app_error.dart';
@@ -17,6 +18,8 @@ import '../../../../../domain/use_cases/training/load_pending_sets_use_case.dart
 import '../../../../../domain/use_cases/training/save_pending_sets_use_case.dart';
 import '../../../../../domain/use_cases/training/get_last_performance_use_case.dart';
 import '../../../../../domain/use_cases/training/get_load_suggestions_use_case.dart';
+import '../../../../../domain/use_cases/training/calibrate_exercise_use_case.dart';
+import '../../../../../domain/use_cases/training/get_session_calibrations_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_bookends_use_case.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 import '../../../../../domain/use_cases/training/cancel_session_use_case.dart';
@@ -52,6 +55,8 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     required this._getBookends,
     required this._getAdaptation,
     required this._getLoadSuggestions,
+    required this._getCalibrations,
+    required this._calibrate,
     required this._loadPending,
     required this._savePending,
     required this._pauseSession,
@@ -135,11 +140,14 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     on<LiveSessionResumeRequested>(_onResume);
     on<LiveSessionGroupPauseChanged>(_onGroupPauseChanged);
     on<LiveSessionExerciseSwapped>(_onExerciseSwapped);
+    on<LiveSessionCalibrationAnswered>(_onCalibrationAnswered);
   }
 
   final GetSessionUseCaseContract _getSession;
   final GetSessionAdaptationUseCaseContract _getAdaptation;
   final GetLoadSuggestionsUseCaseContract _getLoadSuggestions;
+  final GetSessionCalibrationsUseCaseContract _getCalibrations;
+  final CalibrateExerciseUseCaseContract _calibrate;
   final GetRoutineUseCaseContract _getRoutine;
   final RecordSetUseCaseContract _recordSet;
   final DeleteSetUseCaseContract _deleteSet;
@@ -267,7 +275,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       (await _loadDraft(session.id)).valueOrNull ?? const LiveSessionDraft(),
     );
     // Ayudas que no bloquean la sesión: si fallan, simplemente no se muestran.
-    final (last, bookends, loads) = await (
+    final (last, bookends, loads, calibrations) = await (
       _getLastPerformance(),
       exercises.isEmpty
           ? Future.value(
@@ -279,6 +287,13 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
               const Success<List<LoadSuggestion>, AppError>(<LoadSuggestion>[]),
             )
           : _getLoadSuggestions(session.id),
+      exercises.isEmpty
+          ? Future.value(
+              const Success<List<ExerciseCalibration>, AppError>(
+                <ExerciseCalibration>[],
+              ),
+            )
+          : _getCalibrations(session.id),
     ).wait;
     // Solo las de ejercicios de este día que aún tienen series por hacer.
     // Un ejercicio cambiado hoy no usa la propuesta del de la rutina.
@@ -290,6 +305,12 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       for (final l in loads.valueOrNull ?? const <LoadSuggestion>[])
         if (ids.contains(l.plannedExerciseId)) l.plannedExerciseId: l,
     };
+    // Calibración de la primera vez (ADR 0054): solo los huecos de hoy con su
+    // ejercicio de la rutina (si se cambió hoy, no se pregunta).
+    final calibrationById = {
+      for (final c in calibrations.valueOrNull ?? const <ExerciseCalibration>[])
+        if (ids.contains(c.plannedExerciseId)) c.plannedExerciseId: c,
+    };
     final lastByExercise = {
       for (final r in last.valueOrNull ?? const <PersonalRecord>[])
         r.exerciseId: r,
@@ -298,12 +319,68 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final hasBookends =
         suggested != null &&
         (suggested.warmUp.isNotEmpty || suggested.coolDown.isNotEmpty);
-    if (lastByExercise.isEmpty && !hasBookends && loadById.isEmpty) return;
+    if (lastByExercise.isEmpty &&
+        !hasBookends &&
+        loadById.isEmpty &&
+        calibrationById.isEmpty) {
+      return;
+    }
     emit(
       state.copyWith(
         lastPerformance: lastByExercise,
         bookends: hasBookends ? suggested : null,
         loadSuggestions: loadById,
+        calibrations: calibrationById,
+      ),
+    );
+  }
+
+  /// Respuesta a «¿Cuántas más podrías haber hecho?» (ADR 0054). La pregunta
+  /// se cierra al momento; el peso de la serie siguiente lo decide el
+  /// servidor. Si no llega (sin conexión, serie aún sin subir), el peso no
+  /// cambia: es lo seguro.
+  Future<void> _onCalibrationAnswered(
+    LiveSessionCalibrationAnswered event,
+    Emitter<LiveSessionState> emit,
+  ) async {
+    final sessionId = state.sessionId;
+    final target = state.calibrations[event.plannedExerciseId];
+    if (sessionId == null || target == null || target.answered) return;
+    emit(
+      state.copyWith(
+        calibrations: {
+          ...state.calibrations,
+          event.plannedExerciseId: target.copyWith(
+            answer: event.answer,
+            setNumber: event.setNumber,
+          ),
+        },
+      ),
+    );
+    final result = await _calibrate(
+      sessionId: sessionId,
+      plannedExerciseId: event.plannedExerciseId,
+      setNumber: event.setNumber,
+      answer: event.answer,
+    );
+    final answered = result.valueOrNull;
+    if (answered == null) {
+      emit(
+        state.copyWith(
+          calibrationFailed: {
+            ...state.calibrationFailed,
+            event.plannedExerciseId,
+          },
+        ),
+      );
+      return;
+    }
+    emit(
+      state.copyWith(
+        calibrations: {
+          ...state.calibrations,
+          event.plannedExerciseId: answered,
+        },
       ),
     );
   }
@@ -1143,6 +1220,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       ],
       originals: {...s.originals, plannedId: original},
       loadSuggestions: {...s.loadSuggestions}..remove(plannedId),
+      calibrations: {...s.calibrations}..remove(plannedId),
     );
   }
 

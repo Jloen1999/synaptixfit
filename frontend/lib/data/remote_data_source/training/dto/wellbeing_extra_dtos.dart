@@ -25,6 +25,7 @@ abstract final class WellbeingExtraDtos {
         given: json['given'] as bool? ?? false,
         givenAt: _date(json['givenAt'])?.toLocal(),
         withdrawnAt: _date(json['withdrawnAt'])?.toLocal(),
+        outdated: json['outdated'] as bool? ?? false,
       );
 
   static CycleDay cycleDay(Map<String, dynamic> json) => CycleDay(

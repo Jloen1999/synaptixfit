@@ -4,6 +4,7 @@ import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCas
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
 import com.synaptixfit.application.port.input.insights.GetCognitiveStateUseCase;
 import com.synaptixfit.application.port.input.insights.GetCrossRegulationUseCase;
+import com.synaptixfit.application.port.input.training.GetStartingLoadsUseCase;
 import com.synaptixfit.application.port.input.training.AddRoutineDayUseCase;
 import com.synaptixfit.application.port.input.training.AddRoutineExerciseUseCase;
 import com.synaptixfit.application.port.input.training.AddRoutineWeekUseCase;
@@ -135,6 +136,7 @@ public class TrainingBeanConfiguration {
     private final ZoneId zone;
     private final GetCognitiveStateUseCase cognitiveState;
     private final GetCrossRegulationUseCase crossRegulation;
+    private final GetStartingLoadsUseCase startingLoads;
     private final ExerciseTipsRepositoryPort exerciseTips;
     private final ExerciseNoteRepositoryPort exerciseNotes;
 
@@ -161,6 +163,7 @@ public class TrainingBeanConfiguration {
                                      Clock clock,
                                      GetCognitiveStateUseCase cognitiveState,
                                      GetCrossRegulationUseCase crossRegulation,
+                                     GetStartingLoadsUseCase startingLoads,
                                      ExerciseTipsRepositoryPort exerciseTips,
                                      ExerciseNoteRepositoryPort exerciseNotes,
                                      @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
@@ -183,6 +186,7 @@ public class TrainingBeanConfiguration {
         this.clock = clock;
         this.cognitiveState = cognitiveState;
         this.crossRegulation = crossRegulation;
+        this.startingLoads = startingLoads;
         this.exerciseTips = exerciseTips;
         this.exerciseNotes = exerciseNotes;
         this.zone = ZoneId.of(zone);
@@ -448,7 +452,7 @@ public class TrainingBeanConfiguration {
     @Bean(autowireCandidate = false)
     RoutineGenerationService routineGenerationService() {
         return new RoutineGenerationService(context, exercises, sessions, checkIns, generator, cognitiveState,
-                crossRegulation, clock, zone);
+                crossRegulation, startingLoads, clock, zone);
     }
 
     @Bean

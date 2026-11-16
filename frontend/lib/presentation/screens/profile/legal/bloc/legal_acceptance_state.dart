@@ -22,6 +22,10 @@ abstract class LegalAcceptanceState with _$LegalAcceptanceState {
 
     /// Ya había aceptado una versión anterior: la política ha cambiado.
     @Default(false) bool updated,
+
+    /// El permiso de datos de salud se dio con un texto anterior: se ofrece,
+    /// aparte y sin obligar, aceptar el nuevo (ADR 0054).
+    @Default(false) bool offerHealthUpdate,
     @Default(false) bool accepting,
     AppError? error,
   }) = _LegalAcceptanceState;

@@ -62,20 +62,23 @@ public class ExerciseSqlReader {
         return new ArrayList<>(assemble(rows, null).values());
     }
 
-    /** Referencias ligeras (para ejercicios planificados). */
+    /** Referencias ligeras (para ejercicios planificados), con su perfil de carga si tienen (ADR 0054). */
     public Map<UUID, ExerciseRef> refs(Collection<UUID> ids) {
         Map<UUID, ExerciseRef> result = new HashMap<>();
         if (ids == null || ids.isEmpty()) {
             return result;
         }
         jdbc.sql("SELECT e.id, e.nombre, e.url_gif, e.url_preview, e.modalidad_entrenamiento, e.tipo_medicion, "
-                        + "e.es_circuito, e.valor_met, COALESCE(e.activo, true) AS activo FROM ejercicios e WHERE e.id IN (:ids)")
+                        + "e.es_circuito, e.valor_met, COALESCE(e.activo, true) AS activo, "
+                        + ExerciseLoadProfileJdbcAdapter.COLUMNS + " FROM ejercicios e"
+                        + " LEFT JOIN cargas_iniciales_ejercicio c ON c.ejercicio_id = e.id WHERE e.id IN (:ids)")
                 .param("ids", ids)
                 .query((rs, n) -> new ExerciseRef(rs.getObject("id", UUID.class), rs.getString("nombre"),
                         media.resolve(rs.getString("url_gif")), media.resolve(rs.getString("url_preview")),
                         TrainingDbValues.modality(rs.getString("modalidad_entrenamiento")),
                         TrainingDbValues.measurementTypes(strings(rs.getArray("tipo_medicion"))),
-                        rs.getBoolean("es_circuito"), rs.getDouble("valor_met"), rs.getBoolean("activo")))
+                        rs.getBoolean("es_circuito"), rs.getDouble("valor_met"), rs.getBoolean("activo"),
+                        ExerciseLoadProfileJdbcAdapter.profile(rs)))
                 .list().forEach(r -> result.put(r.id(), r));
         return result;
     }

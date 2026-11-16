@@ -33,6 +33,8 @@ import '../use_cases/training/save_exercise_note_use_case.dart';
 import '../use_cases/training/get_exercise_filters_use_case.dart';
 import '../use_cases/training/get_exercise_use_case.dart';
 import '../use_cases/training/get_last_performance_use_case.dart';
+import '../use_cases/training/calibrate_exercise_use_case.dart';
+import '../use_cases/training/get_session_calibrations_use_case.dart';
 import '../use_cases/training/get_load_suggestions_use_case.dart';
 import '../use_cases/training/get_my_routines_use_case.dart';
 import '../use_cases/training/get_open_sessions_use_case.dart';
@@ -168,6 +170,12 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetLoadSuggestionsUseCaseContract>(
       () => GetLoadSuggestionsUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetSessionCalibrationsUseCaseContract>(
+      () => GetSessionCalibrationsUseCase(getIt()),
+    )
+    ..registerLazySingleton<CalibrateExerciseUseCaseContract>(
+      () => CalibrateExerciseUseCase(getIt()),
     )
     ..registerLazySingleton<GetSessionAdaptationUseCaseContract>(
       () => GetSessionAdaptationUseCase(getIt()),

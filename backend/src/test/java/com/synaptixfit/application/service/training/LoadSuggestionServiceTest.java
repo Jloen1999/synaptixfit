@@ -66,7 +66,7 @@ class LoadSuggestionServiceTest {
         assertThat(service.loadSuggestions(USER, session.id())).singleElement().satisfies(s -> {
             assertThat(s.plannedExerciseId()).isEqualTo(planned().id());
             assertThat(s.metric()).isEqualTo(Metric.WEIGHT);
-            assertThat(s.suggested()).isEqualTo(42.0);
+            assertThat(s.suggested()).isEqualTo(42.5);
         });
     }
 

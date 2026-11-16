@@ -11,6 +11,8 @@ import com.synaptixfit.domain.model.run.RunWorkout;
 import com.synaptixfit.domain.model.run.RunWorkoutTemplates;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.training.Routine;
+import com.synaptixfit.domain.model.training.ExerciseParameters;
+import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.RoutineTemplate;
 import com.synaptixfit.domain.model.training.TemplateLevel;
 import com.synaptixfit.domain.model.training.TemplatePlace;
@@ -19,7 +21,9 @@ import com.synaptixfit.domain.model.training.WeekType;
 import com.synaptixfit.domain.port.output.training.RoutineTemplateRepositoryPort;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,12 +37,31 @@ class RoutineTemplateServiceTest {
 
     private static final UUID USER = UUID.randomUUID();
     private static final UUID EXERCISE = UUID.randomUUID();
+    private static final UUID PLANK = UUID.randomUUID();
 
     private final RoutineTemplate template = new RoutineTemplate(UUID.randomUUID(), "casa_2", "En casa · 2 días",
             "Sin material", TrainingGoal.STRENGTH_ENDURANCE, TemplatePlace.HOME, TemplateLevel.BEGINNER, false, 35, 4,
             List.of(new RoutineTemplate.Day(2, List.of(new RoutineTemplate.Item(EXERCISE, 3, 12, 60, null))),
                     new RoutineTemplate.Day(5, List.of(new RoutineTemplate.Item(EXERCISE, 2, 10, 60, null)))),
             List.of());
+    private final RoutineTemplate retired = new RoutineTemplate(UUID.randomUUID(), "vieja", "Vieja", "",
+            TrainingGoal.HYPERTROPHY, TemplatePlace.GYM, TemplateLevel.BEGINNER, false, 30, 2,
+            List.of(new RoutineTemplate.Day(1, List.of(new RoutineTemplate.Item(EXERCISE, 3, 10, 60, null)))),
+            List.of(), false);
+    private final RoutineTemplate real = new RoutineTemplate(UUID.randomUUID(), "maquinas_empezar",
+            "Máquinas para empezar", "", TrainingGoal.HYPERTROPHY, TemplatePlace.GYM, TemplateLevel.BEGINNER, false, 45,
+            4, List.of(new RoutineTemplate.Day(1, "Piernas, pecho y espalda",
+                    List.of(new RoutineTemplate.Item(EXERCISE, 3, 10, 90, null, 10, 12, 3),
+                            new RoutineTemplate.Item(PLANK, 2, 1, 45, 20, null, null, null)))),
+            List.of());
+    private final RoutineTemplate couchTo5k = new RoutineTemplate(UUID.randomUUID(), "empieza_a_correr",
+            "Empieza a correr", "", TrainingGoal.METABOLIC_CONDITIONING, TemplatePlace.OUTDOOR, TemplateLevel.BEGINNER,
+            false, 30, 9,
+            List.of(new RoutineTemplate.Day(4, List.of(new RoutineTemplate.Item(EXERCISE, 2, 10, 60, null)))),
+            List.of(new RoutineTemplate.RunDay(1, "C25K_W1", "Semana 1", 1),
+                    new RoutineTemplate.RunDay(3, "C25K_W1", "Semana 1", 1),
+                    new RoutineTemplate.RunDay(1, "C25K_W5_1", "Semana 5 · 1.ª", 5),
+                    new RoutineTemplate.RunDay(3, "C25K_W5_2", "Semana 5 · 2.ª", 5)));
     private final RoutineTemplate empty = new RoutineTemplate(UUID.randomUUID(), "vacia", "Vacía", "",
             TrainingGoal.HYPERTROPHY, TemplatePlace.GYM, TemplateLevel.BEGINNER, false, 30, 2, List.of(), List.of());
     private final RoutineTemplate running = new RoutineTemplate(UUID.randomUUID(), "cero_a_cinco_km", "De 0 a 5 km",
@@ -52,11 +75,13 @@ class RoutineTemplateServiceTest {
     private final List<CreateRunWorkoutUseCase.Command> createdRuns = new ArrayList<>();
 
     private final AtomicReference<CreateRoutineUseCase.Command> created = new AtomicReference<>();
+    private final Map<UUID, Double> startingLoads = new HashMap<>();
+    private final List<TemplateLevel> startingLoadLevels = new ArrayList<>();
 
     private final RoutineTemplateService service = new RoutineTemplateService(new RoutineTemplateRepositoryPort() {
         @Override
         public List<RoutineTemplate> findAll(String language) {
-            return List.of(template, empty, running);
+            return List.of(template, empty, running, retired, real, couchTo5k);
         }
 
         @Override
@@ -69,11 +94,15 @@ class RoutineTemplateServiceTest {
     }, userId -> ownedRunWorkouts, command -> {
         createdRuns.add(command);
         return null;
+    }, (userId, ids, level) -> {
+        startingLoadLevels.add(level);
+        return startingLoads;
     });
 
     @Test
     void listsOnlyTemplatesWithExercises() {
-        assertThat(service.list("es")).extracting(RoutineTemplate::code).containsExactly("casa_2", "cero_a_cinco_km");
+        assertThat(service.list("es")).extracting(RoutineTemplate::code)
+                .containsExactly("casa_2", "cero_a_cinco_km", "maquinas_empezar", "empieza_a_correr");
     }
 
     @Test
@@ -117,6 +146,45 @@ class RoutineTemplateServiceTest {
                 .containsExactly("START_WALK_RUN");
         assertThat(createdRuns.getFirst().name()).isEqualTo("Empieza a correr");
         assertThat(createdRuns.getFirst().groups()).isEqualTo(RunWorkoutTemplates.ALL.getFirst().groups());
+    }
+
+    @Test
+    void aRetiredTemplateIsNeitherListedNorUsable() {
+        assertThat(service.list("es")).extracting(RoutineTemplate::code).doesNotContain("vieja");
+        assertThatThrownBy(() -> service.createFromTemplate(USER, retired.id(), "es"))
+                .isInstanceOf(RoutineTemplateNotFoundException.class);
+    }
+
+    @Test
+    void realTemplatesCarrySessionNamesRepRangesAndStartingWeights() {
+        startingLoads.put(EXERCISE, 20.0);
+
+        service.createFromTemplate(USER, real.id(), "es");
+
+        RoutineStructureInput.Day day = created.get().weeks().getFirst().days().getFirst();
+        assertThat(day.name()).isEqualTo("Piernas, pecho y espalda");
+        ExerciseParameters press = day.exercises().getFirst().parameters();
+        assertThat(press.repRange()).isEqualTo(new RepRange(10, 12, 3));
+        assertThat(press.reps()).isEqualTo(10);
+        assertThat(press.weightKg()).isEqualTo(20.0);
+        assertThat(press.weightsKg()).isNull();
+        ExerciseParameters plank = day.exercises().get(1).parameters();
+        assertThat(plank.repRange()).isNull();
+        assertThat(plank.isometricSeconds()).isEqualTo(20);
+        assertThat(plank.weightKg()).isNull();
+        assertThat(startingLoadLevels).containsExactly(TemplateLevel.BEGINNER);
+    }
+
+    @Test
+    void aProgressiveRunPlanCreatesOneWorkoutPerOutingAndCountsWeekdaysOnce() {
+        assertThat(couchTo5k.daysPerWeek()).isEqualTo(3);
+
+        service.createFromTemplate(USER, couchTo5k.id(), "es");
+
+        assertThat(createdRuns).extracting(CreateRunWorkoutUseCase.Command::templateCode)
+                .containsExactly("C25K_W1", "C25K_W5_1", "C25K_W5_2");
+        assertThat(createdRuns.getFirst().groups())
+                .isEqualTo(RunWorkoutTemplates.find("C25K_W1").orElseThrow().groups());
     }
 
     @Test

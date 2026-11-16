@@ -219,6 +219,28 @@ public final class Routine {
         plannedExercise(plannedExerciseId).changeParameters(parameters);
     }
 
+    /**
+     * Calibración (ADR 0054): el peso que deja la primera sesión de un ejercicio pasa a ese ejercicio en todos los
+     * días que aún no se han hecho ni saltado, igual en todas sus series. Devuelve si cambió algo.
+     */
+    public boolean applyCalibratedWeight(UUID exerciseId, double weightKg) {
+        boolean changed = false;
+        for (RoutineDay day : allDays()) {
+            if (day.status().isClosed()) {
+                continue;
+            }
+            for (PlannedExercise e : day.exercises()) {
+                ExerciseParameters p = e.parameters();
+                if (e.exerciseId().equals(exerciseId)
+                        && (p.weightsKg() != null || !Objects.equals(p.weightKg(), weightKg))) {
+                    e.changeParameters(p.withUniformWeight(weightKg));
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
+
     public PlannedExercise replaceExercise(UUID plannedExerciseId, ExerciseRef replacement) {
         return dayOfExercise(plannedExerciseId).replaceExercise(plannedExerciseId, replacement);
     }

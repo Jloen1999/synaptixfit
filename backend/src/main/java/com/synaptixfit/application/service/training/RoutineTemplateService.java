@@ -4,6 +4,7 @@ import com.synaptixfit.application.port.input.run.CreateRunWorkoutUseCase;
 import com.synaptixfit.application.port.input.run.ListRunWorkoutsUseCase;
 import com.synaptixfit.application.port.input.training.CreateRoutineFromTemplateUseCase;
 import com.synaptixfit.application.port.input.training.CreateRoutineUseCase;
+import com.synaptixfit.application.port.input.training.GetStartingLoadsUseCase;
 import com.synaptixfit.application.port.input.training.ListRoutineTemplatesUseCase;
 import com.synaptixfit.application.port.input.training.RoutineStructureInput;
 import com.synaptixfit.domain.exception.training.RoutineTemplateNotFoundException;
@@ -16,6 +17,7 @@ import com.synaptixfit.domain.model.training.WeekType;
 import com.synaptixfit.domain.port.output.training.RoutineTemplateRepositoryPort;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +30,10 @@ import java.util.stream.Collectors;
  * ({@link RoutineTemplate#parametersFor}). Los días de carrera (ADR 0043) no entran en la rutina: se crean como
  * entrenos de carrera en Entreno › Correr ({@link CreateRunWorkoutUseCase}), uno por código que la persona aún no
  * tenga, para que se graben con el GPS y cuenten como actividad.
+ *
+ * <p>ADR 0054: solo se ofrecen y se usan las plantillas activas; cada día lleva el nombre de su sesión y cada
+ * ejercicio su rango de repeticiones y su peso de partida ({@link GetStartingLoadsUseCase}). Un plan de carrera
+ * progresivo crea un entreno por semana.
  */
 public class RoutineTemplateService implements ListRoutineTemplatesUseCase, CreateRoutineFromTemplateUseCase {
 
@@ -35,32 +41,36 @@ public class RoutineTemplateService implements ListRoutineTemplatesUseCase, Crea
     private final CreateRoutineUseCase createRoutine;
     private final ListRunWorkoutsUseCase listRunWorkouts;
     private final CreateRunWorkoutUseCase createRunWorkout;
+    private final GetStartingLoadsUseCase startingLoads;
 
     public RoutineTemplateService(RoutineTemplateRepositoryPort templates, CreateRoutineUseCase createRoutine,
-                                  ListRunWorkoutsUseCase listRunWorkouts, CreateRunWorkoutUseCase createRunWorkout) {
+                                  ListRunWorkoutsUseCase listRunWorkouts, CreateRunWorkoutUseCase createRunWorkout,
+                                  GetStartingLoadsUseCase startingLoads) {
         this.templates = templates;
         this.createRoutine = createRoutine;
         this.listRunWorkouts = listRunWorkouts;
         this.createRunWorkout = createRunWorkout;
+        this.startingLoads = startingLoads;
     }
 
     @Override
     public List<RoutineTemplate> list(String language) {
-        return templates.findAll(language).stream().filter(t -> !t.days().isEmpty()).toList();
+        return templates.findAll(language).stream().filter(t -> t.active() && !t.days().isEmpty()).toList();
     }
 
     @Override
     public Routine createFromTemplate(UUID userId, UUID templateId, String language) {
         RoutineTemplate template = templates.findById(templateId, language)
-                .filter(t -> !t.days().isEmpty())
+                .filter(t -> t.active() && !t.days().isEmpty())
                 .orElseThrow(() -> new RoutineTemplateNotFoundException(templateId));
+        Map<UUID, Double> weights = startingLoads.startingLoads(userId, template.exerciseIds(), template.level());
         List<RoutineStructureInput.Week> weeks = new ArrayList<>();
         for (int number = 1; number <= template.weeks(); number++) {
             WeekType type = WeekType.forPosition(number, template.weeks());
             List<RoutineStructureInput.Day> days = template.days().stream()
-                    .map(d -> new RoutineStructureInput.Day(d.dayNumber(), null, d.exercises().stream()
+                    .map(d -> new RoutineStructureInput.Day(d.dayNumber(), d.name(), d.exercises().stream()
                             .map(e -> new RoutineStructureInput.Exercise(e.exerciseId(),
-                                    RoutineTemplate.parametersFor(e, type)))
+                                    RoutineTemplate.parametersFor(e, type, weights.get(e.exerciseId()))))
                             .toList()))
                     .toList();
             weeks.add(new RoutineStructureInput.Week(null, type, days));
@@ -82,7 +92,7 @@ public class RoutineTemplateService implements ListRoutineTemplatesUseCase, Crea
             if (owned.contains(day.workoutCode())) {
                 continue;
             }
-            RunWorkoutTemplates.ALL.stream().filter(t -> t.code().equals(day.workoutCode())).findFirst()
+            RunWorkoutTemplates.find(day.workoutCode())
                     .ifPresent(t -> createRunWorkout.createWorkout(new CreateRunWorkoutUseCase.Command(userId,
                             day.workoutName() == null || day.workoutName().isBlank() ? t.code() : day.workoutName(),
                             t.code(), t.groups())));

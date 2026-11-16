@@ -1,5 +1,6 @@
 import '../models/result/app_result.dart';
 import '../models/result/result.dart';
+import '../models/training/exercise_calibration.dart';
 import '../models/training/load_suggestion.dart';
 import '../models/training/recommendation.dart';
 import '../models/training/routine.dart';
@@ -26,6 +27,19 @@ abstract interface class TrainingRepositoryContract {
 
   /// Propuestas de carga de hoy por ejercicio (vacía si no hay).
   Future<AppResult<List<LoadSuggestion>>> getLoadSuggestions(String sessionId);
+
+  /// Ejercicios de la sesión que se calibran en su primera serie (ADR 0054).
+  Future<AppResult<List<ExerciseCalibration>>> getCalibrations(
+    String sessionId,
+  );
+
+  /// Responde «¿Cuántas más podrías haber hecho?» tras una serie ya guardada.
+  Future<AppResult<ExerciseCalibration>> calibrate({
+    required String sessionId,
+    required String plannedExerciseId,
+    required int setNumber,
+    required CalibrationAnswer answer,
+  });
 
   Future<AppResult<TrainingPage<TrainingSession>>> getSessions({
     bool? completed,

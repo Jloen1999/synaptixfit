@@ -15,7 +15,8 @@ enum _WithdrawChoice { keep, delete }
 
 /// Fila de Ajustes › Privacidad y datos con el permiso de datos de salud del
 /// registro diario (ADR 0034): si está dado, cuándo y «Retirar»; si no, «Dar
-/// permiso», que abre la misma explicación que antes del registro.
+/// permiso», que abre la misma explicación que antes del registro. Si se dio
+/// con un texto anterior (ADR 0054), «Actualizar» abre el texto nuevo.
 class HealthConsentSection extends StatelessWidget {
   const HealthConsentSection({super.key});
 
@@ -92,6 +93,8 @@ class _HealthConsentTile extends StatelessWidget with ErrorsMessageMixin {
           subtitle = null;
         } else if (state.error case final error?) {
           subtitle = errorMessage(context, error);
+        } else if (state.consent?.outdated ?? false) {
+          subtitle = l10n.profileHealthConsentOutdated;
         } else if (state.given) {
           final date = state.consent?.givenAt;
           subtitle = date == null
@@ -101,7 +104,8 @@ class _HealthConsentTile extends StatelessWidget with ErrorsMessageMixin {
           subtitle = l10n.profileHealthConsentNotGiven;
         }
         final busy = state.loading || state.saving;
-        return AppFocusOutline(
+        final outdated = state.given && (state.consent?.outdated ?? false);
+        final tile = AppFocusOutline(
           child: ListTile(
             leading: const Icon(Icons.health_and_safety_outlined),
             title: Text(l10n.profileHealthConsentTitle),
@@ -134,6 +138,23 @@ class _HealthConsentTile extends StatelessWidget with ErrorsMessageMixin {
               }
             },
           ),
+        );
+        if (!outdated) return tile;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            tile,
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: TokensSpacing.xxl,
+              ),
+              child: TextButton(
+                onPressed: busy ? null : () => _give(context),
+                child: Text(l10n.profileHealthConsentUpdate),
+              ),
+            ),
+          ],
         );
       },
     );

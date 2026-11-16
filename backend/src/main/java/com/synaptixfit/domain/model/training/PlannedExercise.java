@@ -35,8 +35,14 @@ public final class PlannedExercise {
         trimDurations();
     }
 
+    /**
+     * Cambia los parámetros. Si los nuevos no traen rango de repeticiones y el hueco lo tenía, se conserva (ADR 0054):
+     * el editor y las apps anteriores no lo envían y quitarlo dejaría el ejercicio sin doble progresión.
+     */
     public void changeParameters(ExerciseParameters newParameters) {
-        this.parameters = Guard.notNull(newParameters, "parameters");
+        Guard.notNull(newParameters, "parameters");
+        this.parameters = newParameters.repRange() == null && parameters.repRange() != null
+                ? newParameters.withRepRange(parameters.repRange()) : newParameters;
     }
 
     void changeOrder(int newOrder) {

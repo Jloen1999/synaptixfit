@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../domain/enums/training_enums.dart';
+import '../../../../../domain/models/training/exercise_calibration.dart';
 import '../../../../../domain/models/training/load_suggestion.dart';
 import '../../../../../domain/models/training/routine.dart';
 import '../../../../../domain/models/training/session.dart';
@@ -422,6 +423,16 @@ class LiveExerciseView extends StatelessWidget {
                 ),
                 style: context.textStyles.titleMedium,
               ),
+              // «Te deben sobrar 2»: el esfuerzo que pide la plantilla, en
+              // palabras (ADR 0054).
+              if (e.parameters.repsInReserve != null &&
+                  fields.has(SetField.reps))
+                Text(
+                  l10n.trainingRepsInReserve(e.parameters.repsInReserve!),
+                  style: context.textStyles.bodyMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                ),
               // La propuesta de hoy ya sale de la última vez: si la hay, va
               // ella sola.
               if (load != null)
@@ -1593,6 +1604,16 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
     super.didUpdateWidget(old);
     final before = _momentOf(old.state);
     final now = _momentOf(widget.state);
+    // Al responder la calibración la pregunta desaparece pero el momento no
+    // cambia: el foco vuelve a «+15 s» en vez de perderse (WCAG 2.4.3).
+    if (before == now &&
+        now == _PanelMoment.rest &&
+        old.state.asksCalibrationNow &&
+        !widget.state.asksCalibrationNow &&
+        (_barFocus.hasFocus || _focusWasHere)) {
+      _focusVisible(_restFocus);
+      return;
+    }
     if (before == now || !(_barFocus.hasFocus || _focusWasHere)) return;
     // En el descanso, a «+15 s»: un Intro de más no se salta el descanso.
     // Al pausar o seguir la serie, al botón que cambia; si no, a la acción.
@@ -1603,8 +1624,17 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
       _PanelMoment.doingPaused => _toggleFocus,
       _ => _actionFocus,
     };
+    _focusVisible(target);
+  }
+
+  /// Da el foco a [target] y lo desplaza a la vista: en pantallas bajas el
+  /// panel se desplaza y el anillo de foco quedaría oculto (WCAG 2.4.11).
+  void _focusVisible(FocusNode target) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && target.canRequestFocus) target.requestFocus();
+      if (!mounted || !target.canRequestFocus) return;
+      target.requestFocus();
+      final focused = target.context;
+      if (focused != null) unawaited(Scrollable.ensureVisible(focused));
     });
   }
 
@@ -2254,11 +2284,16 @@ class LiveRestPanel extends StatelessWidget {
         .firstOrNull;
     final up = s.upNext;
     final next = up == null ? null : s.nextSetOf(up);
+    final ownerExercise = s.restExercise;
+    final asking = s.asksCalibrationNow;
+    final calibration = s.restCalibration;
     // Mismo ejercicio que la serie del descanso: «serie 3 · 8 × 60 kg»; si no
     // (era la última), el nombre del siguiente ejercicio.
     final String? after;
     String? afterSpoken;
-    if (up == null || next == null) {
+    if (up == null || next == null || asking) {
+      // Con la pregunta a la vista, el panel no lleva más texto: cabe en
+      // pantallas bajas y la pregunta no compite.
       after = null;
     } else if (owner == null || owner.plannedExerciseId == up.id) {
       final (target, spoken) = compactTarget(
@@ -2320,6 +2355,36 @@ class LiveRestPanel extends StatelessWidget {
             ),
           ],
         ),
+        if (asking && ownerExercise != null && owner != null) ...[
+          const SizedBox(height: TokensSpacing.s),
+          LiveCalibrationQuestion(
+            onAnswered: (answer) => bloc.add(
+              LiveSessionEvent.calibrationAnswered(
+                plannedExerciseId: ownerExercise.id,
+                setNumber: owner.setNumber,
+                answer: answer,
+              ),
+            ),
+          ),
+        ] else if (calibration != null) ...[
+          const SizedBox(height: TokensSpacing.xs),
+          // El resultado lo anuncia la página una sola vez cuando llega.
+          Text(
+            calibrationResultText(
+              l10n,
+              calibration,
+              failed: s.calibrationFailed.contains(
+                calibration.plannedExerciseId,
+              ),
+            ),
+            style: context.textStyles.titleSmall?.copyWith(color: onColor),
+          ),
+          if (calibration.step != null)
+            Text(
+              l10n.trainingCalibrationFixHint,
+              style: context.textStyles.bodyMedium?.copyWith(color: onColor),
+            ),
+        ],
         if (after != null) ...[
           const SizedBox(height: TokensSpacing.xs),
           Text(
@@ -2362,4 +2427,87 @@ class LiveRestPanel extends StatelessWidget {
       ],
     );
   }
+}
+
+/// «¿Cuántas más podrías haber hecho?» tras la primera serie de un ejercicio
+/// nuevo (ADR 0054): cuatro opciones de un toque. Responder es opcional; sin
+/// respuesta, el peso no cambia.
+class LiveCalibrationQuestion extends StatelessWidget {
+  const LiveCalibrationQuestion({super.key, required this.onAnswered});
+
+  final ValueChanged<CalibrationAnswer> onAnswered;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final onColor = context.colors.onSecondaryContainer;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // En pantallas bajas o con letra grande se ahorra la explicación: los
+        // botones del descanso tienen que seguir a la vista.
+        if (!liveCompact(context)) ...[
+          Text(
+            l10n.trainingCalibrationHelp,
+            style: context.textStyles.bodyMedium?.copyWith(color: onColor),
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+        ],
+        AppSegmentedChoice<CalibrationAnswer>(
+          label: l10n.trainingCalibrationQuestion,
+          values: CalibrationAnswer.values,
+          selected: null,
+          labelOf: (a) => switch (a) {
+            CalibrationAnswer.none => l10n.trainingCalibrationNone,
+            CalibrationAnswer.oneTwo => l10n.trainingCalibrationOneTwo,
+            CalibrationAnswer.three => l10n.trainingCalibrationThree,
+            CalibrationAnswer.fourPlus => l10n.trainingCalibrationFourPlus,
+          },
+          spokenLabelOf: (a) => switch (a) {
+            CalibrationAnswer.none => l10n.trainingCalibrationNone,
+            CalibrationAnswer.oneTwo => l10n.trainingCalibrationOneTwoSpoken,
+            CalibrationAnswer.three => l10n.trainingCalibrationThreeSpoken,
+            CalibrationAnswer.fourPlus =>
+              l10n.trainingCalibrationFourPlusSpoken,
+          },
+          onChanged: (a) {
+            if (a != null) onAnswered(a);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Qué hacer en la serie siguiente según la calibración: el peso nuevo si la
+/// serie llevaba kilos; si no, «una placa más / menos» o «el mismo peso».
+/// Mientras llega la respuesta, «Calculando…»; si no llega ([failed]), que
+/// siga con el mismo peso y por qué.
+String calibrationResultText(
+  AppLocalizations l10n,
+  ExerciseCalibration c, {
+  bool failed = false,
+}) {
+  if (c.step == null) {
+    return failed
+        ? l10n.trainingCalibrationFailed
+        : l10n.trainingCalibrationPending;
+  }
+  final kg = c.nextWeightKg;
+  final weight = kg == null ? null : formatNumber(kg);
+  return switch (c.step) {
+    CalibrationStep.up when weight != null => l10n.trainingCalibrationUp(
+      weight,
+    ),
+    CalibrationStep.up => l10n.trainingCalibrationUpPlate,
+    CalibrationStep.down when weight != null => l10n.trainingCalibrationDown(
+      weight,
+    ),
+    CalibrationStep.down => l10n.trainingCalibrationDownPlate,
+    CalibrationStep.keep when weight != null => l10n.trainingCalibrationKeep(
+      weight,
+    ),
+    _ => l10n.trainingCalibrationKeepNoKg,
+  };
 }

@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.training;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.synaptixfit.domain.model.training.DailyCheckIn;
+import com.synaptixfit.domain.model.training.HealthConsent;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -32,6 +33,26 @@ class HealthConsentServiceTest {
         assertThat(status.given()).isTrue();
         assertThat(status.givenAt()).isEqualTo(NOW);
         assertThat(status.withdrawnAt()).isNull();
+    }
+
+    @Test
+    void anOldTextIsOutdatedUntilGivenAgain() {
+        Instant before = NOW.minusSeconds(86_400);
+        consents.save(new HealthConsent(USER, before, null));
+        assertThat(service.getHealthConsent(USER).outdated()).isTrue();
+
+        service.giveHealthConsent(USER);
+
+        var status = service.getHealthConsent(USER);
+        assertThat(status.outdated()).isFalse();
+        assertThat(status.givenAt()).isEqualTo(NOW);
+        assertThat(consents.store.get(USER).coversBodyWeight()).isTrue();
+    }
+
+    @Test
+    void aWithdrawnConsentIsNotOutdated() {
+        consents.save(new HealthConsent(USER, NOW.minusSeconds(86_400), NOW.minusSeconds(3_600)));
+        assertThat(service.getHealthConsent(USER).outdated()).isFalse();
     }
 
     @Test

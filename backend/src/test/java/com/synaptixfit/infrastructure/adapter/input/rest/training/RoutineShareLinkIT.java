@@ -54,7 +54,7 @@ class RoutineShareLinkIT {
         String owner = register("comparte@example.com");
         String friend = register("copia@example.com");
         String templates = call(get("/api/v1/training/templates"), owner, null, 200);
-        List<String> ids = JsonPath.read(templates, "$[?(@.code == 'casa_2')].id");
+        List<String> ids = JsonPath.read(templates, "$[?(@.code == 'mantener_examenes_casa')].id");
         String routine = call(post("/api/v1/training/templates/" + ids.getFirst() + "/use"), owner, null, 201);
         String routineId = JsonPath.read(routine, "$.id");
 
@@ -68,7 +68,7 @@ class RoutineShareLinkIT {
 
         String body = "{\"token\":\"" + token + "\"}";
         String preview = call(post("/api/v1/shared-routines/preview"), friend, body, 200);
-        assertThat((String) JsonPath.read(preview, "$.name")).isEqualTo("En casa · 2 días");
+        assertThat((String) JsonPath.read(preview, "$.name")).isEqualTo("Mantenerte en exámenes · en casa");
         assertThat((Integer) JsonPath.read(preview, "$.daysPerWeek")).isEqualTo(2);
         assertThat(preview).doesNotContain("ownerId").doesNotContain("authorName").doesNotContain("Persona T");
 

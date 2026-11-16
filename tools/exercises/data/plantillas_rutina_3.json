@@ -1,0 +1,2172 @@
+{
+  "_leeme": "Fase 3A (ADR 0054). sesiones: [nombre del catálogo, series, rep_min, rep_max, descanso_s, repeticiones que deben sobrar (null si no), segundos de aguante (opcional)]. dias: [día 1-7, sesión, nombre de la sesión en español]; nombres_dia traduce ese nombre. carreras: [semana, día, código]. cargas: [nombre, tipo, fracción del peso corporal, kg por defecto, tope del 1.er día, tren inferior].",
+  "sesiones": {
+    "maq_a": [
+      [
+        "Prensa de piernas a 45° (postura estándar)",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Press de pecho en máquina",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Remo sentado en polea baja con agarre estrecho",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        2,
+        10,
+        12,
+        60,
+        3
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        1,
+        45,
+        null,
+        20
+      ]
+    ],
+    "maq_b": [
+      [
+        "Extensión de cuádriceps sentado en máquina",
+        2,
+        12,
+        15,
+        60,
+        3
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Press de hombros sentado en máquina",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Hip thrust con mancuerna (glúteo mayor)",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        45,
+        null,
+        20
+      ]
+    ],
+    "lib_a": [
+      [
+        "Sentadilla trasera con barra (postura estándar)",
+        3,
+        6,
+        8,
+        150,
+        3
+      ],
+      [
+        "Press de banca con barra",
+        3,
+        6,
+        8,
+        150,
+        3
+      ],
+      [
+        "Remo con barra y agarre prono",
+        3,
+        8,
+        10,
+        120,
+        3
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        1,
+        45,
+        null,
+        30
+      ]
+    ],
+    "lib_b": [
+      [
+        "Peso muerto rumano con barra (glúteo mayor)",
+        3,
+        8,
+        10,
+        120,
+        3
+      ],
+      [
+        "Press de hombros con mancuernas sentado",
+        3,
+        8,
+        10,
+        90,
+        3
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        3,
+        8,
+        12,
+        90,
+        3
+      ],
+      [
+        "Sentadilla goblet con kettlebell",
+        2,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        45,
+        null,
+        20
+      ]
+    ],
+    "dos_a": [
+      [
+        "Prensa de piernas a 45° (postura estándar)",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Press de banca con mancuerna",
+        4,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Remo sentado en polea baja con agarre estrecho",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        2,
+        10,
+        12,
+        60,
+        2
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        1,
+        45,
+        null,
+        30
+      ]
+    ],
+    "dos_b": [
+      [
+        "Sentadilla goblet con kettlebell",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Hip thrust con mancuerna (glúteo mayor)",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Press de hombros con mancuernas sentado",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        45,
+        null,
+        20
+      ]
+    ],
+    "tp_t1": [
+      [
+        "Press de banca con barra",
+        4,
+        6,
+        8,
+        150,
+        2
+      ],
+      [
+        "Remo con barra y agarre prono",
+        3,
+        6,
+        8,
+        150,
+        2
+      ],
+      [
+        "Press de hombros con mancuernas sentado",
+        3,
+        8,
+        10,
+        120,
+        2
+      ],
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Extensión de tríceps en polea alta",
+        2,
+        10,
+        12,
+        60,
+        1
+      ],
+      [
+        "Curl de bíceps con mancuernas de pie",
+        2,
+        10,
+        12,
+        60,
+        1
+      ]
+    ],
+    "tp_p1": [
+      [
+        "Sentadilla trasera con barra (postura estándar)",
+        3,
+        6,
+        8,
+        150,
+        2
+      ],
+      [
+        "Peso muerto rumano con barra (glúteo mayor)",
+        3,
+        8,
+        10,
+        120,
+        2
+      ],
+      [
+        "Extensión de cuádriceps sentado en máquina",
+        2,
+        12,
+        15,
+        60,
+        1
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        3,
+        10,
+        12,
+        60,
+        1
+      ],
+      [
+        "Elevación de gemelos de pie con barra",
+        3,
+        10,
+        15,
+        60,
+        1
+      ]
+    ],
+    "tp_t2": [
+      [
+        "Press de banca con mancuerna",
+        4,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Remo sentado en polea baja con agarre estrecho",
+        3,
+        10,
+        12,
+        90,
+        2
+      ],
+      [
+        "Elevación lateral con mancuernas sentado",
+        3,
+        12,
+        15,
+        60,
+        1
+      ],
+      [
+        "Face pull de pie con polea",
+        2,
+        12,
+        15,
+        60,
+        1
+      ],
+      [
+        "Extensión de tríceps en polea alta",
+        2,
+        10,
+        12,
+        60,
+        1
+      ],
+      [
+        "Curl de bíceps con mancuernas de pie",
+        2,
+        10,
+        12,
+        60,
+        1
+      ]
+    ],
+    "tp_p2": [
+      [
+        "Hip thrust con barra",
+        3,
+        8,
+        10,
+        120,
+        2
+      ],
+      [
+        "Prensa de piernas a 45° (postura estándar)",
+        3,
+        10,
+        12,
+        90,
+        2
+      ],
+      [
+        "Sentadilla búlgara con mancuerna",
+        2,
+        8,
+        10,
+        90,
+        2
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        2,
+        10,
+        12,
+        60,
+        1
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        45,
+        null,
+        30
+      ]
+    ],
+    "ppl_e": [
+      [
+        "Press de banca con barra",
+        4,
+        6,
+        8,
+        150,
+        2
+      ],
+      [
+        "Press de hombros con mancuernas sentado",
+        3,
+        8,
+        10,
+        120,
+        2
+      ],
+      [
+        "Press de banca inclinado con barra",
+        3,
+        8,
+        10,
+        120,
+        2
+      ],
+      [
+        "Elevación lateral con mancuernas sentado",
+        3,
+        12,
+        15,
+        60,
+        1
+      ],
+      [
+        "Extensión de tríceps en polea alta",
+        3,
+        10,
+        12,
+        60,
+        1
+      ]
+    ],
+    "ppl_t": [
+      [
+        "Jalón al pecho con agarre abierto en polea",
+        4,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Remo con barra y agarre prono",
+        3,
+        6,
+        10,
+        120,
+        2
+      ],
+      [
+        "Remo sentado en polea baja con agarre estrecho",
+        3,
+        10,
+        12,
+        90,
+        2
+      ],
+      [
+        "Face pull de pie con polea",
+        3,
+        12,
+        15,
+        60,
+        1
+      ],
+      [
+        "Curl de bíceps con mancuernas de pie",
+        3,
+        10,
+        12,
+        60,
+        1
+      ]
+    ],
+    "ppl_p": [
+      [
+        "Sentadilla trasera con barra (postura estándar)",
+        4,
+        6,
+        8,
+        150,
+        2
+      ],
+      [
+        "Peso muerto rumano con barra (glúteo mayor)",
+        3,
+        8,
+        10,
+        120,
+        2
+      ],
+      [
+        "Prensa de piernas a 45° (postura estándar)",
+        3,
+        10,
+        12,
+        90,
+        2
+      ],
+      [
+        "Curl femoral tumbado en máquina",
+        3,
+        10,
+        12,
+        60,
+        1
+      ],
+      [
+        "Elevación de gemelos de pie con barra",
+        3,
+        10,
+        15,
+        60,
+        1
+      ]
+    ],
+    "cas_a": [
+      [
+        "Sentadilla con peso corporal",
+        3,
+        12,
+        20,
+        60,
+        3
+      ],
+      [
+        "Flexión de brazos",
+        3,
+        6,
+        12,
+        90,
+        3
+      ],
+      [
+        "Remo axilar con botella",
+        3,
+        10,
+        15,
+        60,
+        3
+      ],
+      [
+        "Puente de glúteos",
+        3,
+        12,
+        20,
+        45,
+        3
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        1,
+        45,
+        null,
+        30
+      ]
+    ],
+    "cas_b": [
+      [
+        "Zancada",
+        3,
+        8,
+        12,
+        60,
+        3
+      ],
+      [
+        "Peso muerto rumano con peso corporal",
+        3,
+        12,
+        15,
+        45,
+        3
+      ],
+      [
+        "Flexión de brazos en pared",
+        2,
+        10,
+        15,
+        60,
+        3
+      ],
+      [
+        "Elevación lateral con botella",
+        3,
+        12,
+        15,
+        45,
+        3
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        45,
+        null,
+        20
+      ]
+    ],
+    "man_a": [
+      [
+        "Sentadilla sumo con mancuerna",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Press en el suelo a una mano con mancuerna",
+        3,
+        10,
+        12,
+        60,
+        3
+      ],
+      [
+        "Remo a una mano con mancuerna",
+        3,
+        10,
+        12,
+        60,
+        3
+      ],
+      [
+        "Puente de glúteos",
+        2,
+        12,
+        15,
+        45,
+        3
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        1,
+        45,
+        null,
+        30
+      ]
+    ],
+    "man_b": [
+      [
+        "Zancada hacia atrás con mancuerna",
+        3,
+        8,
+        10,
+        90,
+        3
+      ],
+      [
+        "Peso muerto rumano con mancuernas",
+        3,
+        10,
+        12,
+        90,
+        3
+      ],
+      [
+        "Press de hombros de pie con mancuerna",
+        3,
+        8,
+        10,
+        90,
+        3
+      ],
+      [
+        "Curl de bíceps con mancuernas de pie",
+        2,
+        10,
+        12,
+        60,
+        2
+      ],
+      [
+        "Extensión de tríceps sentado con mancuernas",
+        2,
+        10,
+        12,
+        60,
+        2
+      ]
+    ],
+    "par_a": [
+      [
+        "Remo invertido",
+        3,
+        6,
+        12,
+        90,
+        2
+      ],
+      [
+        "Flexión de brazos",
+        3,
+        6,
+        12,
+        90,
+        2
+      ],
+      [
+        "Sentadilla con peso corporal",
+        3,
+        15,
+        20,
+        60,
+        3
+      ],
+      [
+        "Puente de glúteos",
+        3,
+        12,
+        20,
+        45,
+        3
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        1,
+        45,
+        null,
+        30
+      ]
+    ],
+    "par_b": [
+      [
+        "Dominadas asistidas con banda de resistencia",
+        3,
+        4,
+        8,
+        120,
+        2
+      ],
+      [
+        "Fondos en banco con rodillas flexionadas",
+        3,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Subida lateral al cajón",
+        3,
+        8,
+        12,
+        60,
+        3
+      ],
+      [
+        "Zancada",
+        3,
+        8,
+        12,
+        60,
+        3
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        45,
+        null,
+        20
+      ]
+    ],
+    "exg": [
+      [
+        "Prensa de piernas a 45° (postura estándar)",
+        2,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Press de pecho en máquina",
+        2,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Remo sentado en polea baja con agarre estrecho",
+        2,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Hip thrust con mancuerna (glúteo mayor)",
+        2,
+        8,
+        12,
+        90,
+        2
+      ],
+      [
+        "Press de hombros sentado en máquina",
+        2,
+        8,
+        12,
+        60,
+        2
+      ]
+    ],
+    "exc": [
+      [
+        "Sentadilla con peso corporal",
+        2,
+        12,
+        20,
+        45,
+        2
+      ],
+      [
+        "Flexión de brazos",
+        2,
+        6,
+        12,
+        60,
+        2
+      ],
+      [
+        "Remo axilar con botella",
+        2,
+        10,
+        15,
+        45,
+        2
+      ],
+      [
+        "Puente de glúteos",
+        2,
+        12,
+        20,
+        45,
+        2
+      ],
+      [
+        "Plancha abdominal sobre antebrazos",
+        2,
+        1,
+        1,
+        30,
+        null,
+        30
+      ]
+    ],
+    "run_f": [
+      [
+        "Sentadilla con peso corporal",
+        2,
+        10,
+        15,
+        60,
+        3
+      ],
+      [
+        "Puente de glúteos",
+        2,
+        12,
+        15,
+        45,
+        3
+      ],
+      [
+        "Elevación de gemelos de pie con apoyo",
+        2,
+        12,
+        15,
+        45,
+        3
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        30,
+        null,
+        20
+      ]
+    ],
+    "mov": [
+      [
+        "Rotación torácica en cuadrupedia",
+        2,
+        8,
+        8,
+        30,
+        null
+      ],
+      [
+        "Giro de cadera 90/90 dinámico",
+        2,
+        8,
+        8,
+        30,
+        null
+      ],
+      [
+        "Peso muerto rumano con peso corporal",
+        2,
+        10,
+        10,
+        30,
+        4
+      ],
+      [
+        "Puente de glúteos",
+        2,
+        12,
+        12,
+        30,
+        4
+      ],
+      [
+        "Plancha lateral",
+        2,
+        1,
+        1,
+        30,
+        null,
+        20
+      ],
+      [
+        "Estiramiento de isquiotibiales de pie con la punta abajo",
+        2,
+        1,
+        1,
+        30,
+        null,
+        30
+      ]
+    ]
+  },
+  "nombres_dia": {
+    "Piernas, pecho y espalda": {
+      "en": "Legs, chest and back",
+      "fr": "Jambes, pecs et dos",
+      "pt": "Pernas, peito e costas"
+    },
+    "Piernas, hombro y espalda": {
+      "en": "Legs, shoulders and back",
+      "fr": "Jambes, épaules et dos",
+      "pt": "Pernas, ombros e costas"
+    },
+    "Sentadilla, pecho y espalda": {
+      "en": "Squat, chest and back",
+      "fr": "Squat, pecs et dos",
+      "pt": "Agachamento, peito e costas"
+    },
+    "Cadera, hombro y espalda": {
+      "en": "Hips, shoulders and back",
+      "fr": "Hanches, épaules et dos",
+      "pt": "Anca, ombros e costas"
+    },
+    "Glúteo, hombro y espalda": {
+      "en": "Glutes, shoulders and back",
+      "fr": "Fessiers, épaules et dos",
+      "pt": "Glúteos, ombros e costas"
+    },
+    "Pecho, espalda y hombro": {
+      "en": "Chest, back and shoulders",
+      "fr": "Pecs, dos et épaules",
+      "pt": "Peito, costas e ombros"
+    },
+    "Piernas: sentadilla y femoral": {
+      "en": "Legs: squat and hamstrings",
+      "fr": "Jambes : squat et ischios",
+      "pt": "Pernas: agachamento e posteriores"
+    },
+    "Espalda, hombro y brazos": {
+      "en": "Back, shoulders and arms",
+      "fr": "Dos, épaules et bras",
+      "pt": "Costas, ombros e braços"
+    },
+    "Piernas: glúteo y prensa": {
+      "en": "Legs: glutes and leg press",
+      "fr": "Jambes : fessiers et presse",
+      "pt": "Pernas: glúteos e prensa"
+    },
+    "Pecho, hombro y tríceps": {
+      "en": "Chest, shoulders and triceps",
+      "fr": "Pecs, épaules et triceps",
+      "pt": "Peito, ombros e tríceps"
+    },
+    "Espalda y bíceps": {
+      "en": "Back and biceps",
+      "fr": "Dos et biceps",
+      "pt": "Costas e bíceps"
+    },
+    "Piernas y glúteo": {
+      "en": "Legs and glutes",
+      "fr": "Jambes et fessiers",
+      "pt": "Pernas e glúteos"
+    },
+    "Glúteo, hombro y abdomen": {
+      "en": "Glutes, shoulders and abs",
+      "fr": "Fessiers, épaules et abdos",
+      "pt": "Glúteos, ombros e abdominais"
+    },
+    "Piernas, hombro y brazos": {
+      "en": "Legs, shoulders and arms",
+      "fr": "Jambes, épaules et bras",
+      "pt": "Pernas, ombros e braços"
+    },
+    "Espalda, pecho y piernas": {
+      "en": "Back, chest and legs",
+      "fr": "Dos, pecs et jambes",
+      "pt": "Costas, peito e pernas"
+    },
+    "Dominadas, brazos y piernas": {
+      "en": "Pull-ups, arms and legs",
+      "fr": "Tractions, bras et jambes",
+      "pt": "Elevações, braços e pernas"
+    },
+    "Todo el cuerpo en media hora": {
+      "en": "Full body in half an hour",
+      "fr": "Tout le corps en une demi-heure",
+      "pt": "Corpo todo em meia hora"
+    },
+    "Todo el cuerpo, versión corta": {
+      "en": "Full body, short version",
+      "fr": "Tout le corps, version courte",
+      "pt": "Corpo todo, versão curta"
+    },
+    "Piernas y abdomen para correr": {
+      "en": "Legs and core for running",
+      "fr": "Jambes et abdos pour courir",
+      "pt": "Pernas e abdominais para correr"
+    },
+    "Espalda y caderas sueltas": {
+      "en": "Loose back and hips",
+      "fr": "Dos et hanches détendus",
+      "pt": "Costas e ancas soltas"
+    }
+  },
+  "plantillas": [
+    {
+      "codigo": "maquinas_empezar",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "semanas": 8,
+      "minutos": 45,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "maq_a",
+          "Piernas, pecho y espalda"
+        ],
+        [
+          3,
+          "maq_b",
+          "Piernas, hombro y espalda"
+        ],
+        [
+          5,
+          "maq_a",
+          "Piernas, pecho y espalda"
+        ]
+      ],
+      "es": [
+        "Máquinas para empezar",
+        "Para tu primer gimnasio: máquinas guiadas, fáciles de aprender. Empieza ligero: los pesos son para probar."
+      ],
+      "en": [
+        "Machines to get started",
+        "For your first gym: guided machines that are easy to learn. Start light: the weights are just to try."
+      ],
+      "fr": [
+        "Machines pour débuter",
+        "Pour ta première salle : des machines guidées, faciles à apprendre. Commence léger : les charges sont à essayer."
+      ],
+      "pt": [
+        "Máquinas para começar",
+        "Para o teu primeiro ginásio: máquinas guiadas, fáceis de aprender. Começa leve: os pesos são para experimentar."
+      ]
+    },
+    {
+      "codigo": "pesas_libres",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "semanas": 8,
+      "minutos": 40,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "lib_a",
+          "Sentadilla, pecho y espalda"
+        ],
+        [
+          3,
+          "lib_b",
+          "Cadera, hombro y espalda"
+        ],
+        [
+          5,
+          "lib_a",
+          "Sentadilla, pecho y espalda"
+        ]
+      ],
+      "es": [
+        "Cuerpo completo con pesas libres",
+        "Barra y mancuernas para aprender los movimientos básicos, cuando ya te manejas en el gimnasio. Usa el rack con los seguros puestos."
+      ],
+      "en": [
+        "Full body with free weights",
+        "Barbell and dumbbells to learn the basic lifts, once you feel at home in the gym. Use the rack with the safety bars set."
+      ],
+      "fr": [
+        "Corps entier avec poids libres",
+        "Barre et haltères pour apprendre les mouvements de base, quand tu es à l'aise en salle. Utilise le rack avec les sécurités en place."
+      ],
+      "pt": [
+        "Corpo inteiro com pesos livres",
+        "Barra e halteres para aprender os movimentos básicos, quando já te orientas no ginásio. Usa o rack com as seguranças postas."
+      ]
+    },
+    {
+      "codigo": "poco_tiempo",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "semanas": 8,
+      "minutos": 40,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "dos_a",
+          "Piernas, pecho y espalda"
+        ],
+        [
+          4,
+          "dos_b",
+          "Glúteo, hombro y espalda"
+        ]
+      ],
+      "es": [
+        "Cuerpo completo con poco tiempo",
+        "Dos sesiones completas a la semana: el mínimo de fuerza que recomienda la OMS."
+      ],
+      "en": [
+        "Full body when you're short on time",
+        "Two full sessions a week: the minimum strength training the WHO recommends."
+      ],
+      "fr": [
+        "Corps entier quand tu manques de temps",
+        "Deux séances complètes par semaine : le minimum de renforcement recommandé par l'OMS."
+      ],
+      "pt": [
+        "Corpo inteiro com pouco tempo",
+        "Duas sessões completas por semana: o mínimo de força que a OMS recomenda."
+      ]
+    },
+    {
+      "codigo": "arriba_y_piernas",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "INTERMEDIATE",
+      "semanas": 8,
+      "minutos": 55,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "tp_t1",
+          "Pecho, espalda y hombro"
+        ],
+        [
+          2,
+          "tp_p1",
+          "Piernas: sentadilla y femoral"
+        ],
+        [
+          4,
+          "tp_t2",
+          "Espalda, hombro y brazos"
+        ],
+        [
+          5,
+          "tp_p2",
+          "Piernas: glúteo y prensa"
+        ]
+      ],
+      "es": [
+        "Parte de arriba y piernas",
+        "Dos días de parte de arriba y dos de piernas, para quien ya entrena con constancia."
+      ],
+      "en": [
+        "Upper body and legs",
+        "Two upper-body days and two leg days, for people who already train regularly."
+      ],
+      "fr": [
+        "Haut du corps et jambes",
+        "Deux jours pour le haut du corps et deux pour les jambes, pour qui s'entraîne déjà régulièrement."
+      ],
+      "pt": [
+        "Parte de cima e pernas",
+        "Dois dias de parte de cima e dois de pernas, para quem já treina com regularidade."
+      ]
+    },
+    {
+      "codigo": "empujar_tirar_piernas",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "INTERMEDIATE",
+      "semanas": 8,
+      "minutos": 50,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "ppl_e",
+          "Pecho, hombro y tríceps"
+        ],
+        [
+          3,
+          "ppl_t",
+          "Espalda y bíceps"
+        ],
+        [
+          5,
+          "ppl_p",
+          "Piernas y glúteo"
+        ]
+      ],
+      "es": [
+        "Empujar, tirar y piernas",
+        "Un día para pecho, hombro y tríceps; otro para espalda y bíceps; y otro de piernas."
+      ],
+      "en": [
+        "Push, pull and legs",
+        "One day for chest, shoulders and triceps; one for back and biceps; and one for legs."
+      ],
+      "fr": [
+        "Pousser, tirer et jambes",
+        "Un jour pour pecs, épaules et triceps ; un pour le dos et les biceps ; et un pour les jambes."
+      ],
+      "pt": [
+        "Empurrar, puxar e pernas",
+        "Um dia para peito, ombros e tríceps; outro para costas e bíceps; e outro de pernas."
+      ]
+    },
+    {
+      "codigo": "casa_sin_material",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "semanas": 6,
+      "minutos": 35,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "cas_a",
+          "Piernas, pecho y espalda"
+        ],
+        [
+          3,
+          "cas_b",
+          "Glúteo, hombro y abdomen"
+        ],
+        [
+          5,
+          "cas_a",
+          "Piernas, pecho y espalda"
+        ]
+      ],
+      "es": [
+        "En casa sin material",
+        "Solo tu cuerpo, dos botellas de agua y una pared. Si aún no llegas a 6 flexiones, hazlas en la pared."
+      ],
+      "en": [
+        "At home, no equipment",
+        "Just your body, two water bottles and a wall. If you can't do 6 push-ups yet, do them against the wall."
+      ],
+      "fr": [
+        "À la maison sans matériel",
+        "Juste ton corps, deux bouteilles d'eau et un mur. Si tu ne fais pas encore 6 pompes, fais-les contre le mur."
+      ],
+      "pt": [
+        "Em casa sem material",
+        "Só o teu corpo, duas garrafas de água e uma parede. Se ainda não fazes 6 flexões, faz na parede."
+      ]
+    },
+    {
+      "codigo": "casa_mancuernas",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "semanas": 8,
+      "minutos": 35,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "man_a",
+          "Piernas, pecho y espalda"
+        ],
+        [
+          3,
+          "man_b",
+          "Piernas, hombro y brazos"
+        ],
+        [
+          5,
+          "man_a",
+          "Piernas, pecho y espalda"
+        ]
+      ],
+      "es": [
+        "En casa con mancuernas",
+        "Necesitas un par de mancuernas (mejor si son ajustables)."
+      ],
+      "en": [
+        "At home with dumbbells",
+        "You need a pair of dumbbells (adjustable ones are best)."
+      ],
+      "fr": [
+        "À la maison avec haltères",
+        "Il te faut une paire d'haltères (réglables, c'est mieux)."
+      ],
+      "pt": [
+        "Em casa com halteres",
+        "Precisas de um par de halteres (de preferência ajustáveis)."
+      ]
+    },
+    {
+      "codigo": "calistenia_parque",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "OUTDOOR",
+      "nivel": "BEGINNER",
+      "semanas": 8,
+      "minutos": 40,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "par_a",
+          "Espalda, pecho y piernas"
+        ],
+        [
+          3,
+          "par_b",
+          "Dominadas, brazos y piernas"
+        ],
+        [
+          5,
+          "par_a",
+          "Espalda, pecho y piernas"
+        ]
+      ],
+      "es": [
+        "Calistenia en el parque",
+        "Necesitas una barra baja, una barra de dominadas, un banco y una goma elástica."
+      ],
+      "en": [
+        "Park calisthenics",
+        "You need a low bar, a pull-up bar, a bench and a resistance band."
+      ],
+      "fr": [
+        "Street workout au parc",
+        "Il te faut une barre basse, une barre de traction, un banc et un élastique."
+      ],
+      "pt": [
+        "Calistenia no parque",
+        "Precisas de uma barra baixa, uma barra de elevações, um banco e um elástico."
+      ]
+    },
+    {
+      "codigo": "mantener_examenes_gimnasio",
+      "objetivo": "HYPERTROPHY",
+      "lugar": "GYM",
+      "nivel": "BEGINNER",
+      "semanas": 3,
+      "minutos": 30,
+      "examenes": true,
+      "dias": [
+        [
+          2,
+          "exg",
+          "Todo el cuerpo en media hora"
+        ],
+        [
+          5,
+          "exg",
+          "Todo el cuerpo en media hora"
+        ]
+      ],
+      "es": [
+        "Mantenerte en exámenes · gimnasio",
+        "Media hora, dos días: mantienes lo ganado sin quitar horas de estudio. Mismo peso, menos series."
+      ],
+      "en": [
+        "Stay fit during exams · gym",
+        "Half an hour, two days: keep your gains without losing study time. Same weight, fewer sets."
+      ],
+      "fr": [
+        "Garder la forme en examens · salle",
+        "Une demi-heure, deux jours : tu gardes tes progrès sans perdre de temps de révision. Même charge, moins de séries."
+      ],
+      "pt": [
+        "Manter-te em exames · ginásio",
+        "Meia hora, dois dias: manténs o que ganhaste sem tirar horas de estudo. Mesmo peso, menos séries."
+      ]
+    },
+    {
+      "codigo": "mantener_examenes_casa",
+      "objetivo": "STRENGTH_ENDURANCE",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "semanas": 3,
+      "minutos": 25,
+      "examenes": true,
+      "dias": [
+        [
+          2,
+          "exc",
+          "Todo el cuerpo, versión corta"
+        ],
+        [
+          5,
+          "exc",
+          "Todo el cuerpo, versión corta"
+        ]
+      ],
+      "es": [
+        "Mantenerte en exámenes · en casa",
+        "Veinticinco minutos sin material, dos días, entre sesiones de estudio."
+      ],
+      "en": [
+        "Stay fit during exams · at home",
+        "Twenty-five minutes with no equipment, two days, between study sessions."
+      ],
+      "fr": [
+        "Garder la forme en examens · maison",
+        "Vingt-cinq minutes sans matériel, deux jours, entre deux révisions."
+      ],
+      "pt": [
+        "Manter-te em exames · em casa",
+        "Vinte e cinco minutos sem material, dois dias, entre sessões de estudo."
+      ]
+    },
+    {
+      "codigo": "empieza_a_correr",
+      "objetivo": "METABOLIC_CONDITIONING",
+      "lugar": "OUTDOOR",
+      "nivel": "BEGINNER",
+      "semanas": 9,
+      "minutos": 30,
+      "examenes": false,
+      "dias": [
+        [
+          4,
+          "run_f",
+          "Piernas y abdomen para correr"
+        ]
+      ],
+      "es": [
+        "Empieza a correr",
+        "De no correr nada a 30 minutos seguidos en 9 semanas, a un ritmo en el que puedas hablar. Si una semana cuesta, repítela."
+      ],
+      "en": [
+        "Start running",
+        "From no running at all to 30 minutes non-stop in 9 weeks, at a pace where you can still talk. If a week feels hard, repeat it."
+      ],
+      "fr": [
+        "Commence à courir",
+        "De zéro à 30 minutes sans t'arrêter en 9 semaines, à une allure où tu peux parler. Si une semaine est dure, refais-la."
+      ],
+      "pt": [
+        "Começa a correr",
+        "De não correr nada a 30 minutos seguidos em 9 semanas, a um ritmo em que consigas falar. Se uma semana custar, repete-a."
+      ],
+      "carreras": [
+        [
+          1,
+          1,
+          "C25K_W1"
+        ],
+        [
+          1,
+          3,
+          "C25K_W1"
+        ],
+        [
+          1,
+          6,
+          "C25K_W1"
+        ],
+        [
+          2,
+          1,
+          "C25K_W2"
+        ],
+        [
+          2,
+          3,
+          "C25K_W2"
+        ],
+        [
+          2,
+          6,
+          "C25K_W2"
+        ],
+        [
+          3,
+          1,
+          "C25K_W3"
+        ],
+        [
+          3,
+          3,
+          "C25K_W3"
+        ],
+        [
+          3,
+          6,
+          "C25K_W3"
+        ],
+        [
+          4,
+          1,
+          "C25K_W4"
+        ],
+        [
+          4,
+          3,
+          "C25K_W4"
+        ],
+        [
+          4,
+          6,
+          "C25K_W4"
+        ],
+        [
+          5,
+          1,
+          "C25K_W5_1"
+        ],
+        [
+          5,
+          3,
+          "C25K_W5_2"
+        ],
+        [
+          5,
+          6,
+          "C25K_W5_3"
+        ],
+        [
+          6,
+          1,
+          "C25K_W6_1"
+        ],
+        [
+          6,
+          3,
+          "C25K_W6_2"
+        ],
+        [
+          6,
+          6,
+          "C25K_W6_3"
+        ],
+        [
+          7,
+          1,
+          "C25K_W7"
+        ],
+        [
+          7,
+          3,
+          "C25K_W7"
+        ],
+        [
+          7,
+          6,
+          "C25K_W7"
+        ],
+        [
+          8,
+          1,
+          "C25K_W8"
+        ],
+        [
+          8,
+          3,
+          "C25K_W8"
+        ],
+        [
+          8,
+          6,
+          "C25K_W8"
+        ],
+        [
+          9,
+          1,
+          "C25K_W9"
+        ],
+        [
+          9,
+          3,
+          "C25K_W9"
+        ],
+        [
+          9,
+          6,
+          "C25K_W9"
+        ]
+      ]
+    },
+    {
+      "codigo": "espalda_movilidad",
+      "objetivo": "MOBILITY",
+      "lugar": "HOME",
+      "nivel": "BEGINNER",
+      "semanas": 4,
+      "minutos": 15,
+      "examenes": false,
+      "dias": [
+        [
+          1,
+          "mov",
+          "Espalda y caderas sueltas"
+        ],
+        [
+          3,
+          "mov",
+          "Espalda y caderas sueltas"
+        ],
+        [
+          5,
+          "mov",
+          "Espalda y caderas sueltas"
+        ]
+      ],
+      "es": [
+        "Espalda y movilidad para estudiar",
+        "Quince minutos para pasar muchas horas sentado sin que la espalda lo note."
+      ],
+      "en": [
+        "Back and mobility for studying",
+        "Fifteen minutes so long hours sitting don't take a toll on your back."
+      ],
+      "fr": [
+        "Dos et mobilité pour réviser",
+        "Quinze minutes pour passer de longues heures assis sans que ton dos le sente."
+      ],
+      "pt": [
+        "Costas e mobilidade para estudar",
+        "Quinze minutos para passares muitas horas sentado sem que as costas se ressintam."
+      ]
+    }
+  ],
+  "nombres_carrera": {
+    "C25K_W1": {
+      "es": "Semana 1 · 8 veces: 1 min corriendo y 1,5 andando",
+      "en": "Week 1 · 8 times: run 1 min, walk 1.5",
+      "fr": "Semaine 1 · 8 fois : 1 min de course et 1,5 de marche",
+      "pt": "Semana 1 · 8 vezes: 1 min a correr e 1,5 a andar"
+    },
+    "C25K_W2": {
+      "es": "Semana 2 · 6 veces: 1,5 min corriendo y 2 andando",
+      "en": "Week 2 · 6 times: run 1.5 min, walk 2",
+      "fr": "Semaine 2 · 6 fois : 1,5 min de course et 2 de marche",
+      "pt": "Semana 2 · 6 vezes: 1,5 min a correr e 2 a andar"
+    },
+    "C25K_W3": {
+      "es": "Semana 3 · 2 veces: 1,5 y 3 min corriendo con pausas andando",
+      "en": "Week 3 · twice: run 1.5 and 3 min with walking breaks",
+      "fr": "Semaine 3 · 2 fois : 1,5 et 3 min de course avec de la marche",
+      "pt": "Semana 3 · 2 vezes: 1,5 e 3 min a correr com pausas a andar"
+    },
+    "C25K_W4": {
+      "es": "Semana 4 · 3 y 5 min corriendo con pausas andando",
+      "en": "Week 4 · run 3 and 5 min with walking breaks",
+      "fr": "Semaine 4 · 3 et 5 min de course avec de la marche",
+      "pt": "Semana 4 · 3 e 5 min a correr com pausas a andar"
+    },
+    "C25K_W5_1": {
+      "es": "Semana 5 · 1.ª salida: 3 veces 5 min corriendo y 3 andando",
+      "en": "Week 5 · run 1: 3 times, run 5 min and walk 3",
+      "fr": "Semaine 5 · sortie 1 : 3 fois 5 min de course et 3 de marche",
+      "pt": "Semana 5 · 1.ª saída: 3 vezes 5 min a correr e 3 a andar"
+    },
+    "C25K_W5_2": {
+      "es": "Semana 5 · 2.ª salida: 8 min corriendo, 5 andando y 8 corriendo",
+      "en": "Week 5 · run 2: run 8 min, walk 5, run 8",
+      "fr": "Semaine 5 · sortie 2 : 8 min de course, 5 de marche et 8 de course",
+      "pt": "Semana 5 · 2.ª saída: 8 min a correr, 5 a andar e 8 a correr"
+    },
+    "C25K_W5_3": {
+      "es": "Semana 5 · 3.ª salida: 20 min seguidos corriendo",
+      "en": "Week 5 · run 3: 20 min non-stop",
+      "fr": "Semaine 5 · sortie 3 : 20 min de course sans arrêt",
+      "pt": "Semana 5 · 3.ª saída: 20 min seguidos a correr"
+    },
+    "C25K_W6_1": {
+      "es": "Semana 6 · 1.ª salida: 5, 8 y 5 min corriendo con pausas",
+      "en": "Week 6 · run 1: run 5, 8 and 5 min with breaks",
+      "fr": "Semaine 6 · sortie 1 : 5, 8 et 5 min de course avec pauses",
+      "pt": "Semana 6 · 1.ª saída: 5, 8 e 5 min a correr com pausas"
+    },
+    "C25K_W6_2": {
+      "es": "Semana 6 · 2.ª salida: 10 min corriendo, 3 andando y 10 corriendo",
+      "en": "Week 6 · run 2: run 10 min, walk 3, run 10",
+      "fr": "Semaine 6 · sortie 2 : 10 min de course, 3 de marche et 10 de course",
+      "pt": "Semana 6 · 2.ª saída: 10 min a correr, 3 a andar e 10 a correr"
+    },
+    "C25K_W6_3": {
+      "es": "Semana 6 · 3.ª salida: 25 min seguidos corriendo",
+      "en": "Week 6 · run 3: 25 min non-stop",
+      "fr": "Semaine 6 · sortie 3 : 25 min de course sans arrêt",
+      "pt": "Semana 6 · 3.ª saída: 25 min seguidos a correr"
+    },
+    "C25K_W7": {
+      "es": "Semana 7 · 25 min seguidos corriendo",
+      "en": "Week 7 · 25 min non-stop",
+      "fr": "Semaine 7 · 25 min de course sans arrêt",
+      "pt": "Semana 7 · 25 min seguidos a correr"
+    },
+    "C25K_W8": {
+      "es": "Semana 8 · 28 min seguidos corriendo",
+      "en": "Week 8 · 28 min non-stop",
+      "fr": "Semaine 8 · 28 min de course sans arrêt",
+      "pt": "Semana 8 · 28 min seguidos a correr"
+    },
+    "C25K_W9": {
+      "es": "Semana 9 · 30 min seguidos corriendo",
+      "en": "Week 9 · 30 min non-stop",
+      "fr": "Semaine 9 · 30 min de course sans arrêt",
+      "pt": "Semana 9 · 30 min seguidos a correr"
+    }
+  },
+  "cargas": [
+    [
+      "Sentadilla trasera con barra (postura estándar)",
+      "BARBELL",
+      0.35,
+      20,
+      60,
+      true
+    ],
+    [
+      "Peso muerto rumano con barra (glúteo mayor)",
+      "BARBELL",
+      0.35,
+      20,
+      60,
+      true
+    ],
+    [
+      "Hip thrust con barra",
+      "BARBELL",
+      0.45,
+      20,
+      60,
+      true
+    ],
+    [
+      "Press de banca con barra",
+      "BARBELL",
+      0.25,
+      20,
+      40,
+      false
+    ],
+    [
+      "Press de banca inclinado con barra",
+      "BARBELL",
+      0.2,
+      20,
+      40,
+      false
+    ],
+    [
+      "Remo con barra y agarre prono",
+      "BARBELL",
+      0.25,
+      20,
+      40,
+      false
+    ],
+    [
+      "Elevación de gemelos de pie con barra",
+      "BARBELL",
+      0.3,
+      20,
+      60,
+      true
+    ],
+    [
+      "Press de banca con mancuerna",
+      "DUMBBELL_PAIR",
+      0.08,
+      6,
+      16,
+      false
+    ],
+    [
+      "Press de hombros con mancuernas sentado",
+      "DUMBBELL_PAIR",
+      0.06,
+      4,
+      16,
+      false
+    ],
+    [
+      "Press de hombros de pie con mancuerna",
+      "DUMBBELL_PAIR",
+      0.06,
+      4,
+      16,
+      false
+    ],
+    [
+      "Press en el suelo a una mano con mancuerna",
+      "DUMBBELL_SINGLE",
+      0.08,
+      6,
+      16,
+      false
+    ],
+    [
+      "Remo a una mano con mancuerna",
+      "DUMBBELL_SINGLE",
+      0.1,
+      6,
+      16,
+      false
+    ],
+    [
+      "Peso muerto rumano con mancuernas",
+      "DUMBBELL_PAIR",
+      0.1,
+      6,
+      16,
+      true
+    ],
+    [
+      "Zancada hacia atrás con mancuerna",
+      "DUMBBELL_PAIR",
+      0.05,
+      4,
+      16,
+      true
+    ],
+    [
+      "Sentadilla sumo con mancuerna",
+      "DUMBBELL_SINGLE",
+      0.15,
+      8,
+      16,
+      true
+    ],
+    [
+      "Sentadilla búlgara con mancuerna",
+      "DUMBBELL_PAIR",
+      0.05,
+      4,
+      16,
+      true
+    ],
+    [
+      "Hip thrust con mancuerna (glúteo mayor)",
+      "DUMBBELL_SINGLE",
+      0.2,
+      10,
+      16,
+      true
+    ],
+    [
+      "Sentadilla goblet con kettlebell",
+      "KETTLEBELL",
+      0.15,
+      8,
+      16,
+      true
+    ],
+    [
+      "Curl de bíceps con mancuernas de pie",
+      "DUMBBELL_PAIR",
+      0.04,
+      2,
+      16,
+      false
+    ],
+    [
+      "Elevación lateral con mancuernas sentado",
+      "DUMBBELL_PAIR",
+      0.025,
+      2,
+      16,
+      false
+    ],
+    [
+      "Extensión de tríceps sentado con mancuernas",
+      "DUMBBELL_PAIR",
+      0.04,
+      2,
+      16,
+      false
+    ],
+    [
+      "Prensa de piernas a 45° (postura estándar)",
+      "MACHINE",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Press de pecho en máquina",
+      "MACHINE",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Press de hombros sentado en máquina",
+      "MACHINE",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Extensión de cuádriceps sentado en máquina",
+      "MACHINE",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Curl femoral tumbado en máquina",
+      "MACHINE",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Jalón al pecho con agarre abierto en polea",
+      "CABLE",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Remo sentado en polea baja con agarre estrecho",
+      "CABLE",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Extensión de tríceps en polea alta",
+      "CABLE",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Face pull de pie con polea",
+      "CABLE",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Sentadilla con peso corporal",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Flexión de brazos",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Flexión de brazos en pared",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Puente de glúteos",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Zancada",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Peso muerto rumano con peso corporal",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Remo invertido",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Remo axilar con botella",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Elevación lateral con botella",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Fondos en banco con rodillas flexionadas",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      false
+    ],
+    [
+      "Subida lateral al cajón",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Elevación de gemelos de pie con apoyo",
+      "BODYWEIGHT",
+      null,
+      null,
+      null,
+      true
+    ],
+    [
+      "Dominadas asistidas con banda de resistencia",
+      "BAND",
+      null,
+      null,
+      null,
+      false
+    ]
+  ],
+  "retirar": [
+    "cuerpo_completo_2",
+    "cuerpo_completo_3",
+    "torso_pierna_4",
+    "cinco_dias",
+    "fuerza_3",
+    "casa_2",
+    "casa_3",
+    "cardio_casa_3",
+    "examenes_gimnasio",
+    "examenes_casa",
+    "maquinas_3",
+    "parque_3",
+    "expres_gimnasio_3",
+    "casa_intermedio_4",
+    "empuje_tiron_pierna_3",
+    "empuje_tiron_pierna_6",
+    "mancuernas_3",
+    "gomas_3",
+    "kettlebell_3",
+    "cero_a_cinco_km",
+    "correr_y_fuerza",
+    "espalda_sana_5",
+    "gluteo_pierna_3",
+    "vuelta_tras_parada_3"
+  ]
+}

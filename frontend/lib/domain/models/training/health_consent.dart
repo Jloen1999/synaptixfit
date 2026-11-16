@@ -10,5 +10,9 @@ abstract class HealthConsent with _$HealthConsent {
     required bool given,
     DateTime? givenAt,
     DateTime? withdrawnAt,
+
+    /// Dado con un texto anterior, que no incluye usar el peso para proponer
+    /// los kilos de partida (ADR 0054). Se ofrece aceptar el nuevo, sin obligar.
+    @Default(false) bool outdated,
   }) = _HealthConsent;
 }

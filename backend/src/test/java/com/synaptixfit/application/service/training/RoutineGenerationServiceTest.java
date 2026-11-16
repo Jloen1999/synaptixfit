@@ -89,7 +89,8 @@ class RoutineGenerationServiceTest {
                 new CrossRegulationState(userId, 0, 0, 90, null, now), academic.acwr(), AcwrZone.of(academic.acwr()),
                 0, 1);
         service = new RoutineGenerationService(context, exercises, sessions, checkIns, generator, cognitiveState,
-                crossRegulation, Clock.fixed(now, ZoneOffset.UTC), ZoneOffset.UTC);
+                crossRegulation, (userId, ids, level) -> java.util.Map.of(), Clock.fixed(now, ZoneOffset.UTC),
+                ZoneOffset.UTC);
     }
 
     private RoutineProposal generate(int weeks, boolean useAi) {

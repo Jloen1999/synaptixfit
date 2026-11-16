@@ -14,6 +14,8 @@ import 'package:synaptixfit/domain/use_cases/training/delete_set_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/finish_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_last_performance_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_load_suggestions_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/calibrate_exercise_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_session_calibrations_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_routine_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_adaptation_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_bookends_use_case.dart';
@@ -51,6 +53,11 @@ class _GetAdaptation extends Mock
     implements GetSessionAdaptationUseCaseContract {}
 
 class _GetLoads extends Mock implements GetLoadSuggestionsUseCaseContract {}
+
+class _GetCalibrations extends Mock
+    implements GetSessionCalibrationsUseCaseContract {}
+
+class _Calibrate extends Mock implements CalibrateExerciseUseCaseContract {}
 
 class _LoadPending extends Mock implements LoadPendingSetsUseCaseContract {}
 
@@ -118,6 +125,10 @@ void main() {
       () => getAdaptation(any()),
     ).thenAnswer((_) async => const Success(SessionAdaptation()));
     when(() => getLoads(any())).thenAnswer((_) async => const Success([]));
+    final getCalibrations = _GetCalibrations();
+    when(
+      () => getCalibrations(any()),
+    ).thenAnswer((_) async => const Success([]));
     when(() => loadPending(any())).thenAnswer((_) async => const Success([]));
     when(
       () => savePending(any(), any()),
@@ -134,6 +145,8 @@ void main() {
       getBookends: getBookends,
       getAdaptation: getAdaptation,
       getLoadSuggestions: getLoads,
+      getCalibrations: getCalibrations,
+      calibrate: _Calibrate(),
       loadPending: loadPending,
       savePending: savePending,
       pauseSession: pause,

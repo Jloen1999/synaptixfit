@@ -48,6 +48,13 @@ public class ExerciseSelectionEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "segundos_isometricos_por_serie")
     private List<Integer> segundosIsometricosPorSerie;
+    /** Rango de repeticiones y repeticiones que deben sobrar (ADR 0054); nulos sin rango. */
+    @Column(name = "rep_min")
+    private Integer repMin;
+    @Column(name = "rep_max")
+    private Integer repMax;
+    @Column(name = "rir_objetivo")
+    private Integer rirObjetivo;
 
 
     public UUID getId() { return id; }
@@ -80,4 +87,10 @@ public class ExerciseSelectionEntity {
     public void setRepeticionesPorSerie(List<Integer> v) { this.repeticionesPorSerie = v; }
     public List<Integer> getSegundosIsometricosPorSerie() { return segundosIsometricosPorSerie; }
     public void setSegundosIsometricosPorSerie(List<Integer> v) { this.segundosIsometricosPorSerie = v; }
+    public Integer getRepMin() { return repMin; }
+    public void setRepMin(Integer v) { this.repMin = v; }
+    public Integer getRepMax() { return repMax; }
+    public void setRepMax(Integer v) { this.repMax = v; }
+    public Integer getRirObjetivo() { return rirObjetivo; }
+    public void setRirObjetivo(Integer v) { this.rirObjetivo = v; }
 }

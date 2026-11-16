@@ -254,13 +254,12 @@ public final class RoutineRuleEngine {
         return true;
     }
 
-    /** Parámetros iniciales de un ejercicio: puntos medios del objetivo, tiempo/distancia según nivel y peso estimado. */
+    /** Parámetros iniciales de un ejercicio: puntos medios del objetivo y tiempo/distancia según nivel. */
     static ProposedExercise toProposed(Exercise e, GoalParameters params, TrainingProfile profile) {
         int level = profile.activityLevel().rank();
         boolean usesTime = e.measuredBy(MeasurementType.TIME);
         boolean usesDistance = e.measuredBy(MeasurementType.DISTANCE);
         boolean isometric = e.isIsometric();
-        boolean usesWeight = e.measuredBy(MeasurementType.WEIGHT) || e.modality() == Modality.STRENGTH;
         int secondsPerExercise = params.exercisesPerDay() > 0
                 ? profile.minutesPerSession() * 60 / params.exercisesPerDay() : 600;
         double levelFactor = 0.6 + level * 0.15;
@@ -269,48 +268,10 @@ public final class RoutineRuleEngine {
                 ? clamp((int) Math.round(secondsPerExercise * 0.35 * levelFactor), 120, 3600) : null;
         Integer distance = usesDistance ? clamp((int) Math.round((500 + level * 500) * levelFactor), 200, 10_000) : null;
         Integer iso = isometric ? clamp(15 + level * 15, 10, 120) : null;
-        Double weight = null;
-        List<Double> perSet = null;
-        if (usesWeight && profile.weightKg() > 0 && e.measuredBy(MeasurementType.WEIGHT)) {
-            weight = Math.max(1.0, Math.min(300.0,
-                    profile.weightKg() * bodyWeightShare(e.name()) * params.relativeIntensity()));
-            perSet = ProgressionCalculator.warmupWeights(weight, params.defaultSets());
-        }
+        // Sin peso aquí: el de partida lo pone después el caso de uso con StartingLoad (historial, fracción del
+        // peso corporal con consentimiento y redondeo al material, ADR 0054), igual que en las plantillas.
         return new ProposedExercise(e.id(), e.name(), ExerciseParameters.clamped(params.defaultSets(),
-                params.defaultReps(), params.defaultRest(), weight, perSet, duration, distance, iso));
-    }
-
-    /** Fracción del peso corporal que se mueve en cada ejercicio (estimación heredada por nombre). */
-    static double bodyWeightShare(String exerciseName) {
-        String n = ExerciseEligibility.normalize(exerciseName);
-        if (n.contains("sentadilla") || n.contains("squat")) {
-            return 0.50;
-        }
-        if (n.contains("peso muerto") || n.contains("deadlift")) {
-            return 0.60;
-        }
-        if (n.contains("press banca") || n.contains("press de banca") || n.contains("bench press")) {
-            return 0.35;
-        }
-        if (n.contains("dominada") || n.contains("pull up")) {
-            return 0.80;
-        }
-        if (n.contains("remo") || n.contains("row")) {
-            return 0.30;
-        }
-        if (n.contains("press militar") || n.contains("overhead press")) {
-            return 0.25;
-        }
-        if (n.contains("curl") || n.contains("biceps")) {
-            return 0.10;
-        }
-        if (n.contains("extension") || n.contains("triceps")) {
-            return 0.10;
-        }
-        if (n.contains("elevacion") || n.contains("lateral")) {
-            return 0.05;
-        }
-        return 0.15;
+                params.defaultReps(), params.defaultRest(), null, null, duration, distance, iso));
     }
 
     private static List<ProposedExercise> biometricAdjustments(List<ProposedExercise> selected, TrainingProfile profile,
@@ -344,8 +305,7 @@ public final class RoutineRuleEngine {
     }
 
     static ExerciseParameters withSets(ExerciseParameters p, int sets) {
-        List<Double> perSet = p.weightKg() != null && p.weightKg() > 0
-                ? ProgressionCalculator.warmupWeights(p.weightKg(), sets) : p.weightsKg();
+        List<Double> perSet = sets == p.sets() ? p.weightsKg() : null;
         return ExerciseParameters.clamped(sets, p.reps(), p.restSeconds(), p.weightKg(), perSet,
                 p.targetDurationSeconds(), p.distanceMeters(), p.isometricSeconds());
     }

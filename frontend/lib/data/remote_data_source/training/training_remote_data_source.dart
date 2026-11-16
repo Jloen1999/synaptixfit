@@ -52,6 +52,33 @@ class TrainingRemoteDataSource {
     ];
   }
 
+  Future<List<CalibrationTargetDto>> getCalibrations(String sessionId) async {
+    final response = await _dio.get<List<dynamic>>(
+      '$_base/sessions/$sessionId/calibrations',
+    );
+    return [
+      for (final item in response.data ?? const <dynamic>[])
+        CalibrationTargetDto.fromJson(item as Map<String, dynamic>),
+    ];
+  }
+
+  Future<CalibrationTargetDto> calibrate(
+    String sessionId, {
+    required String plannedExerciseId,
+    required int setNumber,
+    required String answer,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/sessions/$sessionId/calibrations',
+      data: {
+        'plannedExerciseId': plannedExerciseId,
+        'setNumber': setNumber,
+        'answer': answer,
+      },
+    );
+    return CalibrationTargetDto.fromJson(response.data!);
+  }
+
   Future<TrainingPage<SessionDto>> listSessions({
     bool? completed,
     required int page,

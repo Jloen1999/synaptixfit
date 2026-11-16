@@ -89,7 +89,7 @@ class TogetherLiveIT {
         assertThat(hub.connections(java.util.UUID.fromString(ana.id()))).isEqualTo(1);
 
         String gallery = call(get("/api/v1/training/templates"), me, null, 200);
-        List<String> templates = JsonPath.read(gallery, "$[?(@.code == 'casa_2')].id");
+        List<String> templates = JsonPath.read(gallery, "$[?(@.code == 'mantener_examenes_casa')].id");
         String routine = call(post("/api/v1/training/templates/" + templates.getFirst() + "/use"), me, null, 201);
         String routineId = JsonPath.read(routine, "$.id");
         String workout = call(post("/api/v1/together/workouts"), me,

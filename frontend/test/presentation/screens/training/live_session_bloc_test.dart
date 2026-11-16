@@ -27,6 +27,9 @@ import 'package:synaptixfit/domain/use_cases/training/get_session_adaptation_use
 import 'package:synaptixfit/domain/models/training/load_suggestion.dart';
 import 'package:synaptixfit/domain/models/training/set_fields.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_load_suggestions_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/calibrate_exercise_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_session_calibrations_use_case.dart';
+import 'package:synaptixfit/domain/models/training/exercise_calibration.dart';
 
 import 'training_fixtures.dart';
 import 'live_session_draft_fakes.dart';
@@ -38,6 +41,11 @@ class _MockPause extends Mock implements PauseSessionUseCaseContract {}
 class _MockResume extends Mock implements ResumeSessionUseCaseContract {}
 
 class _MockGetLoads extends Mock implements GetLoadSuggestionsUseCaseContract {}
+
+class _MockGetCalibrations extends Mock
+    implements GetSessionCalibrationsUseCaseContract {}
+
+class _MockCalibrate extends Mock implements CalibrateExerciseUseCaseContract {}
 
 class _MockLoadPending extends Mock implements LoadPendingSetsUseCaseContract {}
 
@@ -76,6 +84,8 @@ void main() {
   late _MockGetBookends getBookends;
   late _MockGetAdaptation getAdaptation;
   late _MockGetLoads getLoads;
+  late _MockGetCalibrations getCalibrations;
+  late _MockCalibrate calibrate;
   late _MockLoadPending loadPending;
   late _MockSavePending savePending;
 
@@ -103,6 +113,11 @@ void main() {
     getAdaptation = _MockGetAdaptation();
     getLoads = _MockGetLoads();
     when(() => getLoads(any())).thenAnswer((_) async => const Success([]));
+    getCalibrations = _MockGetCalibrations();
+    when(
+      () => getCalibrations(any()),
+    ).thenAnswer((_) async => const Success([]));
+    calibrate = _MockCalibrate();
     loadPending = _MockLoadPending();
     savePending = _MockSavePending();
     // Sin series pendientes guardadas en el teléfono salvo en su test.
@@ -133,6 +148,8 @@ void main() {
     getBookends: getBookends,
     getAdaptation: getAdaptation,
     getLoadSuggestions: getLoads,
+    getCalibrations: getCalibrations,
+    calibrate: calibrate,
     loadPending: loadPending,
     savePending: savePending,
     pauseSession: _MockPause(),
@@ -437,6 +454,149 @@ void main() {
     repsDone: 10,
     completed: true,
   );
+
+  group('calibración de la primera vez (ADR 0054)', () {
+    const target = ExerciseCalibration(
+      plannedExerciseId: 'p1',
+      exerciseId: 'e1',
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'tras cargar, guarda los ejercicios del día que se calibran',
+      setUp: () {
+        when(() => getSession('s1')).thenAnswer(
+          (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+        );
+        when(() => getRoutine(any())).thenAnswer((_) async => Success(routine));
+        when(() => getCalibrations('s1')).thenAnswer(
+          (_) async => const Success([
+            target,
+            // De un hueco que no es de este día: se ignora.
+            ExerciseCalibration(plannedExerciseId: 'otro', exerciseId: 'x'),
+          ]),
+        );
+      },
+      build: build,
+      act: (bloc) => bloc.add(const LiveSessionEvent.started('s1')),
+      skip: 2,
+      expect: () => [
+        isA<LiveSessionState>().having((s) => s.calibrations, 'calibraciones', {
+          'p1': target,
+        }),
+      ],
+    );
+
+    test(
+      'solo se pregunta tras la primera serie y mientras no se responde',
+      () {
+        final s = ready().copyWith(calibrations: {'p1': target});
+        final e = exercises.first;
+        expect(s.asksCalibration(e, 1), isTrue);
+        expect(s.asksCalibration(e, 2), isFalse);
+        expect(
+          s
+              .copyWith(
+                calibrations: {
+                  'p1': target.copyWith(answer: CalibrationAnswer.three),
+                },
+              )
+              .asksCalibration(e, 1),
+          isFalse,
+        );
+        expect(ready().asksCalibration(e, 1), isFalse);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'responder cierra la pregunta al momento y el peso del servidor es la '
+      'cifra de partida de la serie siguiente',
+      setUp: () =>
+          when(
+            () => calibrate(
+              sessionId: 's1',
+              plannedExerciseId: 'p1',
+              setNumber: 1,
+              answer: CalibrationAnswer.fourPlus,
+            ),
+          ).thenAnswer(
+            (_) async => const Success(
+              ExerciseCalibration(
+                plannedExerciseId: 'p1',
+                exerciseId: 'e1',
+                answer: CalibrationAnswer.fourPlus,
+                setNumber: 1,
+                step: CalibrationStep.up,
+                nextWeightKg: 45,
+              ),
+            ),
+          ),
+      build: build,
+      seed: () => ready().copyWith(calibrations: {'p1': target}),
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.calibrationAnswered(
+          plannedExerciseId: 'p1',
+          setNumber: 1,
+          answer: CalibrationAnswer.fourPlus,
+        ),
+      ),
+      expect: () => [
+        isA<LiveSessionState>().having(
+          (s) => s.calibrations['p1']?.answer,
+          'respuesta',
+          CalibrationAnswer.fourPlus,
+        ),
+        isA<LiveSessionState>()
+            .having(
+              (s) => s.calibrations['p1']?.step,
+              'paso',
+              CalibrationStep.up,
+            )
+            .having(
+              (s) => s.proposedValue(exercises.first, 2, SetField.weight),
+              'peso de la serie 2',
+              45,
+            ),
+      ],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'si no llega la respuesta del servidor, el peso no cambia',
+      setUp: () => when(
+        () => calibrate(
+          sessionId: any(named: 'sessionId'),
+          plannedExerciseId: any(named: 'plannedExerciseId'),
+          setNumber: any(named: 'setNumber'),
+          answer: CalibrationAnswer.none,
+        ),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
+      build: build,
+      seed: () => ready().copyWith(calibrations: {'p1': target}),
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.calibrationAnswered(
+          plannedExerciseId: 'p1',
+          setNumber: 1,
+          answer: CalibrationAnswer.none,
+        ),
+      ),
+      expect: () => [
+        isA<LiveSessionState>()
+            .having(
+              (s) => s.calibrations['p1']?.answer,
+              'respuesta',
+              CalibrationAnswer.none,
+            )
+            .having((s) => s.calibrations['p1']?.nextWeightKg, 'peso', null),
+        // Y se marca que no llegó: el panel dice que siga con el mismo peso.
+        isA<LiveSessionState>()
+            .having((s) => s.calibrationFailed, 'sin respuesta', {'p1'})
+            .having(
+              (s) => s.proposedValue(exercises.first, 2, SetField.weight),
+              'peso de la serie 2',
+              exercises.first.parameters.weightForSet(2),
+            ),
+      ],
+    );
+  });
 
   group('reloj', () {
     late DateTime current;

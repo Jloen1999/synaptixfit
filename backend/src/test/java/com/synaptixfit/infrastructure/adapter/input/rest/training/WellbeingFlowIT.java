@@ -83,6 +83,9 @@ class WellbeingFlowIT {
         assertThat((String) JsonPath.read(refused, "$.code")).isEqualTo("HEALTH_CONSENT_REQUIRED");
         body(put("/api/v1/me/health-consent"), token, 204);
         assertThat((Boolean) JsonPath.read(body(get("/api/v1/me/health-consent"), token, 200), "$.given")).isTrue();
+        // Recién dado lleva el texto vigente: no hay nada que volver a pedir (ADR 0054).
+        assertThat((Boolean) JsonPath.read(body(get("/api/v1/me/health-consent"), token, 200), "$.outdated"))
+                .isFalse();
         body(put("/api/v1/training/check-ins/today")
                 .content("{\"sleepQuality\":1,\"energy\":1,\"soreness\":4}"), token, 200);
         String adaptation = body(get("/api/v1/training/adaptation/today").param("tz", "Europe/Madrid"), token, 200);

@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training;
 
 import com.synaptixfit.domain.model.training.ExerciseParameters;
+import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.PlannedExercise;
 import com.synaptixfit.domain.model.training.RecordedDuration;
@@ -53,8 +54,12 @@ public final class RoutinePersistenceMapper {
         ExerciseParameters params = ExerciseParameters.clamped(e.getSeries(), e.getRepeticiones(),
                 e.getSegundosDescanso(), e.getPesoKg(), e.getPesosKg(), e.getDuracionObjetivoSegundos(),
                 e.getDistanciaMetros(), e.getTiempoIsometricoSegundos(), e.getRepeticionesPorSerie(),
-                e.getSegundosIsometricosPorSerie());
+                e.getSegundosIsometricosPorSerie()).withRepRange(repRange(e));
         return new PlannedExercise(e.getId(), ref, params, e.getIndiceOrden(), durations);
+    }
+
+    private static RepRange repRange(ExerciseSelectionEntity e) {
+        return RepRange.ofStored(e.getRepMin(), e.getRepMax(), e.getRirObjetivo());
     }
 
     public static void copy(Routine r, RoutineEntity e) {
@@ -119,5 +124,9 @@ public final class RoutinePersistenceMapper {
         e.setDuracionObjetivoSegundos(x.targetDurationSeconds());
         e.setDistanciaMetros(x.distanceMeters());
         e.setTiempoIsometricoSegundos(x.isometricSeconds());
+        RepRange range = x.repRange();
+        e.setRepMin(range == null ? null : range.min());
+        e.setRepMax(range == null ? null : range.max());
+        e.setRirObjetivo(range == null ? null : range.reserve());
     }
 }

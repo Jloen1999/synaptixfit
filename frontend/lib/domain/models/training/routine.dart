@@ -28,6 +28,12 @@ abstract class ExerciseParameters with _$ExerciseParameters {
     int? isometricSeconds,
     List<int>? repsPerSet,
     List<int>? isometricSecondsPerSet,
+
+    /// Rango de repeticiones («8-12») y cuántas deben sobrar en cada serie
+    /// (ADR 0054); nulos si el ejercicio no tiene rango.
+    int? repMin,
+    int? repMax,
+    int? repsInReserve,
   }) = _ExerciseParameters;
 
   const ExerciseParameters._();
@@ -42,6 +48,9 @@ abstract class ExerciseParameters with _$ExerciseParameters {
   static const maxDuration = 14400;
   static const maxDistance = 100000;
   static const maxIsometric = 600;
+
+  /// Tiene rango de repeticiones (lo traen las plantillas, ADR 0054).
+  bool get hasRepRange => repMin != null && repMax != null;
 
   /// Repeticiones previstas de la serie [setNumber] (desde 1).
   int repsForSet(int setNumber) => _forSet(repsPerSet, setNumber) ?? reps;

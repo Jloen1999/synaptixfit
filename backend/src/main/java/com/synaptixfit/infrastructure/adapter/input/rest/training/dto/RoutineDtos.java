@@ -3,6 +3,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 import com.synaptixfit.application.port.input.training.RoutineStructureInput;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
+import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.MeasurementType;
 import com.synaptixfit.domain.model.training.Modality;
@@ -44,7 +45,8 @@ public final class RoutineDtos {
     /**
      * Parámetros de un ejercicio planificado (mismos rangos que el dominio). {@code repsPerSet},
      * {@code weightsKg} e {@code isometricSecondsPerSet} detallan cada serie (ADR 0027); sin ellos, todas
-     * usan el valor común.
+     * usan el valor común. {@code repMin}, {@code repMax} y {@code repsInReserve}: rango de repeticiones y cuántas
+     * deben sobrar (ADR 0054); sin mínimo o máximo, el ejercicio no tiene rango.
      */
     public record ExerciseParametersRequest(@NotNull @Min(1) @Max(10) Integer sets,
                                             @NotNull @Min(1) @Max(100) Integer reps,
@@ -55,10 +57,14 @@ public final class RoutineDtos {
                                             @Min(1) @Max(100000) Integer distanceMeters,
                                             @Min(1) @Max(600) Integer isometricSeconds,
                                             @Size(max = 10) List<@NotNull @Min(1) @Max(100) Integer> repsPerSet,
-                                            @Size(max = 10) List<@NotNull @Min(1) @Max(600) Integer> isometricSecondsPerSet) {
+                                            @Size(max = 10) List<@NotNull @Min(1) @Max(600) Integer> isometricSecondsPerSet,
+                                            @Min(1) @Max(100) Integer repMin,
+                                            @Min(1) @Max(100) Integer repMax,
+                                            @Min(0) @Max(5) Integer repsInReserve) {
         public ExerciseParameters toDomain() {
             return new ExerciseParameters(sets, reps, restSeconds, weightKg, weightsKg, targetDurationSeconds,
-                    distanceMeters, isometricSeconds, repsPerSet, isometricSecondsPerSet);
+                    distanceMeters, isometricSeconds, repsPerSet, isometricSecondsPerSet,
+                    RepRange.of(repMin, repMax, repsInReserve));
         }
     }
 
@@ -73,10 +79,14 @@ public final class RoutineDtos {
                                          @Min(1) @Max(100000) Integer distanceMeters,
                                          @Min(1) @Max(600) Integer isometricSeconds,
                                          @Size(max = 10) List<@NotNull @Min(1) @Max(100) Integer> repsPerSet,
-                                         @Size(max = 10) List<@NotNull @Min(1) @Max(600) Integer> isometricSecondsPerSet) {
+                                         @Size(max = 10) List<@NotNull @Min(1) @Max(600) Integer> isometricSecondsPerSet,
+                                         @Min(1) @Max(100) Integer repMin,
+                                         @Min(1) @Max(100) Integer repMax,
+                                         @Min(0) @Max(5) Integer repsInReserve) {
         public ExerciseParameters parameters() {
             return new ExerciseParameters(sets, reps, restSeconds, weightKg, weightsKg, targetDurationSeconds,
-                    distanceMeters, isometricSeconds, repsPerSet, isometricSecondsPerSet);
+                    distanceMeters, isometricSeconds, repsPerSet, isometricSecondsPerSet,
+                    RepRange.of(repMin, repMax, repsInReserve));
         }
     }
 
@@ -144,7 +154,8 @@ public final class RoutineDtos {
 
     /**
      * Ejercicio planificado con los datos del ejercicio. {@code estimatedSeconds}: duración prevista
-     * (ver {@code SessionDurationEstimate}), para «quedan ≈ 12 min» en la sesión.
+     * (ver {@code SessionDurationEstimate}), para «quedan ≈ 12 min» en la sesión. {@code repMin}-{@code repMax} y
+     * {@code repsInReserve}: rango de repeticiones y cuántas deben sobrar (ADR 0054), nulos sin rango.
      */
     public record PlannedExerciseResponse(UUID id, UUID exerciseId, String exerciseName, String gifUrl,
                                           String previewUrl, Modality modality, List<MeasurementType> measurementTypes,
@@ -153,7 +164,8 @@ public final class RoutineDtos {
                                           Integer targetDurationSeconds, Integer distanceMeters,
                                           Integer isometricSeconds, Integer realDurationSeconds,
                                           List<Integer> repsPerSet, List<Integer> isometricSecondsPerSet,
-                                          TrackingKind trackingKind, int estimatedSeconds) {
+                                          TrackingKind trackingKind, int estimatedSeconds, Integer repMin,
+                                          Integer repMax, Integer repsInReserve) {
         public static PlannedExerciseResponse from(PlannedExercise p) {
             ExerciseParameters x = p.parameters();
             return new PlannedExerciseResponse(p.id(), p.exerciseId(),
@@ -162,7 +174,9 @@ public final class RoutineDtos {
                     p.exercise().effectiveMet(), p.exercise().active(), p.order(), x.sets(), x.reps(), x.restSeconds(),
                     x.weightKg(), x.weightsKg(), x.targetDurationSeconds(), x.distanceMeters(), x.isometricSeconds(),
                     p.realDurationSeconds(), x.repsPerSet(), x.isometricSecondsPerSet(), p.trackingKind(),
-                    p.estimatedSeconds());
+                    p.estimatedSeconds(), x.repRange() == null ? null : x.repRange().min(),
+                    x.repRange() == null ? null : x.repRange().max(),
+                    x.repRange() == null ? null : x.repRange().reserve());
         }
     }
 

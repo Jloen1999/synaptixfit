@@ -93,6 +93,11 @@ class _ParametersSheetState extends State<_ParametersSheet> {
         targetDurationSeconds: minutes == null ? null : (minutes * 60).round(),
         distanceMeters: distance?.round(),
         isometricSeconds: isometric?.round(),
+        // El rango y lo que debe sobrar (ADR 0054) no se editan aquí: se
+        // conservan para que la doble progresión siga funcionando.
+        repMin: widget.initial.repMin,
+        repMax: widget.initial.repMax,
+        repsInReserve: widget.initial.repsInReserve,
       ),
     );
   }

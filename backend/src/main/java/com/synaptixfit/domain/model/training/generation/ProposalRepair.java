@@ -56,7 +56,7 @@ public final class ProposalRepair {
         Integer iso = inRange(ia.isometricSeconds(), 5, 300) ? ia.isometricSeconds() : b.isometricSeconds();
         List<Double> perSet = sets == b.sets() && java.util.Objects.equals(weight, b.weightKg())
                 ? b.weightsKg()
-                : weight != null && weight > 0 ? ProgressionCalculator.warmupWeights(weight, sets) : null;
+                : null;
         return new ProposedExercise(exercise.id(), exercise.name(),
                 ExerciseParameters.clamped(sets, reps, rest, weight, perSet, duration, distance, iso));
     }

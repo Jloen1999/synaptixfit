@@ -113,6 +113,9 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
         sections.put("weeklyTrainingPlans", rows("plan_entrenamiento_semanal t", "t.usuario_id = :id",
                 "t.semana_inicio"));
         sections.put("exerciseNotes", rows("notas_ejercicio t", "t.usuario_id = :id", "t.actualizado_en"));
+        // Respuestas de calibración del peso en la primera sesión de cada ejercicio (ADR 0054).
+        sections.put("exerciseCalibrations", rows("calibraciones_ejercicio t", "t.usuario_id = :id",
+                "t.respondida_en"));
         sections.put("healthConsent", single("consentimientos_salud"));
         if (includeHealthData) {
             // Datos de salud (ADR 0033 y 0034): el registro diario y el ciclo, solo en la copia de su dueño.

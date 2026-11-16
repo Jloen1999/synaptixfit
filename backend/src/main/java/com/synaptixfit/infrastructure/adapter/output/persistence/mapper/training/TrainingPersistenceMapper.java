@@ -4,6 +4,7 @@ import com.synaptixfit.domain.model.training.DailyCheckIn;
 import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.ExerciseAdjustment;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
+import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.Recommendation;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.TrainingSession;
@@ -202,6 +203,11 @@ public final class TrainingPersistenceMapper {
         m.put("isometricSeconds", p.isometricSeconds());
         m.put("repsPerSet", p.repsPerSet());
         m.put("isometricSecondsPerSet", p.isometricSecondsPerSet());
+        if (p.repRange() != null) {
+            m.put("repMin", p.repRange().min());
+            m.put("repMax", p.repRange().max());
+            m.put("repsInReserve", p.repRange().reserve());
+        }
     }
 
     private static ExerciseAdjustment adjustment(Map<?, ?> m) {
@@ -227,7 +233,9 @@ public final class TrainingPersistenceMapper {
                 intOf(m.get("restSeconds"), 90), doubleOf(m.get("weightKg")), weights,
                 integerOf(m.get("targetDurationSeconds")), integerOf(m.get("distanceMeters")),
                 integerOf(m.get("isometricSeconds")), integersOf(m.get("repsPerSet")),
-                integersOf(m.get("isometricSecondsPerSet")));
+                integersOf(m.get("isometricSecondsPerSet")))
+                .withRepRange(RepRange.ofStored(integerOf(m.get("repMin")), integerOf(m.get("repMax")),
+                        integerOf(m.get("repsInReserve"))));
     }
 
     private static int intOf(Object v, int fallback) {

@@ -105,6 +105,53 @@ void main() {
     verify(() => legal.add(const LegalAcceptanceEvent.accepted())).called(1);
   });
 
+  group('permiso de salud con el texto anterior (ADR 0054)', () {
+    setUp(
+      () => when(() => legal.state).thenReturn(
+        const LegalAcceptanceState(
+          status: LegalGateStatus.required,
+          currentVersion: '2026-11-04',
+          updated: true,
+          offerHealthUpdate: true,
+        ),
+      ),
+    );
+
+    testWidgets('lo ofrece aparte y sin marcar: aceptar no lo cambia', (
+      tester,
+    ) async {
+      await pump(tester);
+      expect(find.text('Novedad en tus datos de salud'), findsOneWidget);
+      expect(find.byType(CheckboxListTile), findsNWidgets(2));
+
+      await tester.tap(find.byType(CheckboxListTile).first);
+      await tester.pump();
+      await tester.tap(find.text('Aceptar y seguir'));
+      await tester.pump();
+      verify(() => legal.add(const LegalAcceptanceEvent.accepted())).called(1);
+    });
+
+    testWidgets('si marca su casilla, se acepta también el texto nuevo', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.tap(find.byType(CheckboxListTile).first);
+      await tester.tap(find.byType(CheckboxListTile).last);
+      await tester.pump();
+      await tester.tap(find.text('Aceptar y seguir'));
+      await tester.pump();
+      verify(
+        () =>
+            legal.add(const LegalAcceptanceEvent.accepted(healthUpdate: true)),
+      ).called(1);
+    });
+
+    testWidgets('a 360 dp y texto al 200 % no se desborda', (tester) async {
+      await pump(tester, textScale: 2, size: const Size(360, 800));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('«Cerrar sesión» cierra la sesión', (tester) async {
     await pump(tester);
     await tester.ensureVisible(find.text('Cerrar sesión'));

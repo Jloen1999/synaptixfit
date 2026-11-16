@@ -9,6 +9,7 @@ import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.TrainingSession;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,8 @@ import java.util.UUID;
  *   <li>Más de 14 días sin entrenar al empezar una sesión → {@code DELOAD} al 80 % / 70 %.</li>
  * </ul>
  * A diferencia del sistema heredado, cada sugerencia lleva los parámetros nuevos por ejercicio, de
- * modo que aplicarla los copia a la rutina.
+ * modo que aplicarla los copia a la rutina. Con rango de repeticiones (ADR 0054) manda la doble progresión de
+ * {@link ProgressionCalculator}, con el escalón del material de cada ejercicio.
  */
 public final class SessionFeedback {
 
@@ -34,6 +36,16 @@ public final class SessionFeedback {
 
     public static List<Recommendation> afterSession(TrainingSession session, Map<UUID, PlannedExercise> planned,
                                                     GoalParameters goal, Instant now) {
+        return afterSession(session, planned, goal, now, List.of());
+    }
+
+    /**
+     * @param previous sesiones completadas anteriores, las más recientes primero (para «dos sesiones seguidas sin
+     *                 llegar al mínimo del rango»); puede incluir esta misma, que se ignora
+     */
+    public static List<Recommendation> afterSession(TrainingSession session, Map<UUID, PlannedExercise> planned,
+                                                    GoalParameters goal, Instant now,
+                                                    List<CompletedSessionSummary> previous) {
         if (!session.isCompleted() || session.rpe() == null || session.sets().isEmpty()) {
             return List.of();
         }
@@ -52,7 +64,8 @@ public final class SessionFeedback {
         byPlanned.forEach((plannedId, sets) -> {
             PlannedExercise p = planned.get(plannedId);
             ProgressionCalculator.Result r = ProgressionCalculator.progress(p.parameters(),
-                    p.exercise().measurementTypes(), rpe, sets, goal);
+                    p.exercise().measurementTypes(), rpe, sets, goal, p.exercise().load(),
+                    belowMinBefore(previous, session.id(), p));
             if (r.changed(p.parameters())) {
                 adjustments.add(new ExerciseAdjustment(plannedId, p.exerciseId(), p.exercise().name(),
                         r.parameters(), r.log(), p.parameters(), r.reason()));
@@ -93,6 +106,21 @@ public final class SessionFeedback {
                     session.routineId(), adjustments, details, now));
         }
         return List.of();
+    }
+
+    /** ¿La sesión anterior con este ejercicio tampoco llegó al mínimo de su rango? */
+    private static boolean belowMinBefore(List<CompletedSessionSummary> previous, UUID sessionId, PlannedExercise p) {
+        if (p.parameters().repRange() == null || previous == null) {
+            return false;
+        }
+        int min = p.parameters().repRange().min();
+        return previous.stream()
+                .filter(s -> !Objects.equals(s.sessionId(), sessionId))
+                .filter(s -> s.sets().stream().anyMatch(x -> Objects.equals(x.exerciseId(), p.exerciseId())))
+                .findFirst()
+                .map(s -> s.sets().stream().filter(x -> Objects.equals(x.exerciseId(), p.exerciseId()))
+                        .anyMatch(x -> x.set().repsDone() != null && x.set().repsDone() < min))
+                .orElse(false);
     }
 
     public static Optional<Recommendation> afterInactivity(UUID userId, UUID routineId, int daysInactive,

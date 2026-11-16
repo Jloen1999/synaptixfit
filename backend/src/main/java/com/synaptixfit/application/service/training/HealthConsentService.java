@@ -39,13 +39,16 @@ public class HealthConsentService implements GetHealthConsentUseCase, GiveHealth
         Optional<HealthConsent> consent = consents.find(userId);
         return new Status(consent.map(HealthConsent::active).orElse(false),
                 consent.map(HealthConsent::givenAt).orElse(null),
-                consent.map(HealthConsent::withdrawnAt).orElse(null));
+                consent.map(HealthConsent::withdrawnAt).orElse(null),
+                consent.filter(HealthConsent::active).map(c -> !c.current()).orElse(false));
     }
 
     @Override
     public void giveHealthConsent(UUID userId) {
-        boolean active = consents.find(userId).map(HealthConsent::active).orElse(false);
-        if (!active) {
+        // Volver a aceptar un texto más nuevo lo guarda con su versión (ADR 0054: el peso del perfil).
+        boolean current = consents.find(userId).filter(HealthConsent::active).map(HealthConsent::current)
+                .orElse(false);
+        if (!current) {
             consents.save(HealthConsent.give(userId, clock.instant()));
         }
     }

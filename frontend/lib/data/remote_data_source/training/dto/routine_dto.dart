@@ -34,6 +34,9 @@ abstract class PlannedExerciseDto with _$PlannedExerciseDto {
     int? realDurationSeconds,
     String? trackingKind,
     int? estimatedSeconds,
+    int? repMin,
+    int? repMax,
+    int? repsInReserve,
   }) = _PlannedExerciseDto;
 
   const PlannedExerciseDto._();
@@ -65,6 +68,9 @@ abstract class PlannedExerciseDto with _$PlannedExerciseDto {
       isometricSeconds: isometricSeconds,
       repsPerSet: repsPerSet,
       isometricSecondsPerSet: isometricSecondsPerSet,
+      repMin: repMin,
+      repMax: repMax,
+      repsInReserve: repsInReserve,
     ),
     realDurationSeconds: realDurationSeconds,
     trackingKind: TrackingKind.tryFromApi(trackingKind),

@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Catálogo de plantillas de rutina (solo lectura), con los textos en el idioma pedido o en español. */
+/**
+ * Catálogo de plantillas de rutina (solo lectura), con los textos en el idioma pedido o en español. Devuelve también
+ * las retiradas ({@code active} falso, ADR 0054): ofrecerlas o no lo decide el caso de uso.
+ */
 public interface RoutineTemplateRepositoryPort {
 
     List<RoutineTemplate> findAll(String language);

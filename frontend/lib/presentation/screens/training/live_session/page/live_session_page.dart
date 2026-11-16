@@ -546,7 +546,43 @@ class _LiveViewState extends State<_LiveView> {
                   (p.restRemaining! > 10 && c.restRemaining! <= 10)),
           listener: (context, state) => SemanticsService.sendAnnouncement(
             View.of(context),
-            context.localizations.trainingRestSemantics(state.restRemaining!),
+            // Al empezar el descanso tras la primera serie de un ejercicio
+            // nuevo, también la pregunta de calibración (ADR 0054): el foco
+            // va a «+15 s», debajo de ella.
+            state.asksCalibrationNow && state.restRemaining! > 10
+                ? context.localizations.trainingRestWithCalibrationAnnounce(
+                    state.restRemaining!,
+                  )
+                : context.localizations.trainingRestSemantics(
+                    state.restRemaining!,
+                  ),
+            Directionality.of(context),
+          ),
+        ),
+        // El resultado de la calibración se anuncia una vez, cuando llega.
+        BlocListener<LiveSessionBloc, LiveSessionState>(
+          listenWhen: (p, c) {
+            final now = c.restCalibration;
+            if (now == null) return false;
+            final before = p.calibrations[now.plannedExerciseId];
+            final failedNow = c.calibrationFailed.contains(
+              now.plannedExerciseId,
+            );
+            final failedBefore = p.calibrationFailed.contains(
+              now.plannedExerciseId,
+            );
+            return (before?.step == null && now.step != null) ||
+                (!failedBefore && failedNow);
+          },
+          listener: (context, state) => SemanticsService.sendAnnouncement(
+            View.of(context),
+            calibrationResultText(
+              context.localizations,
+              state.restCalibration!,
+              failed: state.calibrationFailed.contains(
+                state.restCalibration!.plannedExerciseId,
+              ),
+            ),
             Directionality.of(context),
           ),
         ),

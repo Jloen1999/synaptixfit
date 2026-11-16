@@ -10,6 +10,7 @@ import 'package:synaptixfit/domain/enums/visibility.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/account/account.dart';
 import 'package:synaptixfit/domain/models/profile/legal_document.dart';
+import 'package:synaptixfit/domain/models/training/health_consent.dart';
 import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/repositories/legal_repository_contract.dart';
@@ -17,6 +18,8 @@ import 'package:synaptixfit/domain/use_cases/auth/register_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/accept_legal_terms_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/get_legal_acceptance_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/get_legal_document_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_health_consent_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/give_health_consent_use_case.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/auth/register/bloc/register_bloc.dart';
 import 'package:synaptixfit/presentation/screens/profile/legal/bloc/legal_acceptance_bloc.dart';
@@ -76,17 +79,34 @@ class _FakeLegal implements LegalRepositoryContract {
 
 class _MockRegister extends Mock implements RegisterUseCaseContract {}
 
+class _MockGetConsent extends Mock implements GetHealthConsentUseCaseContract {}
+
+class _MockGiveConsent extends Mock
+    implements GiveHealthConsentUseCaseContract {}
+
 class _MockDocumentBloc extends MockBloc<LegalDocumentEvent, LegalDocumentState>
     implements LegalDocumentBloc {}
 
 void main() {
   late _FakeLegal legal;
+  late _MockGetConsent getConsent;
+  late _MockGiveConsent giveConsent;
 
-  setUp(() => legal = _FakeLegal());
+  setUp(() {
+    legal = _FakeLegal();
+    getConsent = _MockGetConsent();
+    giveConsent = _MockGiveConsent();
+    when(
+      () => getConsent(),
+    ).thenAnswer((_) async => const Success(HealthConsent(given: false)));
+    when(() => giveConsent()).thenAnswer((_) async => const Success(unit));
+  });
 
   LegalAcceptanceBloc acceptanceBloc() => LegalAcceptanceBloc(
     getAcceptance: GetLegalAcceptanceUseCase(legal),
     accept: AcceptLegalTermsUseCase(legal),
+    getHealthConsent: getConsent,
+    giveHealthConsent: giveConsent,
   );
 
   group('Aceptar la política al entrar', () {
@@ -174,6 +194,66 @@ void main() {
           error: AppError.business('LEGAL_VERSION_OUTDATED'),
         ),
       ],
+    );
+
+    blocTest<LegalAcceptanceBloc, LegalAcceptanceState>(
+      'con el permiso de salud del texto anterior, ofrece el nuevo aparte',
+      setUp: () => when(() => getConsent()).thenAnswer(
+        (_) async => const Success(HealthConsent(given: true, outdated: true)),
+      ),
+      build: acceptanceBloc,
+      act: (bloc) => bloc.add(const LegalAcceptanceEvent.checked()),
+      expect: () => [
+        const LegalAcceptanceState(
+          status: LegalGateStatus.required,
+          currentVersion: '2026-11-04',
+          offerHealthUpdate: true,
+        ),
+      ],
+    );
+
+    blocTest<LegalAcceptanceBloc, LegalAcceptanceState>(
+      'si marca la casilla, da el permiso con el texto nuevo tras aceptar',
+      seed: () => const LegalAcceptanceState(
+        status: LegalGateStatus.required,
+        currentVersion: '2026-11-04',
+        offerHealthUpdate: true,
+      ),
+      build: acceptanceBloc,
+      act: (bloc) =>
+          bloc.add(const LegalAcceptanceEvent.accepted(healthUpdate: true)),
+      skip: 1,
+      expect: () => [
+        const LegalAcceptanceState(
+          status: LegalGateStatus.accepted,
+          currentVersion: '2026-11-04',
+          offerHealthUpdate: true,
+        ),
+      ],
+      verify: (_) {
+        expect(legal.acceptedCalls, ['2026-11-04']);
+        verify(() => giveConsent()).called(1);
+      },
+    );
+
+    blocTest<LegalAcceptanceBloc, LegalAcceptanceState>(
+      'sin marcarla, el permiso de salud no cambia',
+      seed: () => const LegalAcceptanceState(
+        status: LegalGateStatus.required,
+        currentVersion: '2026-11-04',
+        offerHealthUpdate: true,
+      ),
+      build: acceptanceBloc,
+      act: (bloc) => bloc.add(const LegalAcceptanceEvent.accepted()),
+      skip: 1,
+      expect: () => [
+        const LegalAcceptanceState(
+          status: LegalGateStatus.accepted,
+          currentVersion: '2026-11-04',
+          offerHealthUpdate: true,
+        ),
+      ],
+      verify: (_) => verifyNever(() => giveConsent()),
     );
 
     blocTest<LegalAcceptanceBloc, LegalAcceptanceState>(

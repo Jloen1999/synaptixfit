@@ -11,11 +11,18 @@ import java.util.UUID;
 /**
  * Plantilla de reto productivo (ADR 0043): título y meta en el idioma pedido, ámbito, dificultad, cuántos días dura y
  * la regla con la que el servidor lo cuenta solo. «Empezar este reto» crea un reto normal y privado a partir de ella.
+ * Una plantilla retirada ({@code active} falso, ADR 0054) ya no se ofrece ni se empieza, pero se sigue leyendo para
+ * los retos en curso que salieron de ella.
  */
 public record ChallengeTemplate(UUID id, String code, ChallengeType type, Difficulty difficulty, int days,
-                                ChallengeRule rule, String title, String goal) {
+                                ChallengeRule rule, String title, String goal, boolean active) {
 
     public static final int MAX_DAYS = 90;
+
+    public ChallengeTemplate(UUID id, String code, ChallengeType type, Difficulty difficulty, int days,
+                             ChallengeRule rule, String title, String goal) {
+        this(id, code, type, difficulty, days, rule, title, goal, true);
+    }
 
     public ChallengeTemplate {
         Guard.notNull(id, "id");
@@ -26,9 +33,9 @@ public record ChallengeTemplate(UUID id, String code, ChallengeType type, Diffic
         Guard.notNull(rule, "rule");
     }
 
-    /** Se ofrece si su ámbito y todo lo que cuenta están en el modo de uso de la persona. */
+    /** Se ofrece si no está retirada y su ámbito y todo lo que cuenta están en el modo de uso de la persona. */
     public boolean availableFor(UsageFocus focus) {
-        return type.allowedFor(focus) && rule.availableFor(focus);
+        return active && type.allowedFor(focus) && rule.availableFor(focus);
     }
 
     /**

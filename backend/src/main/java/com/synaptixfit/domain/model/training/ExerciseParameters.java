@@ -16,12 +16,16 @@ import java.util.function.Function;
  *
  * <p>El valor común es la referencia de lo que no va serie a serie (calorías, progresión) y lo fija esta
  * regla, no quien envía los datos: si una lista cubre todas las series, el común es la media de las
- * repeticiones, el peso de trabajo (el mayor, como en las series de aproximación) y el aguante más largo; si
- * todas coinciden, la lista sobra y se quita. Las listas más largas que las series se recortan.
+ * repeticiones, el peso de trabajo (el mayor) y el aguante más largo; si todas coinciden, la lista sobra y se
+ * quita. Las listas más largas que las series se recortan.
+ *
+ * <p>{@code repRange} (ADR 0054): rango de repeticiones y cuántas deberían sobrar («8-12, te deben sobrar 2»); lo
+ * traen las plantillas y guía la doble progresión. Nulo en los ejercicios sin rango (las repeticiones son fijas).
  */
 public record ExerciseParameters(int sets, int reps, int restSeconds, Double weightKg, List<Double> weightsKg,
                                  Integer targetDurationSeconds, Integer distanceMeters, Integer isometricSeconds,
-                                 List<Integer> repsPerSet, List<Integer> isometricSecondsPerSet) {
+                                 List<Integer> repsPerSet, List<Integer> isometricSecondsPerSet,
+                                 RepRange repRange) {
 
     public static final int MIN_SETS = 1;
     public static final int MAX_SETS = 10;
@@ -92,7 +96,27 @@ public record ExerciseParameters(int sets, int reps, int restSeconds, Double wei
     public ExerciseParameters(int sets, int reps, int restSeconds, Double weightKg, List<Double> weightsKg,
                               Integer targetDurationSeconds, Integer distanceMeters, Integer isometricSeconds) {
         this(sets, reps, restSeconds, weightKg, weightsKg, targetDurationSeconds, distanceMeters, isometricSeconds,
-                null, null);
+                null, null, null);
+    }
+
+    /** Parámetros sin rango de repeticiones (forma anterior a ADR 0054). */
+    public ExerciseParameters(int sets, int reps, int restSeconds, Double weightKg, List<Double> weightsKg,
+                              Integer targetDurationSeconds, Integer distanceMeters, Integer isometricSeconds,
+                              List<Integer> repsPerSet, List<Integer> isometricSecondsPerSet) {
+        this(sets, reps, restSeconds, weightKg, weightsKg, targetDurationSeconds, distanceMeters, isometricSeconds,
+                repsPerSet, isometricSecondsPerSet, null);
+    }
+
+    /** Los mismos parámetros con otro rango de repeticiones (nulo lo quita). */
+    public ExerciseParameters withRepRange(RepRange range) {
+        return new ExerciseParameters(sets, reps, restSeconds, weightKg, weightsKg, targetDurationSeconds,
+                distanceMeters, isometricSeconds, repsPerSet, isometricSecondsPerSet, range);
+    }
+
+    /** Los mismos parámetros con un peso igual en todas las series (nulo quita la carga). */
+    public ExerciseParameters withUniformWeight(Double kg) {
+        return new ExerciseParameters(sets, reps, restSeconds, kg, null, targetDurationSeconds, distanceMeters,
+                isometricSeconds, repsPerSet, isometricSecondsPerSet, repRange);
     }
 
     private static <T> List<T> perSet(List<T> values, String field) {
@@ -173,7 +197,7 @@ public record ExerciseParameters(int sets, int reps, int restSeconds, Double wei
         boolean loaded = exercise.measuredBy(MeasurementType.WEIGHT);
         return switch (exercise.trackingKind()) {
             case REPETITIONS -> new ExerciseParameters(sets, reps, restSeconds, loaded ? weightKg : null,
-                    loaded ? weightsKg : null, null, null, null, repsPerSet, null);
+                    loaded ? weightsKg : null, null, null, null, repsPerSet, null, repRange);
             case HOLD -> new ExerciseParameters(sets, reps, restSeconds, loaded ? weightKg : null,
                     loaded ? weightsKg : null, null, null,
                     isometricSeconds == null ? DEFAULT_HOLD_SECONDS : isometricSeconds, null, isometricSecondsPerSet);

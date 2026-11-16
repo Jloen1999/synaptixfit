@@ -79,6 +79,14 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
 
   /// «Usar hoy»: hace [swap] en lugar del ejercicio del hueco solo en esta
   /// sesión; nulo, vuelve al de la rutina.
+  /// Respuesta a «¿Cuántas más podrías haber hecho?» tras la serie
+  /// [setNumber] de un ejercicio que se calibra (ADR 0054).
+  const factory LiveSessionEvent.calibrationAnswered({
+    required String plannedExerciseId,
+    required int setNumber,
+    required CalibrationAnswer answer,
+  }) = LiveSessionCalibrationAnswered;
+
   const factory LiveSessionEvent.exerciseSwapped(
     String plannedExerciseId,
     ExerciseSwap? swap,

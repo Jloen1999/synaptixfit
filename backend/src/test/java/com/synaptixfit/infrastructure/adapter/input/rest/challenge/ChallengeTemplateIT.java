@@ -68,8 +68,14 @@ class ChallengeTemplateIT {
 
         String templates = body(get("/api/v1/challenges/templates").header("Accept-Language", "en"), token, 200);
         assertThat((List<String>) JsonPath.read(templates, "$[*].code"))
-                .contains("repasa_cada_dia", "pomodoro_diario", "entrena_en_examenes", "registro_diario")
+                .contains("primer_mes_entrenando", "entrena_en_examenes_2", "estudia_y_muevete_2", "pomodoro_diario",
+                        "repasa_cada_dia", "empieza_a_correr", "registro_diario")
+                .doesNotContain("entrena_en_examenes", "estudia_y_muevete", "primeros_5_km", "estudio_temprano")
                 .hasSize(10);
+        assertThat((List<Integer>) JsonPath.read(templates, "$[?(@.code == 'entrena_en_examenes_2')].rule.perUnit"))
+                .containsExactly(2);
+        assertThat((List<Integer>) JsonPath.read(templates, "$[?(@.code == 'empieza_a_correr')].rule.target"))
+                .containsExactly(8);
         assertThat((List<String>) JsonPath.read(templates, "$[?(@.code == 'pomodoro_diario')].title"))
                 .containsExactly("One Pomodoro a day");
         assertThat((List<Boolean>) JsonPath.read(templates, "$[?(@.code == 'registro_diario')].rule.privateOnly"))
@@ -96,6 +102,34 @@ class ChallengeTemplateIT {
         String after = body(get("/api/v1/challenges/templates"), token, 200);
         assertThat((List<Boolean>) JsonPath.read(after, "$[?(@.code == 'pomodoro_diario')].running"))
                 .containsExactly(true);
+    }
+
+    /** ADR 0054: retirar una plantilla no toca los retos en curso que salieron de ella; solo deja de ofrecerse. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void retiringATemplateKeepsTheChallengesInProgress() throws Exception {
+        String token = register("plantillas-retiradas@example.com");
+        String templates = body(get("/api/v1/challenges/templates"), token, 200);
+        List<String> ids = JsonPath.read(templates, "$[?(@.code == 'simulacro_semanal')].id");
+        String challenge = body(post("/api/v1/challenges/templates/" + ids.getFirst() + "/start"), token, 201);
+        String id = JsonPath.read(challenge, "$.id");
+
+        jdbc.sql("UPDATE plantillas_reto SET activa = false WHERE codigo = 'simulacro_semanal'").update();
+        try {
+            String still = body(get("/api/v1/challenges/" + id), token, 200);
+            assertThat((String) JsonPath.read(still, "$.rule.metric")).isEqualTo("TESTS");
+            assertThat((Integer) JsonPath.read(still, "$.rule.target")).isEqualTo(4);
+            String after = body(get("/api/v1/challenges/templates"), token, 200);
+            assertThat((List<String>) JsonPath.read(after, "$[*].code")).doesNotContain("simulacro_semanal");
+            mvc.perform(post("/api/v1/challenges/templates/" + ids.getFirst() + "/start")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("CHALLENGE_TEMPLATE_NOT_FOUND"));
+        } finally {
+            jdbc.sql("UPDATE plantillas_reto SET activa = true WHERE codigo = 'simulacro_semanal'").update();
+        }
+        assertThat(jdbc.sql("SELECT count(*) FROM plantillas_reto WHERE activa = false").query(Integer.class)
+                .single()).isEqualTo(4);
     }
 
     /**

@@ -3,20 +3,31 @@ package com.synaptixfit.domain.model.training.generation;
 import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.MeasurementType;
+import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.SessionSet;
-import java.util.ArrayList;
+import com.synaptixfit.domain.model.training.load.LoadProfile;
+import com.synaptixfit.domain.model.training.load.LoadStep;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Sobrecarga progresiva (doble progresión) y degradación por inactividad, también para ejercicios
  * por tiempo, distancia e isométricos.
  *
- * <p>Tras una sesión: con repeticiones fallidas la carga baja {@code 5 %} por fallo (entre 5 % y
- * 30 %) y se quita una serie; RPE ≥ 9,5 → carga −15 %; RPE ≤ 5 → carga +10 % (isométrico +10 s);
- * RPE ≤ 7 → +1 repetición o, en el tope del rango, +5 % de peso y vuelta al mínimo de
- * repeticiones (tiempo/distancia +10 %). Con más de 14 días sin entrenar la carga baja al 80 %
- * (70 % a partir de 21 días), se quita una serie y se añaden 30 s de descanso.
+ * <p>Con rango de repeticiones del ejercicio ({@link RepRange}, ADR 0054), doble progresión: cuando todas las series
+ * llegan al tope del rango con el esfuerzo pedido (RPE de la sesión ≤ 10 − repeticiones que deben sobrar) el peso sube
+ * un escalón del material ({@link LoadStep}) y las repeticiones vuelven al mínimo; si no, +1 repetición hasta el tope.
+ * Si no se llega al mínimo del rango, se repite; dos sesiones seguidas así, el peso baja un 10 %.
+ *
+ * <p>Sin rango (rutinas generadas o hechas a mano), las reglas de siempre: con repeticiones fallidas la carga baja
+ * {@code 5 %} por fallo (entre 5 % y 30 %) y se quita una serie; RPE ≥ 9,5 → carga −15 %; RPE ≤ 5 → carga +10 %
+ * (isométrico +10 s); RPE ≤ 7 → +1 repetición o, en el tope del rango del objetivo, un escalón del material y vuelta
+ * al mínimo de repeticiones (tiempo/distancia +10 %). Con más de 14 días sin entrenar la carga baja al 80 % (70 % a
+ * partir de 21 días), se quita una serie y se añaden 30 s de descanso.
+ *
+ * <p>El peso es el mismo en todas las series de trabajo: el calentamiento va aparte (ADR 0031), así que ya no se
+ * reparte en 50 % / 75 % / 100 %.
  */
 public final class ProgressionCalculator {
 
@@ -49,27 +60,22 @@ public final class ProgressionCalculator {
         return weightKg * (1 + Math.pow(reps - 1, 0.85) / (-2.55 + 4.58 * Math.log(weightKg)));
     }
 
-    /** Rampa de calentamiento: con 3+ series la primera al 50 % y la segunda al 75 %. */
-    public static List<Double> warmupWeights(double targetKg, int totalSets) {
-        List<Double> weights = new ArrayList<>();
-        if (totalSets <= 1) {
-            weights.add(targetKg);
-            return weights;
-        }
-        for (int i = 1; i <= totalSets; i++) {
-            if (i == 1 && totalSets >= 3) {
-                weights.add(targetKg * 0.50);
-            } else if (i == 2 && totalSets >= 3) {
-                weights.add(targetKg * 0.75);
-            } else {
-                weights.add(targetKg);
-            }
-        }
-        return weights;
-    }
-
     public static Result progress(ExerciseParameters current, Collection<MeasurementType> types, double lastRpe,
                                   List<SessionSet> performedSets, GoalParameters goal) {
+        return progress(current, types, lastRpe, performedSets, goal, null, false);
+    }
+
+    /**
+     * @param load             cómo se carga el ejercicio (decide el escalón de peso); nulo si no se sabe
+     * @param belowMinLastTime la sesión anterior con este ejercicio tampoco llegó al mínimo del rango
+     */
+    public static Result progress(ExerciseParameters current, Collection<MeasurementType> types, double lastRpe,
+                                  List<SessionSet> performedSets, GoalParameters goal, LoadProfile load,
+                                  boolean belowMinLastTime) {
+        if (current.repRange() != null && types.contains(MeasurementType.REPETITIONS)
+                && current.isometricSeconds() == null) {
+            return doubleProgression(current, types, lastRpe, performedSets, load, belowMinLastTime);
+        }
         boolean usesWeight = types.contains(MeasurementType.WEIGHT);
         boolean usesReps = types.contains(MeasurementType.REPETITIONS);
         boolean usesTime = types.contains(MeasurementType.TIME);
@@ -121,9 +127,9 @@ public final class ProgressionCalculator {
             if (usesWeight && usesReps && weight != null) {
                 int repsMax = goal == null ? 15 : goal.repsMax();
                 if (current.reps() >= repsMax) {
-                    weight = weight * 1.05;
+                    weight = LoadStep.up(weight, load);
                     reps = goal == null ? 6 : goal.repsMin();
-                    log = "RPE bajo → +5% peso y repeticiones al mínimo";
+                    log = "RPE bajo → un escalón más de peso y repeticiones al mínimo";
                     reason = AdjustmentReason.LOW_RPE_MORE_WEIGHT;
                 } else {
                     reps = current.reps() + 1;
@@ -141,6 +147,10 @@ public final class ProgressionCalculator {
             }
         }
 
+        // Lo que cambie el peso acaba en un peso que existe en ese material (ADR 0054).
+        if (usesWeight && weight != null && load != null && !Objects.equals(weight, current.weightKg())) {
+            weight = LoadStep.floor(weight, load);
+        }
         int rest = current.restSeconds();
         if (goal != null) {
             sets = goal.clampSets(sets);
@@ -149,6 +159,60 @@ public final class ProgressionCalculator {
         }
         return new Result(build(current, sets, reps, rest, weight, usesWeight, duration, distance, iso), log,
                 reason);
+    }
+
+    /**
+     * Doble progresión con el rango del ejercicio (ver la cabecera). Las series y el descanso no cambian: son los de
+     * la plantilla.
+     */
+    private static Result doubleProgression(ExerciseParameters current, Collection<MeasurementType> types,
+                                            double lastRpe, List<SessionSet> performedSets, LoadProfile load,
+                                            boolean belowMinLastTime) {
+        RepRange range = current.repRange();
+        List<SessionSet> done = performedSets == null ? List.of() : performedSets.stream()
+                .filter(s -> s.repsDone() != null).toList();
+        if (done.isEmpty()) {
+            return new Result(current, null, null);
+        }
+        boolean usesWeight = types.contains(MeasurementType.WEIGHT);
+        Double weight = current.weightKg();
+        boolean loaded = usesWeight && weight != null && weight > 0;
+        boolean belowMin = done.stream().anyMatch(s -> s.repsDone() < range.min());
+        boolean allSets = done.size() >= current.sets();
+        boolean effortOk = lastRpe <= range.targetRpe() && done.stream().noneMatch(SessionSet::toFailure);
+        boolean allTop = allSets && done.stream().allMatch(s -> s.repsDone() >= range.max());
+        boolean allReached = allSets && done.stream().allMatch(s -> s.repsDone() >= current.reps());
+        if (belowMin) {
+            if (belowMinLastTime && loaded) {
+                return changed(current, range.min(), LoadStep.reduce(weight, 10, load),
+                        "Dos sesiones sin llegar al mínimo del rango → peso −10 %", AdjustmentReason.FAILED_REPS);
+            }
+            // Sin llegar al mínimo una sola vez: se repite el mismo peso (un mal día no baja nada).
+            return new Result(current, null, null);
+        }
+        if (allTop && effortOk && loaded) {
+            double next = LoadStep.up(weight, load);
+            if (next > weight) {
+                return changed(current, range.min(), next, "Tope del rango → un escalón más de peso",
+                        AdjustmentReason.LOW_RPE_MORE_WEIGHT);
+            }
+        }
+        if (allReached && effortOk && current.reps() < range.max()) {
+            return changed(current, range.clamp(current.reps() + 1), weight, "Esfuerzo bien → +1 repetición",
+                    AdjustmentReason.LOW_RPE_MORE_REPS);
+        }
+        return new Result(current, null, null);
+    }
+
+    private static Result changed(ExerciseParameters current, int reps, Double weight, String log,
+                                  AdjustmentReason reason) {
+        boolean sameWeight = Objects.equals(weight, current.weightKg());
+        ExerciseParameters next = new ExerciseParameters(current.sets(), reps, current.restSeconds(), weight,
+                sameWeight ? current.weightsKg() : null, current.targetDurationSeconds(), current.distanceMeters(),
+                current.isometricSeconds(), current.repsPerSet() == null ? null : current.repsPerSet().stream()
+                        .map(r -> Math.max(1, r + reps - current.reps())).toList(),
+                current.isometricSecondsPerSet(), current.repRange());
+        return new Result(next, log, reason);
     }
 
     public static Result degradeForInactivity(ExerciseParameters current, Collection<MeasurementType> types,
@@ -169,12 +233,14 @@ public final class ProgressionCalculator {
                 AdjustmentReason.INACTIVITY);
     }
 
-    /** Recalcula los pesos por serie solo si cambian el peso o las series; si no, conserva los actuales. */
+    /**
+     * Conserva los pesos por serie solo si no cambian ni el peso ni las series; si cambian, el peso es el mismo en
+     * todas las series de trabajo.
+     */
     private static ExerciseParameters build(ExerciseParameters current, int sets, int reps, int rest, Double weight,
                                             boolean usesWeight, Integer duration, Integer distance, Integer iso) {
-        boolean sameLoad = sets == current.sets() && java.util.Objects.equals(weight, current.weightKg());
-        List<Double> perSet = sameLoad ? current.weightsKg()
-                : usesWeight && weight != null && weight > 0 ? warmupWeights(weight, sets) : null;
+        boolean sameLoad = sets == current.sets() && Objects.equals(weight, current.weightKg());
+        List<Double> perSet = sameLoad ? current.weightsKg() : null;
         // Las repeticiones y el aguante por serie (ADR 0027) se mueven igual que el valor común: si la
         // progresión suma una repetición, la suma a cada serie; si escala el tiempo, escala cada serie.
         List<Integer> repsPerSet = current.repsPerSet() == null ? null : current.repsPerSet().stream()
@@ -183,7 +249,7 @@ public final class ProgressionCalculator {
                 || current.isometricSeconds() == null ? null : current.isometricSecondsPerSet().stream()
                 .limit(sets).map(s -> (int) Math.round(s * (double) iso / current.isometricSeconds())).toList();
         return ExerciseParameters.clamped(sets, reps, rest, weight, perSet, duration, distance, iso, repsPerSet,
-                isoPerSet);
+                isoPerSet).withRepRange(current.repRange());
     }
 
     private static Double scale(Double value, boolean applies, double factor) {

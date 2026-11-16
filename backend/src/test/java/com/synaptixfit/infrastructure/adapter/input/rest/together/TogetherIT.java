@@ -109,7 +109,7 @@ class TogetherIT {
 
         // Entrenar juntos: Ana entrena con una copia en pausa de la rutina.
         String gallery = call(get("/api/v1/training/templates"), me, null, 200);
-        List<String> routineTemplates = JsonPath.read(gallery, "$[?(@.code == 'casa_2')].id");
+        List<String> routineTemplates = JsonPath.read(gallery, "$[?(@.code == 'mantener_examenes_casa')].id");
         String routine = call(post("/api/v1/training/templates/" + routineTemplates.getFirst() + "/use"), me, null,
                 201);
         String routineId = JsonPath.read(routine, "$.id");

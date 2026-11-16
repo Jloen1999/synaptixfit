@@ -131,14 +131,47 @@ Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevo
 
 ## Progresión de cargas dentro de la sesión (`LoadSuggestions`)
 
-`GET /training/sessions/{id}/load-suggestions` propone la cifra de hoy de cada ejercicio («Hoy prueba 42 kg (+5 %)») con **las mismas reglas** que la sugerencia de después de la sesión (`ProgressionCalculator`), para que las dos digan lo mismo:
+`GET /training/sessions/{id}/load-suggestions` propone la cifra de hoy de cada ejercicio («Hoy prueba 42,5 kg») con **las mismas reglas** que la sugerencia de después de la sesión (`ProgressionCalculator`), para que las dos digan lo mismo:
 
 - **Base:** lo que se hizo de verdad la última vez que se entrenó ese ejercicio (la serie de más peso con sus repeticiones; el aguante, el tiempo o la distancia más largos), no lo planificado. Si alguien subió por su cuenta, se progresa desde ahí.
-- **Regla:** el RPE de aquella sesión y sus repeticiones fallidas: fallos → carga −5 % por fallo (entre −5 % y −30 %); RPE ≥ 9,5 → −15 %; RPE ≤ 5 → +10 % (isométrico +10 s); RPE ≤ 7 → +1 repetición o, en el tope del rango del objetivo, +5 % de peso (tiempo o distancia +10 %). El peso se redondea a 0,5 kg.
+- **Regla con rango del ejercicio (ADR 0054):** la doble progresión de abajo («Peso de partida, calibración y doble progresión»); para «dos sesiones seguidas sin llegar al mínimo» mira también la sesión anterior a la última.
+- **Regla sin rango (rutinas generadas o a mano):** el RPE de aquella sesión y sus repeticiones fallidas: fallos → carga −5 % por fallo (entre −5 % y −30 %); RPE ≥ 9,5 → −15 %; RPE ≤ 5 → +10 % (isométrico +10 s); RPE ≤ 7 → +1 repetición o, en el tope del rango del objetivo, **un escalón del material** (`LoadStep`; antes +5 %) y vuelta al mínimo (tiempo o distancia +10 %). El peso se redondea a 0,5 kg. Al cambiar el peso, todas las series de trabajo llevan el mismo (sin la rampa 50/75/100 % de antes: el calentamiento va aparte, ADR 0031).
 - **Cifra que se propone (`metric`):** la que mueve el motivo: `WEIGHT`, `REPS`, `HOLD_SECONDS`, `DURATION_SECONDS` o `DISTANCE_METERS`. Los recortes al rango del objetivo no se proponen. Solo cambia la carga de hoy; las series no.
 - **Sin propuesta** si no hubo RPE, si la última vez fue hace más de 14 días (manda la descarga por inactividad), o si la rutina ya pide esa cifra (la sugerencia de después de la sesión ya se aplicó).
 - **Por serie (`perSet`):** el servidor da la cifra de cada serie planificada: en una pirámide, el peso y el aguante se mueven en la misma proporción (peso a 0,5 kg) y las repeticiones en la misma diferencia; si no, la cifra propuesta.
-- **En la app:** es la cifra de partida de las series que faltan de ese ejercicio (con `perSet`), sin tener que aceptarla, salvo que la serie anterior de hoy ya tenga una cifra real (manda lo real). Se dice en una línea («Hoy prueba 42,5 kg (+5 %)») con el porqué en un «?». No toca la rutina ni las series ya apuntadas.
+- **En la app:** es la cifra de partida de las series que faltan de ese ejercicio (con `perSet`), sin tener que aceptarla, salvo que la serie anterior de hoy ya tenga una cifra real (manda lo real). Se dice en una línea («Hoy prueba 42,5 kg (+6 %)», un escalón de la barra sobre 40 kg) con el porqué en un «?». No toca la rutina ni las series ya apuntadas.
+
+## Peso de partida, calibración y doble progresión (ADR 0054)
+
+**Peso de partida (`StartingLoad`, `StartingLoadService`)** — siempre «para probar», nunca un objetivo. Cadena de prioridades:
+
+1. **Historial** con ese ejercicio en los últimos 42 días: el peso de trabajo más alto de la sesión más reciente con series de 12 repeticiones o menos. Es lo más fiable y no se recorta.
+2. **Máquinas, poleas, peso corporal y gomas:** sin kilos (cada marca pesa distinto; las placas no son kilos reales). Manda la calibración.
+3. **Nivel intermedio sin historial:** sin kilos; la calibración lo ajusta.
+4. **Fracción del peso corporal** del perfil (tabla `cargas_iniciales_ejercicio`), **solo con el consentimiento de salud vigente y aceptado con el texto que incluye el peso** (versión 2, `HealthConsent.coversBodyWeight`; el peso corporal es dato de salud, ADR 0034); conservadora a propósito (≈ 50-60 % de lo que suele poder un principiante en 8-12 repeticiones). Sin consentimiento o sin peso, el **peso por defecto** de la tabla.
+5. **Redondeo hacia abajo al material (`LoadStep.floor`)** y **tope del primer día** (`kg_tope`).
+
+| Material (`LoadType`) | Redondeo | Mínimo | Escalón (`LoadStep.up/down`) |
+|---|---|---|---|
+| Barra (`BARBELL`) | múltiplos de 2,5 kg (discos de 1,25 por lado) | 20 kg (barra vacía) | +2,5 kg tren superior · +5 kg pierna o cadera |
+| Mancuernas (`DUMBBELL_PAIR`, por mano) y una mancuerna (`DUMBBELL_SINGLE`) | de 2 en 2 kg | 2 kg | ±2 kg |
+| Pesa rusa (`KETTLEBELL`) | 4, 6, 8, 10, 12, 16, 20, 24, 28, 32 kg | 4 kg | la siguiente / la anterior |
+| Máquina o polea (`MACHINE`, `CABLE`) | 0,5 kg (solo historial) | — | una placa ≈ 5 kg |
+| Peso corporal, gomas | sin kilos | — | — |
+| Sin perfil (ejercicios que no son de las plantillas) | 0,5 kg | — | 2,5 kg |
+
+Fracciones de partida (principiante, kg totales o por mano en mancuernas): sentadilla con barra 0,35 (tope 60), peso muerto rumano con barra 0,35 (60), hip thrust con barra 0,45 (60), press de banca con barra 0,25 (40), press inclinado con barra 0,20 (40), remo con barra 0,25 (40), gemelos con barra 0,30 (60), press de banca con mancuerna 0,08 (16), press de hombros con mancuernas 0,06 (16), press en el suelo a una mano 0,08 (16), remo a una mano 0,10 (16), peso muerto rumano con mancuernas 0,10 (16), zancada atrás 0,05 (16), sentadilla sumo 0,15 (16), sentadilla búlgara 0,05 (16), hip thrust con mancuerna 0,20 (16), goblet con pesa rusa 0,15 (16), curl de bíceps 0,04, elevación lateral 0,025 y extensión de tríceps con mancuernas 0,04 (16). Ejemplos: 60 kg → sentadilla 20 kg, press con mancuernas 4 kg; 80 kg → sentadilla 27,5 kg, press con mancuernas 6 kg. Son una estimación propia y baja a propósito, no una norma: su función es que la primera serie sea segura; la calibración la corrige en 1-2 sesiones. La misma regla pone el peso de partida de las rutinas generadas (sustituye a la antigua fracción por el nombre del ejercicio); quien declara actividad moderada o alta cuenta como nivel intermedio.
+
+**Calibración en la primera sesión (`ExerciseCalibration`)** — se pregunta en los ejercicios de repeticiones con kilos que no se han hecho con peso en los últimos 42 días (ni de peso corporal ni de gomas). Tras la **primera serie de trabajo**: «¿Cuántas más podrías haber hecho?» (0 · 1-2 · 3 · 4 o más). **4 o más** → la serie siguiente sube un escalón del material; **3 o 1-2** → se queda; **0, o no llegó al mínimo del rango (o a las repeticiones previstas)** → baja un escalón (sin bajar del mínimo del material: entonces se queda). El peso que queda pasa a la rutina en todos los días de ese ejercicio que aún no se han hecho ni saltado (`Routine.applyCalibratedWeight`). Responder es opcional; sin respuesta (o sin conexión) el peso no cambia. Las repeticiones en reserva se corresponden con el RPE: RPE ≈ 10 − repeticiones que sobran (Zourdos et al., 2016).
+
+**Doble progresión con el rango del ejercicio (`ProgressionCalculator`, plantillas reales)** — cada ejercicio trae su rango («8-12») y cuántas deben sobrar («te deben sobrar 2», `RepRange`). Se empieza por el mínimo del rango. Esfuerzo bien = RPE de la sesión ≤ 10 − repeticiones que deben sobrar (2 si no se pide) y ninguna serie «hasta no poder más».
+
+- Todas las series previstas en el **tope del rango** con el esfuerzo bien → **un escalón más de peso** del material y vuelta al mínimo del rango.
+- Si no, todas las series en lo previsto con el esfuerzo bien → **+1 repetición** (hasta el tope).
+- Alguna serie **por debajo del mínimo**: se repite el mismo peso; **dos sesiones seguidas** así → **−10 %**, redondeado hacia abajo al material, y vuelta al mínimo.
+- Series y descanso no cambian (son los de la plantilla). Con peso corporal se progresa en repeticiones hasta el tope; la variante más difícil se elige a mano.
+
+**Plantillas reales (V1073)** — 12 rutinas con nombre de sesión por día, rango y repeticiones en reserva por ejercicio (principiante: 3 que sobran; quien ya entrena: 1-2). Criterios: OMS 2020 (fuerza 2 o más días por semana), ACSM (Ratamess 2009; Garber 2011: principiantes 1-3 series de 8-12, 1-2 min de descanso), volumen semanal (Schoenfeld 2017; mínimo eficaz ~4 series por grupo, Iversen 2021), frecuencia 1-2 veces por grupo con el volumen igualado (Schoenfeld 2019) y mantener en exámenes con poco volumen y la misma intensidad (Spiering 2021). «Empieza a correr» sigue el esquema clásico de Couch to 5K del NHS (9 semanas, 3 salidas; cada salida con su entreno `C25K_W*` y 5 min andando antes y después; si una semana cuesta, se repite).
 
 ## Edad (ADR 0036)
 
@@ -324,6 +357,12 @@ dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se r
 - Herrmann, S. D. et al. (2024). 2024 Adult Compendium of Physical Activities. *Journal of Sport and Health Science*, 13(1), 6–12.
 - Ratamess, N. A. et al. (2009). American College of Sports Medicine position stand. Progression models in resistance training for healthy adults. *Medicine & Science in Sports & Exercise*, 41(3), 687–708.
 - NHS (2024). *Couch to 5K*: plan de 9 semanas con tres salidas por semana que alterna andar y correr hasta 30 min seguidos.
+- Garber, C. E. et al. (2011). ACSM position stand. Quantity and quality of exercise… *Medicine & Science in Sports & Exercise*, 43(7), 1334–1359.
+- Schoenfeld, B. J., Ogborn, D. y Krieger, J. W. (2017). Dose-response relationship between weekly resistance training volume and increases in muscle mass. *Journal of Sports Sciences*, 35(11), 1073–1082.
+- Schoenfeld, B. J., Grgic, J. y Krieger, J. (2019). How many times per week should a muscle be trained to maximize muscle hypertrophy? *Journal of Sports Sciences*, 37(11), 1286–1295.
+- Iversen, V. M. et al. (2021). No time to lift? Designing time-efficient training programs for strength and hypertrophy. *Sports Medicine*, 51(10), 2079–2095.
+- Spiering, B. A. et al. (2021). Maintaining physical performance: the minimal dose of exercise needed to preserve endurance and strength over time. *Journal of Strength and Conditioning Research*, 35(5), 1449–1458.
+- Zourdos, M. C. et al. (2016). Novel resistance training-specific rating of perceived exertion scale measuring repetitions in reserve. *Journal of Strength and Conditioning Research*, 30(1), 267–275.
 - Wozniak, P. A. (1990). *Optimization of learning* (algoritmo SM-2) y Anki (2024), *Load balancer* del planificador de repasos (versión 24.11): repartir los repasos ±unos días para evitar picos.
 
 ## Objetivos por serie (`ExerciseParameters`, ADR 0027)

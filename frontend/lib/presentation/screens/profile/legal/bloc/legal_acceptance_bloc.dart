@@ -5,6 +5,8 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/use_cases/profile/accept_legal_terms_use_case.dart';
 import '../../../../../domain/use_cases/profile/get_legal_acceptance_use_case.dart';
+import '../../../../../domain/use_cases/training/get_health_consent_use_case.dart';
+import '../../../../../domain/use_cases/training/give_health_consent_use_case.dart';
 
 part 'legal_acceptance_bloc.freezed.dart';
 part 'legal_acceptance_event.dart';
@@ -15,10 +17,18 @@ part 'legal_acceptance_state.dart';
 /// vigente (nunca aceptada, p. ej. al entrar con Google, o actualizada) y el
 /// router lleva a `/legal-acceptance` antes que al onboarding o a los permisos.
 /// Lo decide el servidor; aquí solo se guarda qué versión se enseña.
+///
+/// Si el permiso de datos de salud se dio con un texto anterior (ADR 0054), la
+/// misma pantalla ofrece aceptar el nuevo, aparte y sin obligar: así se ve una
+/// sola vez junto a la política.
 class LegalAcceptanceBloc
     extends Bloc<LegalAcceptanceEvent, LegalAcceptanceState> {
-  LegalAcceptanceBloc({required this._getAcceptance, required this._accept})
-    : super(const LegalAcceptanceState()) {
+  LegalAcceptanceBloc({
+    required this._getAcceptance,
+    required this._accept,
+    required this._getHealthConsent,
+    required this._giveHealthConsent,
+  }) : super(const LegalAcceptanceState()) {
     on<LegalAcceptanceChecked>(_onChecked);
     on<LegalAcceptanceAccepted>(_onAccepted);
     on<LegalAcceptanceReset>((_, emit) => emit(const LegalAcceptanceState()));
@@ -26,6 +36,8 @@ class LegalAcceptanceBloc
 
   final GetLegalAcceptanceUseCaseContract _getAcceptance;
   final AcceptLegalTermsUseCaseContract _accept;
+  final GetHealthConsentUseCaseContract _getHealthConsent;
+  final GiveHealthConsentUseCaseContract _giveHealthConsent;
 
   Future<void> _onChecked(
     LegalAcceptanceChecked event,
@@ -37,11 +49,13 @@ class LegalAcceptanceBloc
       emit(state.copyWith(status: LegalGateStatus.accepted));
       return;
     }
+    final consent = (await _getHealthConsent()).valueOrNull;
     emit(
       state.copyWith(
         status: LegalGateStatus.required,
         currentVersion: status.currentVersion,
         updated: status.acceptedVersion != null,
+        offerHealthUpdate: consent?.outdated ?? false,
       ),
     );
   }
@@ -56,6 +70,10 @@ class LegalAcceptanceBloc
     final result = await _accept(version);
     switch (result) {
       case Success():
+        // Si falla, no se bloquea la entrada: queda «Actualizar» en Ajustes.
+        if (event.healthUpdate && state.offerHealthUpdate) {
+          await _giveHealthConsent();
+        }
         emit(
           state.copyWith(accepting: false, status: LegalGateStatus.accepted),
         );

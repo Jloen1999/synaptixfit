@@ -297,4 +297,7 @@ Map<String, dynamic> parametersToJson(ExerciseParameters p) => {
   'isometricSeconds': ?p.isometricSeconds,
   'repsPerSet': ?p.repsPerSet,
   'isometricSecondsPerSet': ?p.isometricSecondsPerSet,
+  'repMin': ?p.repMin,
+  'repMax': ?p.repMax,
+  'repsInReserve': ?p.repsInReserve,
 };

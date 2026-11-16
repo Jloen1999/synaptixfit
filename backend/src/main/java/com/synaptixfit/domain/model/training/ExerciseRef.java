@@ -1,12 +1,22 @@
 package com.synaptixfit.domain.model.training;
 
 import com.synaptixfit.domain.model.neuro.ExerciseEnergy;
+import com.synaptixfit.domain.model.training.load.LoadProfile;
 import java.util.List;
 import java.util.UUID;
 
-/** Datos mínimos de un ejercicio que acompañan a un ejercicio planificado. */
+/**
+ * Datos mínimos de un ejercicio que acompañan a un ejercicio planificado. {@code load}: cómo se carga (escalones de
+ * peso de la progresión y la calibración, ADR 0054); nulo si el ejercicio no tiene perfil de carga.
+ */
 public record ExerciseRef(UUID id, String name, String gifUrl, String previewUrl, Modality modality,
-                          List<MeasurementType> measurementTypes, boolean circuit, double met, boolean active) {
+                          List<MeasurementType> measurementTypes, boolean circuit, double met, boolean active,
+                          LoadProfile load) {
+
+    public ExerciseRef(UUID id, String name, String gifUrl, String previewUrl, Modality modality,
+                       List<MeasurementType> measurementTypes, boolean circuit, double met, boolean active) {
+        this(id, name, gifUrl, previewUrl, modality, measurementTypes, circuit, met, active, null);
+    }
 
     public ExerciseRef {
         measurementTypes = List.copyOf(measurementTypes == null ? List.of() : measurementTypes);
