@@ -1,0 +1,398 @@
+{
+  // Snippets del cliente de SynaptixFit (Flutter + BLoC + freezed + get_it). Todos empiezan por «sx» (SynaptixFit): escribe «sx» y
+  // verás la lista con su descripción. Siguen frontend/CLAUDE.md: dominio sin Flutter, contratos *Contract,
+  // AppResult, errores traducidos, cuatro estados y nada de valores visuales sueltos (todo de Tokens*).
+  // El nombre de la clase sale del nombre del archivo: crea antes «mi_cosa_bloc.dart», «mi_cosa_use_case.dart»…
+  // Tras crear clases freezed: dart run build_runner build --delete-conflicting-outputs
+
+  // ---------------------------------------------------------------- dominio
+
+  "Dominio: modelo freezed": {
+    "scope": "dart",
+    "prefix": "sxmodel",
+    "description": "Modelo de dominio inmutable (domain/models/<feature>/) con freezed; sin JSON (eso es del DTO)",
+    "body": [
+      "import 'package:freezed_annotation/freezed_annotation.dart';",
+      "",
+      "part '${TM_FILENAME_BASE}.freezed.dart';",
+      "",
+      "/// ${1:Qué representa}.",
+      "@freezed",
+      "abstract class ${2:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}} with _\\$${2} {",
+      "  const factory ${2}({",
+      "    required String id,",
+      "    required ${3:String} ${4:name},",
+      "  }) = _${2};",
+      "}"
+    ]
+  },
+
+  "Dominio: contrato de repositorio": {
+    "scope": "dart",
+    "prefix": "sxrepocontract",
+    "description": "Contrato del repositorio (domain/repositories/): lo que el dominio pide a la capa de datos. Devuelve AppResult, nunca lanza",
+    "body": [
+      "import '../models/result/app_result.dart';",
+      "",
+      "/// ${1:Qué datos gestiona}.",
+      "abstract interface class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} {",
+      "  Future<AppResult<${2:Modelo}>> ${3:get}(String id);",
+      "}"
+    ]
+  },
+
+  "Dominio: caso de uso": {
+    "scope": "dart",
+    "prefix": "sxusecase",
+    "description": "Caso de uso (domain/use_cases/<feature>/): contrato *Contract + implementación que delega en el repositorio. Una acción. Regístralo con sxdilazy",
+    "body": [
+      "import '${3:../../models/result/app_result.dart}';",
+      "import '${4:../../repositories/xxx_repository_contract.dart}';",
+      "",
+      "/// ${1:Qué hace, en una línea}.",
+      "abstract interface class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Contract {",
+      "  Future<AppResult<${2:Modelo}>> call(${5:String id});",
+      "}",
+      "",
+      "/// Implementa [${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Contract] con",
+      "/// [${6:XxxRepositoryContract}].",
+      "class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}",
+      "    implements ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Contract {",
+      "  const ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}(this._repository);",
+      "",
+      "  final ${6} _repository;",
+      "",
+      "  @override",
+      "  Future<AppResult<${2}>> call(${5}) => _repository.${7:get}(${8:id});",
+      "}"
+    ]
+  },
+
+  // ------------------------------------------------------------------ datos
+
+  "Datos: DTO freezed con JSON": {
+    "scope": "dart",
+    "prefix": "sxdto",
+    "description": "DTO (data/remote_data_source/<feature>/dto/) que refleja la respuesta del backend (openapi) con fromJson y toDomain()",
+    "body": [
+      "import 'package:freezed_annotation/freezed_annotation.dart';",
+      "",
+      "part '${TM_FILENAME_BASE}.freezed.dart';",
+      "part '${TM_FILENAME_BASE}.g.dart';",
+      "",
+      "/// `${1:XxxResponse}` del backend.",
+      "@freezed",
+      "abstract class ${2:XxxDto} with _\\$${2} {",
+      "  const factory ${2}({",
+      "    required String id,",
+      "    ${3:String? name},",
+      "  }) = _${2};",
+      "",
+      "  const ${2}._();",
+      "",
+      "  factory ${2}.fromJson(Map<String, dynamic> json) =>",
+      "      _\\$${2}FromJson(json);",
+      "",
+      "  ${4:Modelo} toDomain() => ${4}(id: id${5:, name: name ?? ''});",
+      "}"
+    ]
+  },
+
+  "Datos: fuente remota": {
+    "scope": "dart",
+    "prefix": "sxremote",
+    "description": "Fuente remota (data/remote_data_source/<feature>/): llama a /api/v1/... con Dio y devuelve DTO. Los errores los traduce el repositorio",
+    "body": [
+      "import 'package:dio/dio.dart';",
+      "",
+      "import '../api/api_client.dart';",
+      "",
+      "/// Endpoints de ${1:la funcionalidad} (`/api/v1/${2:recurso}`).",
+      "class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} {",
+      "  ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}(ApiClient client) : _dio = client.dio;",
+      "",
+      "  final Dio _dio;",
+      "",
+      "  static const _base = '/api/v1/${2}';",
+      "",
+      "  Future<${3:XxxDto}> ${4:get}(String id) async {",
+      "    final r = await _dio.get<Map<String, dynamic>>('\\$_base/\\$id');",
+      "    return ${3}.fromJson(r.data!);",
+      "  }",
+      "}"
+    ]
+  },
+
+  "Datos: método de endpoint": {
+    "scope": "dart",
+    "prefix": "sxendpoint",
+    "description": "Un endpoint más en una fuente remota: elige el verbo de Dio",
+    "body": [
+      "Future<${1:XxxDto}> ${2:accion}(${3:String id}) async {",
+      "  final r = await _dio.${4|get,post,put,patch,delete|}<Map<String, dynamic>>(",
+      "    '\\$_base/${5:\\$id}',",
+      "    ${6:data: {'campo': valor\\},}",
+      "  );",
+      "  return ${1}.fromJson(r.data!);",
+      "}"
+    ]
+  },
+
+  "Datos: repositorio": {
+    "scope": "dart",
+    "prefix": "sxrepo",
+    "description": "Repositorio (data/repository/) que implementa el contrato: llama a la fuente, convierte con toDomain() y traduce errores con RepositoryErrorHandler.guard",
+    "body": [
+      "import '../../domain/models/result/app_result.dart';",
+      "import '../errors/repository_error_handler.dart';",
+      "",
+      "/// Implementa [${1:XxxRepositoryContract}] con [${2:XxxRemoteDataSource}].",
+      "class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} implements ${1} {",
+      "  const ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}(this._remote);",
+      "",
+      "  final ${2} _remote;",
+      "",
+      "  @override",
+      "  Future<AppResult<${3:Modelo}>> ${4:get}(String id) =>",
+      "      RepositoryErrorHandler.guard(() async => (await _remote.${4}(id)).toDomain());",
+      "}"
+    ]
+  },
+
+  // ----------------------------------------------------------- presentación
+
+  "BLoC: archivo del bloc": {
+    "scope": "dart",
+    "prefix": "sxbloc",
+    "description": "Bloc con freezed y sus partes _event/_state (screens/<feature>/<pantalla>/bloc/). El archivo debe llamarse <pantalla>_bloc.dart. Regístralo con sxdifactory",
+    "body": [
+      "import 'package:flutter_bloc/flutter_bloc.dart';",
+      "import 'package:freezed_annotation/freezed_annotation.dart';",
+      "",
+      "import '${2:../../../../../domain/errors/app_error.dart}';",
+      "",
+      "part '${TM_FILENAME_BASE}.freezed.dart';",
+      "part '${TM_FILENAME_BASE/(.*)_bloc$/$1/}_event.dart';",
+      "part '${TM_FILENAME_BASE/(.*)_bloc$/$1/}_state.dart';",
+      "",
+      "/// ${1:Qué gestiona esta pantalla}.",
+      "class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}",
+      "    extends Bloc<${TM_FILENAME_BASE/(.*)_bloc$/${1:/pascalcase}/}Event, ${TM_FILENAME_BASE/(.*)_bloc$/${1:/pascalcase}/}State> {",
+      "  ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}({required this._${3:getXxx}})",
+      "    : super(const ${TM_FILENAME_BASE/(.*)_bloc$/${1:/pascalcase}/}State.loading()) {",
+      "    on<${TM_FILENAME_BASE/(.*)_bloc$/${1:/pascalcase}/}Started>((event, emit) async {",
+      "      emit(const ${TM_FILENAME_BASE/(.*)_bloc$/${1:/pascalcase}/}State.loading());",
+      "      final result = await _${3}(event.id);",
+      "      emit(",
+      "        result.fold(",
+      "          ${TM_FILENAME_BASE/(.*)_bloc$/${1:/pascalcase}/}State.loaded,",
+      "          ${TM_FILENAME_BASE/(.*)_bloc$/${1:/pascalcase}/}State.failure,",
+      "        ),",
+      "      );",
+      "    });",
+      "  }",
+      "",
+      "  final ${4:GetXxxUseCaseContract} _${3};",
+      "}"
+    ]
+  },
+
+  "BLoC: eventos": {
+    "scope": "dart",
+    "prefix": "sxevent",
+    "description": "Archivo <pantalla>_event.dart: eventos sellados con freezed (part of el bloc)",
+    "body": [
+      "part of '${TM_FILENAME_BASE/(.*)_event$/$1/}_bloc.dart';",
+      "",
+      "@freezed",
+      "sealed class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} with _\\$${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} {",
+      "  const factory ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}.started(String id) =",
+      "      ${TM_FILENAME_BASE/(.*)_event$/${1:/pascalcase}/}Started;",
+      "  $0",
+      "}"
+    ]
+  },
+
+  "BLoC: estados": {
+    "scope": "dart",
+    "prefix": "sxstate",
+    "description": "Archivo <pantalla>_state.dart: carga, cargado y error (el vacío se decide en la vista con los datos)",
+    "body": [
+      "part of '${TM_FILENAME_BASE/(.*)_state$/$1/}_bloc.dart';",
+      "",
+      "@freezed",
+      "sealed class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} with _\\$${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} {",
+      "  const factory ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}.loading() =",
+      "      ${TM_FILENAME_BASE/(.*)_state$/${1:/pascalcase}/}Loading;",
+      "",
+      "  const factory ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}.loaded(${1:Modelo} ${2:data}) =",
+      "      ${TM_FILENAME_BASE/(.*)_state$/${1:/pascalcase}/}Loaded;",
+      "",
+      "  const factory ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}.failure(AppError error) =",
+      "      ${TM_FILENAME_BASE/(.*)_state$/${1:/pascalcase}/}Failure;",
+      "}"
+    ]
+  },
+
+  "Pantalla: página con sus estados": {
+    "scope": "dart",
+    "prefix": "sxpage",
+    "description": "Página (screens/<feature>/<pantalla>/page/): crea el bloc con getIt y pinta carga (esqueleto), error con Reintentar, vacío y contenido. Espaciados de TokensSpacing",
+    "body": [
+      "import 'package:flutter/material.dart';",
+      "import 'package:flutter_bloc/flutter_bloc.dart';",
+      "",
+      "import '${5:../../../../../app/di/app_di.dart}';",
+      "import '${6:../../../../extensions/context_extensions.dart}';",
+      "import '${7:../../../../theme/tokens.g.dart}';",
+      "import '${8:../../../../widgets/widgets.dart}';",
+      "import '../bloc/${TM_FILENAME_BASE/(.*)_page$/$1/}_bloc.dart';",
+      "",
+      "/// ${1:Qué ve la persona en esta pantalla}.",
+      "class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} extends StatelessWidget {",
+      "  const ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}({super.key, required this.id});",
+      "",
+      "  final String id;",
+      "",
+      "  @override",
+      "  Widget build(BuildContext context) {",
+      "    return BlocProvider(",
+      "      create: (_) => getIt<${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Bloc>()",
+      "        ..add(${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Event.started(id)),",
+      "      child: Scaffold(",
+      "        appBar: AppPageBar(",
+      "          leading: const AppBackButton(fallback: ${2:XxxPaths.root}),",
+      "          title: Text(context.localizations.${3:xxxTitle}),",
+      "        ),",
+      "        body: BlocBuilder<${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Bloc, ${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}State>(",
+      "          builder: (context, state) => switch (state) {",
+      "            ${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Loading() => const AppSkeletonList(count: 3),",
+      "            ${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Failure(:final error) => AppErrorView(",
+      "              error: error,",
+      "              onRetry: () => context.read<${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Bloc>().add(",
+      "                ${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Event.started(id),",
+      "              ),",
+      "            ),",
+      "            ${TM_FILENAME_BASE/(.*)_page$/${1:/pascalcase}/}Loaded(:final ${4:data}) => ListView(",
+      "              padding: const EdgeInsets.all(TokensSpacing.m),",
+      "              children: [$0],",
+      "            ),",
+      "          },",
+      "        ),",
+      "      ),",
+      "    );",
+      "  }",
+      "}"
+    ]
+  },
+
+  "Widget: privado sin estado": {
+    "scope": "dart",
+    "prefix": "sxwidget",
+    "description": "Trozo de pantalla como clase privada (mejor que métodos que devuelven Widget)",
+    "body": [
+      "class _${1:Content} extends StatelessWidget {",
+      "  const _${1}({required this.${2:data}});",
+      "",
+      "  final ${3:Modelo} ${2};",
+      "",
+      "  @override",
+      "  Widget build(BuildContext context) {",
+      "    final l10n = context.localizations;",
+      "    return $0;",
+      "  }",
+      "}"
+    ]
+  },
+
+  // ---------------------------------------------------------- inyección (DI)
+
+  "DI: caso de uso o repositorio (singleton perezoso)": {
+    "scope": "dart",
+    "prefix": "sxdilazy",
+    "description": "Línea para domain/di/<feature>_domain_di.dart o data/di/...: registra el contrato con su implementación una sola vez",
+    "body": [
+      "..registerLazySingleton<${1:XxxUseCaseContract}>(",
+      "  () => ${1/(.*)Contract$/$1/}(getIt()),",
+      ")"
+    ]
+  },
+
+  "DI: bloc (factory)": {
+    "scope": "dart",
+    "prefix": "sxdifactory",
+    "description": "Línea para presentation/di/<feature>_presentation_di.dart: un bloc nuevo cada vez que se abre la pantalla",
+    "body": [
+      "..registerFactory(() => ${1:XxxBloc}(${2:getXxx}: getIt()))"
+    ]
+  },
+
+  // ---------------------------------------------------------------- tests
+
+  "Test: bloc": {
+    "scope": "dart",
+    "prefix": "sxbloctest",
+    "description": "Test de bloc con bloc_test y mocktail: dobles de los casos de uso (contratos) y qué estados emite",
+    "body": [
+      "import 'package:bloc_test/bloc_test.dart';",
+      "import 'package:flutter_test/flutter_test.dart';",
+      "import 'package:mocktail/mocktail.dart';",
+      "import 'package:synaptixfit/domain/models/result/result.dart';",
+      "",
+      "class _${1:GetXxx} extends Mock implements ${2:GetXxxUseCaseContract} {}",
+      "",
+      "void main() {",
+      "  late _${1} ${3:getXxx};",
+      "",
+      "  setUp(() => ${3} = _${1}());",
+      "",
+      "  blocTest<${4:XxxBloc}, ${4/(.*)Bloc$/$1/}State>(",
+      "    '${5:al empezar carga y muestra los datos}',",
+      "    setUp: () => when(() => ${3}(any())).thenAnswer((_) async => Success(${6:dato})),",
+      "    build: () => ${4}(${3}: ${3}),",
+      "    act: (bloc) => bloc.add(const ${4/(.*)Bloc$/$1/}Event.started('1')),",
+      "    expect: () => [",
+      "      const ${4/(.*)Bloc$/$1/}State.loading(),",
+      "      ${4/(.*)Bloc$/$1/}State.loaded(${6}),",
+      "    ],",
+      "  );",
+      "}"
+    ]
+  },
+
+  "Test: widget": {
+    "scope": "dart",
+    "prefix": "sxwidgettest",
+    "description": "Test de pantalla en español con el tema de la app; busca por texto visible o por etiqueta del lector (accesibilidad)",
+    "body": [
+      "import 'package:flutter/material.dart';",
+      "import 'package:flutter_localizations/flutter_localizations.dart';",
+      "import 'package:flutter_test/flutter_test.dart';",
+      "import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';",
+      "import 'package:synaptixfit/presentation/theme/app_theme.dart';",
+      "",
+      "void main() {",
+      "  testWidgets('${1:qué ve la persona}', (tester) async {",
+      "    await tester.pumpWidget(",
+      "      MaterialApp(",
+      "        theme: AppTheme.light,",
+      "        locale: const Locale('es'),",
+      "        supportedLocales: AppLocalizations.supportedLocales,",
+      "        localizationsDelegates: const [",
+      "          AppLocalizations.delegate,",
+      "          GlobalMaterialLocalizations.delegate,",
+      "          GlobalWidgetsLocalizations.delegate,",
+      "          GlobalCupertinoLocalizations.delegate,",
+      "        ],",
+      "        home: ${2:const MiWidget()},",
+      "      ),",
+      "    );",
+      "    await tester.pumpAndSettle();",
+      "",
+      "    expect(find.text('${3:Texto visible}'), findsOneWidget);",
+      "    $0",
+      "  });",
+      "}"
+    ]
+  }
+}

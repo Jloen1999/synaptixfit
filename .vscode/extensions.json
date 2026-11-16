@@ -1,0 +1,12 @@
+{
+  // VS Code las ofrece al abrir el proyecto («Extensiones recomendadas»).
+  "recommendations": [
+    // Backend: Java (autocompletado, depuración, tests, refactorizar) y Spring Boot (application.yml, beans, rutas)
+    "vscjava.vscode-java-pack",
+    "vmware.vscode-boot-dev-pack",
+    // Cliente: Flutter y Dart, y el asistente de BLoC (crear bloc/cubit y envolver widgets)
+    "dart-code.flutter",
+    "dart-code.dart-code",
+    "felixangelov.bloc"
+  ]
+}

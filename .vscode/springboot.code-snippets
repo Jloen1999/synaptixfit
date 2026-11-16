@@ -1,0 +1,484 @@
+{
+  // Snippets del backend de SynaptixFit (Spring Boot hexagonal). Todos empiezan por «sx» (SynaptixFit): escribe «sx» y verás la
+  // lista con su descripción. Siguen backend/CLAUDE.md: Javadoc de cabecera, casos de uso sin Spring, beans
+  // envueltos con TransactionalUseCaseFactory, errores con `code` y el usuario siempre desde el JWT.
+  // El `package` lo escribe solo la extensión de Java al crear el archivo.
+
+  // ---------------------------------------------------------------- dominio
+
+  "Dominio: excepción con code": {
+    "scope": "java",
+    "prefix": "sxexception",
+    "description": "Excepción de dominio (domain/exception/<feature>/) que extiende una categoría; el GlobalExceptionHandler saca de ella el estado HTTP. Añade el code a docs/03-api/errors.md",
+    "body": [
+      "import com.synaptixfit.domain.exception.${1|NotFoundException,ConflictException,BusinessRuleException,InvalidInputException,ForbiddenOperationException|};",
+      "",
+      "/** ${2:Cuándo ocurre, en lenguaje de negocio}. */",
+      "public class ${TM_FILENAME_BASE} extends ${1} {",
+      "",
+      "    public ${TM_FILENAME_BASE}(${3:UUID id}) {",
+      "        super(\"${4:FEATURE_REASON}\", \"${5:Detalle técnico en inglés}\");",
+      "    }",
+      "}"
+    ]
+  },
+
+  "Dominio: puerto de salida": {
+    "scope": "java",
+    "prefix": "sxport",
+    "description": "Puerto de salida (domain/port/output/<feature>/): lo que el dominio necesita de fuera (BD, IA, archivos). Lo implementa un adaptador de infraestructura",
+    "body": [
+      "/** ${1:Qué guarda o consulta}; lo implementa ${2:XxxPersistenceAdapter}. */",
+      "public interface ${TM_FILENAME_BASE} {",
+      "",
+      "    Optional<${3:Modelo}> findById(UUID id);",
+      "",
+      "    ${3} save(${3} ${4:modelo});",
+      "    $0",
+      "}"
+    ]
+  },
+
+  "Dominio: valor inmutable (record)": {
+    "scope": "java",
+    "prefix": "sxvalue",
+    "description": "Objeto valor como record con sus reglas en el constructor compacto (Java puro, sin frameworks)",
+    "body": [
+      "/** ${1:Qué representa} (${2:origen de la regla o ADR}). */",
+      "public record ${TM_FILENAME_BASE}(${3:int minutes}) {",
+      "",
+      "    public ${TM_FILENAME_BASE} {",
+      "        if (${4:minutes < 1}) {",
+      "            throw new ${5:FieldValidationException}(${6});",
+      "        }",
+      "    }",
+      "}"
+    ]
+  },
+
+  "Dominio: evento": {
+    "scope": "java",
+    "prefix": "sxevent",
+    "description": "Evento de dominio (domain/event/<feature>/): hecho ya ocurrido que escuchan otros módulos. Se publica con DomainEventPublisherPort y va al catálogo docs/01-architecture/events.md",
+    "body": [
+      "import com.synaptixfit.domain.event.DomainEvent;",
+      "import java.time.Instant;",
+      "import java.util.UUID;",
+      "",
+      "/** ${1:Qué ha pasado} y ${2:quién reacciona}. */",
+      "public record ${TM_FILENAME_BASE}(UUID ${3:userId}, ${4}Instant occurredAt) implements DomainEvent {",
+      "}"
+    ]
+  },
+
+  // ------------------------------------------------------------- aplicación
+
+  "Aplicación: caso de uso (puerto de entrada)": {
+    "scope": "java",
+    "prefix": "sxusecase",
+    "description": "Puerto de entrada (application/port/input/<feature>/): una acción. El usuario llega como parámetro, nunca del cuerpo de la petición",
+    "body": [
+      "import java.util.UUID;",
+      "",
+      "/** ${1:Qué hace, en una línea}. */",
+      "public interface ${TM_FILENAME_BASE} {",
+      "",
+      "    ${2:Resultado} ${3:execute}(UUID userId${4:, UUID id});",
+      "}"
+    ]
+  },
+
+  "Aplicación: caso de uso con Command": {
+    "scope": "java",
+    "prefix": "sxusecasecmd",
+    "description": "Puerto de entrada con un record Command anidado, para acciones con varios datos de entrada",
+    "body": [
+      "import java.util.UUID;",
+      "",
+      "/** ${1:Qué hace, en una línea}. */",
+      "public interface ${TM_FILENAME_BASE} {",
+      "",
+      "    ${2:Resultado} ${3:execute}(Command command);",
+      "",
+      "    record Command(UUID userId, ${4:String name}) {",
+      "    }",
+      "}"
+    ]
+  },
+
+  "Aplicación: servicio": {
+    "scope": "java",
+    "prefix": "sxservice",
+    "description": "Servicio (application/service/<feature>/) que implementa uno o varios casos de uso. Sin anotaciones de Spring ni @Transactional: se crea en su BeanConfiguration",
+    "body": [
+      "/** Implementa ${1:XxxUseCase}; guarda con ${2:XxxRepositoryPort}. */",
+      "public class ${TM_FILENAME_BASE} implements ${1} {",
+      "",
+      "    private final ${2} ${3:repository};",
+      "    private final Clock clock;",
+      "",
+      "    public ${TM_FILENAME_BASE}(${2} ${3}, Clock clock) {",
+      "        this.${3} = ${3};",
+      "        this.clock = clock;",
+      "    }",
+      "",
+      "    @Override",
+      "    public ${4:Resultado} ${5:execute}(${6:UUID userId}) {",
+      "        $0",
+      "    }",
+      "}"
+    ]
+  },
+
+  // ---------------------------------------------------------- composición
+
+  "Configuración: BeanConfiguration de un módulo": {
+    "scope": "java",
+    "prefix": "sxbeans",
+    "description": "infrastructure/config/<Feature>BeanConfiguration: puertos por constructor, servicio con autowireCandidate = false y un bean por contrato envuelto con tx.wrap (transacción)",
+    "body": [
+      "import org.springframework.context.annotation.Bean;",
+      "import org.springframework.context.annotation.Configuration;",
+      "",
+      "/** Composición de ${1:la funcionalidad}: ${2:qué casos de uso registra}. */",
+      "@Configuration",
+      "public class ${TM_FILENAME_BASE} {",
+      "",
+      "    private final TransactionalUseCaseFactory tx;",
+      "    private final ${3:XxxRepositoryPort} ${4:repository};",
+      "    private final Clock clock;",
+      "",
+      "    public ${TM_FILENAME_BASE}(TransactionalUseCaseFactory tx, ${3} ${4}, Clock clock) {",
+      "        this.tx = tx;",
+      "        this.${4} = ${4};",
+      "        this.clock = clock;",
+      "    }",
+      "",
+      "    @Bean(autowireCandidate = false)",
+      "    ${5:XxxService} ${5/(.)(.*)/${1:/downcase}$2/}() {",
+      "        return new ${5}(${4}, clock);",
+      "    }",
+      "",
+      "    @Bean",
+      "    ${6:XxxUseCase} ${6/(.)(.*)/${1:/downcase}$2/}() {",
+      "        return tx.wrap(${6}.class, ${5/(.)(.*)/${1:/downcase}$2/}());",
+      "    }",
+      "}"
+    ]
+  },
+
+  "Configuración: un bean de caso de uso": {
+    "scope": "java",
+    "prefix": "sxbean",
+    "description": "Registra un caso de uso más dentro de una BeanConfiguration, envuelto en transacción",
+    "body": [
+      "@Bean",
+      "${1:XxxUseCase} ${1/(.)(.*)/${1:/downcase}$2/}() {",
+      "    return tx.wrap(${1}.class, ${2:xxxService}());",
+      "}"
+    ]
+  },
+
+  // ---------------------------------------------------------------- REST
+
+  "REST: controlador": {
+    "scope": "java",
+    "prefix": "sxcontroller",
+    "description": "Controlador (infrastructure/adapter/input/rest/<feature>/): /api/v1/..., casos de uso por constructor, @CurrentUserId del JWT y DTO directo (sin envoltorio)",
+    "body": [
+      "import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;",
+      "import io.swagger.v3.oas.annotations.tags.Tag;",
+      "import java.util.UUID;",
+      "import org.springframework.web.bind.annotation.GetMapping;",
+      "import org.springframework.web.bind.annotation.PathVariable;",
+      "import org.springframework.web.bind.annotation.RequestMapping;",
+      "import org.springframework.web.bind.annotation.RestController;",
+      "",
+      "/** ${1:Qué expone}. Lo ajeno es 404. */",
+      "@Tag(name = \"${2:Módulo - Funcionalidad}\")",
+      "@RestController",
+      "@RequestMapping(\"/api/v1/${3:recurso}\")",
+      "public class ${TM_FILENAME_BASE} {",
+      "",
+      "    private final ${4:GetXxxUseCase} ${5:get};",
+      "",
+      "    public ${TM_FILENAME_BASE}(${4} ${5}) {",
+      "        this.${5} = ${5};",
+      "    }",
+      "",
+      "    @GetMapping(\"/{id}\")",
+      "    public ${6:Xxx}Response ${7:one}(@CurrentUserId UUID userId, @PathVariable UUID id) {",
+      "        return ${6}Response.from(${5}.${8:get}(userId, id));",
+      "    }",
+      "}"
+    ]
+  },
+
+  "REST: endpoint": {
+    "scope": "java",
+    "prefix": "sxendpoint",
+    "description": "Un endpoint más dentro de un controlador: elige el verbo; POST que crea devuelve 201",
+    "body": [
+      "/** ${1:Qué hace}. */",
+      "@${2|GetMapping,PostMapping,PutMapping,PatchMapping,DeleteMapping|}(\"${3:/{id\\}}\")",
+      "public ${4:XxxResponse} ${5:accion}(@CurrentUserId UUID userId${6:, @PathVariable UUID id}${7:, @Valid @RequestBody XxxRequest request}) {",
+      "    $0",
+      "}"
+    ]
+  },
+
+  "REST: DTO de petición": {
+    "scope": "java",
+    "prefix": "sxrequest",
+    "description": "Record de petición (rest/<feature>/dto/) con validación Jakarta; la regla de negocio la comprueba el dominio, aquí solo la forma",
+    "body": [
+      "import jakarta.validation.constraints.NotBlank;",
+      "import jakarta.validation.constraints.NotNull;",
+      "",
+      "/** ${1:Datos para qué acción}. */",
+      "public record ${TM_FILENAME_BASE}(@NotBlank String ${2:name}, @NotNull Integer ${3:minutes}) {",
+      "}"
+    ]
+  },
+
+  "REST: DTO de respuesta": {
+    "scope": "java",
+    "prefix": "sxresponse",
+    "description": "Record de respuesta con from(modelo): JSON camelCase, Instant para instantes, LocalDate para días",
+    "body": [
+      "import java.util.UUID;",
+      "",
+      "/** ${1:Qué devuelve}. */",
+      "public record ${TM_FILENAME_BASE}(UUID id, ${2:String name}) {",
+      "",
+      "    public static ${TM_FILENAME_BASE} from(${3:Modelo} ${4:m}) {",
+      "        return new ${TM_FILENAME_BASE}(${4}.id(), ${4}.${5:name}());",
+      "    }",
+      "}"
+    ]
+  },
+
+  // --------------------------------------------------------- persistencia
+
+  "Persistencia: entidad JPA": {
+    "scope": "java",
+    "prefix": "sxentity",
+    "description": "Entidad (persistence/entity/<feature>/): una por tabla, solo en el módulo dueño. Columnas en español como en Flyway; el esquema lo gobierna la migración",
+    "body": [
+      "import jakarta.persistence.Column;",
+      "import jakarta.persistence.Entity;",
+      "import jakarta.persistence.Id;",
+      "import jakarta.persistence.Table;",
+      "import java.util.UUID;",
+      "",
+      "/** Tabla {@code ${1:tabla}} (${2:V1xxx}): ${3:qué guarda}. */",
+      "@Entity",
+      "@Table(name = \"${1}\")",
+      "public class ${TM_FILENAME_BASE} {",
+      "",
+      "    @Id",
+      "    @Column(name = \"id\")",
+      "    private UUID id;",
+      "    @Column(name = \"${4:columna}\")",
+      "    private ${5:String} ${6:campo};",
+      "",
+      "    public UUID getId() { return id; }",
+      "    public void setId(UUID v) { this.id = v; }",
+      "    public ${5} get${6/(.)(.*)/${1:/upcase}$2/}() { return ${6}; }",
+      "    public void set${6/(.)(.*)/${1:/upcase}$2/}(${5} v) { this.${6} = v; }",
+      "}"
+    ]
+  },
+
+  "Persistencia: repositorio Spring Data": {
+    "scope": "java",
+    "prefix": "sxjpa",
+    "description": "Interfaz Spring Data JPA (persistence/repository/<feature>/) para la entidad; solo la usa el adaptador",
+    "body": [
+      "import java.util.UUID;",
+      "import org.springframework.data.jpa.repository.JpaRepository;",
+      "",
+      "/** Spring Data para {@code ${1:tabla}}. */",
+      "public interface ${TM_FILENAME_BASE} extends JpaRepository<${2:XxxEntity}, UUID> {",
+      "    $0",
+      "}"
+    ]
+  },
+
+  "Persistencia: adaptador JPA": {
+    "scope": "java",
+    "prefix": "sxadapter",
+    "description": "Adaptador de salida (persistence/adapter/<feature>/) que implementa el puerto del dominio con Spring Data y convierte entidad <-> modelo",
+    "body": [
+      "import java.util.Optional;",
+      "import java.util.UUID;",
+      "import org.springframework.stereotype.Repository;",
+      "",
+      "/** Implementa {@link ${1:XxxRepositoryPort}} con {@link ${2:XxxJpaRepository}}. */",
+      "@Repository",
+      "public class ${TM_FILENAME_BASE} implements ${1} {",
+      "",
+      "    private final ${2} jpa;",
+      "",
+      "    public ${TM_FILENAME_BASE}(${2} jpa) {",
+      "        this.jpa = jpa;",
+      "    }",
+      "",
+      "    @Override",
+      "    public Optional<${3:Modelo}> findById(UUID id) {",
+      "        return jpa.findById(id).map(this::toDomain);",
+      "    }",
+      "",
+      "    private ${3} toDomain(${4:XxxEntity} e) {",
+      "        $0",
+      "    }",
+      "}"
+    ]
+  },
+
+  "Persistencia: consulta con JdbcClient": {
+    "scope": "java",
+    "prefix": "sxjdbc",
+    "description": "Adaptador que LEE tablas de otro módulo con JdbcClient (nunca escribe en ellas). SQL estándar: lo propio de PostgreSQL va a database_portability.md",
+    "body": [
+      "import java.util.UUID;",
+      "import org.springframework.jdbc.core.simple.JdbcClient;",
+      "import org.springframework.stereotype.Repository;",
+      "",
+      "/** Lee {@code ${1:tabla}} (módulo ${2:dueño}) con {@link JdbcClient}; nunca escribe. */",
+      "@Repository",
+      "public class ${TM_FILENAME_BASE} implements ${3:XxxQueryPort} {",
+      "",
+      "    private final JdbcClient jdbc;",
+      "",
+      "    public ${TM_FILENAME_BASE}(JdbcClient jdbc) {",
+      "        this.jdbc = jdbc;",
+      "    }",
+      "",
+      "    @Override",
+      "    public ${4:boolean} ${5:consulta}(UUID userId) {",
+      "        return jdbc.sql(\"\"\"",
+      "                        SELECT ${6} FROM ${1} WHERE usuario_id = :userId",
+      "                        \"\"\")",
+      "                .param(\"userId\", userId)",
+      "                .query(${7:Boolean}.class)",
+      "                .single();",
+      "    }",
+      "}"
+    ]
+  },
+
+  // ------------------------------------------------------ eventos (entrada)
+
+  "Evento: oyente": {
+    "scope": "java",
+    "prefix": "sxlistener",
+    "description": "Oyente (infrastructure/adapter/input/event/<feature>/) que reacciona a un evento llamando a un caso de uso. Debe ser idempotente",
+    "body": [
+      "import org.springframework.context.event.EventListener;",
+      "import org.springframework.stereotype.Component;",
+      "",
+      "/** Al ${1:ocurrir X}, ${2:qué hace} (idempotente). */",
+      "@Component",
+      "public class ${TM_FILENAME_BASE} {",
+      "",
+      "    private final ${3:XxxUseCase} ${4:useCase};",
+      "",
+      "    public ${TM_FILENAME_BASE}(${3} ${4}) {",
+      "        this.${4} = ${4};",
+      "    }",
+      "",
+      "    @EventListener",
+      "    public void on(${5:XxxEvent} event) {",
+      "        ${4}.${6:execute}(event.userId());",
+      "    }",
+      "}"
+    ]
+  },
+
+  // ---------------------------------------------------------------- tests
+
+  "Test: unitario": {
+    "scope": "java",
+    "prefix": "sxtest",
+    "description": "Test unitario (JUnit 5 + AssertJ) de un modelo o servicio creado con new y dobles en memoria; reloj fijo",
+    "body": [
+      "import static org.assertj.core.api.Assertions.assertThat;",
+      "",
+      "import java.time.Instant;",
+      "import org.junit.jupiter.api.Test;",
+      "",
+      "/** ${1:Qué reglas comprueba}. */",
+      "class ${TM_FILENAME_BASE} {",
+      "",
+      "    private static final Instant NOW = Instant.parse(\"${2:2026-11-16T09:00:00Z}\");",
+      "",
+      "    @Test",
+      "    void ${3:describeLaReglaEnUnaFrase}() {",
+      "        $0",
+      "        assertThat(${4}).isEqualTo(${5});",
+      "    }",
+      "}"
+    ]
+  },
+
+  "Test: integración (*IT)": {
+    "scope": "java",
+    "prefix": "sxit",
+    "description": "Test de integración con la app entera sobre PostgreSQL embebido y MockMvc. Se ejecuta con ./mvnw test -Pintegration",
+    "body": [
+      "import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;",
+      "import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;",
+      "",
+      "import com.synaptixfit.support.EmbeddedPostgresSupport;",
+      "import org.junit.jupiter.api.Test;",
+      "import org.springframework.beans.factory.annotation.Autowired;",
+      "import org.springframework.boot.test.context.SpringBootTest;",
+      "import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;",
+      "import org.springframework.test.context.DynamicPropertyRegistry;",
+      "import org.springframework.test.context.DynamicPropertySource;",
+      "import org.springframework.test.web.servlet.MockMvc;",
+      "",
+      "/** ${1:Flujo que comprueba} sobre PostgreSQL real. */",
+      "@SpringBootTest",
+      "@AutoConfigureMockMvc",
+      "class ${TM_FILENAME_BASE} {",
+      "",
+      "    @DynamicPropertySource",
+      "    static void datasource(DynamicPropertyRegistry registry) {",
+      "        EmbeddedPostgresSupport.register(registry);",
+      "    }",
+      "",
+      "    @Autowired",
+      "    private MockMvc mvc;",
+      "",
+      "    @Test",
+      "    void ${2:flujoCompleto}() throws Exception {",
+      "        mvc.perform(get(\"/api/v1/${3:recurso}\").header(\"Authorization\", \"Bearer \" + ${4:token}))",
+      "                .andExpect(status().isOk());",
+      "        $0",
+      "    }",
+      "}"
+    ]
+  },
+
+  // ------------------------------------------------------------- migraciones
+
+  "Flyway: migración": {
+    "scope": "sql",
+    "prefix": "sxmigration",
+    "description": "Cabecera de una migración V<n>__<modulo>_<descripcion>.sql. Nunca se edita una ya aplicada; las reglas van al dominio, no a triggers",
+    "body": [
+      "-- ${1:Qué cambia y por qué} (${2:ADR 00xx}).",
+      "",
+      "CREATE TABLE ${3:tabla} (",
+      "    id          uuid        PRIMARY KEY,",
+      "    usuario_id  uuid        NOT NULL REFERENCES usuarios (id) ON DELETE CASCADE,",
+      "    ${4:columna}     ${5:text}        NOT NULL,",
+      "    creado_en   timestamptz NOT NULL",
+      ");",
+      "",
+      "CREATE INDEX idx_${3}_usuario ON ${3} (usuario_id);"
+    ]
+  }
+}
