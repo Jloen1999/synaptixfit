@@ -1,6 +1,7 @@
 package com.synaptixfit.application.service.training;
 
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.GetTrainingWeekUseCase;
 import com.synaptixfit.application.port.input.training.RestartRoutineUseCase;
 import com.synaptixfit.application.port.input.training.SkipRoutineDayUseCase;
 import com.synaptixfit.application.port.input.training.UnskipRoutineDayUseCase;
@@ -8,6 +9,7 @@ import com.synaptixfit.domain.exception.training.RoutineNotFoundException;
 import com.synaptixfit.domain.model.training.PendingDay;
 import com.synaptixfit.domain.model.training.Routine;
 import com.synaptixfit.domain.model.training.RoutineSchedule;
+import com.synaptixfit.domain.model.training.TrainingWeek;
 import com.synaptixfit.domain.model.training.RoutineStatus;
 import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
@@ -30,8 +32,8 @@ import java.util.stream.Collectors;
  * Inicio y los avisos), saltar y recuperar días y repetir el ciclo. Guarda con {@link RoutineLifecycle}
  * para respetar la rutina única en curso y avisar al calendario.
  */
-public class RoutineProgressService implements GetPendingTrainingDayUseCase, SkipRoutineDayUseCase,
-        UnskipRoutineDayUseCase, RestartRoutineUseCase {
+public class RoutineProgressService implements GetPendingTrainingDayUseCase, GetTrainingWeekUseCase,
+        SkipRoutineDayUseCase, UnskipRoutineDayUseCase, RestartRoutineUseCase {
 
     private final RoutineRepositoryPort routines;
     private final TrainingSessionRepositoryPort sessions;
@@ -58,7 +60,22 @@ public class RoutineProgressService implements GetPendingTrainingDayUseCase, Ski
         if (active.isEmpty()) {
             return Optional.empty();
         }
-        Routine routine = active.get();
+        return active.get().nextPendingDay(context(userId, active.get()));
+    }
+
+    @Override
+    public TrainingWeek trainingWeek(UUID userId) {
+        LocalDate today = today();
+        LocalDate monday = TrainingWeek.mondayOf(today);
+        Map<UUID, Instant> completed = sessions.completedBetween(userId, monday.atStartOfDay(zone).toInstant(),
+                monday.plusDays(7).atStartOfDay(zone).toInstant());
+        List<LocalDate> planned = routines.findLatestActive(userId)
+                .map(r -> r.upcomingTrainingDates(context(userId, r), monday.plusDays(6))).orElse(List.of());
+        return TrainingWeek.of(today, zone, completed, planned);
+    }
+
+    /** Lo que la regla del próximo día necesita de fuera: sesiones abiertas y bloques del calendario. */
+    private RoutineSchedule.Context context(UUID userId, Routine routine) {
         Instant now = clock.instant();
         Map<UUID, RoutineSchedule.OpenSession> open = new HashMap<>();
         // findOpen viene de más reciente a más antigua: se queda la última sesión abierta de cada día.
@@ -70,7 +87,7 @@ public class RoutineProgressService implements GetPendingTrainingDayUseCase, Ski
         Map<UUID, List<LocalDate>> planned = calendar.pendingBlockStarts(userId, routine.id()).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         e -> e.getValue().stream().map(i -> LocalDate.ofInstant(i, zone)).toList()));
-        return routine.nextPendingDay(new RoutineSchedule.Context(today(), now, open, planned));
+        return new RoutineSchedule.Context(today(), now, open, planned);
     }
 
     @Override

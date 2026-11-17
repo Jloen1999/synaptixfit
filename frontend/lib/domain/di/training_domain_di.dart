@@ -39,6 +39,7 @@ import '../use_cases/training/get_load_suggestions_use_case.dart';
 import '../use_cases/training/get_my_routines_use_case.dart';
 import '../use_cases/training/get_open_sessions_use_case.dart';
 import '../use_cases/training/get_pending_day_use_case.dart';
+import '../use_cases/training/get_training_week_use_case.dart';
 import '../use_cases/training/get_personal_records_use_case.dart';
 import '../use_cases/training/get_recommendations_use_case.dart';
 import '../use_cases/training/get_routine_use_case.dart';
@@ -161,6 +162,9 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetPendingDayUseCaseContract>(
       () => GetPendingDayUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetTrainingWeekUseCaseContract>(
+      () => GetTrainingWeekUseCase(getIt()),
     )
     ..registerLazySingleton<StartSessionUseCaseContract>(
       () => StartSessionUseCase(getIt()),

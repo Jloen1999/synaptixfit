@@ -41,6 +41,14 @@ class _QuickCheckInView extends StatefulWidget {
 }
 
 class _QuickCheckInViewState extends State<_QuickCheckInView> {
+  final _headerFocus = FocusNode(debugLabel: 'check-in-header');
+
+  @override
+  void dispose() {
+    _headerFocus.dispose();
+    super.dispose();
+  }
+
   /// Preguntas desplegadas (de entrada, plegadas en una línea).
   bool _open = false;
 
@@ -73,10 +81,29 @@ class _QuickCheckInViewState extends State<_QuickCheckInView> {
                         // La fila sigue ahí al abrir: pliega y despliega, y
                         // el foco no se pierde.
                         _Header(
+                          focusNode: _headerFocus,
                           open: open,
                           onToggle: state.editing
                               ? null
                               : () => setState(() => _open = !_open),
+                          // Plegada y sin contestar: las caras responden ya
+                          // la energía y abren las otras dos (ADR 0055).
+                          onFace: open || state.answers.values.isNotEmpty
+                              ? null
+                              : (value) {
+                                  context.read<QuickCheckInBloc>().add(
+                                    QuickCheckInEvent.answered(
+                                      CheckInQuestion.energy,
+                                      value,
+                                    ),
+                                  );
+                                  setState(() => _open = true);
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (mounted) _headerFocus.requestFocus();
+                                  });
+                                },
                         ),
                         if (open)
                           Padding(
@@ -98,9 +125,21 @@ class _QuickCheckInViewState extends State<_QuickCheckInView> {
 
 /// Fila «¿Qué tal estás hoy?» que pliega y despliega las preguntas.
 class _Header extends StatelessWidget {
-  const _Header({required this.open, required this.onToggle});
+  const _Header({
+    required this.open,
+    required this.onToggle,
+    required this.focusNode,
+    this.onFace,
+  });
 
   final bool open;
+
+  /// Al contestar con una cara, las caras desaparecen: el foco vuelve aquí
+  /// para no perderse (WCAG 2.4.3).
+  final FocusNode focusNode;
+
+  /// Respuesta de un toque a la energía con una cara; nula si no se ofrece.
+  final ValueChanged<int>? onFace;
 
   /// Nulo al cambiar un registro ya hecho (se cierra con «Cancelar»).
   final VoidCallback? onToggle;
@@ -108,24 +147,30 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return MergeSemantics(
+    final header = MergeSemantics(
       child: Semantics(
         header: true,
         expanded: onToggle == null ? null : open,
         child: AppFocusOutline(
           child: ListTile(
+            focusNode: focusNode,
             leading: Icon(Icons.mood_rounded, color: context.colors.secondary),
             title: Text(
               l10n.trainingQuickCheckInTitle,
               style: context.textStyles.titleMedium,
             ),
             // Se avisa antes de que la tercera respuesta guarda (WCAG 3.2.2).
+            // Con las caras a la vista, dice qué contestan: la energía, no
+            // el ánimo. Si no, se avisa de que la tercera respuesta guarda
+            // (WCAG 3.2.2).
             subtitle: Text(
               onToggle == null
                   ? l10n.trainingCheckInChangeHint
+                  : onFace != null
+                  ? l10n.trainingQuickEnergy
                   : l10n.trainingQuickCheckInHint,
             ),
-            trailing: onToggle == null
+            trailing: onToggle == null || onFace != null
                 ? null
                 : Icon(
                     open
@@ -136,6 +181,49 @@ class _Header extends StatelessWidget {
           ),
         ),
       ),
+    );
+    // Las caras, fuera de la fila que pliega: botones propios, no dentro de
+    // otro botón (el lector las leería fundidas con la cabecera).
+    final answer = onFace;
+    if (answer == null) return header;
+    return Row(
+      children: [
+        Expanded(child: header),
+        _Faces(onFace: answer),
+        const SizedBox(width: TokensSpacing.xs),
+      ],
+    );
+  }
+}
+
+/// Tres caras, de peor a mejor, que contestan la energía de un toque. Cada una
+/// lleva su respuesta para el lector («¿Cómo va tu energía? Baja»).
+class _Faces extends StatelessWidget {
+  const _Faces({required this.onFace});
+
+  final ValueChanged<int> onFace;
+
+  static const _icons = [
+    Icons.sentiment_dissatisfied_rounded,
+    Icons.sentiment_neutral_rounded,
+    Icons.sentiment_satisfied_rounded,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final options = CheckInQuestions.options(l10n, CheckInQuestion.energy);
+    final title = CheckInQuestions.title(l10n, CheckInQuestion.energy);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < options.length; i++)
+          IconButton(
+            tooltip: '$title ${options[i].$2}',
+            onPressed: () => onFace(options[i].$1),
+            icon: Icon(_icons[i], color: context.colors.secondary),
+          ),
+      ],
     );
   }
 }

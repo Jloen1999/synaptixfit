@@ -8,9 +8,6 @@
   "trainingMyRoutines": "Mis rutinas",
   "trainingNoRoutinesTitle": "Aún no tienes rutinas",
   "trainingNoRoutinesMessage": "Crea tu primera rutina: te proponemos una o la montas tú.",
-  "trainingNextWorkout": "Próximo entrenamiento",
-  "trainingNoPendingDay": "No te queda ningún día por hacer",
-  "trainingNoPendingDayHint": "Activa una rutina o haz una sesión libre.",
   "trainingFreeSession": "Sesión libre",
   "trainingStart": "Empezar",
   "trainingTrain": "Entrenar",
@@ -36,7 +33,6 @@
       }
     }
   },
-  "trainingMoreTools": "Más herramientas",
   "trainingExplorerTitle": "Explorar ejercicios",
   "trainingCommunityTitle": "Comunidad",
   "trainingWeeklyPlanTitle": "Plan semanal",
@@ -1017,17 +1013,6 @@
       }
     }
   },
-  "trainingSessionOfWeek": "Sesión {position} de {count}",
-  "@trainingSessionOfWeek": {
-    "placeholders": {
-      "position": {
-        "type": "int"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "trainingOverdueSince": "Tocaba el {date}",
   "@trainingOverdueSince": {
     "placeholders": {
@@ -1365,7 +1350,6 @@
     }
   },
   "trainingExerciseNoLongerInRoutine": "Ejercicio que ya no está en la rutina",
-  "trainingLogActivityButton": "Apuntar un partido u otra actividad",
   "trainingNotNow": "Ahora no",
   "trainingRecommendationScope": "Cuándo: se guarda en tu rutina y lo verás desde la próxima vez que hagas este día.",
   "trainingRecommendationScopeApplied": "Ya está en tu rutina: lo verás la próxima vez que hagas este día.",
@@ -2513,10 +2497,6 @@
   "runTemplateLongWhy": "10 km tranquilos para ganar fondo. Mejor una vez por semana.",
   "runMapUnavailable": "Mapa no disponible",
   "runMapAttribution": "© MapTiler © OpenStreetMap",
-  "runMapHereSpoken": "Mapa con tu posición actual",
-  "runMapNoHereSpoken": "Mapa. Tu posición sale cuando permitas la ubicación al empezar a correr.",
-  "runYouAreHere": "Estás aquí",
-  "runStart": "Empezar a correr",
   "runStartShort": "Empezar",
   "runStartNow": "Empezar",
   "runCreateWorkout": "Crear entreno",
@@ -2539,7 +2519,6 @@
   "runUnfinishedTitle": "Tienes una carrera sin terminar",
   "runUnfinishedMessage": "Está guardada en este móvil. Síguela o termínala para que cuente.",
   "runUnfinishedContinue": "Seguir con la carrera",
-  "runPlannedTitle": "En tu calendario",
   "runPlannedWhen": "{when} · al grabarlo queda hecho",
   "@runPlannedWhen": {
     "placeholders": {
@@ -2556,17 +2535,7 @@
   "runWeekTitle": "Esta semana",
   "runWeekDistance": "distancia",
   "runWeekTime": "en movimiento",
-  "runWeekElevation": "de desnivel",
-  "runWeekOutings": "salidas",
   "runWeekEmpty": "Aún no has salido esta semana.",
-  "runWeekChartSpoken": "Distancia por día: {days}",
-  "@runWeekChartSpoken": {
-    "placeholders": {
-      "days": {
-        "type": "String"
-      }
-    }
-  },
   "runShare": "Compartir",
   "runShareWeekTitle": "{distance} esta semana",
   "@runShareWeekTitle": {
@@ -2611,14 +2580,6 @@
         "type": "String"
       },
       "elevation": {
-        "type": "int"
-      }
-    }
-  },
-  "runActivitiesTitle": "Tus actividades ({count})",
-  "@runActivitiesTitle": {
-    "placeholders": {
-      "count": {
         "type": "int"
       }
     }
@@ -3378,5 +3339,50 @@
         "type": "int"
       }
     }
-  }
+  },
+  "trainingQuickTemplates": "Plantillas",
+  "trainingQuickExercises": "Ejercicios",
+  "trainingQuickMore": "Más",
+  "trainingWeekDoneOfTotal": "{total, plural, =1{{done} de 1 entreno} other{{done} de {total} entrenos}}",
+  "@trainingWeekDoneOfTotal": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWeekStateDone": "entreno hecho",
+  "trainingWeekStatePlanned": "toca entrenar",
+  "trainingWeekStateFree": "sin entreno",
+  "trainingRoutineNextUp": "Toca: {day}",
+  "@trainingRoutineNextUp": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "runGoRun": "Salir a correr",
+  "runQuickFree": "Correr libre",
+  "runQuickLog": "Apuntar partido",
+  "runNextTitle": "Próximo entreno",
+  "runLastTitle": "Últimas actividades",
+  "runSeeAllCount": "Ver todos ({count})",
+  "@runSeeAllCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingMoreTitle": "Más opciones",
+  "trainingNoActiveRoutine": "No tienes ninguna rutina en curso",
+  "trainingNoActiveRoutineHint": "Abre una de tus rutinas para seguirla, o haz una sesión libre.",
+  "trainingFirstRoutineHint": "Empieza con una plantilla: ya trae los ejercicios, las series y con cuántos kilos empezar.",
+  "trainingCreateOwnRoutine": "O crea la tuya",
+  "trainingWeekEmpty": "Aún no has entrenado esta semana.",
+  "trainingWeekOpenWorkout": "Ver entreno"
 }

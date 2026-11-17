@@ -5378,6 +5378,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/PageResponseWeeklyPlanResponse"
+  /api/v1/training/week:
+    get:
+      tags:
+      - Training sessions
+      operationId: week
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TrainingWeekResponse"
   /api/v1/training/templates:
     get:
       tags:
@@ -5507,7 +5519,7 @@ paths:
     get:
       tags:
       - Training - Runs
-      operationId: week
+      operationId: week_1
       parameters:
       - name: date
         in: query
@@ -14873,6 +14885,36 @@ components:
           type: integer
           format: int64
         totalPages:
+          type: integer
+          format: int32
+    TrainingWeekDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        state:
+          type: string
+          enum:
+          - DONE
+          - PLANNED
+          - FREE
+        today:
+          type: boolean
+        sessionId:
+          type: string
+          format: uuid
+    TrainingWeekResponse:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingWeekDay"
+        done:
+          type: integer
+          format: int32
+        total:
           type: integer
           format: int32
     RoutineTemplateResponse:

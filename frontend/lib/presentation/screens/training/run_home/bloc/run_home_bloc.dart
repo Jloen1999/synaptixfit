@@ -9,12 +9,10 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/training/run.dart';
 import '../../../../../domain/models/training/sport_activity.dart';
-import '../../../../../domain/use_cases/profile/get_device_permission_status_use_case.dart';
 import '../../../../../domain/use_cases/profile/open_permission_settings_use_case.dart';
 import '../../../../../domain/use_cases/progress/share_achievement_image_use_case.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../../domain/use_cases/training/delete_run_workout_use_case.dart';
-import '../../../../../domain/use_cases/training/get_current_position_use_case.dart';
 import '../../../../../domain/use_cases/training/get_run_week_use_case.dart';
 import '../../../../../domain/use_cases/training/list_pending_runs_use_case.dart';
 import '../../../../../domain/use_cases/training/list_planned_runs_use_case.dart';
@@ -52,9 +50,7 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
     required this._loadRecording,
     required this._deleteWorkout,
     required this._scheduleWorkout,
-    required this._permissionStatus,
     required this._openSettings,
-    required this._position,
     required this._track,
     required this._share,
     required this._watchDataChanges,
@@ -72,7 +68,6 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
         ),
       );
       await _load(emit);
-      await _locate(emit);
     });
     on<RunHomeRefreshed>((_, emit) => _load(emit));
     on<RunHomeWorkoutDeleted>((e, emit) {
@@ -131,9 +126,7 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
   final LoadRunRecordingUseCaseContract _loadRecording;
   final DeleteRunWorkoutUseCaseContract _deleteWorkout;
   final ScheduleRunWorkoutUseCaseContract _scheduleWorkout;
-  final GetDevicePermissionStatusUseCaseContract _permissionStatus;
   final OpenPermissionSettingsUseCaseContract _openSettings;
-  final GetCurrentPositionUseCaseContract _position;
   final TrackRunUseCaseContract _track;
   final ShareAchievementImageUseCaseContract _share;
   final WatchDataChangesUseCaseContract _watchDataChanges;
@@ -201,19 +194,6 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
     );
     if ((uploaded.valueOrNull ?? const <RunSaved>[]).isNotEmpty) {
       _notify(emit, notice: RunHomeNotice.uploaded);
-    }
-  }
-
-  /// «Estás aquí» solo con el permiso ya concedido (no se pide al entrar).
-  Future<void> _locate(Emitter<RunHomeState> emit) async {
-    if (!_track.supported) return;
-    final status = (await _permissionStatus(
-      DevicePermission.location,
-    )).valueOrNull;
-    if (status != DevicePermissionStatus.granted) return;
-    final fix = (await _position()).valueOrNull;
-    if (fix != null) {
-      emit(state.copyWith(here: (fix.latitude, fix.longitude)));
     }
   }
 

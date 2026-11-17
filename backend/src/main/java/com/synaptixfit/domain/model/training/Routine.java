@@ -399,6 +399,11 @@ public final class Routine {
         return RoutineSchedule.next(this, context);
     }
 
+    /** Fechas en las que toca entrenar hasta {@code until}: ver {@link RoutineSchedule#upcoming}. */
+    public List<LocalDate> upcomingTrainingDates(RoutineSchedule.Context context, LocalDate until) {
+        return RoutineSchedule.upcoming(this, context, until);
+    }
+
     // ------------------------------------------------------------------ copias
 
     /**

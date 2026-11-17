@@ -4,6 +4,7 @@ import '../../domain/models/result/result.dart';
 import '../../domain/models/training/exercise_calibration.dart';
 import '../../domain/models/training/recommendation.dart';
 import '../../domain/models/training/routine.dart';
+import '../../domain/models/training/training_week.dart';
 import '../../domain/models/training/session.dart';
 import '../../domain/models/training/load_suggestion.dart';
 import '../../domain/models/training/session_adaptation.dart';
@@ -33,6 +34,12 @@ class TrainingRepository implements TrainingRepositoryContract {
   Future<AppResult<PendingDay?>> getPendingDay() =>
       RepositoryErrorHandler.guard(
         () async => (await _remote.pendingDay())?.toDomain(),
+      );
+
+  @override
+  Future<AppResult<TrainingWeek>> getTrainingWeek() =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.trainingWeek()).toDomain(),
       );
 
   @override

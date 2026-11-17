@@ -4,6 +4,7 @@ import '../models/training/exercise_calibration.dart';
 import '../models/training/load_suggestion.dart';
 import '../models/training/recommendation.dart';
 import '../models/training/routine.dart';
+import '../models/training/training_week.dart';
 import '../models/training/session.dart';
 import '../models/training/session_adaptation.dart';
 import '../models/training/training_page.dart';
@@ -13,6 +14,9 @@ import '../models/training/wellbeing.dart';
 abstract interface class TrainingRepositoryContract {
   /// Próximo día pendiente; `null` si no hay rutina activa con días pendientes.
   Future<AppResult<PendingDay?>> getPendingDay();
+
+  /// La semana de entreno en curso (lunes a domingo), calculada por el servidor.
+  Future<AppResult<TrainingWeek>> getTrainingWeek();
 
   /// Empieza (o recupera si ya está en curso) una sesión. Sin día: sesión libre.
   Future<AppResult<TrainingSession>> startSession({

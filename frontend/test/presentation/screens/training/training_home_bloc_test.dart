@@ -8,6 +8,7 @@ import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/recommendation.dart';
 import 'package:synaptixfit/domain/models/training/routine.dart';
+import 'package:synaptixfit/domain/models/training/training_week.dart';
 import 'package:synaptixfit/domain/models/training/training_page.dart';
 import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/domain/use_cases/training/apply_recommendation_use_case.dart';
@@ -20,6 +21,7 @@ import 'package:synaptixfit/domain/use_cases/training/unskip_routine_day_use_cas
 import 'package:synaptixfit/domain/use_cases/training/discard_recommendation_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_my_routines_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_pending_day_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_training_week_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_recommendations_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_today_check_in_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
@@ -30,6 +32,8 @@ import '../data_changes_fake.dart';
 import 'training_fixtures.dart';
 
 class _MockPending extends Mock implements GetPendingDayUseCaseContract {}
+
+class _MockWeek extends Mock implements GetTrainingWeekUseCaseContract {}
 
 class _MockRoutines extends Mock implements GetMyRoutinesUseCaseContract {}
 
@@ -58,6 +62,7 @@ class _MockRestart extends Mock implements RestartRoutineUseCaseContract {}
 
 void main() {
   late _MockPending pending;
+  late _MockWeek week;
   late _MockRoutines routines;
   late _MockCheckIn checkIn;
   late _MockRecs recs;
@@ -96,8 +101,12 @@ void main() {
     applied: false,
   );
 
+  const trainingWeek = TrainingWeek(done: 1, total: 3);
+
   setUp(() {
     pending = _MockPending();
+    week = _MockWeek();
+    when(() => week()).thenAnswer((_) async => const Success(trainingWeek));
     routines = _MockRoutines();
     checkIn = _MockCheckIn();
     recs = _MockRecs();
@@ -125,6 +134,7 @@ void main() {
 
   TrainingHomeBloc build() => TrainingHomeBloc(
     getPendingDay: pending,
+    getWeek: week,
     getMyRoutines: routines,
     getTodayCheckIn: checkIn,
     getRecommendations: recs,
@@ -143,6 +153,7 @@ void main() {
   const ready = TrainingHomeState(
     status: HomeStatus.ready,
     pendingDay: pendingDay,
+    week: trainingWeek,
     routines: [summary],
     recommendations: [rec],
   );
@@ -152,6 +163,17 @@ void main() {
     build: build,
     act: (bloc) => bloc.add(const TrainingHomeEvent.started()),
     expect: () => const [TrainingHomeState(), ready],
+  );
+
+  blocTest<TrainingHomeBloc, TrainingHomeState>(
+    'si falla la semana, la pestaña sale igual y conserva la última leída',
+    setUp: () => when(
+      () => week(),
+    ).thenAnswer((_) async => const Failure(AppError.network())),
+    seed: () => ready,
+    build: build,
+    act: (bloc) => bloc.add(const TrainingHomeEvent.refreshed()),
+    expect: () => [ready.copyWith(refreshing: true), ready],
   );
 
   blocTest<TrainingHomeBloc, TrainingHomeState>(

@@ -17,6 +17,7 @@ import com.synaptixfit.domain.model.training.RoutineStatus;
 import com.synaptixfit.domain.model.training.RoutineWeek;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.domain.model.training.TrainingSession;
+import com.synaptixfit.domain.model.training.TrainingWeek;
 import com.synaptixfit.domain.model.training.WeekType;
 import java.time.Clock;
 import java.time.Duration;
@@ -111,5 +112,45 @@ class RoutineProgressServiceTest {
         assertThat(other.status()).isEqualTo(RoutineStatus.PAUSED);
         assertThatThrownBy(() -> service.restart(UUID.randomUUID(), routine.id()))
                 .isInstanceOf(RoutineNotFoundException.class);
+    }
+
+    @Test
+    void trainingWeekMarksDoneAndPlannedDaysFromTheRoutine() {
+        // Lunes 5: toca el lunes (hoy) y el jueves 8; el domingo anterior no es de esta semana.
+        sessions.save(TrainingSession.logged(USER, routine.id(), null, Instant.parse("2026-10-04T18:00:00Z"), 30, 5,
+                0, 0));
+
+        TrainingWeek week = service.trainingWeek(USER);
+
+        assertThat(week.monday()).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThat(week.days()).extracting(TrainingWeek.Day::state).containsExactly(TrainingWeek.DayState.PLANNED,
+                TrainingWeek.DayState.FREE, TrainingWeek.DayState.FREE, TrainingWeek.DayState.PLANNED,
+                TrainingWeek.DayState.FREE, TrainingWeek.DayState.FREE, TrainingWeek.DayState.FREE);
+        assertThat(week.done()).isZero();
+        assertThat(week.total()).isEqualTo(2);
+    }
+
+    @Test
+    void trainingWeekOpensTheLastWorkoutOfTheDay() {
+        TrainingSession morning = sessions.save(TrainingSession.logged(USER, null, null,
+                Instant.parse("2026-10-05T07:00:00Z"), 30, 5, 0, 0));
+        TrainingSession later = sessions.save(TrainingSession.logged(USER, null, null,
+                Instant.parse("2026-10-05T09:30:00Z"), 30, 5, 0, 0));
+
+        TrainingWeek week = service.trainingWeek(USER);
+
+        assertThat(week.days().get(0).state()).isEqualTo(TrainingWeek.DayState.DONE);
+        assertThat(week.days().get(0).sessionId()).isEqualTo(later.id()).isNotEqualTo(morning.id());
+        assertThat(week.done()).isEqualTo(1);
+    }
+
+    @Test
+    void withoutRoutineOnlyTheDoneDaysCount() {
+        sessions.save(TrainingSession.logged(UUID.randomUUID(), null, null, NOW.minusSeconds(3600), 30, 5, 0, 0));
+
+        TrainingWeek week = service.trainingWeek(UUID.randomUUID());
+
+        assertThat(week.done()).isZero();
+        assertThat(week.total()).isZero();
     }
 }

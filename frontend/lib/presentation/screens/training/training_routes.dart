@@ -117,6 +117,9 @@ abstract final class TrainingPaths {
   /// Muro de la Comunidad (fuera del módulo): «Ver» tras publicar.
   static const communityWall = '/social';
 
+  /// «Con amigos» (módulo social): retos, rachas y entrenar juntos.
+  static const together = '/social/together';
+
   /// Grabar una carrera (pantalla completa), con un entreno de carrera o
   /// desde su evento del calendario si se indican.
   static String recordRun({String? workoutId, String? eventId}) => _withQuery(

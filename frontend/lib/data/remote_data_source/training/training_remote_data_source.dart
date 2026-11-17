@@ -6,6 +6,7 @@ import 'dto/page_dto.dart';
 import 'dto/recommendation_dto.dart';
 import 'dto/routine_dto.dart';
 import 'dto/session_dto.dart';
+import 'dto/training_week_dto.dart';
 import 'dto/wellbeing_dto.dart';
 
 /// Sesiones, día pendiente, check-in, plan semanal y sugerencias (`/api/v1/training`).
@@ -23,6 +24,12 @@ class TrainingRemoteDataSource {
     return data == null || response.statusCode == 204
         ? null
         : PendingDayDto.fromJson(data);
+  }
+
+  /// La semana de entreno en curso (ADR 0055).
+  Future<TrainingWeekDto> trainingWeek() async {
+    final response = await _dio.get<Map<String, dynamic>>('$_base/week');
+    return TrainingWeekDto.fromJson(response.data ?? const {});
   }
 
   Future<SessionDto> startSession(String? routineId, String? dayId) => _session(

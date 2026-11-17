@@ -92,7 +92,7 @@ Decisión del propietario: «la aplicación debe ir al grano, facilitar al usuar
   - **Un solo registro diario: «¿Qué tal estás hoy?»** (ese nombre en toda la app y en los avisos). Tres preguntas de un toque; la tercera guarda. «Añadir detalles» (estrés, dolores, notas) es opcional y va plegado.
   - **Escalas en el mismo sentido: a la derecha, lo mejor** («Mal · Regular · Bien», «Muchas · Algo · Nada»). Se dice en palabras, no en números del 1 al 5.
   - **Borrar no ocupa sitio en cada fila:** se desliza con «Deshacer» o se hace desde el detalle (con su acción para el lector de pantalla). Marcar hecho sigue a un toque.
-  - **Nada flotante tapa botones:** «Nueva rutina» va en la cabecera de «Mis rutinas».
+  - **Nada flotante tapa botones:** «Nueva rutina» es la última tarjeta del carrusel de «Mis rutinas» (ADR 0055).
   - **Lo ocasional de una pantalla, en su ⋮** (editar, archivar, eliminar una asignatura); la barra no recorta el título con iconos.
 - **Menos texto (fase 4, ADR 0041):**
   - **Una línea o un «?».** Ninguna explicación de más de una línea a la vista; lo demás, en `AppHelpToggle`. Ningún texto repite lo que dice el botón ni el mismo consejo en otra pantalla.

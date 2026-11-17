@@ -11,6 +11,7 @@ import 'package:synaptixfit/domain/models/training/sport_activity.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/run_home/bloc/run_home_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/run_home/page/run_home_page.dart';
+import 'package:synaptixfit/presentation/screens/training/widgets/run_map.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 import 'package:synaptixfit/presentation/widgets/widgets.dart';
 
@@ -83,6 +84,29 @@ void main() {
 
   const empty = RunHomeState(status: RunHomeStatus.ready);
 
+  // Un entreno hoy y dos más adelante (ADR 0055).
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day, 23, 0);
+  final withToday = full.copyWith(
+    planned: [
+      PlannedRun(
+        blockId: 'hoy',
+        workoutId: 'w1',
+        workoutName: 'Rodaje suave',
+        start: today,
+        end: today.add(const Duration(minutes: 30)),
+      ),
+      for (final (i, d) in [(1, 2), (2, 4)])
+        PlannedRun(
+          blockId: 'p$i',
+          workoutId: 'w1',
+          workoutName: 'Series $i',
+          start: today.add(Duration(days: d)),
+          end: today.add(Duration(days: d, minutes: 45)),
+        ),
+    ],
+  );
+
   setUpAll(() => initializeDateFormatting('es'));
 
   setUp(() {
@@ -148,7 +172,41 @@ void main() {
     handle.dispose();
   });
 
-  for (final (name, state) in [('con datos', full), ('en vacío', empty)]) {
+  testWidgets('hoy toca arriba, atajos y «Próximo» en una línea', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await pump(tester, withToday);
+    expect(find.text('Rodaje suave'), findsOneWidget);
+    expect(find.text('Salir a correr'), findsOneWidget);
+    expect(find.bySemanticsLabel('Correr libre'), findsOneWidget);
+    expect(find.bySemanticsLabel('Apuntar partido'), findsOneWidget);
+    expect(find.byType(RunMap), findsNothing);
+    // «Próximo» enseña uno y despliega el resto.
+    expect(find.text('Series 1'), findsOneWidget);
+    expect(find.text('Series 2'), findsNothing);
+    await tester.tap(find.text('Ver todos (2)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Series 2'), findsOneWidget);
+    handle.dispose();
+  });
+
+  testWidgets(
+    'sin entreno hoy, «Salir a correr» y sin «Correr libre» repetido',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(tester, empty);
+      expect(find.text('Salir a correr'), findsOneWidget);
+      expect(find.bySemanticsLabel('Correr libre'), findsNothing);
+      handle.dispose();
+    },
+  );
+
+  for (final (name, state) in [
+    ('con datos', full),
+    ('en vacío', empty),
+    ('con entreno hoy', withToday),
+  ]) {
     for (final (mode, theme) in [
       ('claro', AppTheme.light),
       ('oscuro', AppTheme.dark),

@@ -12,6 +12,7 @@ import 'package:synaptixfit/domain/models/training/recommendation.dart';
 import 'package:synaptixfit/domain/enums/visibility.dart' as vis;
 import 'package:synaptixfit/domain/models/training/routine.dart';
 import 'package:synaptixfit/domain/models/training/session.dart';
+import 'package:synaptixfit/domain/models/training/training_week.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
@@ -21,6 +22,7 @@ import 'package:synaptixfit/domain/use_cases/training/submit_quick_check_in_use_
 import 'package:synaptixfit/presentation/screens/training/quick_check_in/bloc/quick_check_in_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/bloc/training_home_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/page/training_home_page.dart';
+import 'package:synaptixfit/presentation/widgets/widgets.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/continue_session_target.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
@@ -39,6 +41,12 @@ class _DoneToday implements GetTodayAdaptationUseCaseContract {
   @override
   Future<AppResult<TodayAdaptation>> call() async =>
       const Result.success(TodayAdaptation(checkInDone: true));
+}
+
+class _NotYetToday implements GetTodayAdaptationUseCaseContract {
+  @override
+  Future<AppResult<TodayAdaptation>> call() async =>
+      const Result.success(TodayAdaptation(checkInDone: false));
 }
 
 class _NoSubmit implements SubmitQuickCheckInUseCaseContract {
@@ -330,5 +338,191 @@ void main() {
         semantics.dispose();
       });
     }
+  });
+
+  group('Gimnasio al grano (ADR 0055)', () {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final state = TrainingHomeState(
+      status: HomeStatus.ready,
+      pendingDay: PendingDay(
+        routineId: 'r1',
+        routineName: 'Cuerpo completo para empezar',
+        weekId: 'w1',
+        weekNumber: 1,
+        dayId: 'd1',
+        dayNumber: today.weekday,
+        dayName: 'Pierna y empuje',
+        dayStatus: ProgressStatus.pending,
+        scheduledDate: today,
+        estimatedMinutes: 45,
+      ),
+      week: TrainingWeek(
+        days: [
+          for (var i = 0; i < 7; i++)
+            TrainingWeekDay(
+              date: monday.add(Duration(days: i)),
+              today: i == today.weekday - 1,
+              state: i == today.weekday - 1
+                  ? TrainingDayState.planned
+                  : i == 0
+                  ? TrainingDayState.done
+                  : TrainingDayState.free,
+              sessionId: i == 0 && today.weekday != 1 ? 's1' : null,
+            ),
+        ],
+        done: 1,
+        total: 2,
+      ),
+      routines: const [
+        RoutineSummary(
+          id: 'r1',
+          ownerId: 'u1',
+          name: 'Cuerpo completo para empezar',
+          visibility: vis.Visibility.private,
+          status: RoutineStatus.active,
+          durationWeeks: 8,
+          exerciseCount: 6,
+          totalDays: 24,
+          completedDays: 1,
+        ),
+      ],
+    );
+
+    testWidgets('hoy toca, atajos, semana y rutinas en ese orden', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(state);
+      final semantics = tester.ensureSemantics();
+      await pump(tester);
+
+      expect(find.text('Pierna y empuje'), findsOneWidget);
+      expect(find.text('≈ 45 min'), findsOneWidget);
+      for (final label in [
+        'Sesión libre',
+        'Plantillas',
+        'Ejercicios',
+        'Historial',
+        'Más',
+      ]) {
+        expect(find.bySemanticsLabel(label), findsOneWidget);
+      }
+      expect(find.text('Esta semana'), findsOneWidget);
+      expect(find.text('1 de 2 entrenos'), findsOneWidget);
+      expect(find.text('Nueva rutina'), findsOneWidget);
+      // Hoy se lee como tal, con lo que toca.
+      expect(
+        find.bySemanticsLabel(RegExp(r', Hoy: toca entrenar$')),
+        findsOneWidget,
+      );
+      // El orden de la maqueta: hoy toca encima de los atajos y de la semana.
+      final top = tester.getTopLeft(find.text('Pierna y empuje')).dy;
+      final quick = tester.getTopLeft(find.bySemanticsLabel('Plantillas')).dy;
+      final week = tester.getTopLeft(find.text('Esta semana')).dy;
+      expect(top < quick && quick < week, isTrue);
+      semantics.dispose();
+    });
+
+    testWidgets('el lector puede activar los atajos y los días', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(state);
+      final semantics = tester.ensureSemantics();
+      await pump(tester);
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Plantillas')),
+        isSemantics(
+          label: 'Plantillas',
+          isButton: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tester.getSemantics(
+          find.bySemanticsLabel(RegExp(r', Hoy: toca entrenar$')),
+        ),
+        isSemantics(
+          isButton: true,
+          hasTapAction: true,
+          onTapHint: 'Ver rutina',
+        ),
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('«Más» abre lo que no está en la fila', (tester) async {
+      when(() => bloc.state).thenReturn(state);
+      await pump(tester);
+      await tester.tap(find.bySemanticsLabel('Más'));
+      await tester.pumpAndSettle();
+      expect(find.text('Plan semanal'), findsOneWidget);
+      expect(find.text('Comunidad'), findsOneWidget);
+      expect(find.text('Entrenar con amigos'), findsOneWidget);
+    });
+
+    testWidgets('táctil, etiquetas, contraste y texto al 200 %', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(state);
+      final semantics = tester.ensureSemantics();
+      for (final theme in [AppTheme.light, AppTheme.dark]) {
+        await pump(tester, theme: theme);
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+      }
+      await pump(tester, textScale: 2);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+  });
+
+  group('«¿Qué tal estás hoy?» con caras (ADR 0055)', () {
+    setUp(() {
+      getIt
+        ..unregister<QuickCheckInBloc>()
+        ..registerFactory<QuickCheckInBloc>(
+          () => QuickCheckInBloc(
+            getAdaptation: _NotYetToday(),
+            submit: _NoSubmit(),
+            watchDataChanges: _NoDataChanges(),
+          ),
+        );
+    });
+
+    testWidgets('una cara contesta la energía y abre las otras dos', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pump(tester);
+      await tester.pump();
+      expect(find.byType(AppSegmentedChoice<int>), findsNothing);
+
+      await tester.tap(find.byTooltip('¿Cómo va tu energía? Baja'));
+      await tester.pump();
+
+      expect(find.byType(AppSegmentedChoice<int>), findsNWidgets(3));
+      // Ya abiertas, las caras se van: no hay dos sitios para contestar.
+      expect(find.byTooltip('¿Cómo va tu energía? Baja'), findsNothing);
+      semantics.dispose();
+    });
+
+    testWidgets('las caras: táctil, etiquetas, contraste y texto al 200 %', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      for (final theme in [AppTheme.light, AppTheme.dark]) {
+        await pump(tester, theme: theme);
+        await tester.pump();
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+      }
+      await pump(tester, textScale: 2);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
   });
 }

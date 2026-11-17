@@ -236,6 +236,14 @@ class TrainingFlowIT {
                 .content("{\"durationSeconds\":1800,\"rpe\":5}"), token, 200);
         assertThat((String) JsonPath.read(freeDone, "$.session.type")).isEqualTo("FREE");
 
+        // La semana de entreno (ADR 0055): siete días y hoy hecho con la sesión libre, que se puede abrir.
+        String week = body(get("/api/v1/training/week"), token, 200);
+        assertThat((List<?>) JsonPath.read(week, "$.days")).hasSize(7);
+        assertThat((List<String>) JsonPath.read(week, "$.days[?(@.today == true)].state")).containsExactly("DONE");
+        assertThat((List<String>) JsonPath.read(week, "$.days[?(@.today == true)].sessionId"))
+                .containsExactly(freeId);
+        assertThat((Integer) JsonPath.read(week, "$.done")).isEqualTo(1);
+
         // Check-in: solo el primero del día da XP
         String checkIn = "{\"sleepQuality\":4,\"stress\":2,\"energy\":4,\"soreness\":2,\"painZones\":[\"piernas\"]}";
         body(put("/api/v1/me/health-consent"), token, 204);

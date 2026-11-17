@@ -14,15 +14,15 @@ import '../../../shell/widgets/first_time_guide.dart';
 import '../../quick_check_in/page/quick_check_in_card.dart';
 import '../../training_routes.dart';
 import '../../widgets/continue_session_target.dart';
-import '../../widgets/exercise_thumbnail.dart';
 import '../../widgets/open_session_card.dart';
 import '../../widgets/recommendation_card.dart';
-import '../../widgets/routine_summary_card.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
+import '../../widgets/training_quick_actions.dart';
 import '../../widgets/training_section_bar.dart';
 import '../bloc/training_home_bloc.dart';
+import 'training_week_strip.dart';
 
 /// Apartado «Gimnasio» de la pestaña Entreno (rutinas, sesiones y registro).
 class TrainingHomePage extends StatelessWidget {
@@ -152,13 +152,6 @@ class _TrainingHomeViewState extends State<_TrainingHomeView> {
             appBar: AppPageBar(
               title: Text(l10n.tabTraining),
               bottom: const TrainingSectionBar(current: TrainingSection.gym),
-              actions: [
-                IconButton(
-                  tooltip: l10n.trainingHistoryTitle,
-                  onPressed: () => open(context, TrainingPaths.history),
-                  icon: const Icon(AppIcons.history),
-                ),
-              ],
             ),
             body: switch (state.status) {
               HomeStatus.loading => const AppSkeletonList(
@@ -251,6 +244,66 @@ class _HomeContentState extends State<_HomeContent> {
   VoidCallback get onNewRoutine => widget.onNewRoutine;
   _GymGuideKeys get _guide => widget.guide;
 
+  /// «Más»: lo que se usa de vez en cuando, fuera de la fila de atajos.
+  Future<void> _showMore(BuildContext context) async {
+    final l10n = context.localizations;
+    final path = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                TokensSpacing.l,
+                0,
+                TokensSpacing.l,
+                TokensSpacing.s,
+              ),
+              child: Semantics(
+                header: true,
+                child: Text(
+                  l10n.trainingMoreTitle,
+                  style: context.textStyles.titleLarge,
+                ),
+              ),
+            ),
+            for (final (icon, label, path) in [
+              (
+                AppIcons.calendar,
+                l10n.trainingWeeklyPlanTitle,
+                TrainingPaths.weeklyPlan,
+              ),
+              (
+                Icons.groups_rounded,
+                l10n.trainingCommunityTitle,
+                TrainingPaths.community,
+              ),
+              (
+                Icons.handshake_rounded,
+                l10n.togetherTrainWithFriends,
+                TrainingPaths.together,
+              ),
+            ])
+              AppFocusOutline(
+                child: ListTile(
+                  leading: Icon(icon, color: context.colors.secondary),
+                  title: Text(label),
+                  onTap: () => Navigator.of(context).pop(path),
+                ),
+              ),
+            const SizedBox(height: TokensSpacing.m),
+          ],
+        ),
+      ),
+    );
+    if (path != null && context.mounted) {
+      await _TrainingHomeView.open(context, path);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -307,29 +360,88 @@ class _HomeContentState extends State<_HomeContent> {
                 ),
                 const SizedBox(height: TokensSpacing.m),
               ],
-              _PendingDayCard(
-                key: _guide.start,
-                pendingDay: state.pendingDay,
-                starting: state.startingSession,
-                busy: state.working,
-                onSkip: (day) => bloc.add(
-                  TrainingHomeEvent.daySkipped(
-                    routineId: day.routineId,
-                    dayId: day.dayId,
+              // Con el ciclo terminado, su tarjeta ya dice qué hacer.
+              if (finished == null)
+                _TodayCard(
+                  key: _guide.start,
+                  hasRoutines: state.routines.isNotEmpty,
+                  onTemplates: () =>
+                      _TrainingHomeView.open(context, TrainingPaths.templates),
+                  pendingDay: state.pendingDay,
+                  starting: state.startingSession,
+                  busy: state.working,
+                  onStart: (day) => bloc.add(
+                    TrainingHomeEvent.sessionStarted(
+                      routineId: day.routineId,
+                      dayId: day.dayId,
+                    ),
+                  ),
+                  onOpenRoutine: (id) => _TrainingHomeView.open(
+                    context,
+                    TrainingPaths.routine(id),
                   ),
                 ),
-                onStart: (day) => bloc.add(
-                  TrainingHomeEvent.sessionStarted(
-                    routineId: day.routineId,
-                    dayId: day.dayId,
+              const SizedBox(height: TokensSpacing.s),
+              // Lo que más se usa, a un toque y sin bajar (ADR 0055).
+              TrainingQuickActions(
+                actions: [
+                  TrainingQuickAction(
+                    icon: AppIcons.freeSession,
+                    label: l10n.trainingFreeSession,
+                    onTap: state.startingSession || state.working
+                        ? null
+                        : () => bloc.add(
+                            const TrainingHomeEvent.sessionStarted(),
+                          ),
                   ),
-                ),
-                onFreeSession: () =>
-                    bloc.add(const TrainingHomeEvent.sessionStarted()),
-                onOpenRoutine: (id) =>
-                    _TrainingHomeView.open(context, TrainingPaths.routine(id)),
+                  TrainingQuickAction(
+                    key: _guide.templates,
+                    icon: Icons.view_list_rounded,
+                    label: l10n.trainingQuickTemplates,
+                    onTap: () => _TrainingHomeView.open(
+                      context,
+                      TrainingPaths.templates,
+                    ),
+                  ),
+                  TrainingQuickAction(
+                    icon: AppIcons.search,
+                    label: l10n.trainingQuickExercises,
+                    onTap: () => _TrainingHomeView.open(
+                      context,
+                      TrainingPaths.exercises,
+                    ),
+                  ),
+                  TrainingQuickAction(
+                    icon: AppIcons.history,
+                    label: l10n.trainingHistoryTitle,
+                    onTap: () =>
+                        _TrainingHomeView.open(context, TrainingPaths.history),
+                  ),
+                  TrainingQuickAction(
+                    icon: Icons.more_horiz_rounded,
+                    label: l10n.trainingQuickMore,
+                    onTap: () => _showMore(context),
+                  ),
+                ],
               ),
-              const SizedBox(height: TokensSpacing.m),
+              if (state.week case final week?) ...[
+                const SizedBox(height: TokensSpacing.s),
+                TrainingWeekStrip(
+                  week: week,
+                  onOpenSession: (id) => _TrainingHomeView.open(
+                    context,
+                    TrainingPaths.sessionDetail(id),
+                  ),
+                  onOpenPlanned: switch (state.pendingDay) {
+                    final day? => () => _TrainingHomeView.open(
+                      context,
+                      TrainingPaths.routine(day.routineId),
+                    ),
+                    null => null,
+                  },
+                ),
+              ],
+              const SizedBox(height: TokensSpacing.s),
               // Tres toques y el porqué de la adaptación de hoy (ADR 0033),
               // plegado en una línea hasta que se abre. Los partidos y otras
               // actividades se apuntan en Correr (ADR 0039).
@@ -339,38 +451,27 @@ class _HomeContentState extends State<_HomeContent> {
                 // Sin rutinas, la guía señala la tarjeta con los botones.
                 key: state.routines.isEmpty ? null : _guide.routines,
                 title: l10n.trainingMyRoutines,
-                actionLabel: state.routines.isEmpty
-                    ? null
-                    : l10n.trainingNewRoutine,
-                onAction: state.routines.isEmpty ? null : onNewRoutine,
               ),
               if (state.routines.isEmpty)
                 AppCard(
                   key: _guide.routines,
                   child: AppEmptyState.compact(
                     icon: Icons.fitness_center_rounded,
-                    title: l10n.trainingNoRoutinesTitle,
+                    title: l10n.trainingCreateOwnRoutine,
                     message: l10n.trainingNoRoutinesMessage,
-                    // Las dos formas de empezar, sin pasar por el botón flotante.
+                    // Las otras formas de empezar: la plantilla ya está arriba,
+                    // en «Hoy toca», y es el único botón destacado.
                     action: Wrap(
                       alignment: WrapAlignment.center,
                       spacing: TokensSpacing.s,
                       runSpacing: TokensSpacing.s,
                       children: [
-                        AppPrimaryButton(
+                        AppSecondaryButton(
                           label: l10n.trainingNewRoutineAi,
-                          icon: AppIcons.proposal,
+                          icon: const Icon(AppIcons.proposal),
                           onPressed: () => _TrainingHomeView.open(
                             context,
                             TrainingPaths.newRoutine(),
-                          ),
-                        ),
-                        AppSecondaryButton(
-                          label: l10n.trainingTemplatesEntry,
-                          icon: const Icon(Icons.view_list_rounded),
-                          onPressed: () => _TrainingHomeView.open(
-                            context,
-                            TrainingPaths.templates,
                           ),
                         ),
                         AppSecondaryButton(
@@ -388,18 +489,15 @@ class _HomeContentState extends State<_HomeContent> {
                   ),
                 )
               else
-                for (final routine in state.routines)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-                    child: RoutineSummaryCard(
-                      routine: routine,
-                      nextDay: state.pendingDay,
-                      onTap: () => _TrainingHomeView.open(
-                        context,
-                        TrainingPaths.routine(routine.id),
-                      ),
-                    ),
+                _RoutinesCarousel(
+                  routines: state.routines,
+                  nextDay: state.pendingDay,
+                  onOpen: (id) => _TrainingHomeView.open(
+                    context,
+                    TrainingPaths.routine(id),
                   ),
+                  onNew: onNewRoutine,
+                ),
               if (state.recommendations.isNotEmpty) ...[
                 const SizedBox(height: TokensSpacing.l),
                 _Recommendations(
@@ -411,12 +509,6 @@ class _HomeContentState extends State<_HomeContent> {
                       bloc.add(TrainingHomeEvent.recommendationDiscarded(id)),
                 ),
               ],
-              const SizedBox(height: TokensSpacing.l),
-              AppSectionHeader(title: l10n.trainingMoreTools),
-              _QuickAccess(
-                templatesKey: _guide.templates,
-                onOpen: (path) => _TrainingHomeView.open(context, path),
-              ),
             ],
           ),
         ),
@@ -425,206 +517,267 @@ class _HomeContentState extends State<_HomeContent> {
   }
 }
 
-class _PendingDayCard extends StatelessWidget {
-  const _PendingDayCard({
+/// «Hoy toca» (ADR 0055): la foto, qué día es, cuánto dura y «Empezar». Nada
+/// más: el avance del ciclo y «Saltar este día» están en el detalle de la
+/// rutina, que abre el botón del icono.
+class _TodayCard extends StatelessWidget {
+  const _TodayCard({
     super.key,
+    required this.hasRoutines,
+    required this.onTemplates,
     required this.pendingDay,
     required this.starting,
     required this.busy,
-    required this.onSkip,
     required this.onStart,
-    required this.onFreeSession,
     required this.onOpenRoutine,
   });
 
   final PendingDay? pendingDay;
   final bool starting;
 
-  /// Otra acción del avance en curso (saltar, cerrar una sesión…).
-  final bool busy;
-  final ValueChanged<PendingDay> onSkip;
-  final ValueChanged<PendingDay> onStart;
-  final VoidCallback onFreeSession;
-  final ValueChanged<String> onOpenRoutine;
+  /// Sin ninguna rutina, la tarjeta invita a elegir una plantilla.
+  final bool hasRoutines;
+  final VoidCallback onTemplates;
 
-  /// Ejercicios del día que se nombran en la tarjeta (el resto, «y N más»).
-  static const _previewCount = 3;
+  /// Otra acción del avance en curso (cerrar una sesión, repetir ciclo…).
+  final bool busy;
+  final ValueChanged<PendingDay> onStart;
+  final ValueChanged<String> onOpenRoutine;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final day = pendingDay;
     if (day == null) {
+      // Sin rutina, lo primero es elegir una; con rutinas pero ninguna en
+      // curso, se dice tal cual. La sesión libre está debajo, en los atajos.
       return AppCard(
-        padding: const EdgeInsets.all(TokensSpacing.l),
+        padding: const EdgeInsets.all(TokensSpacing.m),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l10n.trainingNoPendingDay,
-              style: context.textStyles.titleMedium,
+            Semantics(
+              header: true,
+              child: Text(
+                hasRoutines
+                    ? l10n.trainingNoActiveRoutine
+                    : l10n.trainingNoRoutinesTitle,
+                style: context.textStyles.titleMedium,
+              ),
             ),
             const SizedBox(height: TokensSpacing.xs),
             Text(
-              l10n.trainingNoPendingDayHint,
+              hasRoutines
+                  ? l10n.trainingNoActiveRoutineHint
+                  : l10n.trainingFirstRoutineHint,
               style: context.textStyles.bodyMedium?.copyWith(
                 color: context.colors.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: TokensSpacing.m),
-            AppSecondaryButton(
-              label: l10n.trainingFreeSession,
-              icon: const Icon(Icons.play_arrow_rounded),
-              onPressed: starting ? null : onFreeSession,
-            ),
+            if (!hasRoutines) ...[
+              const SizedBox(height: TokensSpacing.m),
+              AppPrimaryButton(
+                label: l10n.trainingTemplatesEntry,
+                icon: Icons.view_list_rounded,
+                onPressed: onTemplates,
+              ),
+            ],
           ],
         ),
       );
     }
-    // Jerarquía: qué día toca (grande), cuándo y si va con retraso, cuánto
-    // queda del ciclo y el botón para empezar. La foto del primer ejercicio
-    // de fondo dice de un vistazo qué se va a entrenar.
-    final whenText = day.scheduledDate != null
-        ? scheduledDayLabel(l10n, day.scheduledDate!)
-        : weekdayName(l10n, day.dayNumber);
+    final date = day.scheduledDate;
+    final inProgress = day.dayStatus == ProgressStatus.inProgress;
+    final late = day.overdue && date != null && !inProgress;
+    // Cuándo toca, en una palabra si es hoy.
+    final when =
+        inProgress || date == null || DateUtils.isSameDay(date, DateTime.now())
+        ? l10n.commonDateToday
+        : late
+        ? overdueSinceLabel(l10n, date)
+        : scheduledDayLabel(l10n, date);
+    final figures = [
+      if (day.estimatedMinutes > 0)
+        l10n.trainingEstimatedMinutes(day.estimatedMinutes),
+      if (day.exercises.isNotEmpty)
+        l10n.trainingExercisesCount(day.exercises.length),
+    ];
     return AppCoverCard(
       layout: AppCoverLayout.bottom,
       imageUrl: day.coverImageUrl,
       padding: const EdgeInsets.all(TokensSpacing.m),
-      // Sin toque en toda la tarjeta: lleva sus propios botones (nada de
-      // controles anidados); la rutina se abre con «Ver rutina».
-      // Lo que necesita el ancho entero va al pie, sin la foto detrás.
-      footer: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (day.totalDays > 0) ...[
-            const SizedBox(height: TokensSpacing.s),
-            AppCycleProgress(
-              progress: day.cycleProgress,
-              label: l10n.trainingDaysProgress(
-                day.completedDays + day.skippedDays,
-                day.totalDays,
+      // Sin toque en toda la tarjeta: lleva sus propios botones.
+      footer: Padding(
+        padding: const EdgeInsets.only(top: TokensSpacing.m),
+        child: Row(
+          children: [
+            Expanded(
+              child: AppPrimaryButton(
+                // Un día empezado y sin terminar se retoma, no se empieza.
+                label: inProgress
+                    ? l10n.trainingContinueDay
+                    : l10n.trainingStart,
+                icon: Icons.play_arrow_rounded,
+                loading: starting,
+                onPressed: busy ? null : () => onStart(day),
               ),
             ),
+            const SizedBox(width: TokensSpacing.s),
+            IconButton.outlined(
+              tooltip: l10n.trainingSeeRoutine,
+              onPressed: () => onOpenRoutine(day.routineId),
+              icon: const Icon(Icons.list_alt_rounded),
+            ),
           ],
-          const SizedBox(height: TokensSpacing.s),
-          Text(
-            [
-              day.routineName,
-              l10n.trainingWeekOfTotal(day.weekNumber, day.totalWeeks),
-              l10n.trainingSessionOfWeek(day.sessionOfWeek, day.sessionsInWeek),
-            ].join(' · '),
-            style: context.textStyles.labelMedium?.copyWith(
-              color: context.colors.onSurfaceVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // El nombre de la rutina, en gris junto a «Hoy»: da contexto sin
+          // competir con lo que toca.
+          // Con letra grande o un «Tocaba el miércoles» largo, el nombre baja
+          // de línea en vez de cortarse.
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              AppCoverPill(
+                icon: late ? AppIcons.overdue : AppIcons.upNext,
+                color: late ? context.palette.warning : context.colors.primary,
+                label: when,
+              ),
+              Text(
+                day.routineName,
+                style: context.textStyles.labelLarge?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          Semantics(
+            header: true,
+            child: Text(
+              dayTitle(l10n, day.dayNumber, day.dayName),
+              style: context.textStyles.headlineSmall,
             ),
           ),
-          // Los nombres de los primeros ejercicios dicen qué toca hoy mejor
-          // que solo las miniaturas.
-          if (day.exercises.isNotEmpty) ...[
-            const SizedBox(height: TokensSpacing.s),
-            for (final e in day.exercises.take(_previewCount))
+          if (figures.isNotEmpty)
+            Semantics(
+              label: [
+                if (day.estimatedMinutes > 0)
+                  l10n.trainingEstimatedMinutesSpoken(day.estimatedMinutes),
+                if (day.exercises.isNotEmpty)
+                  l10n.trainingExercisesCount(day.exercises.length),
+              ].join(', '),
+              excludeSemantics: true,
+              child: Text(
+                figures.join(' · '),
+                style: context.textStyles.bodyMedium,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// «Mis rutinas» en carrusel (ADR 0055): foto, estado, nombre y lo que toca.
+/// «Nueva rutina» va al final, como una tarjeta más.
+class _RoutinesCarousel extends StatelessWidget {
+  const _RoutinesCarousel({
+    required this.routines,
+    required this.nextDay,
+    required this.onOpen,
+    required this.onNew,
+  });
+
+  final List<RoutineSummary> routines;
+  final PendingDay? nextDay;
+  final ValueChanged<String> onOpen;
+  final VoidCallback onNew;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final width = context.scaled(TokensSize.routineCardWidth);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final r in routines)
               Padding(
-                padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
-                child: Row(
-                  children: [
-                    ExerciseThumbnail(
-                      url: e.thumbnailUrl,
-                      size: TokensSize.thumbnailXs,
+                padding: const EdgeInsetsDirectional.only(end: TokensSpacing.s),
+                child: SizedBox(
+                  width: width,
+                  child: AppCoverCard(
+                    layout: AppCoverLayout.bottom,
+                    imageUrl: r.coverImageUrl,
+                    padding: const EdgeInsets.all(TokensSpacing.sm),
+                    onTap: () => onOpen(r.id),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppCoverPill(
+                          icon: r.status.icon,
+                          label: r.status.label(l10n),
+                          color: r.status == RoutineStatus.active
+                              ? context.colors.primary
+                              : context.colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: TokensSpacing.xs),
+                        Text(
+                          r.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.textStyles.titleMedium,
+                        ),
+                        if (nextDay case final next?
+                            when next.routineId == r.id)
+                          Text(
+                            l10n.trainingRoutineNextUp(
+                              dayTitle(l10n, next.dayNumber, next.dayName),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.textStyles.bodyMedium?.copyWith(
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(width: TokensSpacing.s),
-                    Expanded(
-                      child: Text(
-                        e.exerciseName,
-                        style: context.textStyles.bodyMedium,
-                      ),
+                  ),
+                ),
+              ),
+            SizedBox(
+              width: context.scaled(TokensSize.newRoutineCardWidth),
+              child: AppCard(
+                onTap: onNew,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_circle_outline_rounded,
+                      color: context.colors.primary,
+                      size: TokensSize.iconL,
+                    ),
+                    const SizedBox(height: TokensSpacing.xs),
+                    Text(
+                      l10n.trainingNewRoutine,
+                      textAlign: TextAlign.center,
+                      style: context.textStyles.labelLarge,
                     ),
                   ],
                 ),
               ),
-            if (day.exercises.length > _previewCount)
-              Text(
-                l10n.trainingRecommendationMoreExercises(
-                  day.exercises.length - _previewCount,
-                ),
-                style: context.textStyles.labelMedium?.copyWith(
-                  color: context.colors.onSurfaceVariant,
-                ),
-              ),
-          ],
-          const SizedBox(height: TokensSpacing.m),
-          AppPrimaryButton(
-            // Un día empezado y sin terminar se retoma, no se empieza.
-            label: day.dayStatus == ProgressStatus.inProgress
-                ? l10n.trainingContinueDay
-                : l10n.trainingStart,
-            icon: Icons.play_arrow_rounded,
-            loading: starting,
-            onPressed: busy ? null : () => onStart(day),
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          // Saltar solo un día que no está en curso: la rutina pasa al
-          // siguiente y el calendario retira este entrenamiento.
-          OverflowBar(
-            alignment: MainAxisAlignment.spaceBetween,
-            overflowAlignment: OverflowBarAlignment.end,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.list_alt_rounded),
-                label: Text(l10n.trainingSeeRoutine),
-                onPressed: () => onOpenRoutine(day.routineId),
-              ),
-              if (day.dayStatus != ProgressStatus.inProgress)
-                TextButton.icon(
-                  icon: const Icon(Icons.redo_rounded),
-                  label: Text(l10n.trainingSkipDay),
-                  // Reversible: sin confirmar, con «Deshacer» en el aviso.
-                  onPressed: busy || starting ? null : () => onSkip(day),
-                ),
-            ],
-          ),
-        ],
-      ),
-      // Texto abajo sobre la foto (ADR 0042): el estado en pastilla sólida y
-      // tres datos como mucho (qué día, cuándo y cuánto). La rutina y los
-      // ejercicios van al pie, a todo el ancho.
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppCoverPill(
-            icon: day.overdue && day.scheduledDate != null
-                ? AppIcons.overdue
-                : AppIcons.upNext,
-            color: day.overdue && day.scheduledDate != null
-                ? context.palette.warning
-                : context.colors.primary,
-            label: day.overdue && day.scheduledDate != null
-                ? overdueSinceLabel(l10n, day.scheduledDate!)
-                : l10n.trainingNextWorkout,
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          Text(
-            dayTitle(l10n, day.dayNumber, day.dayName),
-            style: context.textStyles.headlineSmall,
-          ),
-          // Cuándo toca, en qué semana va y cuánto dura (lo calcula el
-          // servidor).
-          Semantics(
-            label: [
-              whenText,
-              if (day.estimatedMinutes > 0)
-                l10n.trainingEstimatedMinutesSpoken(day.estimatedMinutes),
-            ].join(', '),
-            excludeSemantics: true,
-            child: Text(
-              [
-                whenText,
-                if (day.estimatedMinutes > 0)
-                  l10n.trainingEstimatedMinutes(day.estimatedMinutes),
-              ].join(' · '),
-              style: context.textStyles.bodyMedium,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -738,63 +891,6 @@ class _RecommendationsState extends State<_Recommendations> {
                 onDiscard: () => widget.onDiscard(r.id),
               ),
             ),
-      ],
-    );
-  }
-}
-
-class _QuickAccess extends StatelessWidget {
-  const _QuickAccess({required this.onOpen, this.templatesKey});
-
-  final ValueChanged<String> onOpen;
-
-  /// El acceso a las plantillas lleva la clave de la guía (ADR 0049).
-  final GlobalKey? templatesKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    final items = [
-      (AppIcons.search, l10n.trainingExplorerTitle, TrainingPaths.exercises),
-      (
-        Icons.view_list_rounded,
-        l10n.trainingTemplatesTitle,
-        TrainingPaths.templates,
-      ),
-      (
-        Icons.groups_rounded,
-        l10n.trainingCommunityTitle,
-        TrainingPaths.community,
-      ),
-      (
-        AppIcons.calendar,
-        l10n.trainingWeeklyPlanTitle,
-        TrainingPaths.weeklyPlan,
-      ),
-    ];
-    return AppTileGrid(
-      // Icono y texto en fila: cada acceso necesita más ancho que en Inicio.
-      minTileWidth: TokensLayout.minTouchTarget * 3,
-      children: [
-        for (final (icon, label, path) in items)
-          AppCard(
-            key: path == TrainingPaths.templates ? templatesKey : null,
-            onTap: () => onOpen(path),
-            child: Row(
-              children: [
-                Icon(icon, color: context.colors.secondary),
-                const SizedBox(width: TokensSpacing.s),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: context.textStyles.labelLarge,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
       ],
     );
   }

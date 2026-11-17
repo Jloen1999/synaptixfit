@@ -7,6 +7,7 @@ import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/training/recommendation.dart';
 import '../../../../../domain/models/result/app_result.dart';
 import '../../../../../domain/models/training/routine.dart';
+import '../../../../../domain/models/training/training_week.dart';
 import '../../../../../domain/models/training/session.dart';
 import '../../../../../domain/models/training/wellbeing.dart';
 import '../../../../../domain/use_cases/training/apply_recommendation_use_case.dart';
@@ -16,6 +17,7 @@ import '../../../../../domain/use_cases/training/finish_session_use_case.dart';
 import '../../../../../domain/use_cases/training/get_my_routines_use_case.dart';
 import '../../../../../domain/use_cases/training/get_open_sessions_use_case.dart';
 import '../../../../../domain/use_cases/training/get_pending_day_use_case.dart';
+import '../../../../../domain/use_cases/training/get_training_week_use_case.dart';
 import '../../../../../domain/use_cases/training/get_recommendations_use_case.dart';
 import '../../../../../domain/use_cases/training/get_today_check_in_use_case.dart';
 import '../../../../../domain/use_cases/training/restart_routine_use_case.dart';
@@ -43,6 +45,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
         DeferredCommitMixin<TrainingHomeState> {
   TrainingHomeBloc({
     required this._getPendingDay,
+    required this._getWeek,
     required this._getMyRoutines,
     required this._getTodayCheckIn,
     required this._getRecommendations,
@@ -118,6 +121,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
   }
 
   final GetPendingDayUseCaseContract _getPendingDay;
+  final GetTrainingWeekUseCaseContract _getWeek;
   final GetMyRoutinesUseCaseContract _getMyRoutines;
   final GetTodayCheckInUseCaseContract _getTodayCheckIn;
   final GetRecommendationsUseCaseContract _getRecommendations;
@@ -155,6 +159,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
       emit(state.copyWith(refreshing: true));
     }
     final pendingFuture = _getPendingDay();
+    final weekFuture = _getWeek();
     final routinesFuture = _getMyRoutines(size: _routinesPageSize);
     final checkInFuture = _getTodayCheckIn();
     final recommendationsFuture = _getRecommendations(applied: false);
@@ -165,6 +170,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     final checkIn = await checkInFuture;
     final recommendations = await recommendationsFuture;
     final open = await openFuture;
+    final week = await weekFuture;
 
     final error = pending.errorOrNull ?? routines.errorOrNull;
     if (error != null) {
@@ -183,6 +189,8 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
         error: null,
         refreshing: false,
         pendingDay: pending.valueOrNull,
+        // Un extra: si falla, se conserva la última semana leída.
+        week: week.valueOrNull ?? state.week,
         routines: routines.valueOrNull?.items ?? const [],
         todayCheckIn: checkIn.valueOrNull,
         recommendations: [

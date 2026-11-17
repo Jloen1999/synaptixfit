@@ -38,6 +38,7 @@ void registerTrainingPresentation(GetIt getIt) {
     ..registerFactory(
       () => TrainingHomeBloc(
         getPendingDay: getIt(),
+        getWeek: getIt(),
         getMyRoutines: getIt(),
         getTodayCheckIn: getIt(),
         getRecommendations: getIt(),

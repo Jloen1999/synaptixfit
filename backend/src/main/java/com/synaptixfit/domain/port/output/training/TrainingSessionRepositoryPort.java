@@ -6,6 +6,7 @@ import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.model.training.generation.CompletedSessionSummary;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,6 +34,9 @@ public interface TrainingSessionRepositoryPort {
     List<CompletedSessionSummary> recentCompleted(UUID userId, int limit);
 
     int countCompletedBetween(UUID userId, Instant fromInclusive, Instant toExclusive);
+
+    /** Cuándo se terminó cada sesión del intervalo (id → instante), para pintar la semana de entreno. */
+    Map<UUID, Instant> completedBetween(UUID userId, Instant fromInclusive, Instant toExclusive);
 
     /** Sesiones completadas en el intervalo que dieron experiencia (para el tope diario). */
     int countRewardedBetween(UUID userId, Instant fromInclusive, Instant toExclusive);

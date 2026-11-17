@@ -37,6 +37,7 @@ import com.synaptixfit.application.port.input.training.GetExerciseFilterOptionsU
 import com.synaptixfit.application.port.input.training.GetExerciseNamesUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.GetTrainingWeekUseCase;
 import com.synaptixfit.application.port.input.training.GetLoadSuggestionsUseCase;
 import com.synaptixfit.application.port.input.training.GetRoutineUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
@@ -430,6 +431,11 @@ public class TrainingBeanConfiguration {
     @Bean
     GetPendingTrainingDayUseCase getPendingTrainingDayUseCase() {
         return tx.wrap(GetPendingTrainingDayUseCase.class, routineProgressService());
+    }
+
+    @Bean
+    GetTrainingWeekUseCase getTrainingWeekUseCase() {
+        return tx.wrap(GetTrainingWeekUseCase.class, routineProgressService());
     }
 
     @Bean

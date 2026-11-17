@@ -191,6 +191,13 @@ final class TrainingFakes {
             return (int) store.values().stream().filter(s -> s.userId().equals(userId) && s.isCompleted()
                     && !s.completedAt().isBefore(from) && s.completedAt().isBefore(to)).count();
         }
+        public Map<UUID, Instant> completedBetween(UUID userId, Instant from, Instant to) {
+            Map<UUID, Instant> result = new LinkedHashMap<>();
+            store.values().stream().filter(s -> s.userId().equals(userId) && s.isCompleted()
+                    && !s.completedAt().isBefore(from) && s.completedAt().isBefore(to))
+                    .forEach(s -> result.put(s.id(), s.completedAt()));
+            return result;
+        }
         public int countRewardedBetween(UUID userId, Instant from, Instant to) {
             return (int) store.values().stream().filter(s -> s.userId().equals(userId) && s.isCompleted()
                     && s.xpAwarded() > 0 && !s.completedAt().isBefore(from) && s.completedAt().isBefore(to)).count();

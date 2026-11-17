@@ -107,6 +107,30 @@ class RoutineScheduleTest {
     }
 
     @Test
+    void upcomingDatesFollowEachPreferredWeekdayUntilTheLimit() {
+        // Hoy es miércoles 7: toca el viernes 9, luego el domingo 11 y el lunes 12 ya es de la semana siguiente.
+        Routine r = routine(null, List.of(day(5, true), day(7, true)), List.of(day(1, true)));
+
+        List<LocalDate> week = r.upcomingTrainingDates(RoutineSchedule.Context.of(TODAY, NOW),
+                LocalDate.of(2026, 10, 11));
+
+        assertThat(week).containsExactly(LocalDate.of(2026, 10, 9), LocalDate.of(2026, 10, 11));
+    }
+
+    @Test
+    void anOverdueDayIsExpectedTodayAndTheRestAfterIt() {
+        RoutineDay monday = day(1, true);
+        Routine r = routine(null, List.of(monday, day(2, true), day(4, true)), List.of(day(1, true)));
+        r.completeDay(monday.id(), LocalDate.of(2026, 9, 28));
+
+        // El martes iba con retraso: se espera hoy (miércoles 7) y el jueves sigue en su día.
+        List<LocalDate> week = r.upcomingTrainingDates(RoutineSchedule.Context.of(TODAY, NOW),
+                LocalDate.of(2026, 10, 11));
+
+        assertThat(week).containsExactly(TODAY, LocalDate.of(2026, 10, 8));
+    }
+
+    @Test
     void nothingLeftMeansNoNextDay() {
         RoutineDay monday = day(1, true);
         RoutineDay week2 = day(1, true);

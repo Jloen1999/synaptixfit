@@ -12,6 +12,9 @@ abstract class TrainingHomeState with _$TrainingHomeState {
     @Default(false) bool refreshing,
     PendingDay? pendingDay,
 
+    /// La semana de entreno (siete puntos); nula hasta que el servidor la da.
+    TrainingWeek? week,
+
     /// Sesiones abandonadas (más de 6 h abiertas) que hay que cerrar.
     @Default(<OpenSession>[]) List<OpenSession> staleSessions,
     @Default(<RoutineSummary>[]) List<RoutineSummary> routines,

@@ -5,6 +5,7 @@ import com.synaptixfit.application.port.input.training.DeleteSessionSetUseCase;
 import com.synaptixfit.application.port.input.training.DeleteTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.FinishTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.GetTrainingWeekUseCase;
 import com.synaptixfit.application.port.input.training.GetLoadSuggestionsUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.GetTrainingSessionUseCase;
@@ -20,6 +21,7 @@ import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RecommendationDtos.RecommendationResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.TrainingWeekResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.PendingDayResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.CorrectSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.ExperienceResponse;
@@ -71,6 +73,7 @@ public class TrainingSessionController {
     private final ListTrainingSessionsUseCase list;
     private final GetTrainingSessionUseCase get;
     private final GetPendingTrainingDayUseCase pendingDay;
+    private final GetTrainingWeekUseCase trainingWeek;
     private final GetSessionAdaptationUseCase adaptation;
     private final GetLoadSuggestionsUseCase loadSuggestions;
     private final PauseTrainingSessionUseCase pause;
@@ -82,7 +85,7 @@ public class TrainingSessionController {
                                      CorrectTrainingSessionUseCase correct, LogPastRoutineSessionUseCase logPast,
                                      ListOpenSessionsUseCase listOpen,
                                      ListTrainingSessionsUseCase list, GetTrainingSessionUseCase get,
-                                     GetPendingTrainingDayUseCase pendingDay,
+                                     GetPendingTrainingDayUseCase pendingDay, GetTrainingWeekUseCase trainingWeek,
                                      GetSessionAdaptationUseCase adaptation,
                                      GetLoadSuggestionsUseCase loadSuggestions,
                                      PauseTrainingSessionUseCase pause, ResumeTrainingSessionUseCase resume) {
@@ -100,6 +103,7 @@ public class TrainingSessionController {
         this.list = list;
         this.get = get;
         this.pendingDay = pendingDay;
+        this.trainingWeek = trainingWeek;
         this.adaptation = adaptation;
         this.loadSuggestions = loadSuggestions;
     }
@@ -109,6 +113,12 @@ public class TrainingSessionController {
     public ResponseEntity<PendingDayResponse> pendingDay(@CurrentUserId UUID userId) {
         return pendingDay.pendingDay(userId).map(PendingDayResponse::from).map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** La semana de entreno en curso: días entrenados, días que aún tocan y hoy. */
+    @GetMapping("/week")
+    public TrainingWeekResponse week(@CurrentUserId UUID userId) {
+        return TrainingWeekResponse.from(trainingWeek.trainingWeek(userId));
     }
 
     /** Empieza (o recupera si ya está en curso para ese día) una sesión. */

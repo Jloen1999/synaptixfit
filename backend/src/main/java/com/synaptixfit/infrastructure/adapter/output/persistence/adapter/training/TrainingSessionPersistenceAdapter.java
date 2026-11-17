@@ -12,6 +12,7 @@ import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.SessionSetJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.TrainingSessionJpaRepository;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -157,6 +158,19 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
     public int countCompletedBetween(UUID userId, Instant fromInclusive, Instant toExclusive) {
         return (int) sessions.countByUsuarioIdAndCompletadaEnGreaterThanEqualAndCompletadaEnLessThan(userId,
                 fromInclusive, toExclusive);
+    }
+
+    @Override
+    public Map<UUID, Instant> completedBetween(UUID userId, Instant fromInclusive, Instant toExclusive) {
+        Map<UUID, Instant> result = new HashMap<>();
+        jdbc.sql("SELECT id, completada_en FROM sesiones_registradas WHERE usuario_id = :u"
+                        + " AND completada_en >= :from AND completada_en < :to")
+                .param("u", userId).param("from", Timestamp.from(fromInclusive))
+                .param("to", Timestamp.from(toExclusive))
+                .query((ResultSet rs) -> {
+                    result.put(rs.getObject("id", UUID.class), rs.getTimestamp("completada_en").toInstant());
+                });
+        return result;
     }
 
     @Override

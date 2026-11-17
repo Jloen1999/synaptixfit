@@ -32,8 +32,6 @@ abstract class RunHomeState with _$RunHomeState {
     /// Carrera sin terminar guardada en el teléfono («Seguir grabando»).
     RunRecording? unfinished,
 
-    /// «Estás aquí» (solo con el permiso ya dado).
-    (double, double)? here,
     RunHomeNotice? notice,
     AppError? actionError,
   }) = _RunHomeState;

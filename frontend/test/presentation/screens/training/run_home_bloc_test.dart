@@ -4,12 +4,10 @@ import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/run.dart';
-import 'package:synaptixfit/domain/use_cases/profile/get_device_permission_status_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/open_permission_settings_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/share_achievement_image_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/sync/watch_data_changes_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/delete_run_workout_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/training/get_current_position_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_run_week_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/list_pending_runs_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/list_planned_runs_use_case.dart';
@@ -43,12 +41,7 @@ class _Recording extends Mock implements LoadRunRecordingUseCaseContract {}
 
 class _Schedule extends Mock implements ScheduleRunWorkoutUseCaseContract {}
 
-class _Permission extends Mock
-    implements GetDevicePermissionStatusUseCaseContract {}
-
 class _Settings extends Mock implements OpenPermissionSettingsUseCaseContract {}
-
-class _Position extends Mock implements GetCurrentPositionUseCaseContract {}
 
 class _Track extends Mock implements TrackRunUseCaseContract {}
 
@@ -86,9 +79,7 @@ void main() {
     loadRecording: _Recording(),
     deleteWorkout: delete,
     scheduleWorkout: _Schedule(),
-    permissionStatus: _Permission(),
     openSettings: _Settings(),
-    position: _Position(),
     track: _Track(),
     share: _Share(),
     watchDataChanges: _Watch(),

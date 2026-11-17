@@ -164,6 +164,12 @@ abstract final class TokensSize {
   static const double weekBarHeight = 72;
   static const double weekSegmentMin = 8;
   static const double dot = 5;
+  static const double quickActionMinWidth = 72;
+  static const double routineCardWidth = 216;
+  static const double newRoutineCardWidth = 128;
+  static const double weekDotRing = 2;
+  static const double weekTodayMarkWidth = 16;
+  static const double weekTodayMarkHeight = 3;
   static const double recordCardWidth = 168;
   static const double recordCardHeight = 92;
   static const double coverBanner = 112;

@@ -87,6 +87,9 @@ abstract final class AppIcons {
   static const IconData previous = Icons.chevron_left_rounded;
   static const IconData next = Icons.chevron_right_rounded;
   static const IconData history = Icons.history_rounded;
+
+  /// Entrenar sin rutina (sesión libre). No es `kcal` (el rayo).
+  static const IconData freeSession = Icons.play_circle_outline_rounded;
   static const IconData calendar = Icons.calendar_month_rounded;
   static const IconData today = Icons.today_rounded;
   static const IconData notifications = Icons.notifications_outlined;

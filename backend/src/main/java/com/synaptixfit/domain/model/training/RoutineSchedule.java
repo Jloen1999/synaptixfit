@@ -53,7 +53,38 @@ public final class RoutineSchedule {
         }
     }
 
-    static Optional<PendingDay> next(Routine routine, Context ctx) {
+    /**
+     * Fechas en las que toca entrenar de aquí a {@code until} (incluido), en orden: el próximo día en su fecha
+     * (hoy si va con retraso o ya está en curso) y los siguientes en su día de la semana preferido, cada uno
+     * después del anterior. Es una previsión para pintar la semana; la rutina sigue avanzando al ritmo real. Solo el
+     * próximo día mira el calendario: los siguientes van a su día de la semana, porque su bloque puede moverse en
+     * cuanto se entrene el anterior.
+     */
+    static List<LocalDate> upcoming(Routine routine, Context ctx, LocalDate until) {
+        Optional<PendingDay> next = next(routine, ctx);
+        if (next.isEmpty()) {
+            return List.of();
+        }
+        LocalDate date = next.get().scheduledDate().isBefore(ctx.today()) ? ctx.today() : next.get().scheduledDate();
+        List<LocalDate> dates = new ArrayList<>();
+        boolean after = false;
+        for (Slot slot : slots(routine)) {
+            if (slot.day().id().equals(next.get().day().id())) {
+                after = true;
+            } else if (after && !slot.day().status().isClosed()) {
+                date = nextWeekday(date.plusDays(1), slot.day().number());
+            } else {
+                continue;
+            }
+            if (date.isAfter(until)) {
+                break;
+            }
+            dates.add(date);
+        }
+        return dates;
+    }
+
+    private static List<Slot> slots(Routine routine) {
         List<Slot> order = new ArrayList<>();
         for (RoutineWeek week : routine.weeks()) {
             List<RoutineDay> trainable = week.trainableDays();
@@ -61,6 +92,11 @@ public final class RoutineSchedule {
                 order.add(new Slot(week, trainable.get(i), i + 1, trainable.size()));
             }
         }
+        return order;
+    }
+
+    static Optional<PendingDay> next(Routine routine, Context ctx) {
+        List<Slot> order = slots(routine);
         Optional<Slot> active = order.stream()
                 .filter(s -> s.day().status() != ProgressStatus.SKIPPED)
                 .filter(s -> isActive(ctx.openSessions().get(s.day().id()), ctx.now()))
