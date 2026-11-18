@@ -1,6 +1,7 @@
 import '../models/result/app_result.dart';
 import '../models/training/exercise.dart';
 import '../models/training/exercise_guide.dart';
+import '../models/training/media_credit.dart';
 import '../models/training/training_page.dart';
 
 /// Catálogo de ejercicios (`/api/v1/exercises`).
@@ -23,6 +24,9 @@ abstract interface class ExerciseRepositoryContract {
 
   /// «Las claves» y «Errores comunes» (vacío si no hay).
   Future<AppResult<ExerciseTips>> getTips(String exerciseId);
+
+  /// Quién hizo la foto y el vídeo y con qué licencia (vacío si no hay).
+  Future<AppResult<List<MediaCredit>>> getMediaCredits(String exerciseId);
 
   /// Nota propia sobre el ejercicio (nula si no hay).
   Future<AppResult<ExerciseNote?>> getNote(String exerciseId);

@@ -7,6 +7,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/exercise_instructions.dart';
 import '../../widgets/exercise_media.dart';
+import '../../widgets/exercise_media_credits.dart';
 import '../../../../../domain/models/training/exercise.dart';
 import '../../exercise_guide/page/exercise_guide_section.dart';
 import '../bloc/exercise_detail_bloc.dart';
@@ -120,6 +121,8 @@ class _HowToSheet extends StatelessWidget {
                       loaded?.name ?? name,
                     ),
                   ),
+                  if (state case ExerciseDetailLoaded(:final credits))
+                    ExerciseMediaCredits(credits: credits),
                   const SizedBox(height: TokensSpacing.l),
                   switch (state) {
                     ExerciseDetailLoading() => const AppLoadingView(),

@@ -275,6 +275,7 @@ class _StripItem extends StatelessWidget {
                 ExerciseThumbnail(
                   url: exercise.thumbnailUrl,
                   size: TokensSize.thumbnailS,
+                  icon: exercise.modality.icon,
                 ),
                 if (finished)
                   PositionedDirectional(

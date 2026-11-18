@@ -3343,7 +3343,7 @@
   "trainingQuickTemplates": "Plantillas",
   "trainingQuickExercises": "Ejercicios",
   "trainingQuickMore": "Más",
-  "trainingWeekDoneOfTotal": "{total, plural, =1{{done} de 1 entreno} other{{done} de {total} entrenos}}",
+  "trainingWeekDoneOfTotal": "{total, plural, =1{{done} de {total} entreno} other{{done} de {total} entrenos}}",
   "@trainingWeekDoneOfTotal": {
     "placeholders": {
       "done": {
@@ -3384,5 +3384,44 @@
   "trainingFirstRoutineHint": "Empieza con una plantilla: ya trae los ejercicios, las series y con cuántos kilos empezar.",
   "trainingCreateOwnRoutine": "O crea la tuya",
   "trainingWeekEmpty": "Aún no has entrenado esta semana.",
-  "trainingWeekOpenWorkout": "Ver entreno"
+  "trainingWeekOpenWorkout": "Ver entreno",
+  "trainingMediaCreditPhoto": "Foto: {who}",
+  "@trainingMediaCreditPhoto": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingMediaCreditVideo": "Vídeo: {who}",
+  "@trainingMediaCreditVideo": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingMediaCreditsSpoken": "Créditos: {line}",
+  "@trainingMediaCreditsSpoken": {
+    "placeholders": {
+      "line": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingMediaCreditsOpen": "Ver de dónde salen",
+  "trainingMediaCreditsTitle": "Créditos",
+  "trainingMediaCreditsIntro": "Las comparten sus autores para que cualquiera las use, siempre que se les cite.",
+  "trainingMediaCreditLicense": "Licencia libre: {license}",
+  "@trainingMediaCreditLicense": {
+    "placeholders": {
+      "license": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingMediaCreditSeeLicense": "Ver licencia",
+  "trainingMediaCreditSeeWork": "Ver original",
+  "trainingMediaCreditsOpensBrowser": "Se abre en el navegador",
+  "trainingMediaCreditOpenFailed": "No se ha podido abrir el enlace."
 }

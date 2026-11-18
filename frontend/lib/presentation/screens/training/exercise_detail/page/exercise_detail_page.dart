@@ -4,11 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/training/exercise.dart';
+import '../../../../../domain/models/training/media_credit.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/exercise_instructions.dart';
 import '../../widgets/exercise_media.dart';
+import '../../widgets/exercise_media_credits.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_labels.dart';
 import '../../exercise_guide/page/exercise_guide_section.dart';
@@ -48,7 +50,8 @@ class ExerciseDetailPage extends StatelessWidget {
                 ExerciseDetailEvent.started(exerciseId),
               ),
             ),
-            ExerciseDetailLoaded(:final exercise) => _Content(
+            ExerciseDetailLoaded(:final exercise, :final credits) => _Content(
+              credits: credits,
               exercise: exercise,
             ),
           },
@@ -59,9 +62,12 @@ class ExerciseDetailPage extends StatelessWidget {
 }
 
 class _Content extends StatelessWidget {
-  const _Content({required this.exercise});
+  const _Content({required this.exercise, this.credits = const []});
 
   final Exercise exercise;
+
+  /// Quién hizo la foto y el vídeo (ADR 0056).
+  final List<MediaCredit> credits;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +85,7 @@ class _Content extends StatelessWidget {
                 previewUrl: e.previewUrl,
                 semanticLabel: l10n.trainingExerciseDemo(e.name),
               ),
+              ExerciseMediaCredits(credits: credits),
               const SizedBox(height: TokensSpacing.m),
               Text(e.name, style: context.textStyles.headlineSmall),
               const SizedBox(height: TokensSpacing.s),
@@ -136,7 +143,11 @@ class _Content extends StatelessWidget {
                   ],
                 ),
               ],
-              if (e.gifUrl == null && e.previewUrl == null) ...[
+              // Los datos de openGym son los de los ejercicios sin medios del
+              // catálogo original, también cuando después recibieron una foto
+              // de una fuente abierta (con crédito, ADR 0056).
+              if ((e.gifUrl == null && e.previewUrl == null) ||
+                  credits.isNotEmpty) ...[
                 const SizedBox(height: TokensSpacing.l),
                 Text(
                   l10n.trainingExerciseSourceOpenGym,

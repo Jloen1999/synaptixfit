@@ -51,3 +51,8 @@ dist/
 
 # Documentos personales de ejemplo (datos reales): nunca al repositorio
 docs/CARTA DE PAGO.pdf
+
+# Cachés de terceros de tools/exercises/exercise_images.py (se vuelven a descargar si faltan; ADR 0056)
+tools/exercises/data/wger_exerciseinfo.json
+tools/exercises/data/wger_videos.json
+tools/exercises/data/fedb_exercises.json

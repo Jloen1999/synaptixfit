@@ -93,7 +93,9 @@ void registerTrainingPresentation(GetIt getIt) {
     ..registerFactory(
       () => ExerciseExplorerBloc(search: getIt(), getFilters: getIt()),
     )
-    ..registerFactory(() => ExerciseDetailBloc(getExercise: getIt()))
+    ..registerFactory(
+      () => ExerciseDetailBloc(getExercise: getIt(), getCredits: getIt()),
+    )
     ..registerFactory(
       () => ExerciseGuideBloc(
         getTips: getIt(),

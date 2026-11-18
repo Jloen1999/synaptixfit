@@ -36,6 +36,7 @@ import com.synaptixfit.application.port.input.training.GetCatalogTranslationsUse
 import com.synaptixfit.application.port.input.training.GetExerciseFilterOptionsUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseNamesUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseUseCase;
+import com.synaptixfit.application.port.input.training.ListExerciseMediaCreditsUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
 import com.synaptixfit.application.port.input.training.GetTrainingWeekUseCase;
 import com.synaptixfit.application.port.input.training.GetLoadSuggestionsUseCase;
@@ -91,6 +92,7 @@ import com.synaptixfit.domain.port.output.training.ExerciseNameTranslationsRepos
 import com.synaptixfit.domain.port.output.training.ExerciseNameTranslatorPort;
 import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseTipsRepositoryPort;
+import com.synaptixfit.domain.port.output.training.ExerciseMediaCreditRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseNoteRepositoryPort;
 import com.synaptixfit.application.port.input.training.GetExerciseTipsUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseNoteUseCase;
@@ -140,6 +142,7 @@ public class TrainingBeanConfiguration {
     private final GetStartingLoadsUseCase startingLoads;
     private final ExerciseTipsRepositoryPort exerciseTips;
     private final ExerciseNoteRepositoryPort exerciseNotes;
+    private final ExerciseMediaCreditRepositoryPort exerciseMediaCredits;
 
     /**
      * @param zone «día» de sesiones y check-ins: la zona de los indicadores
@@ -167,6 +170,7 @@ public class TrainingBeanConfiguration {
                                      GetStartingLoadsUseCase startingLoads,
                                      ExerciseTipsRepositoryPort exerciseTips,
                                      ExerciseNoteRepositoryPort exerciseNotes,
+                                     ExerciseMediaCreditRepositoryPort exerciseMediaCredits,
                                      @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.exercises = exercises;
@@ -190,6 +194,7 @@ public class TrainingBeanConfiguration {
         this.startingLoads = startingLoads;
         this.exerciseTips = exerciseTips;
         this.exerciseNotes = exerciseNotes;
+        this.exerciseMediaCredits = exerciseMediaCredits;
         this.zone = ZoneId.of(zone);
     }
 
@@ -197,12 +202,17 @@ public class TrainingBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     ExerciseGuideService exerciseGuideService() {
-        return new ExerciseGuideService(exercises, exerciseTips, exerciseNotes, clock);
+        return new ExerciseGuideService(exercises, exerciseTips, exerciseNotes, exerciseMediaCredits, clock);
     }
 
     @Bean
     GetExerciseTipsUseCase getExerciseTipsUseCase() {
         return tx.wrap(GetExerciseTipsUseCase.class, exerciseGuideService());
+    }
+
+    @Bean
+    ListExerciseMediaCreditsUseCase listExerciseMediaCreditsUseCase() {
+        return tx.wrap(ListExerciseMediaCreditsUseCase.class, exerciseGuideService());
     }
 
     @Bean

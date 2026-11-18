@@ -1270,6 +1270,7 @@ class _ExerciseCard extends StatelessWidget {
               ExerciseThumbnail(
                 url: exercise.thumbnailUrl,
                 size: TokensSize.thumbnailS,
+                icon: exercise.modality.icon,
               ),
               const SizedBox(width: TokensSpacing.m),
               Expanded(

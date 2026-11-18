@@ -193,6 +193,29 @@ class ExerciseCatalogIT {
                 + "\"targetMuscleIds\":[" + muscle + "]" + extra + "}";
     }
 
+    @Test
+    void newPhotosAndVideosCarryTheirCredit() throws Exception {
+        String token = register("exercise-media-it@example.com");
+        // V1077: un ejercicio que no tenía nada recibe foto y vídeo de wger, cada uno con su crédito (ADR 0056).
+        String id = "ceac7407-e623-5b5b-a7f6-b3e919d3e556";
+        mvc.perform(get("/api/v1/exercises/" + id).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.previewUrl").value(org.hamcrest.Matchers.containsString("/ejercicios/wger/")))
+                .andExpect(jsonPath("$.gifUrl").value(org.hamcrest.Matchers.endsWith(".mp4")));
+        mvc.perform(get("/api/v1/exercises/" + id + "/media-credits").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].kind").value("PHOTO"))
+                .andExpect(jsonPath("$[0].source").value("wger"))
+                .andExpect(jsonPath("$[1].kind").value("VIDEO"));
+        // Ningún crédito sin su medio puesto, y el catálogo original no tiene ninguno.
+        assertThat(jdbc.sql("SELECT COUNT(*) FROM creditos_medios_ejercicio c JOIN ejercicios e ON e.id = c.ejercicio_id"
+                + " WHERE (c.tipo = 'FOTO' AND e.url_preview IS NULL) OR (c.tipo = 'VIDEO' AND e.url_gif IS NULL)")
+                .query(Long.class).single()).isZero();
+        assertThat(jdbc.sql("SELECT COUNT(*) FROM creditos_medios_ejercicio").query(Long.class).single())
+                .isGreaterThan(300);
+    }
+
     private String login(String email) throws Exception {
         String body = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"" + email + "\",\"password\":\"secret123\"}"))

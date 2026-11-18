@@ -7164,6 +7164,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ExerciseTipsResponse"
+  /api/v1/exercises/{exerciseId}/media-credits:
+    get:
+      tags:
+      - Exercises
+      operationId: mediaCredits
+      parameters:
+      - name: exerciseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaCreditResponse"
   /api/v1/exercises/{exerciseId}/alternatives:
     get:
       tags:
@@ -16970,6 +16991,24 @@ components:
           type: array
           items:
             type: string
+    MediaCreditResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+          - PHOTO
+          - VIDEO
+        source:
+          type: string
+        license:
+          type: string
+        licenseUrl:
+          type: string
+        author:
+          type: string
+        workUrl:
+          type: string
     ExerciseFilterOptionsResponse:
       type: object
       properties:

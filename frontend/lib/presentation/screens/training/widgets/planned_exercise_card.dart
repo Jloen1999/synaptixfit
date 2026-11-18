@@ -120,6 +120,7 @@ class _PlannedExerciseCardState extends State<PlannedExerciseCard> {
                 ExerciseThumbnail(
                   url: e.thumbnailUrl,
                   size: TokensSize.listTileMin,
+                  icon: e.modality.icon,
                 ),
                 const SizedBox(width: TokensSpacing.m),
                 Expanded(

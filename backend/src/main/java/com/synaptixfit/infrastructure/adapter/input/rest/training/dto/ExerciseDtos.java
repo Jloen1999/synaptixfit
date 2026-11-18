@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
 import com.synaptixfit.domain.model.training.ExerciseNote;
 import com.synaptixfit.domain.model.training.ExerciseTips;
+import com.synaptixfit.domain.model.training.MediaCredit;
 import java.util.Optional;
 import com.synaptixfit.domain.model.training.CatalogItem;
 import com.synaptixfit.domain.model.training.CatalogTranslations;
@@ -156,6 +157,18 @@ public final class ExerciseDtos {
     public record ExerciseTipsResponse(List<String> keyPoints, List<String> commonMistakes) {
         public static ExerciseTipsResponse from(ExerciseTips t) {
             return new ExerciseTipsResponse(t.keyPoints(), t.commonMistakes());
+        }
+    }
+
+    /**
+     * Crédito de la foto ({@code PHOTO}) o del vídeo ({@code VIDEO}) de un ejercicio (ADR 0056): fuente, licencia con
+     * su enlace y, si se sabe, autor y página de la obra.
+     */
+    public record MediaCreditResponse(MediaCredit.Kind kind, String source, String license, String licenseUrl,
+                                      String author, String workUrl) {
+        public static List<MediaCreditResponse> list(List<MediaCredit> credits) {
+            return credits.stream().map(c -> new MediaCreditResponse(c.kind(), c.source(), c.license(),
+                    c.licenseUrl(), c.author(), c.workUrl())).toList();
         }
     }
 

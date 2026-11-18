@@ -25,6 +25,7 @@ import '../use_cases/training/get_body_weight_use_case.dart';
 import '../use_cases/training/get_check_ins_use_case.dart';
 import '../use_cases/training/get_community_routines_use_case.dart';
 import '../use_cases/training/get_exercise_alternatives_use_case.dart';
+import '../use_cases/training/get_exercise_media_credits_use_case.dart';
 import '../use_cases/training/get_exercise_tips_use_case.dart';
 import '../use_cases/training/load_live_session_draft_use_case.dart';
 import '../use_cases/training/save_live_session_draft_use_case.dart';
@@ -226,6 +227,9 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetExerciseAlternativesUseCaseContract>(
       () => GetExerciseAlternativesUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetExerciseMediaCreditsUseCaseContract>(
+      () => GetExerciseMediaCreditsUseCase(getIt()),
     )
     ..registerLazySingleton<GetExerciseTipsUseCaseContract>(
       () => GetExerciseTipsUseCase(getIt()),

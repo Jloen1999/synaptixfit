@@ -105,6 +105,10 @@ abstract final class AppIcons {
   static const IconData howTo = Icons.ondemand_video_rounded;
   static const IconData help = Icons.help_outline_rounded;
 
+  /// Más detalles de algo pequeño (p. ej. los créditos de una foto). No es la
+  /// «?» de las ayudas opcionales.
+  static const IconData info = Icons.info_outline_rounded;
+
   /// Lo que propone la app (IA o reglas, se ven igual: vocabulario).
   static const IconData proposal = Icons.lightbulb_outline_rounded;
 

@@ -4140,7 +4140,7 @@
   "trainingQuickTemplates": "Templates",
   "trainingQuickExercises": "Exercises",
   "trainingQuickMore": "More",
-  "trainingWeekDoneOfTotal": "{total, plural, =1{{done} of 1 workout} other{{done} of {total} workouts}}",
+  "trainingWeekDoneOfTotal": "{total, plural, =1{{done} of {total} workout} other{{done} of {total} workouts}}",
   "trainingWeekStateDone": "workout done",
   "trainingWeekStatePlanned": "workout planned",
   "trainingWeekStateFree": "no workout",
@@ -4157,5 +4157,16 @@
   "trainingFirstRoutineHint": "Start with a template: it already has the exercises, the sets and how many kilos to start with.",
   "trainingCreateOwnRoutine": "Or create your own",
   "trainingWeekEmpty": "You haven't trained this week yet.",
-  "trainingWeekOpenWorkout": "See workout"
+  "trainingWeekOpenWorkout": "See workout",
+  "trainingMediaCreditPhoto": "Photo: {who}",
+  "trainingMediaCreditVideo": "Video: {who}",
+  "trainingMediaCreditsSpoken": "Credits: {line}",
+  "trainingMediaCreditsOpen": "See where they come from",
+  "trainingMediaCreditsTitle": "Credits",
+  "trainingMediaCreditsIntro": "Their authors share them so anyone can use them, as long as they're credited.",
+  "trainingMediaCreditLicense": "Free licence: {license}",
+  "trainingMediaCreditSeeLicense": "See licence",
+  "trainingMediaCreditSeeWork": "See original",
+  "trainingMediaCreditsOpensBrowser": "Opens in the browser",
+  "trainingMediaCreditOpenFailed": "The link couldn't be opened."
 }

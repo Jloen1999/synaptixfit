@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../domain/models/training/exercise.dart';
 import '../../../domain/models/training/exercise_guide.dart';
+import '../../../domain/models/training/media_credit.dart';
 import '../../../domain/models/training/training_page.dart';
 import '../api/api_client.dart';
 import 'dto/exercise_dto.dart';
@@ -87,6 +88,38 @@ class ExerciseRemoteDataSource {
       keyPoints: lines('keyPoints'),
       commonMistakes: lines('commonMistakes'),
     );
+  }
+
+  /// Crédito de la foto y el vídeo (ADR 0056); JSON pequeño, se lee a mano.
+  Future<List<MediaCredit>> mediaCredits(String exerciseId) async {
+    final response = await _dio.get<List<dynamic>>(
+      '$_base/$exerciseId/media-credits',
+    );
+    return [
+      for (final c in (response.data ?? const []).cast<Map<String, dynamic>>())
+        // Sin fuente, licencia o enlace no hay nada que citar: se descarta.
+        if ((_text(c['source']), _text(c['license']), _text(c['licenseUrl']))
+            case (
+              final String source,
+              final String license,
+              final String licenseUrl,
+            ))
+          MediaCredit(
+            kind: c['kind'] == 'VIDEO'
+                ? MediaCreditKind.video
+                : MediaCreditKind.photo,
+            source: source,
+            license: license,
+            licenseUrl: licenseUrl,
+            author: _text(c['author']),
+            workUrl: _text(c['workUrl']),
+          ),
+    ];
+  }
+
+  static String? _text(Object? value) {
+    final text = value is String ? value.trim() : null;
+    return text == null || text.isEmpty ? null : text;
   }
 
   Future<ExerciseNote?> note(String exerciseId) async {

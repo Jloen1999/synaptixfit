@@ -13,9 +13,26 @@ Descargados el 23 de octubre de 2026.
 | `nombres_i18n.json`, `vocabulario_i18n.json` | Nombres de ejercicios y vocabulario en inglés, francés y portugués de Portugal | Generado con DeepSeek (`translate_names.py`, `fix_portuguese.py`) | Propio (con pistas AGPL) |
 | `textos_ia.json` | Nombre natural, descripción e instrucciones redactadas para los ejercicios que no las traían en español y para los 909 del catálogo original | Generado con DeepSeek (`generate_texts.py`) a partir de nombre, material y músculos; revisado por muestreo | Propio |
 
-**No se usa ningún vídeo ni imagen de estos repositorios**: son de Gym visual con licencia solo para esos proyectos. Los ejercicios nuevos no tienen vídeo y la app muestra el icono de su categoría.
+**No se usa ningún vídeo ni imagen de estos repositorios**: son de Gym visual con licencia solo para esos proyectos. Los ejercicios nuevos no traían foto ni vídeo; parte la tienen ahora de otras fuentes (V1077, abajo) y el resto muestra el icono de su categoría.
 
 **Obligaciones de la AGPL-3.0**: los datos derivados de openGym (catálogo y traducciones) se distribuyen con su licencia y su atribución («Fuente: openGym, Duarte Santos, AGPL-3.0»). Si la app se ofrece como servicio, el código que use esos datos debe poder obtenerse con la misma licencia; el propietario del proyecto decidió usarlos sabiendo esta condición.
+
+## Fotos y vídeos nuevos (`V1077`, ADR 0056)
+
+| Archivo | Contenido | Fuente | Licencia |
+|---|---|---|---|
+| `wger_exerciseinfo.json`, `wger_videos.json` | Ejercicios de wger con su nombre en inglés, sus imágenes y sus vídeos, con licencia y autor de cada uno | <https://wger.de/api/v2/> (descargado el 17 nov 2026) | Por medio: CC BY-SA 3.0/4.0, CC BY 4.0 o CC0 (Everkinetic: CC BY-SA 3.0) |
+| `fedb_exercises.json` | 800+ ejercicios con foto | <https://github.com/yuhonas/free-exercise-db> (`dist/exercises.json`) | Unlicense; las fotos vienen de `wrkout/exercises.json`, sin origen documentado |
+| `imagenes_ejercicios.json` | Por ejercicio nuestro: foto y vídeo elegidos, clave en R2, URL publicada, fuente, licencia y autor | Generado por `exercise_images.py` y `upload_exercise_media.py` | Propio |
+
+El propietario pidió usar todas las fuentes y asume el riesgo de licencia de las que no documentan su origen (ADR 0056).
+Las tres descargas (`wger_*.json`, `fedb_exercises.json`) son cachés y no van al repositorio (`.gitignore`): el script las vuelve a pedir si faltan. Lo que cuenta es `imagenes_ejercicios.json`.
+
+```bash
+py -I tools/exercises/exercise_images.py        # empareja (reanuda con la caché)
+py tools/exercises/upload_exercise_media.py     # convierte a WebP/MP4 y sube a R2 (Pillow y ffmpeg; sin -I)
+py -I tools/exercises/build_media_migration.py  # escribe V1077
+```
 
 ## Decisiones al limpiar
 

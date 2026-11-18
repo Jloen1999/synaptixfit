@@ -428,6 +428,7 @@ class _ExerciseSets extends StatelessWidget {
               ExerciseThumbnail(
                 url: e?.thumbnailUrl,
                 size: TokensSize.thumbnailS,
+                icon: e?.modality.icon ?? Modality.strength.icon,
               ),
               const SizedBox(width: TokensSpacing.m),
               Expanded(

@@ -7,11 +7,13 @@ import com.synaptixfit.application.port.input.training.SearchExercisesUseCase;
 import com.synaptixfit.application.port.input.training.SuggestSessionBookendsUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseNoteUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseTipsUseCase;
+import com.synaptixfit.application.port.input.training.ListExerciseMediaCreditsUseCase;
 import com.synaptixfit.application.port.input.training.SaveExerciseNoteUseCase;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseNoteResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseTipsResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.MediaCreditResponse;
 import com.synaptixfit.infrastructure.i18n.RequestLanguage;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,13 +49,15 @@ public class ExerciseController {
     private final ListExerciseAlternativesUseCase alternatives;
     private final SuggestSessionBookendsUseCase bookends;
     private final GetExerciseTipsUseCase tips;
+    private final ListExerciseMediaCreditsUseCase mediaCredits;
     private final GetExerciseNoteUseCase getNote;
     private final SaveExerciseNoteUseCase saveNote;
 
     public ExerciseController(SearchExercisesUseCase search, GetExerciseUseCase get,
                               GetExerciseFilterOptionsUseCase filters,
                               ListExerciseAlternativesUseCase alternatives, SuggestSessionBookendsUseCase bookends,
-                              GetExerciseTipsUseCase tips, GetExerciseNoteUseCase getNote,
+                              GetExerciseTipsUseCase tips,
+                              ListExerciseMediaCreditsUseCase mediaCredits, GetExerciseNoteUseCase getNote,
                               SaveExerciseNoteUseCase saveNote) {
         this.search = search;
         this.get = get;
@@ -61,6 +65,7 @@ public class ExerciseController {
         this.alternatives = alternatives;
         this.bookends = bookends;
         this.tips = tips;
+        this.mediaCredits = mediaCredits;
         this.getNote = getNote;
         this.saveNote = saveNote;
     }
@@ -106,6 +111,12 @@ public class ExerciseController {
     @GetMapping("/{exerciseId}/tips")
     public ExerciseTipsResponse tips(@PathVariable UUID exerciseId) {
         return ExerciseTipsResponse.from(tips.tips(exerciseId, RequestLanguage.code()));
+    }
+
+    /** Quién hizo la foto y el vídeo del ejercicio y con qué licencia; vacía si no hay que atribuir (ADR 0056). */
+    @GetMapping("/{exerciseId}/media-credits")
+    public List<MediaCreditResponse> mediaCredits(@PathVariable UUID exerciseId) {
+        return MediaCreditResponse.list(mediaCredits.mediaCredits(exerciseId));
     }
 
     /** Nota propia sobre el ejercicio; {@code text} nulo si no hay. */

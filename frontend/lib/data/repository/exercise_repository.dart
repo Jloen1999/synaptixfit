@@ -1,6 +1,7 @@
 import '../../domain/models/result/app_result.dart';
 import '../../domain/models/training/exercise.dart';
 import '../../domain/models/training/exercise_guide.dart';
+import '../../domain/models/training/media_credit.dart';
 import '../../domain/models/training/training_page.dart';
 import '../../domain/repositories/exercise_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
@@ -60,6 +61,10 @@ class ExerciseRepository implements ExerciseRepositoryContract {
   @override
   Future<AppResult<ExerciseTips>> getTips(String exerciseId) =>
       RepositoryErrorHandler.guard(() => _remote.tips(exerciseId));
+
+  @override
+  Future<AppResult<List<MediaCredit>>> getMediaCredits(String exerciseId) =>
+      RepositoryErrorHandler.guard(() => _remote.mediaCredits(exerciseId));
 
   @override
   Future<AppResult<ExerciseNote?>> getNote(String exerciseId) =>

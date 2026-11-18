@@ -4140,7 +4140,7 @@
   "trainingQuickTemplates": "Modelos",
   "trainingQuickExercises": "Exercícios",
   "trainingQuickMore": "Mais",
-  "trainingWeekDoneOfTotal": "{total, plural, =1{{done} de 1 treino} other{{done} de {total} treinos}}",
+  "trainingWeekDoneOfTotal": "{total, plural, =1{{done} de {total} treino} other{{done} de {total} treinos}}",
   "trainingWeekStateDone": "treino feito",
   "trainingWeekStatePlanned": "toca treinar",
   "trainingWeekStateFree": "sem treino",
@@ -4157,5 +4157,16 @@
   "trainingFirstRoutineHint": "Começa com um modelo: já traz os exercícios, as séries e com quantos quilos começar.",
   "trainingCreateOwnRoutine": "Ou cria a tua",
   "trainingWeekEmpty": "Ainda não treinaste esta semana.",
-  "trainingWeekOpenWorkout": "Ver treino"
+  "trainingWeekOpenWorkout": "Ver treino",
+  "trainingMediaCreditPhoto": "Foto: {who}",
+  "trainingMediaCreditVideo": "Vídeo: {who}",
+  "trainingMediaCreditsSpoken": "Créditos: {line}",
+  "trainingMediaCreditsOpen": "Ver de onde vêm",
+  "trainingMediaCreditsTitle": "Créditos",
+  "trainingMediaCreditsIntro": "Os autores partilham-nas para que qualquer pessoa as use, desde que sejam citados.",
+  "trainingMediaCreditLicense": "Licença livre: {license}",
+  "trainingMediaCreditSeeLicense": "Ver licença",
+  "trainingMediaCreditSeeWork": "Ver original",
+  "trainingMediaCreditsOpensBrowser": "Abre-se no navegador",
+  "trainingMediaCreditOpenFailed": "Não foi possível abrir a ligação."
 }

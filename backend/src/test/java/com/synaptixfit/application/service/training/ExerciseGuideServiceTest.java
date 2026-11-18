@@ -8,6 +8,7 @@ import com.synaptixfit.domain.exception.training.ExerciseNotFoundException;
 import com.synaptixfit.domain.model.training.Exercise;
 import com.synaptixfit.domain.model.training.ExerciseNote;
 import com.synaptixfit.domain.model.training.ExerciseTips;
+import com.synaptixfit.domain.model.training.MediaCredit;
 import com.synaptixfit.domain.port.output.training.ExerciseNoteRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseTipsRepositoryPort;
 import java.time.Clock;
@@ -21,7 +22,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** «Las claves», «Errores comunes» y la nota propia de un ejercicio (ADR 0031). */
+/** «Las claves», «Errores comunes», la nota propia de un ejercicio (ADR 0031) y el crédito de sus medios (ADR 0056). */
 class ExerciseGuideServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-11-04T10:00:00Z");
@@ -31,6 +32,7 @@ class ExerciseGuideServiceTest {
     private final TrainingFakes.Exercises exercises = new TrainingFakes.Exercises();
     private final Map<String, ExerciseTips> tips = new HashMap<>();
     private final Map<String, ExerciseNote> notes = new HashMap<>();
+    private final Map<UUID, List<MediaCredit>> credits = new HashMap<>();
     private ExerciseGuideService service;
     private Exercise bench;
 
@@ -44,7 +46,8 @@ class ExerciseGuideServiceTest {
             public void save(UUID userId, ExerciseNote note) { notes.put(userId + "/" + note.exerciseId(), note); }
             public void delete(UUID userId, UUID exerciseId) { notes.remove(userId + "/" + exerciseId); }
         };
-        service = new ExerciseGuideService(exercises, tipsPort, notesPort, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new ExerciseGuideService(exercises, tipsPort, notesPort,
+                id -> credits.getOrDefault(id, List.of()), Clock.fixed(NOW, ZoneOffset.UTC));
         bench = exercises.add(TrainingFakes.strength("Press de banca", "Pectoral mayor"));
     }
 
@@ -62,6 +65,19 @@ class ExerciseGuideServiceTest {
     void anExerciseWithoutTipsReturnsEmptyListsAndAnUnknownOneIsNotFound() {
         assertThat(service.tips(bench.id(), "es").isEmpty()).isTrue();
         assertThatThrownBy(() -> service.tips(UUID.randomUUID(), "es")).isInstanceOf(ExerciseNotFoundException.class);
+    }
+
+    @Test
+    void mediaCreditsOfAnExerciseAndNoneForTheOriginalCatalog() {
+        MediaCredit photo = new MediaCredit(MediaCredit.Kind.PHOTO, "wger", "CC BY-SA 3.0",
+                "https://creativecommons.org/licenses/by-sa/3.0/", "Everkinetic", null);
+        credits.put(bench.id(), List.of(photo));
+
+        assertThat(service.mediaCredits(bench.id())).containsExactly(photo);
+        Exercise original = exercises.add(TrainingFakes.strength("Sentadilla", "Cuádriceps"));
+        assertThat(service.mediaCredits(original.id())).isEmpty();
+        assertThatThrownBy(() -> service.mediaCredits(UUID.randomUUID()))
+                .isInstanceOf(ExerciseNotFoundException.class);
     }
 
     @Test

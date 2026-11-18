@@ -2,23 +2,29 @@ package com.synaptixfit.application.service.training;
 
 import com.synaptixfit.application.port.input.training.GetExerciseNoteUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseTipsUseCase;
+import com.synaptixfit.application.port.input.training.ListExerciseMediaCreditsUseCase;
 import com.synaptixfit.application.port.input.training.SaveExerciseNoteUseCase;
 import com.synaptixfit.domain.exception.training.ExerciseNotFoundException;
 import com.synaptixfit.domain.model.training.Exercise;
 import com.synaptixfit.domain.model.training.ExerciseNote;
 import com.synaptixfit.domain.model.training.ExerciseTips;
+import com.synaptixfit.domain.model.training.MediaCredit;
+import com.synaptixfit.domain.port.output.training.ExerciseMediaCreditRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseNoteRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseTipsRepositoryPort;
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Guía de un ejercicio (ADR 0031): sus consejos del catálogo y la nota propia de cada persona. Usa
- * {@link ExerciseTipsRepositoryPort} y {@link ExerciseNoteRepositoryPort}; solo con ejercicios activos.
+ * Guía de un ejercicio (ADR 0031): sus consejos del catálogo, la nota propia de cada persona y el crédito de su foto
+ * y su vídeo (ADR 0056). Usa {@link ExerciseTipsRepositoryPort}, {@link ExerciseNoteRepositoryPort} y
+ * {@link ExerciseMediaCreditRepositoryPort}; solo con ejercicios activos.
  */
-public class ExerciseGuideService implements GetExerciseTipsUseCase, GetExerciseNoteUseCase, SaveExerciseNoteUseCase {
+public class ExerciseGuideService implements GetExerciseTipsUseCase, GetExerciseNoteUseCase, SaveExerciseNoteUseCase,
+        ListExerciseMediaCreditsUseCase {
 
     /** Idioma canónico del catálogo: si no hay consejos en el pedido, se enseñan en este. */
     static final String FALLBACK_LANGUAGE = "es";
@@ -26,14 +32,23 @@ public class ExerciseGuideService implements GetExerciseTipsUseCase, GetExercise
     private final ExerciseRepositoryPort exercises;
     private final ExerciseTipsRepositoryPort tips;
     private final ExerciseNoteRepositoryPort notes;
+    private final ExerciseMediaCreditRepositoryPort credits;
     private final Clock clock;
 
     public ExerciseGuideService(ExerciseRepositoryPort exercises, ExerciseTipsRepositoryPort tips,
-                                ExerciseNoteRepositoryPort notes, Clock clock) {
+                                ExerciseNoteRepositoryPort notes, ExerciseMediaCreditRepositoryPort credits,
+                                Clock clock) {
         this.exercises = exercises;
         this.tips = tips;
         this.notes = notes;
+        this.credits = credits;
         this.clock = clock;
+    }
+
+    @Override
+    public List<MediaCredit> mediaCredits(UUID exerciseId) {
+        active(exerciseId);
+        return credits.findByExercise(exerciseId);
     }
 
     @Override
