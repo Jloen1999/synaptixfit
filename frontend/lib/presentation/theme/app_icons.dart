@@ -49,6 +49,9 @@ abstract final class AppIcons {
   /// Estado «Hecho» (casilla marcada, pastilla o insignia de algo terminado).
   static const IconData done = Icons.check_circle_rounded;
 
+  /// Marca de «todo hecho» dentro de un círculo ya relleno («Tu semana»).
+  static const IconData check = Icons.check_rounded;
+
   /// Estado «Por hacer» (casilla sin marcar); se cambia por [done] al marcar.
   static const IconData todo = Icons.radio_button_unchecked_rounded;
 

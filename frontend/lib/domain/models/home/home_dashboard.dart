@@ -4,9 +4,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../enums/cognitive_level.dart';
 import '../../enums/home_acwr_zone.dart';
 import '../../enums/home_banner_type.dart';
+import '../../enums/home_day_mark.dart';
 import '../../enums/home_day_state.dart';
 import '../../enums/home_event_kind.dart';
 import '../../enums/home_event_type.dart';
+import '../../enums/home_week_state.dart';
 import '../../enums/planner_enums.dart';
 import '../../enums/today_intensity.dart';
 import '../../enums/training_enums.dart';
@@ -40,7 +42,49 @@ abstract class HomeDashboard with _$HomeDashboard {
     /// Resumen de «Tu día» (anillo, lo sin hacer y qué se destaca); lo
     /// calcula el servidor con los mismos eventos que la agenda (ADR 0050).
     @Default(HomeTodaySummary()) HomeTodaySummary todaySummary,
+
+    /// «Tu semana» en una frase (ADR 0059): lo decide el servidor.
+    @Default(HomeWeekSummary()) HomeWeekSummary weekSummary,
+
+    /// Sesión de entreno a medias que hay que guardar o descartar (de otro
+    /// día o abierta más de 6 h: lo decide el servidor); nula si no hay.
+    HomeUnfinishedSession? unfinishedSession,
+
+    /// Lo de ayer que pasó sin marcar, el más reciente primero (ADR 0059).
+    @Default(<HomeTodayEvent>[]) List<HomeTodayEvent> missedEvents,
+
+    /// Solicitudes de amistad recibidas sin responder (icono «Comunidad»).
+    @Default(0) int pendingFriendRequests,
   }) = _HomeDashboard;
+}
+
+/// «Tu semana» en una frase (`weekSummary`, ADR 0059): [done] de [planned]
+/// hechas, [missed] sin hacer y cómo vas ([state]).
+@freezed
+abstract class HomeWeekSummary with _$HomeWeekSummary {
+  const factory HomeWeekSummary({
+    @Default(0) int done,
+    @Default(0) int planned,
+    @Default(0) int missed,
+    @Default(HomeWeekState.noPlan) HomeWeekState state,
+  }) = _HomeWeekSummary;
+}
+
+/// Sesión de entreno a medias (`unfinishedSession`, ADR 0059): qué sesión es,
+/// cuándo empezó y [exercisesDone] de [exercisesTotal] ejercicios (nulo si
+/// es una sesión libre).
+@freezed
+abstract class HomeUnfinishedSession with _$HomeUnfinishedSession {
+  const factory HomeUnfinishedSession({
+    required String sessionId,
+    String? routineName,
+    String? dayName,
+    int? dayNumber,
+    required DateTime startedAt,
+    @Default(0) int exercisesDone,
+    int? exercisesTotal,
+    String? coverImageUrl,
+  }) = _HomeUnfinishedSession;
 }
 
 /// Resumen de «Tu día» (`todaySummary`, ADR 0050): [done] de [total] (sin
@@ -54,6 +98,10 @@ abstract class HomeTodaySummary with _$HomeTodaySummary {
     @Default(0) int missed,
     String? nextEventId,
     @Default(HomeDayState.nothingPlanned) HomeDayState state,
+
+    /// Evento de la fila «ahora o a continuación» de «Tu día» (clases
+    /// incluidas, sin entregas ni días de rutina; ADR 0059).
+    String? spotlightEventId,
   }) = _HomeTodaySummary;
 }
 
@@ -117,6 +165,9 @@ abstract class HomeWeekKpis with _$HomeWeekKpis {
     required int trainingMinutes,
     required double trainingCalories,
     required int studyMinutesCompleted,
+
+    /// Estudio y repaso planificados en la semana («Estudio 5 h de 8 h»).
+    @Default(0) int studyMinutesPlanned,
   }) = _HomeWeekKpis;
 }
 
@@ -194,6 +245,9 @@ abstract class HomeNextTrainingDay with _$HomeNextTrainingDay {
 
     /// Duración prevista del día («≈ 45 min»; 0 si el servidor no la manda).
     @Default(0) int estimatedMinutes,
+
+    /// Toca hoy o va con retraso: sale en «Tu día» y no aparte (ADR 0059).
+    @Default(false) bool dueToday,
   }) = _HomeNextTrainingDay;
 
   const HomeNextTrainingDay._();
@@ -227,6 +281,11 @@ abstract class HomePlanDay with _$HomePlanDay {
 
     /// Bloques del día que pasaron sin hacerse.
     @Default(0) int missed,
+
+    /// Marca del círculo (la decide el servidor, ADR 0059) y lo que queda
+    /// por hacer ese día.
+    @Default(HomeDayMark.none) HomeDayMark mark,
+    @Default(0) int pending,
   }) = _HomePlanDay;
 }
 
@@ -257,6 +316,10 @@ abstract class HomeTodayEvent with _$HomeTodayEvent {
     /// Al marcarlo se pregunta el esfuerzo (registra carga física); lo dice
     /// el servidor, igual que en el planificador.
     @Default(false) bool tracksPhysicalLoad,
+
+    /// Aula o lugar (el del evento o el habitual de su asignatura) y profesor.
+    String? place,
+    String? teacher,
   }) = _HomeTodayEvent;
 }
 

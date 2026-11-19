@@ -61,13 +61,35 @@ public class SessionLabelJdbcAdapter implements SessionLabelQueryPort {
         Map<UUID, String> dayCovers = dayCovers(rows.stream().map(Row::dayId).filter(id -> id != null)
                 .collect(Collectors.toSet()));
         Map<UUID, String> setCovers = firstSetCovers(sessionIds);
+        Map<UUID, Integer> counts = exerciseCounts(rows.stream().map(Row::dayId).filter(id -> id != null)
+                .collect(Collectors.toSet()));
         Map<UUID, SessionLabel> result = new HashMap<>();
         for (Row row : rows) {
             SessionLabel l = row.label();
             result.put(l.sessionId(), l.withCover(row.dayId() == null ? null : dayCovers.get(row.dayId()),
-                    setCovers.get(l.sessionId())));
+                    setCovers.get(l.sessionId())).withExerciseCount(row.dayId() == null ? null
+                    : counts.getOrDefault(row.dayId(), 0)));
         }
         return result;
+    }
+
+    /** Ejercicios de cada día de rutina («4 de 6 ejercicios» de una sesión a medias). */
+    private Map<UUID, Integer> exerciseCounts(Collection<UUID> dayIds) {
+        if (dayIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Integer> counts = new HashMap<>();
+        jdbc.sql("""
+                        SELECT sel.dia_id, count(*) AS total
+                        FROM seleccion_de_ejercicios sel
+                        WHERE sel.dia_id IN (:ids)
+                        GROUP BY sel.dia_id
+                        """)
+                .param("ids", dayIds)
+                .query((rs, n) -> Map.entry(rs.getObject("dia_id", UUID.class), rs.getInt("total")))
+                .list()
+                .forEach(e -> counts.put(e.getKey(), e.getValue()));
+        return counts;
     }
 
     /** Foto del primer ejercicio de cada día (la regla de {@code RoutineDay.coverExercise}). */

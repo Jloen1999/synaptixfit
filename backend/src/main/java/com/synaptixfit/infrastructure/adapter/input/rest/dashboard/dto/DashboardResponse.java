@@ -8,6 +8,7 @@ import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChalleng
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
 import com.synaptixfit.domain.model.dashboard.SmartBanner;
 import com.synaptixfit.domain.model.dashboard.TodaySummary;
+import com.synaptixfit.domain.model.dashboard.WeekSummary;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.Modality;
@@ -27,6 +28,9 @@ import java.util.UUID;
 /**
  * Resumen del inicio. Los tipos de la BD se exponen como enums en UPPER_SNAKE_CASE (ver {@link #code}).
  * {@code todayIntensity}: «Hoy toca: suave / normal / fuerte» (EASY, NORMAL, HARD); nulo si hoy no hay entreno.
+ * ADR 0059: {@code weekSummary} («Tu semana» en una frase), {@code unfinishedSession} (sesión a medias que hay que
+ * guardar o descartar; nula si no hay), {@code missedEvents} (lo de ayer sin marcar, el más reciente primero) y
+ * {@code pendingFriendRequests} (solicitudes de amistad sin responder).
  */
 public record DashboardResponse(GreetingResponse greeting, TodayResponse today, WeekResponse week,
                                 CognitiveStateResponse cognitive, CrossRegulationResponse crossRegulation,
@@ -34,7 +38,9 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                                 List<ChallengeResponse> activeChallenges, List<PlanDayResponse> planWeek,
                                 List<TodayEventResponse> todayEvents, BannerResponse banner,
                                 NextDeadlineResponse nextDeadline, TodayIntensity todayIntensity,
-                                TodaySummaryResponse todaySummary) {
+                                TodaySummaryResponse todaySummary, WeekSummaryResponse weekSummary,
+                                UnfinishedSessionResponse unfinishedSession, List<TodayEventResponse> missedEvents,
+                                int pendingFriendRequests) {
 
     private static final Map<String, String> CODES = Map.ofEntries(
             // tipo_actividad de horarios_academicos
@@ -62,24 +68,27 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
 
     @Schema(name = "DashboardWeekResponse")
 
+    /** {@code studyMinutesPlanned}: estudio y repaso planificados en la semana («Estudio 5 h de 8 h»). */
     public record WeekResponse(LocalDate weekStart, int sessions, Integer plannedSessions, Integer remainingSessions,
-                               int trainingMinutes, double trainingCalories, int studyMinutesCompleted) {
+                               int trainingMinutes, double trainingCalories, int studyMinutesCompleted,
+                               int studyMinutesPlanned) {
     }
 
     /**
      * Próximo entrenamiento (regla única {@code RoutineSchedule}). {@code status}: PENDING o IN_PROGRESS;
      * {@code dayName} nulo si el día no tiene nombre propio (el cliente muestra el día de la semana de
      * {@code dayNumber}); {@code staleSessionId}: sesión abandonada de ese día que hay que cerrar antes;
-     * {@code estimatedMinutes}: duración prevista del día («≈ 45 min»).
+     * {@code estimatedMinutes}: duración prevista del día («≈ 45 min»); {@code dueToday}: toca hoy o va con retraso
+     * (sale en «Tu día» y no como «Próximo entreno», ADR 0059).
      */
     public record NextTrainingDayResponse(UUID routineId, String routineName, UUID weekId, int weekNumber,
                                           int totalWeeks, UUID dayId, int dayNumber, String dayName, String status,
                                           LocalDate scheduledDate, boolean overdue, int sessionOfWeek,
                                           int sessionsInWeek, UUID staleSessionId, int exerciseCount,
                                           int totalDays, int completedDays, int skippedDays, String coverImageUrl,
-                                          Modality coverModality, int estimatedMinutes) {
+                                          Modality coverModality, int estimatedMinutes, boolean dueToday) {
 
-        static NextTrainingDayResponse from(PendingDay p) {
+        static NextTrainingDayResponse from(PendingDay p, boolean dueToday) {
             if (p == null) {
                 return null;
             }
@@ -91,7 +100,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                     p.routine().completedDays(), p.routine().skippedDays(),
                     cover.map(ExerciseRef::stillImageUrl).orElse(null),
                     cover.map(ExerciseRef::modality).orElse(null),
-                    p.day().estimatedMinutes());
+                    p.day().estimatedMinutes(), dueToday);
         }
     }
 
@@ -106,7 +115,30 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
         }
     }
 
-    public record PlanDayResponse(LocalDate date, int planned, int completed, int missed) {
+    /**
+     * {@code mark}: NONE, DONE, PARTIAL, MISSED o PENDING (la marca del círculo, ADR 0059); {@code pending}: lo que
+     * queda por hacer ese día.
+     */
+    public record PlanDayResponse(LocalDate date, int planned, int completed, int missed, Dashboard.DayMark mark,
+                                  int pending) {
+    }
+
+    /** «Tu semana»: {@code done} de {@code planned} hechas, {@code missed} sin hacer y {@code state}. */
+    public record WeekSummaryResponse(int done, int planned, int missed, WeekSummary.State state) {
+    }
+
+    /**
+     * Sesión a medias: cuándo empezó y {@code exercisesDone} de {@code exercisesTotal} ejercicios (nulo si es
+     * libre). {@code routineName}/{@code dayName}/{@code dayNumber} nulos en una sesión libre.
+     */
+    public record UnfinishedSessionResponse(UUID sessionId, String routineName, String dayName, Integer dayNumber,
+                                            Instant startedAt, int exercisesDone, Integer exercisesTotal,
+                                            String coverImageUrl) {
+
+        static UnfinishedSessionResponse from(Dashboard.UnfinishedSession u) {
+            return u == null ? null : new UnfinishedSessionResponse(u.sessionId(), u.routineName(), u.dayName(),
+                    u.dayNumber(), u.startedAt(), u.exercisesDone(), u.exercisesTotal(), u.coverImageUrl());
+        }
     }
 
     /**
@@ -117,11 +149,19 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
      * {@code routineId}/{@code routineDayId}: día de rutina del bloque de deporte («Entrenar» empieza ese).
      * {@code tasks}: tareas de reto que avanzan al marcar este evento o esta entrega (ADR 0035).
      * {@code tracksPhysicalLoad}: al marcarlo se pide el esfuerzo, como en el planificador.
+     * {@code place}: aula o lugar (el del evento o el habitual de su asignatura); {@code teacher}: profesor.
      */
     public record TodayEventResponse(Dashboard.TodayEvent.Kind kind, UUID id, String title, String type, Instant start,
                                      Instant end, boolean completed, String subjectName, ItemTimeStatus status,
                                      UUID routineId, UUID routineDayId, List<TaskMentionResponse> tasks,
-                                     boolean tracksPhysicalLoad) {
+                                     boolean tracksPhysicalLoad, String place, String teacher) {
+
+        static TodayEventResponse from(Dashboard.TodayEvent e) {
+            return new TodayEventResponse(e.kind(), e.id(), e.title(), code(e.type()), e.start(), e.end(),
+                    e.completed(), e.subjectName(), e.status(), e.routineId(), e.routineDayId(),
+                    e.tasks().stream().map(TaskMentionResponse::from).toList(), e.tracksPhysicalLoad(), e.place(),
+                    e.teacher());
+        }
     }
 
     /** Tarea de reto que avanza con un evento; {@code title} nulo: el propio reto (sin tareas, va con su entrega). */
@@ -150,11 +190,14 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
      * Resumen de «Tu día» (ADR 0050): el anillo ({@code done} de {@code total}, sin clases y con las entregas de hoy),
      * lo que quedó sin hacer ({@code missed}), el evento que se destaca ({@code nextEventId}, uno de {@code todayEvents};
      * nulo si no queda nada) y {@code state}: NOTHING_PLANNED, PENDING, MISSED_LEFT o ALL_DONE.
+     * {@code spotlightEventId}: el evento de la fila «ahora o a continuación» (clases incluidas, ADR 0059); nulo si no hay.
      */
-    public record TodaySummaryResponse(int done, int total, int missed, UUID nextEventId, TodaySummary.State state) {
+    public record TodaySummaryResponse(int done, int total, int missed, UUID nextEventId, TodaySummary.State state,
+                                       UUID spotlightEventId) {
 
-        static TodaySummaryResponse from(TodaySummary s) {
-            return new TodaySummaryResponse(s.done(), s.total(), s.missed(), s.nextEventId(), s.state());
+        static TodaySummaryResponse from(TodaySummary s, UUID spotlightEventId) {
+            return new TodaySummaryResponse(s.done(), s.total(), s.missed(), s.nextEventId(), s.state(),
+                    spotlightEventId);
         }
     }
 
@@ -173,21 +216,28 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                         round(t.totalCalories(), 1), t.sessions(), t.trainingMinutes(), t.studyMinutesCompleted(),
                         t.studyMinutesPlanned(), round(t.physicalLoad(), 2)),
                 new WeekResponse(w.weekStart(), w.sessions(), w.plannedSessions(), w.remainingSessions(),
-                        w.trainingMinutes(), round(w.trainingCalories(), 1), w.studyMinutesCompleted()),
+                        w.trainingMinutes(), round(w.trainingCalories(), 1), w.studyMinutesCompleted(),
+                        d.extras().studyMinutesPlannedWeek()),
                 CognitiveStateResponse.from(d.cognitive()),
                 CrossRegulationResponse.from(d.crossRegulation()),
                 WellbeingResponse.from(d.wellbeing()),
-                NextTrainingDayResponse.from(d.nextTrainingDay()),
+                NextTrainingDayResponse.from(d.nextTrainingDay(), d.extras().trainingDueToday()),
                 d.activeChallenges().stream().map(ChallengeResponse::from).toList(),
                 d.planWeek().stream()
-                        .map(p -> new PlanDayResponse(p.date(), p.planned(), p.completed(), p.missed())).toList(),
-                d.todayEvents().stream().map(e -> new TodayEventResponse(e.kind(), e.id(), e.title(), code(e.type()),
-                        e.start(), e.end(), e.completed(), e.subjectName(), e.status(), e.routineId(),
-                        e.routineDayId(), e.tasks().stream().map(TaskMentionResponse::from).toList(),
-                        e.tracksPhysicalLoad())).toList(),
+                        .map(p -> new PlanDayResponse(p.date(), p.planned(), p.completed(), p.missed(), p.mark(),
+                                p.pending())).toList(),
+                d.todayEvents().stream().map(TodayEventResponse::from).toList(),
                 new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()),
                 NextDeadlineResponse.from(d.nextDeadline()),
                 d.todayIntensity(),
-                TodaySummaryResponse.from(d.todaySummary()));
+                TodaySummaryResponse.from(d.todaySummary(), d.spotlightEventId()),
+                weekSummary(d.weekSummary()),
+                UnfinishedSessionResponse.from(d.extras().unfinishedSession()),
+                d.extras().missedEvents().stream().map(TodayEventResponse::from).toList(),
+                d.extras().pendingFriendRequests());
+    }
+
+    private static WeekSummaryResponse weekSummary(WeekSummary w) {
+        return new WeekSummaryResponse(w.done(), w.planned(), w.missed(), w.state());
     }
 }

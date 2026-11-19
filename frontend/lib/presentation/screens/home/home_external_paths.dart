@@ -11,6 +11,13 @@ abstract final class HomeExternalPaths {
   static const permissionsIntro = '/permissions-intro';
   static const notifications = '/notifications';
   static const community = '/social';
+
+  /// Amigos y, con solicitudes pendientes, su pestaña de recibidas (icono
+  /// «Comunidad» de la cabecera, ADR 0059).
+  static const friends = '/social/friends';
+  static const friendRequests = '/social/friends/requests';
+  static String communityFor(int pendingRequests) =>
+      pendingRequests > 0 ? friendRequests : friends;
   static const admin = '/admin';
 
   /// Pestaña Calendario (`go`).

@@ -5,9 +5,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../domain/enums/cognitive_level.dart';
 import '../../../../domain/enums/home_acwr_zone.dart';
 import '../../../../domain/enums/home_banner_type.dart';
+import '../../../../domain/enums/home_day_mark.dart';
 import '../../../../domain/enums/home_day_state.dart';
 import '../../../../domain/enums/home_event_kind.dart';
 import '../../../../domain/enums/home_event_type.dart';
+import '../../../../domain/enums/home_week_state.dart';
 import '../../../../domain/enums/planner_enums.dart';
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
@@ -36,6 +38,10 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     HomeNextDeadlineDto? nextDeadline,
     String? todayIntensity,
     HomeTodaySummaryDto? todaySummary,
+    HomeWeekSummaryDto? weekSummary,
+    HomeUnfinishedSessionDto? unfinishedSession,
+    @Default(<HomeTodayEventDto>[]) List<HomeTodayEventDto> missedEvents,
+    @Default(0) int pendingFriendRequests,
   }) = _HomeDashboardDto;
 
   const HomeDashboardDto._();
@@ -59,6 +65,66 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     nextDeadline: nextDeadline?.toDomain(),
     todayIntensity: TodayIntensity.fromApi(todayIntensity),
     todaySummary: (todaySummary ?? const HomeTodaySummaryDto()).toDomain(),
+    weekSummary: (weekSummary ?? const HomeWeekSummaryDto()).toDomain(),
+    unfinishedSession: unfinishedSession?.toDomain(),
+    missedEvents: missedEvents.map((e) => e.toDomain()).toList(),
+    pendingFriendRequests: pendingFriendRequests,
+  );
+}
+
+/// «Tu semana» en una frase (`weekSummary`, ADR 0059).
+@freezed
+abstract class HomeWeekSummaryDto with _$HomeWeekSummaryDto {
+  const factory HomeWeekSummaryDto({
+    @Default(0) int done,
+    @Default(0) int planned,
+    @Default(0) int missed,
+    String? state,
+  }) = _HomeWeekSummaryDto;
+
+  const HomeWeekSummaryDto._();
+
+  factory HomeWeekSummaryDto.fromJson(Map<String, dynamic> json) =>
+      _$HomeWeekSummaryDtoFromJson(json);
+
+  HomeWeekSummary toDomain() => HomeWeekSummary(
+    done: done,
+    planned: planned,
+    missed: missed,
+    state: HomeWeekState.fromApi(state),
+  );
+}
+
+/// Sesión de entreno a medias (`unfinishedSession`, ADR 0059).
+@freezed
+abstract class HomeUnfinishedSessionDto with _$HomeUnfinishedSessionDto {
+  const factory HomeUnfinishedSessionDto({
+    required String sessionId,
+    String? routineName,
+    String? dayName,
+    int? dayNumber,
+    required DateTime startedAt,
+    @Default(0) int exercisesDone,
+    int? exercisesTotal,
+    String? coverImageUrl,
+  }) = _HomeUnfinishedSessionDto;
+
+  const HomeUnfinishedSessionDto._();
+
+  factory HomeUnfinishedSessionDto.fromJson(Map<String, dynamic> json) =>
+      _$HomeUnfinishedSessionDtoFromJson(json);
+
+  HomeUnfinishedSession toDomain() => HomeUnfinishedSession(
+    sessionId: sessionId,
+    routineName: routineName,
+    dayName: (dayName?.trim().isEmpty ?? true) ? null : dayName,
+    dayNumber: dayNumber,
+    startedAt: startedAt.toLocal(),
+    exercisesDone: exercisesDone,
+    exercisesTotal: exercisesTotal,
+    coverImageUrl: (coverImageUrl?.trim().isEmpty ?? true)
+        ? null
+        : coverImageUrl,
   );
 }
 
@@ -71,6 +137,7 @@ abstract class HomeTodaySummaryDto with _$HomeTodaySummaryDto {
     @Default(0) int missed,
     String? nextEventId,
     String? state,
+    String? spotlightEventId,
   }) = _HomeTodaySummaryDto;
 
   const HomeTodaySummaryDto._();
@@ -84,6 +151,7 @@ abstract class HomeTodaySummaryDto with _$HomeTodaySummaryDto {
     missed: missed,
     nextEventId: nextEventId,
     state: HomeDayState.fromApi(state),
+    spotlightEventId: spotlightEventId,
   );
 }
 
@@ -176,6 +244,7 @@ abstract class HomeWeekDto with _$HomeWeekDto {
     @Default(0) int trainingMinutes,
     @Default(0) double trainingCalories,
     @Default(0) int studyMinutesCompleted,
+    @Default(0) int studyMinutesPlanned,
   }) = _HomeWeekDto;
 
   const HomeWeekDto._();
@@ -189,6 +258,7 @@ abstract class HomeWeekDto with _$HomeWeekDto {
     trainingMinutes: trainingMinutes,
     trainingCalories: trainingCalories,
     studyMinutesCompleted: studyMinutesCompleted,
+    studyMinutesPlanned: studyMinutesPlanned,
   );
 }
 
@@ -294,6 +364,7 @@ abstract class HomeNextTrainingDayDto with _$HomeNextTrainingDayDto {
     String? coverImageUrl,
     String? coverModality,
     @Default(0) int estimatedMinutes,
+    @Default(false) bool dueToday,
   }) = _HomeNextTrainingDayDto;
 
   const HomeNextTrainingDayDto._();
@@ -326,7 +397,14 @@ abstract class HomeNextTrainingDayDto with _$HomeNextTrainingDayDto {
         ? null
         : Modality.fromApi(coverModality),
     estimatedMinutes: estimatedMinutes,
+    dueToday: dueToday,
   );
+}
+
+/// Texto opcional de la API, sin espacios sobrantes; vacío, nulo.
+String? _text(String? value) {
+  final trimmed = value?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
 }
 
 /// Fecha sin hora de la API (`yyyy-MM-dd`) como medianoche local.
@@ -370,6 +448,8 @@ abstract class HomePlanDayDto with _$HomePlanDayDto {
     @Default(0) int planned,
     @Default(0) int completed,
     @Default(0) int missed,
+    String? mark,
+    @Default(0) int pending,
   }) = _HomePlanDayDto;
 
   const HomePlanDayDto._();
@@ -382,6 +462,8 @@ abstract class HomePlanDayDto with _$HomePlanDayDto {
     planned: planned,
     completed: completed,
     missed: missed,
+    mark: HomeDayMark.fromApi(mark),
+    pending: pending,
   );
 }
 
@@ -401,6 +483,8 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     String? routineDayId,
     @Default(<HomeTaskMentionDto>[]) List<HomeTaskMentionDto> tasks,
     @Default(false) bool tracksPhysicalLoad,
+    String? place,
+    String? teacher,
   }) = _HomeTodayEventDto;
 
   const HomeTodayEventDto._();
@@ -422,6 +506,8 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     routineDayId: routineDayId,
     tasks: tasks.map((t) => t.toDomain()).toList(),
     tracksPhysicalLoad: tracksPhysicalLoad,
+    place: _text(place),
+    teacher: _text(teacher),
   );
 }
 

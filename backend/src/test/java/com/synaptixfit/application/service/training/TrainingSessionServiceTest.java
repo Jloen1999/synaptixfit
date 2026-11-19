@@ -436,6 +436,23 @@ class TrainingSessionServiceTest {
                 e -> assertThat(e.date()).isEqualTo(LocalDate.of(2026, 10, 5)));
     }
 
+    @Test
+    void trainingPastMidnightKeepsGoingAndCountsOnTheDayItStarted() {
+        // Empieza a las 22:00; a las 23:00 sigue en curso y «Empezar» la retoma.
+        clock.advance(java.time.Duration.ofHours(4));
+        TrainingSession late = service.start(USER, routine.id(), day1.id());
+        clock.advance(java.time.Duration.ofHours(1));
+        assertThat(service.start(USER, routine.id(), day1.id()).id()).isEqualTo(late.id());
+
+        // A la 01:00 lleva 3 h: cambió el día, pero sigue en curso; solo a partir de 6 h es «a medias» (ADR 0059).
+        clock.advance(java.time.Duration.ofHours(2));
+        assertThat(service.start(USER, routine.id(), day1.id()).id()).isEqualTo(late.id());
+
+        // Guardada, cuenta en el día en que se hizo.
+        var result = service.finish(new FinishTrainingSessionUseCase.Command(USER, late.id(), 3600, 6, null, null));
+        assertThat(result.session().completedOn(ZoneOffset.UTC)).isEqualTo(LocalDate.of(2026, 10, 5));
+    }
+
     // ------------------------------------------------------------------ ADR 0031
 
     @Test

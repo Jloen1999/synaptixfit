@@ -1,3 +1,4 @@
+import 'package:synaptixfit/domain/enums/home_day_mark.dart';
 import 'package:synaptixfit/domain/enums/home_day_state.dart';
 import 'package:synaptixfit/domain/enums/home_acwr_zone.dart';
 import 'package:synaptixfit/domain/enums/home_banner_type.dart';
@@ -69,6 +70,13 @@ final homeDashboardFixture = HomeDashboard(
         date: DateTime(2026, 10, 12 + i),
         planned: i < 5 ? 3 : 0,
         completed: i < 3 ? 2 : 0,
+        // Las marcas las da el servidor (ADR 0059).
+        mark: i < 3
+            ? HomeDayMark.partial
+            : i < 5
+            ? HomeDayMark.pending
+            : HomeDayMark.none,
+        pending: i < 3 ? 1 : (i < 5 ? 3 : 0),
       ),
   ],
   todayEvents: [
@@ -96,6 +104,7 @@ final homeDashboardFixture = HomeDashboard(
     done: 1,
     total: 2,
     nextEventId: 'e1',
+    spotlightEventId: 'e1',
     state: HomeDayState.pending,
   ),
   banner: const HomeSmartBanner(

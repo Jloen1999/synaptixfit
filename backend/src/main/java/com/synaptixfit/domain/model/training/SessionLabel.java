@@ -7,12 +7,23 @@ import java.util.UUID;
  * día no tiene nombre se queda nulo y el cliente muestra «Día N»; en sesiones libres o si la rutina
  * se borró, todo es nulo. {@code coverImageUrl}: foto de su tarjeta (ADR 0042), la del primer ejercicio del día
  * (la misma que la del próximo entreno) o, en una sesión libre, la del primer ejercicio apuntado; nula si no hay.
+ * {@code exerciseCount}: ejercicios del día de rutina («4 de 6 ejercicios»); nulo en sesiones libres.
  */
 public record SessionLabel(UUID sessionId, String routineName, String dayName, Integer dayNumber,
-                           Integer weekNumber, String coverImageUrl) {
+                           Integer weekNumber, String coverImageUrl, Integer exerciseCount) {
 
     public SessionLabel(UUID sessionId, String routineName, String dayName, Integer dayNumber, Integer weekNumber) {
-        this(sessionId, routineName, dayName, dayNumber, weekNumber, null);
+        this(sessionId, routineName, dayName, dayNumber, weekNumber, null, null);
+    }
+
+    public SessionLabel(UUID sessionId, String routineName, String dayName, Integer dayNumber, Integer weekNumber,
+                        String coverImageUrl) {
+        this(sessionId, routineName, dayName, dayNumber, weekNumber, coverImageUrl, null);
+    }
+
+    /** La misma etiqueta con los ejercicios de su día. */
+    public SessionLabel withExerciseCount(Integer count) {
+        return new SessionLabel(sessionId, routineName, dayName, dayNumber, weekNumber, coverImageUrl, count);
     }
 
     /**
@@ -25,6 +36,6 @@ public record SessionLabel(UUID sessionId, String routineName, String dayName, I
     public SessionLabel withCover(String dayCover, String firstSetCover) {
         String cover = dayCover != null && !dayCover.isBlank() ? dayCover
                 : firstSetCover != null && !firstSetCover.isBlank() ? firstSetCover : null;
-        return new SessionLabel(sessionId, routineName, dayName, dayNumber, weekNumber, cover);
+        return new SessionLabel(sessionId, routineName, dayName, dayNumber, weekNumber, cover, exerciseCount);
     }
 }

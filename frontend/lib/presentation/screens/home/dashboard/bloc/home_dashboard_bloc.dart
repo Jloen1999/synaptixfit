@@ -12,19 +12,26 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/home/home_dashboard.dart';
 import '../../../../../domain/models/home/home_due_review.dart';
 import '../../../../../domain/models/planner/weekly_planning.dart';
+import '../../../../../domain/models/result/app_result.dart';
+import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/use_cases/home/get_home_dashboard_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_due_reviews_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_onboarding_status_use_case.dart';
 import '../../../../../domain/use_cases/profile/is_permissions_intro_pending_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_unread_count_use_case.dart';
+import '../../../../../domain/use_cases/planner/delete_block_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_timeline_use_case.dart';
-import '../../../../../domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
+import '../../../../../domain/use_cases/planner/reschedule_block_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_deadline_completion_use_case.dart';
+import '../../../../../domain/use_cases/training/cancel_session_use_case.dart';
+import '../../../../../domain/use_cases/training/finish_session_use_case.dart';
+import '../../../../../domain/use_cases/training/log_past_session_use_case.dart';
 import '../../../../../domain/use_cases/training/start_session_use_case.dart';
 import '../../home_onboarding_gate.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../mixins/data_change_refresh_mixin.dart';
+import '../../../../mixins/deferred_commit_mixin.dart';
 
 part 'home_dashboard_bloc.freezed.dart';
 part 'home_dashboard_event.dart';
@@ -33,8 +40,13 @@ part 'home_dashboard_state.dart';
 /// Pestaña Inicio: resumen del día, agenda de los próximos días (planificador),
 /// cuenta atrás de la próxima entrega o examen, repasos, campana y onboarding. Se refresca sola con cualquier cambio de
 /// datos; las insignias y el nivel se celebran en el armazón (`AchievementsBloc`).
+/// Cierra lo que quedó a medias (ADR 0059): la sesión de entreno (guardar o
+/// descartar con «Deshacer») y lo de ayer sin marcar (hecho, a otro día o
+/// quitar con «Deshacer», aplazado con [DeferredCommitMixin]).
 class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
-    with DataChangeRefreshMixin<HomeDashboardEvent, HomeDashboardState> {
+    with
+        DataChangeRefreshMixin<HomeDashboardEvent, HomeDashboardState>,
+        DeferredCommitMixin<HomeDashboardState> {
   HomeDashboardBloc({
     required this._getDashboard,
     required this._getDueReviews,
@@ -47,9 +59,13 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     required this._watchChanges,
     required this._startSession,
     required this._setBlockCompletion,
-    required this._rescheduleToNextSlot,
     required this._setDeadlineCompletion,
     required this._permissionsIntroPending,
+    required this._finishSession,
+    required this._cancelSession,
+    required this._logPastSession,
+    required this._rescheduleBlock,
+    required this._deleteBlock,
     this._clock = DateTime.now,
   }) : super(const HomeDashboardState()) {
     on<HomeDashboardStarted>(_onStarted);
@@ -65,9 +81,36 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     );
     on<HomeDashboardTrainingStarted>(_onTrainingStarted);
     on<HomeDashboardSetupSnoozed>(_onSetupSnoozed);
-    on<HomeDashboardBannerBlockCompleted>(_onBannerBlockCompleted);
-    on<HomeDashboardBannerBlockRescheduled>(_onBannerBlockRescheduled);
     on<HomeDashboardCompletionSet>(_onCompletionSet);
+    on<HomeDashboardUnfinishedSaved>(_onUnfinishedSaved);
+    on<HomeDashboardUnfinishedDiscarded>(
+      (event, emit) => _defer(
+        emit,
+        HomeDeferred.session(event.sessionId),
+        HomeActionNotice.sessionDiscarded,
+      ),
+    );
+    on<HomeDashboardMissedLogged>(_onMissedLogged);
+    on<HomeDashboardMissedMoved>(_onMissedMoved);
+    on<HomeDashboardMissedRemoved>(
+      (event, emit) => _defer(
+        emit,
+        HomeDeferred.block(event.eventId),
+        HomeActionNotice.removed,
+      ),
+    );
+    on<HomeDashboardDeferredUndone>((event, emit) {
+      if (!release(event.key)) return;
+      emit(
+        state.copyWith(
+          deferredKeys: {...state.deferredKeys}..remove(event.key),
+        ),
+      );
+    });
+    on<HomeDashboardDeferredCommitted>(_onDeferredCommitted);
+    on<HomeDashboardActionNoticeHandled>(
+      (_, emit) => emit(state.copyWith(actionNotice: null)),
+    );
     on<HomeDashboardUndoExpired>((event, emit) {
       if (state.lastUndoable?.id == event.id) {
         emit(state.copyWith(lastUndoable: null));
@@ -89,12 +132,14 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     on<HomeDashboardCompletionNoticeHandled>(
       (_, emit) => emit(state.copyWith(completionNotice: null)),
     );
-    on<HomeDashboardBannerNoticeHandled>(
-      (_, emit) => emit(state.copyWith(bannerNotice: null)),
-    );
     on<HomeDashboardTrainingHandled>(
-      (_, emit) =>
-          emit(state.copyWith(openSessionId: null, trainingError: null)),
+      (_, emit) => emit(
+        state.copyWith(
+          openSessionId: null,
+          trainingError: null,
+          showUnfinished: false,
+        ),
+      ),
     );
   }
 
@@ -116,29 +161,118 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
   final WatchDataChangesUseCaseContract _watchChanges;
   final StartSessionUseCaseContract _startSession;
   final SetBlockCompletionUseCaseContract _setBlockCompletion;
-  final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleToNextSlot;
   final SetDeadlineCompletionUseCaseContract _setDeadlineCompletion;
   final IsPermissionsIntroPendingUseCaseContract _permissionsIntroPending;
+  final FinishSessionUseCaseContract _finishSession;
+  final CancelSessionUseCaseContract _cancelSession;
+  final LogPastSessionUseCaseContract _logPastSession;
+  final RescheduleBlockUseCaseContract _rescheduleBlock;
+  final DeleteBlockUseCaseContract _deleteBlock;
 
-  /// La XP y el hueco los decide el servidor; Inicio se refresca solo con el
-  /// cambio de datos del planificador.
-  Future<void> _onBannerBlockCompleted(
-    HomeDashboardBannerBlockCompleted event,
+  /// Termina la sesión a medias con lo registrado; el servidor acota la
+  /// duración y la apunta en su día. Inicio se refresca con el cambio de datos.
+  Future<void> _onUnfinishedSaved(
+    HomeDashboardUnfinishedSaved event,
     Emitter<HomeDashboardState> emit,
+  ) => _act(
+    emit,
+    event.sessionId,
+    () => _finishSession(
+      event.sessionId,
+      durationSeconds: event.minutes * 60,
+      rpe: event.rpe,
+    ),
+    (_) => const HomeActionNotice.sessionSaved(),
+  );
+
+  Future<void> _onMissedLogged(
+    HomeDashboardMissedLogged event,
+    Emitter<HomeDashboardState> emit,
+  ) => _act(
+    emit,
+    event.eventId,
+    () => _logPastSession(
+      routineId: event.routineId,
+      dayId: event.dayId,
+      date: event.date,
+      durationMinutes: event.minutes,
+      rpe: event.rpe,
+    ),
+    (_) => const HomeActionNotice.logged(),
+  );
+
+  Future<void> _onMissedMoved(
+    HomeDashboardMissedMoved event,
+    Emitter<HomeDashboardState> emit,
+  ) => _act(
+    emit,
+    event.eventId,
+    () => _rescheduleBlock(event.eventId, start: event.start, end: event.end),
+    (change) => HomeActionNotice.moved(change.block.start),
+  );
+
+  /// Una acción de las tarjetas de arriba: marca [id] como ocupado, la hace y
+  /// avisa del resultado (el resto llega con el refresco de datos).
+  Future<void> _act<T>(
+    Emitter<HomeDashboardState> emit,
+    String id,
+    Future<AppResult<T>> Function() call,
+    HomeActionNotice Function(T value) done,
   ) async {
-    if (state.bannerBusy != null) return;
-    emit(state.copyWith(bannerBusy: HomeBannerAction.complete));
-    final result = await _setBlockCompletion(event.blockId, completed: true);
+    if (state.actingIds.contains(id)) return;
+    emit(state.copyWith(actingIds: {...state.actingIds, id}));
+    final result = await call();
     emit(
       state.copyWith(
-        bannerBusy: null,
-        bannerNotice: result.fold(
-          (value) => HomeBannerNotice.completed(value.xpDelta),
-          HomeBannerNotice.failed,
-        ),
+        actingIds: {...state.actingIds}..remove(id),
+        actionNotice: result.fold(done, HomeActionNotice.failed),
       ),
     );
   }
+
+  /// Quita [key] de la vista ya y avisa con «Deshacer»; se hace al cerrarse
+  /// el aviso (o al cerrarse el bloc, [DeferredCommitMixin]).
+  void _defer(
+    Emitter<HomeDashboardState> emit,
+    String key,
+    HomeActionNotice Function(String key) notice,
+  ) {
+    if (!defer(key)) return;
+    emit(
+      state.copyWith(
+        deferredKeys: {...state.deferredKeys, key},
+        actionNotice: notice(key),
+      ),
+    );
+  }
+
+  Future<void> _onDeferredCommitted(
+    HomeDashboardDeferredCommitted event,
+    Emitter<HomeDashboardState> emit,
+  ) async {
+    if (!release(event.key)) return;
+    final result = await _commit(event.key);
+    if (result case Failure(:final error) when error is! NotFoundError) {
+      // No se pudo: vuelve a verse y se avisa.
+      emit(
+        state.copyWith(
+          deferredKeys: {...state.deferredKeys}..remove(event.key),
+          actionNotice: HomeActionNotice.failed(error),
+        ),
+      );
+    }
+    // Hecho (o ya no existía): sigue oculto hasta que el refresco lo quite.
+  }
+
+  Future<AppResult<Object?>> _commit(String key) async {
+    final sessionId = HomeDeferred.sessionId(key);
+    if (sessionId != null) return _cancelSession(sessionId);
+    return _deleteBlock(HomeDeferred.blockId(key)!);
+  }
+
+  /// Al cerrarse Inicio, lo pendiente se hace ya (su aviso ya no se vería).
+  @override
+  Future<void> commitDeferred(String id) => _commit(id);
 
   /// Marca o desmarca con las mismas reglas que el planificador (XP, retos
   /// ligados, racha: todo en el servidor). Lo cambiado se pinta ya con el
@@ -181,6 +315,8 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
             completingIds: busy,
             dashboard: dashboard?.copyWith(
               todayEvents: dashboard.todayEvents.map(update).toList(),
+              // «Lo hice» de lo de ayer: deja de pedirse en cuanto se marca.
+              missedEvents: dashboard.missedEvents.map(update).toList(),
             ),
             upcoming: state.upcoming.map(update).toList(),
             completionNotice: notice,
@@ -192,24 +328,6 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
         state.copyWith(
           completingIds: busy,
           completionNotice: HomeCompletionNotice.failed(error),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _onBannerBlockRescheduled(
-    HomeDashboardBannerBlockRescheduled event,
-    Emitter<HomeDashboardState> emit,
-  ) async {
-    if (state.bannerBusy != null) return;
-    emit(state.copyWith(bannerBusy: HomeBannerAction.reschedule));
-    final result = await _rescheduleToNextSlot(event.blockId);
-    emit(
-      state.copyWith(
-        bannerBusy: null,
-        bannerNotice: result.fold(
-          (value) => HomeBannerNotice.rescheduled(value.block.start),
-          HomeBannerNotice.failed,
         ),
       ),
     );
@@ -238,10 +356,24 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
   ) async {
     if (state.startingTraining) return;
     emit(state.copyWith(startingTraining: true));
+    // Una sesión descartada con su «Deshacer» aún abierto se borra ya: si no,
+    // el servidor diría que hay una a medias que ya no se ve.
+    for (final key in [...state.deferredKeys]) {
+      if (HomeDeferred.sessionId(key) != null && release(key)) {
+        await _commit(key);
+      }
+    }
     final result = await _startSession(
       routineId: event.routineId,
       dayId: event.dayId,
     );
+    // Con una sesión a medias no hay callejón sin salida: se vuelve a leer
+    // Inicio y la página lleva a su tarjeta (ADR 0059).
+    if (result case Failure(error: BusinessError(code: _staleSessionCode))) {
+      emit(state.copyWith(startingTraining: false, showUnfinished: true));
+      await _load(emit);
+      return;
+    }
     emit(
       result.fold(
         (session) =>
@@ -251,6 +383,8 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
       ),
     );
   }
+
+  static const _staleSessionCode = 'SESSION_STALE_OPEN';
 
   Future<void> _onStarted(
     HomeDashboardStarted event,

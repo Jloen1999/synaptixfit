@@ -329,8 +329,9 @@ class TrainingFlowIT {
         String session = body(post("/api/v1/training/sessions")
                 .content("{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + day1 + "\"}"), token, 201);
         String sessionId = JsonPath.read(session, "$.id");
+        java.time.Instant abandonedAt = java.time.Instant.now().minus(java.time.Duration.ofDays(2));
         jdbc.sql("UPDATE sesiones_registradas SET creado_en = :t WHERE id = :id")
-                .param("t", java.sql.Timestamp.from(java.time.Instant.now().minus(java.time.Duration.ofDays(2))))
+                .param("t", java.sql.Timestamp.from(abandonedAt))
                 .param("id", UUID.fromString(sessionId)).update();
         mvc.perform(auth(post("/api/v1/training/sessions")
                         .content("{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + day1 + "\"}"), token))
@@ -339,13 +340,22 @@ class TrainingFlowIT {
         assertThat((String) JsonPath.read(open, "$[0].session.id")).isEqualTo(sessionId);
         assertThat((Boolean) JsonPath.read(open, "$[0].stale")).isTrue();
         assertThat((String) JsonPath.read(open, "$[0].dayName")).isEqualTo("Empuje");
+        assertThat((Integer) JsonPath.read(open, "$[0].exercisesDone")).isZero();
+        assertThat((Integer) JsonPath.read(open, "$[0].exercisesTotal")).isEqualTo(1);
+        // Inicio la enseña como «Sin terminar» con sus dos botones (ADR 0059).
+        String home = body(get("/api/v1/dashboard"), token, 200);
+        assertThat((String) JsonPath.read(home, "$.unfinishedSession.sessionId")).isEqualTo(sessionId);
+        assertThat((String) JsonPath.read(home, "$.unfinishedSession.dayName")).isEqualTo("Empuje");
+        assertThat((Integer) JsonPath.read(home, "$.unfinishedSession.exercisesTotal")).isEqualTo(1);
         String pending = body(get("/api/v1/training/pending-day"), token, 200);
         assertThat((String) JsonPath.read(pending, "$.staleSessionId")).isEqualTo(sessionId);
         String finished = body(post("/api/v1/training/sessions/" + sessionId + "/finish")
                 .content("{\"durationSeconds\":3000,\"rpe\":6}"), token, 200);
         LocalDate twoDaysAgo = LocalDate.now(java.time.ZoneId.of("Europe/Madrid")).minusDays(2);
+        // Termina al acabar los 50 min registrados desde que empezó (pasadas las 23:10 cae ya en el día siguiente).
         assertThat(java.time.Instant.parse(JsonPath.read(finished, "$.session.completedAt"))
-                .atZone(java.time.ZoneId.of("Europe/Madrid")).toLocalDate()).isEqualTo(twoDaysAgo);
+                .atZone(java.time.ZoneId.of("Europe/Madrid")).toLocalDate())
+                .isEqualTo(LocalDate.ofInstant(abandonedAt.plusSeconds(3000), java.time.ZoneId.of("Europe/Madrid")));
         mvc.perform(auth(post("/api/v1/training/sessions/" + sessionId + "/unmark"), token))
                 .andExpect(status().is(422)).andExpect(jsonPath("$.code").value("SESSION_UNMARK_EXPIRED"));
         String corrected = body(patch("/api/v1/training/sessions/" + sessionId)

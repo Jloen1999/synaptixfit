@@ -1,18 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:synaptixfit/domain/enums/home_day_state.dart';
+import 'package:synaptixfit/domain/enums/home_acwr_zone.dart';
+import 'package:synaptixfit/domain/enums/home_banner_type.dart';
 import 'package:synaptixfit/domain/enums/home_event_kind.dart';
 import 'package:synaptixfit/domain/enums/home_event_type.dart';
 import 'package:synaptixfit/domain/enums/item_time_status.dart';
 import 'package:synaptixfit/domain/models/home/home_dashboard.dart';
 import 'package:synaptixfit/domain/models/home/today_next.dart';
 
-/// El botón de «Tu día» para el evento que destaca el servidor (ADR 0050).
+/// El botón de la fila de «Tu día» y qué se nombra (ADR 0059): el evento y si
+/// el entreno es hoy los dice el servidor; aquí solo se elige el botón.
 void main() {
   HomeTodayEvent event(
     HomeEventType type, {
     ItemTimeStatus status = ItemTimeStatus.upcoming,
     HomeEventKind kind = HomeEventKind.block,
-    bool routine = false,
     bool completed = false,
   }) => HomeTodayEvent(
     id: 'e',
@@ -21,99 +22,185 @@ void main() {
     title: 'Evento',
     completed: completed,
     status: status,
-    routineId: routine ? 'r' : null,
-    routineDayId: routine ? 'd' : null,
   );
 
-  const pending = HomeTodaySummary(
-    total: 1,
-    nextEventId: 'e',
-    state: HomeDayState.pending,
-  );
-  const missedLeft = HomeTodaySummary(
-    total: 1,
-    missed: 1,
-    nextEventId: 'e',
-    state: HomeDayState.missedLeft,
-  );
+  test('estudio y repaso se concentran; una clase o un partido por empezar '
+      'no llevan botón', () {
+    expect(TodayAction.forEvent(event(HomeEventType.study)), TodayAction.focus);
+    expect(
+      TodayAction.forEvent(event(HomeEventType.review)),
+      TodayAction.focus,
+    );
+    expect(TodayAction.forEvent(event(HomeEventType.classSession)), isNull);
+    expect(TodayAction.forEvent(event(HomeEventType.sport)), isNull);
+    expect(TodayAction.forEvent(event(HomeEventType.personal)), isNull);
+  });
 
-  test('con algo por hacer, el botón según el tipo', () {
+  test('lo personal o un partido en curso, y lo que quedó sin hacer, se '
+      'marcan', () {
     expect(
-      TodayAction.of(pending, event(HomeEventType.study)),
-      TodayAction.focus,
-    );
-    expect(
-      TodayAction.of(pending, event(HomeEventType.review)),
-      TodayAction.focus,
-    );
-    expect(
-      TodayAction.of(pending, event(HomeEventType.sport, routine: true)),
-      TodayAction.train,
-    );
-    // Un partido suelto no arranca otra rutina; una clase se ve en la agenda.
-    expect(TodayAction.of(pending, event(HomeEventType.sport)), isNull);
-    expect(TodayAction.of(pending, event(HomeEventType.classSession)), isNull);
-    // Lo personal se marca cuando está en curso.
-    expect(TodayAction.of(pending, event(HomeEventType.personal)), isNull);
-    expect(
-      TodayAction.of(
-        pending,
+      TodayAction.forEvent(
         event(HomeEventType.personal, status: ItemTimeStatus.inProgress),
       ),
       TodayAction.markDone,
     );
-    // Una entrega de hoy se puede adelantar.
     expect(
-      TodayAction.of(
-        pending,
-        event(HomeEventType.delivery, kind: HomeEventKind.deadline),
+      TodayAction.forEvent(
+        event(HomeEventType.sport, status: ItemTimeStatus.inProgress),
       ),
       TodayAction.markDone,
     );
-  });
-
-  test('lo que quedó sin hacer se marca; un día de rutina se empieza', () {
-    for (final type in [
-      HomeEventType.study,
-      HomeEventType.sport,
-      HomeEventType.personal,
-    ]) {
-      expect(
-        TodayAction.of(missedLeft, event(type, status: ItemTimeStatus.missed)),
-        TodayAction.markDone,
-        reason: '$type',
-      );
-    }
     expect(
-      TodayAction.of(
-        missedLeft,
-        event(
-          HomeEventType.sport,
-          status: ItemTimeStatus.missed,
-          routine: true,
-        ),
+      TodayAction.forEvent(
+        event(HomeEventType.study, status: ItemTimeStatus.missed),
       ),
-      TodayAction.train,
+      TodayAction.markDone,
     );
-  });
-
-  test('sin nada pendiente, añadir; ya marcado, sin botón', () {
+    // Una clase pasada no se marca.
     expect(
-      TodayAction.of(const HomeTodaySummary(), null),
-      TodayAction.addEvent,
-    );
-    expect(
-      TodayAction.of(
-        const HomeTodaySummary(done: 1, total: 1, state: HomeDayState.allDone),
-        null,
+      TodayAction.forEvent(
+        event(HomeEventType.classSession, status: ItemTimeStatus.missed),
       ),
-      TodayAction.addEvent,
-    );
-    expect(
-      TodayAction.of(pending, event(HomeEventType.study, completed: true)),
       isNull,
     );
-    // El evento del resumen aún no ha llegado: sin botón.
-    expect(TodayAction.of(pending, null), isNull);
+    // Una entrega se puede adelantar; ya hecha, sin botón.
+    final delivery = event(
+      HomeEventType.delivery,
+      kind: HomeEventKind.deadline,
+    );
+    expect(TodayAction.forEvent(delivery), TodayAction.markDone);
+    expect(TodayAction.forEvent(delivery.copyWith(completed: true)), isNull);
+  });
+
+  test('la fila nombra el evento del servidor y el entreno solo si es hoy', () {
+    const training = HomeNextTrainingDay(
+      routineId: 'r',
+      routineName: 'Fuerza',
+      dayId: 'd',
+      weekNumber: 1,
+      dayNumber: 1,
+      inProgress: false,
+    );
+    final base = HomeDashboard(
+      greeting: const HomeGreeting(
+        fullName: 'Ana',
+        level: 1,
+        levelXp: 0,
+        levelThreshold: 100,
+        streak: 0,
+      ),
+      today: const HomeTodayKpis(
+        trainingCalories: 0,
+        studyCalories: 0,
+        totalCalories: 0,
+        sessions: 0,
+        trainingMinutes: 0,
+        studyMinutesCompleted: 0,
+        studyMinutesPlanned: 0,
+      ),
+      week: const HomeWeekKpis(
+        sessions: 0,
+        trainingMinutes: 0,
+        trainingCalories: 0,
+        studyMinutesCompleted: 0,
+      ),
+      cognitive: const HomeCognitiveState(
+        cognitiveLoad: 0,
+        attentionCapacity: 1,
+        lastBlockMinutes: 0,
+      ),
+      crossRegulation: const HomeCrossRegulation(
+        zone: HomeAcwrZone.optimal,
+        maxStudyMinutes: 0,
+        focusMinutes: 50,
+        focusBreakMinutes: 10,
+      ),
+      wellbeing: const HomeWellbeing(checkInDone: false),
+      banner: const HomeSmartBanner(type: HomeBannerType.balance),
+      todayEvents: [event(HomeEventType.classSession)],
+      todaySummary: const HomeTodaySummary(spotlightEventId: 'e'),
+      nextTrainingDay: training,
+    );
+
+    expect(base.spotlight?.id, 'e');
+    expect(base.trainingToday, isNull);
+    expect(
+      base
+          .copyWith(nextTrainingDay: training.copyWith(dueToday: true))
+          .trainingToday,
+      isNotNull,
+    );
+    expect(
+      base.copyWith(todaySummary: const HomeTodaySummary()).spotlight,
+      isNull,
+    );
+  });
+
+  test('«y N más» cuenta lo que queda sin nombrar; los días de rutina, solo '
+      'si no sale el entreno', () {
+    HomeTodayEvent e(
+      String id,
+      HomeEventType type, {
+      ItemTimeStatus status = ItemTimeStatus.upcoming,
+      bool routine = false,
+    }) => HomeTodayEvent(
+      id: id,
+      kind: HomeEventKind.block,
+      type: type,
+      title: id,
+      completed: status == ItemTimeStatus.done,
+      status: status,
+      routineId: routine ? 'r' : null,
+      routineDayId: routine ? 'd' : null,
+    );
+    final day = HomeDashboard(
+      greeting: const HomeGreeting(
+        fullName: 'Ana',
+        level: 1,
+        levelXp: 0,
+        levelThreshold: 100,
+        streak: 0,
+      ),
+      today: const HomeTodayKpis(
+        trainingCalories: 0,
+        studyCalories: 0,
+        totalCalories: 0,
+        sessions: 0,
+        trainingMinutes: 0,
+        studyMinutesCompleted: 0,
+        studyMinutesPlanned: 0,
+      ),
+      week: const HomeWeekKpis(
+        sessions: 0,
+        trainingMinutes: 0,
+        trainingCalories: 0,
+        studyMinutesCompleted: 0,
+      ),
+      cognitive: const HomeCognitiveState(
+        cognitiveLoad: 0,
+        attentionCapacity: 1,
+        lastBlockMinutes: 0,
+      ),
+      crossRegulation: const HomeCrossRegulation(
+        zone: HomeAcwrZone.optimal,
+        maxStudyMinutes: 0,
+        focusMinutes: 50,
+        focusBreakMinutes: 10,
+      ),
+      wellbeing: const HomeWellbeing(checkInDone: false),
+      banner: const HomeSmartBanner(type: HomeBannerType.balance),
+      todayEvents: [
+        e('shown', HomeEventType.study),
+        e('done', HomeEventType.study, status: ItemTimeStatus.done),
+        e('class', HomeEventType.classSession),
+        e('gym', HomeEventType.sport, routine: true),
+        e('review', HomeEventType.review),
+      ],
+    );
+
+    expect(day.othersPending(shownIds: {'shown'}, trainingShown: true), 1);
+    expect(day.othersPending(shownIds: {'shown'}, trainingShown: false), 2);
+    expect(day.todayEvents[3].isRoutineDay, isTrue);
+    expect(day.todayEvents[0].isRoutineDay, isFalse);
   });
 }

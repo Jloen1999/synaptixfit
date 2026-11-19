@@ -642,7 +642,344 @@
   },
   "homeTodayMoreHint": "Ver en la agenda",
   "guideHomeDayTitle": "Tu día",
-  "guideHomeDayBody": "Lo que te toca ahora, con un botón para hacerlo.",
+  "guideHomeDayBody": "Lo de hoy en filas: tu entreno con «Empezar», la clase de ahora y la entrega más cercana. Toca una fila para abrirla.",
   "guideHomeWeekTitle": "Tu semana",
-  "guideHomeWeekBody": "Toca un día para verlo en el calendario."
+  "guideHomeWeekBody": "Cómo vas esta semana. Cada círculo es un día: ✓ todo hecho, «!» algo sin hacer. Tócalo para verlo en el calendario.",
+  "homeTodayDoneCount": "{done} de {total} hechos",
+  "@homeTodayDoneCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTodayTrainingLabel": "Entreno de hoy",
+  "homeTodayTrainingWith": "Entreno de hoy · {level}",
+  "@homeTodayTrainingWith": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayIntensityEasyWord": "suave",
+  "homeTodayIntensityNormalWord": "normal",
+  "homeTodayIntensityHardWord": "fuerte",
+  "homeTodayTrainingMinutes": "≈ {minutes} min",
+  "@homeTodayTrainingMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTodayTrainingExercises": "{count, plural, =1{1 ejercicio} other{{count} ejercicios}}",
+  "@homeTodayTrainingExercises": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTodayTrainingBlocked": "Primero guarda o descarta la del {day}.",
+  "@homeTodayTrainingBlocked": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayTrainingBlockedToday": "Primero guarda o descarta la que dejaste a medias.",
+  "homeTodayOpenRoutineHint": "Abre la rutina",
+  "homeTodayOpenDeadlineHint": "Abre la entrega",
+  "homeTodayNowUntil": "Ahora · hasta las {time}",
+  "@homeTodayNowUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayNextAt": "A continuación · a las {time}",
+  "@homeTodayNextAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayMissedWasAt": "Sin hacer · era a las {time}",
+  "@homeTodayMissedWasAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayClassOf": "Clase de {subject}",
+  "@homeTodayClassOf": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayExam": "Examen",
+  "homeTodayDelivery": "Entrega",
+  "homeUnfinishedTitle": "Sin terminar: {name}",
+  "@homeUnfinishedTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeUnfinishedStarted": "Empezado el {day} a las {time}",
+  "@homeUnfinishedStarted": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeUnfinishedExercisesOf": "{done} de {total} ejercicios",
+  "@homeUnfinishedExercisesOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "homeUnfinishedExercisesDone": "{count, plural, =0{Ningún ejercicio hecho} =1{1 ejercicio hecho} other{{count} ejercicios hechos}}",
+  "@homeUnfinishedExercisesDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeUnfinishedSave": "Guardar lo hecho",
+  "homeUnfinishedSaveHint": "{count, plural, =0{Cuenta como entreno, aunque no marcaste ejercicios} =1{Cuenta el ejercicio que hiciste} other{Cuentan los {count} ejercicios que hiciste}}",
+  "@homeUnfinishedSaveHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeUnfinishedDiscard": "Descartar",
+  "homeUnfinishedDiscardHint": "Se borra, como si no la hubieras empezado",
+  "homeUnfinishedDiscardTitle": "¿Descartar «{name}»?",
+  "@homeUnfinishedDiscardTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeUnfinishedDiscardMessage": "Se borra con lo que marcaste, como si no la hubieras empezado. Justo después podrás deshacerlo.",
+  "homeUnfinishedSaved": "Guardada en el día en que la hiciste: la ves en tu historial de Entreno",
+  "homeUnfinishedFirst": "Antes de empezar otra, guarda o descarta la sesión sin terminar.",
+  "homeMissedTitle": "{count, plural, =1{Ayer quedó sin marcar} other{Ayer quedaron {count} cosas sin marcar}}",
+  "@homeMissedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeMissedDidIt": "Lo hice",
+  "homeMissedDidItFor": "Lo hice: {name}",
+  "@homeMissedDidItFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMissedMove": "Pasar a otro día",
+  "homeMissedMoveFor": "Pasar {name} a otro día",
+  "@homeMissedMoveFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMissedRemove": "Quitar",
+  "homeMissedRemoveFor": "Quitar {name} del calendario",
+  "@homeMissedRemoveFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMissedSeeAll": "Ver los {count}",
+  "@homeMissedSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeMissedMoved": "Pasado al {when} a las {time}",
+  "@homeMissedMoved": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMissedLogged": "Apuntado como hecho",
+  "homeMoveTitle": "¿A qué día lo pasas?",
+  "homeMoveSameTime": "A la misma hora: {time}",
+  "@homeMoveSameTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMoveOtherDay": "Otro día…",
+  "homeCommunityRequests": "{count, plural, =0{Comunidad} =1{Comunidad, 1 solicitud de amistad} other{Comunidad, {count} solicitudes de amistad}}",
+  "@homeCommunityRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekOnTrack": "Vas bien",
+  "homeWeekBehind": "Vas por detrás",
+  "homeWeekNoPlan": "Semana sin plan",
+  "homeWeekDoneOf": "{done} de {planned} cosas hechas",
+  "@homeWeekDoneOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "planned": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekMissedCount": "{count, plural, =1{1 se quedó sin hacer} other{{count} se quedaron sin hacer}}",
+  "@homeWeekMissedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekToday": "Hoy",
+  "homeWeekDayDone": "{day}: todo hecho",
+  "@homeWeekDayDone": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWeekDayMissed": "{count, plural, =1{{day}: 1 sin hacer} other{{day}: {count} sin hacer}}",
+  "@homeWeekDayMissed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWeekDayPending": "{day}: {count} por hacer",
+  "@homeWeekDayPending": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekLegendDone": "Todo hecho",
+  "homeWeekLegendPartial": "A medias",
+  "homeWeekLegendMissed": "Algo sin hacer",
+  "homeWeekLegendPending": "Por hacer",
+  "homeWeekTrainings": "Entrenos",
+  "homeWeekStudy": "Estudio",
+  "homeWeekOfTotal": "{value} de {total}",
+  "@homeWeekOfTotal": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWeekHoursShort": "{hours} h",
+  "@homeWeekHoursShort": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekMinutesShort": "{minutes} min",
+  "@homeWeekMinutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekHoursMinutesShort": "{hours} h {minutes} min",
+  "@homeWeekHoursMinutesShort": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "guideHomeAgendaTitle": "Agenda",
+  "guideHomeAgendaBody": "Lo que tienes hoy y los próximos días. Marca aquí lo que ya hiciste.",
+  "guideHomeCommunityTitle": "Comunidad",
+  "guideHomeCommunityBody": "Tus amigos y las solicitudes de amistad. El número dice cuántas esperan respuesta.",
+  "homeTodayOpenEventHint": "Abre el evento en el calendario",
+  "homeUnfinishedOpenHint": "Ver lo que marcaste",
+  "homeMoveTodayOn": "Hoy, {date}",
+  "@homeMoveTodayOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMoveTomorrowOn": "Mañana, {date}",
+  "@homeMoveTomorrowOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWeekNoPlanHint": "Toca un día para añadir algo al calendario."
 }

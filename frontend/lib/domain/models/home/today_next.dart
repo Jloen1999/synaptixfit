@@ -4,44 +4,29 @@ import '../../enums/home_event_type.dart';
 import '../../enums/item_time_status.dart';
 import 'home_dashboard.dart';
 
-/// El único botón de «Tu día» (vocabulario §4, ADR 0038): concentrarse
-/// (Pomodoro del evento), empezar el entreno, marcar como hecho o, sin nada
-/// pendiente, añadir al calendario. Qué evento toca y en qué punto está el día
-/// lo dice el servidor ([HomeTodaySummary], ADR 0050); aquí solo se elige el
-/// botón para ese evento.
+/// Botón de la fila «ahora o a continuación» de «Tu día» (ADR 0059):
+/// concentrarse (Pomodoro del evento) o marcar como hecho; sin nada que
+/// nombrar, añadir al calendario. El entreno de hoy tiene su propia fila con
+/// «Empezar». Qué evento se nombra lo decide el servidor
+/// ([HomeTodaySummary.spotlightEventId]); aquí solo se elige el botón.
 enum TodayAction {
   focus,
-  train,
   markDone,
   addEvent;
 
-  /// Acción para el evento destacado ([next]) según el estado del día; nula
-  /// si no hay ninguna directa (una clase o un partido por empezar: se ven y
-  /// se marcan en la agenda) o si [next] ya se marcó y falta el refresco.
-  static TodayAction? of(HomeTodaySummary summary, HomeTodayEvent? next) {
-    if (next == null) {
-      return switch (summary.state) {
-        HomeDayState.nothingPlanned || HomeDayState.allDone => addEvent,
-        _ => null,
-      };
-    }
-    if (next.completed) return null;
-    // Igual que la agenda: un día de rutina se empieza (aunque se pasara la
-    // hora); un partido o una carrera sueltos no arrancan otra rutina.
-    final routineDay =
-        next.kind == HomeEventKind.block &&
-        next.type == HomeEventType.sport &&
-        next.routineId != null &&
-        next.routineDayId != null;
-    if (summary.state == HomeDayState.missedLeft) {
-      return routineDay ? train : markDone;
-    }
+  /// Botón para el evento [event] de la fila; nulo si no tiene uno directo
+  /// (una clase o un partido por empezar se ven, y se abren al tocarlos).
+  static TodayAction? forEvent(HomeTodayEvent event) {
+    if (event.completed) return null;
     // Una entrega se puede adelantar: se marca en cuanto se tiene.
-    if (next.kind == HomeEventKind.deadline) return markDone;
-    return switch (next.type) {
+    if (event.kind == HomeEventKind.deadline) return markDone;
+    if (event.type == HomeEventType.classSession) return null;
+    // Lo que pasó sin hacerse aún se puede marcar.
+    if (event.status == ItemTimeStatus.missed) return markDone;
+    return switch (event.type) {
       HomeEventType.study || HomeEventType.review => focus,
-      HomeEventType.sport when routineDay => train,
-      HomeEventType.personal when next.status == ItemTimeStatus.inProgress =>
+      HomeEventType.personal || HomeEventType.sport
+          when event.status == ItemTimeStatus.inProgress =>
         markDone,
       _ => null,
     };
@@ -50,15 +35,48 @@ enum TodayAction {
 
 /// Lo que toca hoy según el resumen del servidor.
 extension TodayNext on HomeDashboard {
-  /// El evento que destaca «Tu día» ([HomeTodaySummary.nextEventId]): el que
-  /// está en curso, si no el próximo y, si ya no queda nada por empezar, el
-  /// último sin hacer. Nulo sin nada pendiente.
-  HomeTodayEvent? get nextUp {
-    final id = todaySummary.nextEventId;
+  /// El evento de la fila «ahora o a continuación»: en curso, si no el
+  /// próximo y, si ya no queda nada por empezar, el último sin hacer (clases
+  /// incluidas, sin entregas ni días de rutina). Nulo sin nada que nombrar.
+  HomeTodayEvent? get spotlight {
+    final id = todaySummary.spotlightEventId;
     if (id == null) return null;
     return todayEvents.where((e) => e.id == id).firstOrNull;
   }
 
-  /// El botón de «Tu día» para lo que toca.
-  TodayAction? get todayAction => TodayAction.of(todaySummary, nextUp);
+  /// El entreno de hoy de «Tu día»: el próximo día de la rutina si toca hoy
+  /// o va con retraso (lo dice el servidor, `dueToday`).
+  HomeNextTrainingDay? get trainingToday {
+    final next = nextTrainingDay;
+    return next != null && next.dueToday ? next : null;
+  }
+
+  /// ¿Queda algo de hoy y ya está todo? Solo si el servidor lo dice.
+  bool get dayAllDone => todaySummary.state == HomeDayState.allDone;
+
+  /// Lo demás de hoy que aún queda por hacer y no nombra ninguna fila de «Tu
+  /// día» («y 2 más»): ni lo hecho o pasado, ni las clases (no se marcan),
+  /// ni [shownIds], ni los días de rutina si ya sale la fila del entreno.
+  int othersPending({
+    required Set<String> shownIds,
+    required bool trainingShown,
+  }) => todayEvents
+      .where(
+        (e) =>
+            !e.completed &&
+            e.status != ItemTimeStatus.done &&
+            e.status != ItemTimeStatus.past &&
+            !(e.kind == HomeEventKind.block &&
+                e.type == HomeEventType.classSession) &&
+            !shownIds.contains(e.id) &&
+            !(trainingShown && e.isRoutineDay),
+      )
+      .length;
+}
+
+/// Lo que se puede decir de un evento sin pedir nada al servidor.
+extension HomeTodayEventKind on HomeTodayEvent {
+  /// Refleja un día de rutina: se empieza o se apunta como sesión de ese día
+  /// (marcarlo a mano no avanzaría la rutina, `BLOCK_ROUTINE_LINKED`).
+  bool get isRoutineDay => routineId != null && routineDayId != null;
 }

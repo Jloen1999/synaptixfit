@@ -141,9 +141,10 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         RoutineDay day = routine.findDay(dayId).orElseThrow(SessionDayMismatchException::new);
         Optional<TrainingSession> existing = sessions.findInProgressForDay(userId, dayId);
         if (existing.isPresent()) {
-            // Una sesión abandonada no se reanuda (series de otra jornada) ni se borra sin que la
-            // persona lo decida: primero la termina con lo registrado o la descarta.
-            if (existing.get().isStale(now)) {
+            // Una sesión a medias (abierta más de 6 h, ADR 0059) no se reanuda (series de otra
+            // jornada) ni se borra sin que la persona lo decida: primero la termina con lo registrado
+            // o la descarta. La misma regla que enseña Inicio como «Sin terminar».
+            if (existing.get().isLeftover(now)) {
                 throw new SessionStaleOpenException(existing.get().id());
             }
             return existing.get();
@@ -234,7 +235,7 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         long duration = session.boundedDurationSeconds(c.durationSeconds(), now);
         double calories = SessionCalories.estimate(planned, realDurations, weight, duration);
         // Una sesión abandonada cuenta en el día en que se hizo, no en el de hoy.
-        Instant completedAt = session.completionInstant(duration, now);
+        Instant completedAt = session.completionInstant(duration, now, zone);
         LocalDate day = LocalDate.ofInstant(completedAt, zone);
         int minutes = TrainingSession.minutesOf(duration);
         int rewardedToday = rewardedOn(c.userId(), day, completedAt);

@@ -20,11 +20,17 @@ import 'package:synaptixfit/domain/use_cases/home/get_home_unread_count_use_case
 import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/is_permissions_intro_pending_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/delete_block_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/cancel_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/finish_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/log_past_session_use_case.dart';
+import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/domain/use_cases/planner/set_block_completion_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/set_deadline_completion_use_case.dart';
 import 'package:synaptixfit/domain/models/planner/deadline.dart';
 import 'package:synaptixfit/domain/enums/item_time_status.dart';
+import 'package:synaptixfit/domain/enums/training_enums.dart';
 import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
 import 'package:synaptixfit/presentation/screens/home/dashboard/bloc/home_dashboard_bloc.dart';
 import 'package:synaptixfit/presentation/screens/home/home_onboarding_gate.dart';
@@ -56,8 +62,15 @@ class _MockComplete extends Mock implements SetBlockCompletionUseCaseContract {}
 class _MockCompleteDeadline extends Mock
     implements SetDeadlineCompletionUseCaseContract {}
 
-class _MockReschedule extends Mock
-    implements RescheduleBlockToNextFreeSlotUseCaseContract {}
+class _MockReschedule extends Mock implements RescheduleBlockUseCaseContract {}
+
+class _MockDeleteBlock extends Mock implements DeleteBlockUseCaseContract {}
+
+class _MockFinish extends Mock implements FinishSessionUseCaseContract {}
+
+class _MockCancel extends Mock implements CancelSessionUseCaseContract {}
+
+class _MockLogPast extends Mock implements LogPastSessionUseCaseContract {}
 
 class _MockPermissionsIntro extends Mock
     implements IsPermissionsIntroPendingUseCaseContract {}
@@ -77,6 +90,10 @@ void main() {
   late _MockCompleteDeadline completeDeadline;
   late _MockReschedule reschedule;
   late _MockPermissionsIntro permissionsIntro;
+  late _MockDeleteBlock deleteBlock;
+  late _MockFinish finish;
+  late _MockCancel cancel;
+  late _MockLogPast logPast;
 
   HomeDashboardBloc build() => HomeDashboardBloc(
     getDashboard: getDashboard,
@@ -90,9 +107,13 @@ void main() {
     watchChanges: changes.useCase,
     startSession: start,
     setBlockCompletion: complete,
-    rescheduleToNextSlot: reschedule,
     setDeadlineCompletion: completeDeadline,
     permissionsIntroPending: permissionsIntro,
+    finishSession: finish,
+    cancelSession: cancel,
+    logPastSession: logPast,
+    rescheduleBlock: reschedule,
+    deleteBlock: deleteBlock,
     clock: () => DateTime(2026, 10, 20, 9),
   );
 
@@ -112,6 +133,10 @@ void main() {
     completeDeadline = _MockCompleteDeadline();
     reschedule = _MockReschedule();
     permissionsIntro = _MockPermissionsIntro();
+    deleteBlock = _MockDeleteBlock();
+    finish = _MockFinish();
+    cancel = _MockCancel();
+    logPast = _MockLogPast();
     when(
       () => permissionsIntro(),
     ).thenAnswer((_) async => const Success(false));
@@ -422,55 +447,288 @@ void main() {
     ],
   );
 
-  group('acciones del aviso de bloques sin hacer', () {
-    final missed = block(id: 'b9', start: DateTime(2026, 10, 20, 8));
+  blocTest<HomeDashboardBloc, HomeDashboardState>(
+    'con una sesión a medias, «Empezar» lleva a su tarjeta en vez de un aviso '
+    'sin salida (ADR 0059)',
+    setUp: () => when(() => start(routineId: 'r1', dayId: 'd1')).thenAnswer(
+      (_) async => const Failure(AppError.business('SESSION_STALE_OPEN')),
+    ),
+    build: build,
+    act: (bloc) => bloc.add(
+      const HomeDashboardEvent.trainingStarted(routineId: 'r1', dayId: 'd1'),
+    ),
+    expect: () => [
+      const HomeDashboardState(startingTraining: true),
+      const HomeDashboardState(showUnfinished: true),
+      // Vuelve a leer Inicio: la tarjeta «Sin terminar» sale con sus botones.
+      loaded.copyWith(showUnfinished: true),
+    ],
+  );
+
+  group('sesión a medias (ADR 0059)', () {
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Guardar lo hecho» la termina con los minutos y el esfuerzo elegidos',
+      setUp: () =>
+          when(() => finish('s9', durationSeconds: 2700, rpe: 6)).thenAnswer(
+            (_) async => Success(
+              FinishSessionResult(
+                session: TrainingFixtures.session(
+                  status: SessionStatus.completed,
+                ),
+                experience: const ExperienceChange(
+                  level: 1,
+                  levelXp: 10,
+                  xpDelta: 10,
+                ),
+              ),
+            ),
+          ),
+      build: build,
+      act: (bloc) => bloc.add(
+        const HomeDashboardEvent.unfinishedSaved(
+          sessionId: 's9',
+          minutes: 45,
+          rpe: 6,
+        ),
+      ),
+      expect: () => const [
+        HomeDashboardState(actingIds: {'s9'}),
+        HomeDashboardState(actionNotice: HomeActionNotice.sessionSaved()),
+      ],
+    );
 
     blocTest<HomeDashboardBloc, HomeDashboardState>(
-      '«Hecho» marca el bloque y avisa de la XP que dio el servidor',
-      setUp: () => when(() => complete('b9', completed: true)).thenAnswer(
-        (_) async => Success(BlockCompletion(block: missed, xpDelta: 20)),
-      ),
+      '«Descartar» la quita ya y solo la borra al cerrarse el aviso',
+      setUp: () =>
+          when(() => cancel('s9')).thenAnswer((_) async => const Success(unit)),
       build: build,
       act: (bloc) => bloc
-        ..add(const HomeDashboardEvent.bannerBlockCompleted('b9'))
-        ..add(const HomeDashboardEvent.bannerNoticeHandled()),
+        ..add(const HomeDashboardEvent.unfinishedDiscarded('s9'))
+        ..add(const HomeDashboardEvent.actionNoticeHandled())
+        ..add(const HomeDashboardEvent.deferredCommitted('session:s9')),
       expect: () => const [
-        HomeDashboardState(bannerBusy: HomeBannerAction.complete),
-        HomeDashboardState(bannerNotice: HomeBannerNotice.completed(20)),
+        HomeDashboardState(
+          deferredKeys: {'session:s9'},
+          actionNotice: HomeActionNotice.sessionDiscarded('session:s9'),
+        ),
+        HomeDashboardState(deferredKeys: {'session:s9'}),
+      ],
+      verify: (_) => verify(() => cancel('s9')).called(1),
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Deshacer» la vuelve a enseñar y no se borra nada',
+      build: build,
+      act: (bloc) => bloc
+        ..add(const HomeDashboardEvent.unfinishedDiscarded('s9'))
+        ..add(const HomeDashboardEvent.actionNoticeHandled())
+        ..add(const HomeDashboardEvent.deferredUndone('session:s9'))
+        // El aviso se cierra después: ya no hay nada que hacer.
+        ..add(const HomeDashboardEvent.deferredCommitted('session:s9')),
+      expect: () => const [
+        HomeDashboardState(
+          deferredKeys: {'session:s9'},
+          actionNotice: HomeActionNotice.sessionDiscarded('session:s9'),
+        ),
+        HomeDashboardState(deferredKeys: {'session:s9'}),
         HomeDashboardState(),
       ],
+      verify: (_) => verifyNever(() => cancel(any())),
     );
 
     blocTest<HomeDashboardBloc, HomeDashboardState>(
-      '«Al próximo hueco» lo mueve y dice a dónde',
+      'si no se puede descartar, vuelve a verse y se avisa',
       setUp: () => when(
-        () => reschedule('b9'),
-      ).thenAnswer((_) async => Success(BlockChange(block: missed))),
-      build: build,
-      act: (bloc) =>
-          bloc.add(const HomeDashboardEvent.bannerBlockRescheduled('b9')),
-      expect: () => [
-        const HomeDashboardState(bannerBusy: HomeBannerAction.reschedule),
-        HomeDashboardState(
-          bannerNotice: HomeBannerNotice.rescheduled(DateTime(2026, 10, 20, 8)),
-        ),
-      ],
-    );
-
-    blocTest<HomeDashboardBloc, HomeDashboardState>(
-      'si falla, avisa con el error',
-      setUp: () => when(
-        () => reschedule('b9'),
+        () => cancel('s9'),
       ).thenAnswer((_) async => const Failure(AppError.network())),
       build: build,
-      act: (bloc) =>
-          bloc.add(const HomeDashboardEvent.bannerBlockRescheduled('b9')),
+      act: (bloc) => bloc
+        ..add(const HomeDashboardEvent.unfinishedDiscarded('s9'))
+        ..add(const HomeDashboardEvent.actionNoticeHandled())
+        ..add(const HomeDashboardEvent.deferredCommitted('session:s9')),
       expect: () => const [
-        HomeDashboardState(bannerBusy: HomeBannerAction.reschedule),
         HomeDashboardState(
-          bannerNotice: HomeBannerNotice.failed(AppError.network()),
+          deferredKeys: {'session:s9'},
+          actionNotice: HomeActionNotice.sessionDiscarded('session:s9'),
+        ),
+        HomeDashboardState(deferredKeys: {'session:s9'}),
+        HomeDashboardState(
+          actionNotice: HomeActionNotice.failed(AppError.network()),
         ),
       ],
+    );
+  });
+
+  blocTest<HomeDashboardBloc, HomeDashboardState>(
+    '«Empezar» con un descarte aún por confirmar lo borra antes de empezar',
+    setUp: () {
+      when(() => cancel('s9')).thenAnswer((_) async => const Success(unit));
+      when(
+        () => start(routineId: 'r1', dayId: 'd1'),
+      ).thenAnswer((_) async => Success(TrainingFixtures.session()));
+    },
+    build: build,
+    act: (bloc) async {
+      bloc.add(const HomeDashboardEvent.unfinishedDiscarded('s9'));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(
+        const HomeDashboardEvent.trainingStarted(routineId: 'r1', dayId: 'd1'),
+      );
+      await Future<void>.delayed(Duration.zero);
+      // El aviso se cierra después: no se borra dos veces.
+      bloc.add(const HomeDashboardEvent.deferredCommitted('session:s9'));
+    },
+    verify: (_) {
+      verify(() => cancel('s9')).called(1);
+      verify(() => start(routineId: 'r1', dayId: 'd1')).called(1);
+    },
+  );
+
+  group('lo de ayer sin marcar (ADR 0059)', () {
+    final moved = block(id: 'b9', start: DateTime(2026, 10, 22, 19));
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Pasar a otro día» lo lleva al día elegido y dice a cuál',
+      setUp: () => when(
+        () => reschedule(
+          'b9',
+          start: DateTime(2026, 10, 22, 19),
+          end: DateTime(2026, 10, 22, 20),
+        ),
+      ).thenAnswer((_) async => Success(BlockChange(block: moved))),
+      build: build,
+      act: (bloc) => bloc.add(
+        HomeDashboardEvent.missedMoved(
+          eventId: 'b9',
+          start: DateTime(2026, 10, 22, 19),
+          end: DateTime(2026, 10, 22, 20),
+        ),
+      ),
+      expect: () => [
+        const HomeDashboardState(actingIds: {'b9'}),
+        HomeDashboardState(
+          actionNotice: HomeActionNotice.moved(DateTime(2026, 10, 22, 19)),
+        ),
+      ],
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Quitar» lo borra del calendario al cerrarse su «Deshacer»',
+      setUp: () => when(
+        () => deleteBlock('b9'),
+      ).thenAnswer((_) async => const Success(unit)),
+      build: build,
+      act: (bloc) => bloc
+        ..add(const HomeDashboardEvent.missedRemoved('b9'))
+        ..add(const HomeDashboardEvent.actionNoticeHandled())
+        ..add(const HomeDashboardEvent.deferredCommitted('block:b9')),
+      expect: () => const [
+        HomeDashboardState(
+          deferredKeys: {'block:b9'},
+          actionNotice: HomeActionNotice.removed('block:b9'),
+        ),
+        HomeDashboardState(deferredKeys: {'block:b9'}),
+      ],
+      verify: (_) => verify(() => deleteBlock('b9')).called(1),
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      'al cerrar Inicio con un «Quitar» pendiente, se borra igual',
+      setUp: () => when(
+        () => deleteBlock('b9'),
+      ).thenAnswer((_) async => const Success(unit)),
+      build: build,
+      act: (bloc) async {
+        bloc.add(const HomeDashboardEvent.missedRemoved('b9'));
+        await Future<void>.delayed(Duration.zero);
+        await bloc.close();
+      },
+      verify: (_) => verify(() => deleteBlock('b9')).called(1),
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Lo hice» de un día de rutina lo apunta como sesión de ese día',
+      setUp: () =>
+          when(
+            () => logPast(
+              routineId: 'r1',
+              dayId: 'd1',
+              date: DateTime(2026, 10, 19),
+              durationMinutes: 50,
+              rpe: 7,
+            ),
+          ).thenAnswer(
+            (_) async => Success(
+              PastSessionResult(
+                session: TrainingFixtures.session(
+                  status: SessionStatus.completed,
+                ),
+                experience: const ExperienceChange(
+                  level: 1,
+                  levelXp: 10,
+                  xpDelta: 10,
+                ),
+              ),
+            ),
+          ),
+      build: build,
+      act: (bloc) => bloc.add(
+        HomeDashboardEvent.missedLogged(
+          eventId: 'b9',
+          routineId: 'r1',
+          dayId: 'd1',
+          date: DateTime(2026, 10, 19),
+          minutes: 50,
+          rpe: 7,
+        ),
+      ),
+      expect: () => const [
+        HomeDashboardState(actingIds: {'b9'}),
+        HomeDashboardState(actionNotice: HomeActionNotice.logged()),
+      ],
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Lo hice» de un estudio lo marca y deja de pedirse',
+      setUp: () => when(() => complete('m1', completed: true)).thenAnswer(
+        (_) async => Success(
+          BlockCompletion(
+            block: block(
+              id: 'm1',
+              start: DateTime(2026, 10, 19, 19),
+            ).copyWith(completed: true, timeStatus: ItemTimeStatus.done),
+            xpDelta: 10,
+          ),
+        ),
+      ),
+      build: build,
+      seed: () => loaded.copyWith(
+        dashboard: homeDashboardFixture.copyWith(
+          missedEvents: [
+            HomeTodayEvent(
+              id: 'm1',
+              kind: HomeEventKind.block,
+              type: HomeEventType.study,
+              title: 'Repasar Cálculo',
+              start: DateTime(2026, 10, 19, 19),
+              end: DateTime(2026, 10, 19, 20),
+              completed: false,
+              status: ItemTimeStatus.missed,
+            ),
+          ],
+        ),
+      ),
+      act: (bloc) => bloc.add(
+        const HomeDashboardEvent.completionSet(
+          id: 'm1',
+          kind: HomeEventKind.block,
+          completed: true,
+        ),
+      ),
+      verify: (bloc) {
+        final missed = bloc.state.dashboard!.missedEvents.single;
+        expect(missed.completed, isTrue);
+      },
     );
   });
 

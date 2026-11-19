@@ -24,10 +24,13 @@ public final class DashboardReadModels {
      * @param routineId    rutina enlazada (bloques de deporte de una rutina)
      * @param routineDayId día de rutina que refleja el bloque: «Entrenar» empieza ese día
      * @param milestoneId  tarea de reto a la que está asignado (la hace avanzar)
+     * @param place        aula o lugar del propio evento (el del horario importado), si lo tiene
+     * @param subjectRoom  aula habitual de su asignatura (ADR 0036)
+     * @param teacher      profesor o profesora de su asignatura
      */
     public record CalendarBlock(UUID id, String activityType, Instant start, Instant end, boolean completed,
                                 String subjectName, String topics, UUID routineId, UUID routineDayId,
-                                UUID milestoneId) {
+                                UUID milestoneId, String place, String subjectRoom, String teacher) {
 
         public CalendarBlock(UUID id, String activityType, Instant start, Instant end, boolean completed,
                              String subjectName, String topics) {
@@ -37,6 +40,29 @@ public final class DashboardReadModels {
         public CalendarBlock(UUID id, String activityType, Instant start, Instant end, boolean completed,
                              String subjectName, String topics, UUID routineId, UUID routineDayId) {
             this(id, activityType, start, end, completed, subjectName, topics, routineId, routineDayId, null);
+        }
+
+        public CalendarBlock(UUID id, String activityType, Instant start, Instant end, boolean completed,
+                             String subjectName, String topics, UUID routineId, UUID routineDayId,
+                             UUID milestoneId) {
+            this(id, activityType, start, end, completed, subjectName, topics, routineId, routineDayId, milestoneId,
+                    null, null, null);
+        }
+
+        /**
+         * Dónde es: el aula del propio evento y, si no la trae, la habitual de su asignatura (la misma regla que la
+         * tarjeta de la asignatura, {@code SubjectAgenda}). Nulo si no se sabe.
+         */
+        public String where() {
+            if (place != null && !place.isBlank()) {
+                return place.strip();
+            }
+            return subjectRoom == null || subjectRoom.isBlank() ? null : subjectRoom.strip();
+        }
+
+        /** Profesor de su asignatura, sin espacios sobrantes; nulo si no se sabe. */
+        public String teacherName() {
+            return teacher == null || teacher.isBlank() ? null : teacher.strip();
         }
     }
 

@@ -13,6 +13,11 @@ import com.synaptixfit.application.port.input.insights.GetStudyActivityUseCase;
 import com.synaptixfit.application.port.input.insights.GetStudyCaloriesTodayUseCase;
 import com.synaptixfit.application.port.input.insights.GetWellbeingUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
+import com.synaptixfit.application.port.input.social.ListFriendshipsUseCase;
+import com.synaptixfit.domain.model.social.FriendshipListKind;
+import com.synaptixfit.domain.model.training.OpenTrainingSession;
+import com.synaptixfit.domain.model.training.SessionLabel;
 import com.synaptixfit.domain.exception.user.UserNotFoundException;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
@@ -100,6 +105,10 @@ public class DashboardService implements GetDashboardUseCase {
     /** Racha efectiva al leer (null: se usa la guardada en el usuario). */
     private final GetStreakUseCase streaks;
     private final GetTodayAdaptationUseCase todayAdaptation;
+    /** Sesión a medias de «Sin terminar» (ADR 0059); nulo, no se busca. */
+    private final ListOpenSessionsUseCase openSessions;
+    /** Solicitudes de amistad del icono «Comunidad» (ADR 0059); nulo, cero. */
+    private final ListFriendshipsUseCase friendships;
     private final Clock clock;
     private final ZoneId defaultZone;
 
@@ -132,6 +141,24 @@ public class DashboardService implements GetDashboardUseCase {
                             GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges,
                             GetPendingTrainingDayUseCase pendingDays, GetStreakUseCase streaks,
                             GetTodayAdaptationUseCase todayAdaptation, Clock clock, ZoneId defaultZone) {
+        this(users, reads, insightSources, cognitiveStates, crossRegulation, studyCalories, studyActivity, physicalLoad,
+                wellbeing, challenges, pendingDays, streaks, todayAdaptation, null, null, clock, defaultZone);
+    }
+
+    /**
+     * @param openSessions sesiones sin terminar, para la tarjeta «Sin terminar» (ADR 0059)
+     * @param friendships  solicitudes de amistad recibidas, para el icono «Comunidad» (ADR 0059)
+     */
+    public DashboardService(UserRepositoryPort users, DashboardReadPort reads, InsightsSourcePort insightSources,
+                            GetCognitiveStateUseCase cognitiveStates, GetCrossRegulationUseCase crossRegulation,
+                            GetStudyCaloriesTodayUseCase studyCalories, GetStudyActivityUseCase studyActivity,
+                            GetPhysicalLoadUseCase physicalLoad,
+                            GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges,
+                            GetPendingTrainingDayUseCase pendingDays, GetStreakUseCase streaks,
+                            GetTodayAdaptationUseCase todayAdaptation, ListOpenSessionsUseCase openSessions,
+                            ListFriendshipsUseCase friendships, Clock clock, ZoneId defaultZone) {
+        this.openSessions = openSessions;
+        this.friendships = friendships;
         this.todayAdaptation = todayAdaptation;
         this.pendingDays = pendingDays;
         this.streaks = streaks;
@@ -183,7 +210,6 @@ public class DashboardService implements GetDashboardUseCase {
         Instant yesterdayStart = TimeZones.startOfDay(today.minusDays(1), zone);
         List<CalendarBlock> missed = SmartBannerRules.missedForBanner(
                 reads.calendarBlocks(userId, yesterdayStart, tomorrowStart), focus, now);
-        int missedBlocks = missed.size();
         int overdueDeadlines = focus.includesAcademic()
                 ? (int) reads.deadlines(userId, now.minus(Duration.ofDays(OVERDUE_DAYS)), now).stream()
                         .filter(d -> ItemTimeStatus.ofDeadline(d.dueAt(), d.completed(), now) == ItemTimeStatus.MISSED)
@@ -229,14 +255,23 @@ public class DashboardService implements GetDashboardUseCase {
                 reads.lastTrainingSession(userId)
                         .map(last -> (int) ChronoUnit.DAYS.between(LocalDate.ofInstant(last, zone), today))
                         .orElse(null),
-                focus, overdueDeadlines, missedBlocks));
-        if (banner.type() == SmartBanner.Type.MISSED_BLOCKS) {
-            banner = SmartBannerRules.describeLatestMissed(banner, missed, today, zone);
-        }
+                focus, overdueDeadlines,
+                // Lo sin hacer ya lo dicen, evento a evento, «Ayer quedó sin marcar» y «Tu día» (ADR 0059): el
+                // aviso de Inicio no lo repite y deja sitio al siguiente (entregas, registro diario…).
+                0));
 
         PendingDay nextTraining = focus.includesFitness() ? pendingDays.pendingDay(userId).orElse(null) : null;
         List<Dashboard.TodayEvent> events = withTasks(todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart,
                 now), todayBlocks, active.stream().filter(c -> c.status(now) == ChallengeStatus.ACTIVE).toList());
+        boolean trainingDueToday = nextTraining != null && nextTraining.isDueBy(today);
+        Dashboard.Extras extras = new Dashboard.Extras(trainingDueToday,
+                focus.includesFitness() ? unfinishedSession(userId, now) : null,
+                missedEvents(missed.stream().filter(b -> b.start().isBefore(todayStart)).toList(), now),
+                pendingFriendRequests(userId),
+                minutes(weekBlocks.stream()
+                        .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus))
+                        // Estudio personal (estudio y repaso): la clase es asistencia, no «horas de estudio».
+                        .filter(b -> ActivityType.countsAsStudyCode(b.activityType())).toList()));
         return new Dashboard(greeting, todayKpis, weekKpis, cognitive, regulation, wellbeingNow,
                 nextTraining,
                 active.stream().limit(TOP_CHALLENGES).map(ActiveChallenge::of).toList(),
@@ -248,7 +283,58 @@ public class DashboardService implements GetDashboardUseCase {
                         ? Dashboard.countdownOf(reads.deadlines(userId, now,
                                 now.plus(Duration.ofDays(Dashboard.COUNTDOWN_HORIZON_DAYS))), now)
                         : null,
-                todayIntensity(userId, tz, focus, nextTraining, events, today));
+                todayIntensity(userId, tz, focus, nextTraining, events, today),
+                extras);
+    }
+
+    /**
+     * La sesión a medias más reciente que hay que cerrar (ADR 0059): la regla de cuándo es «a medias» es del dominio
+     * ({@link com.synaptixfit.domain.model.training.TrainingSession#isLeftover}): abierta más de 6 h.
+     */
+    private Dashboard.UnfinishedSession unfinishedSession(UUID userId, Instant now) {
+        if (openSessions == null) {
+            return null;
+        }
+        return openSessions.listOpen(userId).stream()
+                .filter(o -> o.session().isLeftover(now))
+                .max(Comparator.comparing(o -> o.session().startedAt()))
+                .map(DashboardService::unfinished)
+                .orElse(null);
+    }
+
+    static Dashboard.UnfinishedSession unfinished(OpenTrainingSession o) {
+        SessionLabel l = o.label();
+        return new Dashboard.UnfinishedSession(o.session().id(), l == null ? null : l.routineName(),
+                l == null ? null : l.dayName(), l == null ? null : l.dayNumber(), o.session().startedAt(),
+                o.session().exercisesDone(), l == null ? null : l.exerciseCount(),
+                l == null ? null : l.coverImageUrl());
+    }
+
+    /** Solicitudes de amistad recibidas sin responder (solo se cuenta: una página de uno basta). */
+    private int pendingFriendRequests(UUID userId) {
+        if (friendships == null) {
+            return 0;
+        }
+        long total = friendships.list(userId, FriendshipListKind.RECEIVED, new PageRequest(0, 1)).totalItems();
+        return (int) Math.min(Integer.MAX_VALUE, total);
+    }
+
+    /**
+     * Lo que se quedó sin marcar ayer (de los mismos bloques que el aviso, {@link SmartBannerRules#missedForBanner};
+     * lo de hoy ya sale en «Tu día» y en la agenda), como eventos con nombre, día y hora: el más reciente primero.
+     */
+    static List<Dashboard.TodayEvent> missedEvents(List<CalendarBlock> missed, Instant now) {
+        return missed.stream()
+                .sorted(Comparator.comparing(CalendarBlock::start).reversed())
+                .map(b -> blockEvent(b, now))
+                .toList();
+    }
+
+    private static Dashboard.TodayEvent blockEvent(CalendarBlock b, Instant now) {
+        String title = b.subjectName() != null ? b.subjectName() : b.topics();
+        return new Dashboard.TodayEvent(Dashboard.TodayEvent.Kind.BLOCK, b.id(), title, b.activityType(),
+                b.start(), b.end(), b.completed(), b.subjectName(), status(b, now), b.routineId(),
+                b.routineDayId()).withPlace(b.where(), b.teacherName());
     }
 
     /** «Hoy toca» (ADR 0042): solo con deporte en el enfoque y entreno por hacer hoy; si no, nula. */
@@ -346,10 +432,7 @@ public class DashboardService implements GetDashboardUseCase {
             if (DEADLINE_BLOCK_TYPES.contains(b.activityType())) {
                 continue;
             }
-            String title = b.subjectName() != null ? b.subjectName() : b.topics();
-            events.add(new Dashboard.TodayEvent(Dashboard.TodayEvent.Kind.BLOCK, b.id(), title, b.activityType(),
-                    b.start(), b.end(), b.completed(), b.subjectName(), status(b, now), b.routineId(),
-                    b.routineDayId()));
+            events.add(blockEvent(b, now));
         }
         for (Deadline d : deadlines) {
             if (!d.dueAt().isBefore(todayStart) && d.dueAt().isBefore(tomorrowStart)) {

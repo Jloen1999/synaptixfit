@@ -3,7 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:synaptixfit/domain/enums/home_day_mark.dart';
 import 'package:synaptixfit/domain/enums/home_event_kind.dart';
+import 'package:synaptixfit/domain/enums/home_week_state.dart';
 import 'package:synaptixfit/domain/enums/home_event_type.dart';
 import 'package:synaptixfit/domain/enums/item_time_status.dart';
 import 'package:synaptixfit/domain/models/home/home_dashboard.dart';
@@ -12,8 +14,8 @@ import 'package:synaptixfit/presentation/screens/home/widgets/agenda_section.dar
 import 'package:synaptixfit/presentation/screens/home/widgets/plan_week_bar.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
-/// «Tu semana» con Hecho / Por hacer / Sin hacer y la agenda que marca desde
-/// Inicio (ADR 0035).
+/// «Tu semana» con su frase y un círculo por día (ADR 0059) y la agenda que
+/// marca desde Inicio (ADR 0035).
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('es');
@@ -21,14 +23,39 @@ void main() {
   });
 
   final monday = DateTime(2026, 10, 19);
+  // Las marcas las manda el servidor (ADR 0059): lunes con algo sin hacer,
+  // martes todo hecho, miércoles (hoy) a medias, jueves 3 por hacer y el
+  // resto sin nada.
   final days = [
-    HomePlanDay(date: monday, planned: 4, completed: 2, missed: 1),
+    HomePlanDay(
+      date: monday,
+      planned: 4,
+      completed: 2,
+      missed: 1,
+      mark: HomeDayMark.missed,
+      pending: 1,
+    ),
     HomePlanDay(
       date: monday.add(const Duration(days: 1)),
+      planned: 2,
+      completed: 2,
+      mark: HomeDayMark.done,
+    ),
+    HomePlanDay(
+      date: monday.add(const Duration(days: 2)),
+      planned: 4,
+      completed: 2,
+      mark: HomeDayMark.partial,
+      pending: 2,
+    ),
+    HomePlanDay(
+      date: monday.add(const Duration(days: 3)),
       planned: 3,
       completed: 0,
+      mark: HomeDayMark.pending,
+      pending: 3,
     ),
-    for (var i = 2; i < 7; i++)
+    for (var i = 4; i < 7; i++)
       HomePlanDay(
         date: monday.add(Duration(days: i)),
         planned: 0,
@@ -36,11 +63,20 @@ void main() {
       ),
   ];
   const week = HomeWeekKpis(
-    sessions: 1,
-    trainingMinutes: 45,
-    trainingCalories: 300,
-    studyMinutesCompleted: 90,
+    sessions: 2,
+    plannedSessions: 3,
+    trainingMinutes: 90,
+    trainingCalories: 600,
+    studyMinutesCompleted: 300,
+    studyMinutesPlanned: 480,
   );
+  const summary = HomeWeekSummary(
+    done: 6,
+    planned: 13,
+    missed: 1,
+    state: HomeWeekState.onTrack,
+  );
+  final wednesday = monday.add(const Duration(days: 2));
 
   Future<void> pump(
     WidgetTester tester,
@@ -75,64 +111,99 @@ void main() {
   }
 
   group('Tu semana', () {
-    testWidgets('el título se entiende solo y nombra los tres estados', (
+    Widget bar({ValueChanged<DateTime>? onOpenDay, HomeWeekSummary? state}) =>
+        PlanWeekBar(
+          days: days,
+          week: week,
+          summary: state ?? summary,
+          onOpenDay: onOpenDay ?? (_) {},
+          now: wednesday,
+        );
+
+    testWidgets('una frase dice cómo vas y cada cifra lleva su palabra', (
+      tester,
+    ) async {
+      await pump(tester, bar());
+
+      expect(find.text('Vas bien'), findsOneWidget);
+      expect(
+        find.text('6 de 13 cosas hechas · 1 se quedó sin hacer'),
+        findsOneWidget,
+      );
+      expect(find.text('Entrenos'), findsOneWidget);
+      expect(find.text('2 de 3'), findsOneWidget);
+      expect(find.text('Estudio'), findsOneWidget);
+      expect(find.text('5 h de 8 h'), findsOneWidget);
+      // Sin «2/3» sueltos.
+      expect(find.text('2/4'), findsNothing);
+    });
+
+    testWidgets('el estado lo da el servidor: por detrás y sin plan', (
       tester,
     ) async {
       await pump(
         tester,
-        PlanWeekBar(days: days, week: week, onOpenDay: (_) {}, now: monday),
+        bar(
+          state: const HomeWeekSummary(
+            done: 1,
+            planned: 8,
+            missed: 4,
+            state: HomeWeekState.behind,
+          ),
+        ),
       );
+      expect(find.text('Vas por detrás'), findsOneWidget);
+      expect(find.textContaining('4 se quedaron sin hacer'), findsOneWidget);
 
-      expect(find.text('2 de 7 hechos esta semana'), findsOneWidget);
-      expect(find.text('4 por hacer · 1 sin hacer'), findsOneWidget);
-      expect(find.text('Hecho'), findsOneWidget);
-      expect(find.text('Por hacer'), findsOneWidget);
-      expect(find.text('Sin hacer'), findsOneWidget);
-      expect(find.text('Planificado'), findsNothing);
+      await pump(tester, bar(state: const HomeWeekSummary()));
+      expect(find.text('Semana sin plan'), findsOneWidget);
     });
 
-    testWidgets('el lector dice lo mismo que se ve y tocar abre el día', (
+    testWidgets('cada día lleva una marca que no depende del color', (
+      tester,
+    ) async {
+      await pump(tester, bar());
+
+      // ✓ todo hecho (icono), «!» algo sin hacer, el número de lo que queda
+      // y «–» sin nada; «Hoy» en vez de la inicial.
+      expect(find.byIcon(Icons.check_rounded), findsWidgets);
+      expect(find.text('!'), findsWidgets);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('–'), findsWidgets);
+      expect(find.text('Hoy'), findsOneWidget);
+      // Leyenda corta.
+      expect(find.text('Todo hecho'), findsOneWidget);
+      expect(find.text('A medias'), findsOneWidget);
+      expect(find.text('Algo sin hacer'), findsOneWidget);
+      expect(find.text('Por hacer'), findsOneWidget);
+    });
+
+    testWidgets('el lector dice lo mismo con palabras y tocar abre el día', (
       tester,
     ) async {
       final handle = tester.ensureSemantics();
       DateTime? opened;
-      await pump(
-        tester,
-        PlanWeekBar(
-          days: days,
-          week: week,
-          onOpenDay: (d) => opened = d,
-          now: monday,
-        ),
-      );
+      await pump(tester, bar(onOpenDay: (d) => opened = d));
 
-      final label = find.bySemanticsLabel(
-        'Hoy, lunes: 2 de 4 hechos, 1 por hacer, 1 sin hacer',
-      );
+      expect(find.bySemanticsLabel('lunes: 1 sin hacer'), findsOneWidget);
+      expect(find.bySemanticsLabel('martes: todo hecho'), findsOneWidget);
+      final today = find.bySemanticsLabel('Hoy, miércoles: 2 de 4 hechos');
+      expect(today, findsOneWidget);
+      expect(find.bySemanticsLabel('jueves: 3 por hacer'), findsOneWidget);
       expect(
-        find.bySemanticsLabel('martes: 0 de 3 hechos, 3 por hacer'),
+        find.bySemanticsLabel('viernes: nada planificado'),
         findsOneWidget,
       );
-      expect(
-        find.bySemanticsLabel('miércoles: nada planificado'),
-        findsOneWidget,
-      );
-      expect(label, findsOneWidget);
-      expect(find.text('2/4'), findsOneWidget);
-      await tester.tap(label);
-      expect(opened, monday);
+      await tester.tap(today);
+      expect(opened, wednesday);
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(textContrastGuideline));
       handle.dispose();
     });
 
     testWidgets('al 200 % y en 320 px no desborda', (tester) async {
-      await pump(
-        tester,
-        PlanWeekBar(days: days, week: week, onOpenDay: (_) {}, now: monday),
-        textScale: 2,
-        width: 320,
-      );
+      await pump(tester, bar(), textScale: 2, width: 320);
       expect(tester.takeException(), isNull);
     });
   });

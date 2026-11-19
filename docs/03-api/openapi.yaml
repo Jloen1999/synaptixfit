@@ -15407,6 +15407,12 @@ components:
           format: int32
         coverImageUrl:
           type: string
+        exercisesDone:
+          type: integer
+          format: int32
+        exercisesTotal:
+          type: integer
+          format: int32
     RunWeekResponse:
       type: object
       properties:
@@ -17376,6 +17382,17 @@ components:
           - HARD
         todaySummary:
           $ref: "#/components/schemas/TodaySummaryResponse"
+        weekSummary:
+          $ref: "#/components/schemas/WeekSummaryResponse"
+        unfinishedSession:
+          $ref: "#/components/schemas/UnfinishedSessionResponse"
+        missedEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/TodayEventResponse"
+        pendingFriendRequests:
+          type: integer
+          format: int32
     DashboardWeekResponse:
       type: object
       properties:
@@ -17398,6 +17415,9 @@ components:
           type: number
           format: double
         studyMinutesCompleted:
+          type: integer
+          format: int32
+        studyMinutesPlanned:
           type: integer
           format: int32
     GreetingResponse:
@@ -17486,6 +17506,8 @@ components:
         estimatedMinutes:
           type: integer
           format: int32
+        dueToday:
+          type: boolean
     PlanDayResponse:
       type: object
       properties:
@@ -17499,6 +17521,17 @@ components:
           type: integer
           format: int32
         missed:
+          type: integer
+          format: int32
+        mark:
+          type: string
+          enum:
+          - NONE
+          - DONE
+          - PARTIAL
+          - MISSED
+          - PENDING
+        pending:
           type: integer
           format: int32
     TaskMentionResponse:
@@ -17559,6 +17592,10 @@ components:
             $ref: "#/components/schemas/TaskMentionResponse"
         tracksPhysicalLoad:
           type: boolean
+        place:
+          type: string
+        teacher:
+          type: string
     TodayResponse:
       type: object
       properties:
@@ -17611,6 +17648,51 @@ components:
           - PENDING
           - MISSED_LEFT
           - ALL_DONE
+        spotlightEventId:
+          type: string
+          format: uuid
+    UnfinishedSessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        routineName:
+          type: string
+        dayName:
+          type: string
+        dayNumber:
+          type: integer
+          format: int32
+        startedAt:
+          type: string
+          format: date-time
+        exercisesDone:
+          type: integer
+          format: int32
+        exercisesTotal:
+          type: integer
+          format: int32
+        coverImageUrl:
+          type: string
+    WeekSummaryResponse:
+      type: object
+      properties:
+        done:
+          type: integer
+          format: int32
+        planned:
+          type: integer
+          format: int32
+        missed:
+          type: integer
+          format: int32
+        state:
+          type: string
+          enum:
+          - NO_PLAN
+          - ON_TRACK
+          - BEHIND
     PageResponseChallengeResponse:
       type: object
       properties:

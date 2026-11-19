@@ -16,4 +16,9 @@ import java.util.UUID;
 public record PendingDay(Routine routine, RoutineWeek week, RoutineDay day, ProgressStatus status,
                          LocalDate scheduledDate, boolean overdue, int sessionOfWeek, int sessionsInWeek,
                          UUID staleSessionId) {
+
+    /** ¿Toca hoy o va con retraso? Entonces Inicio lo pone en «Tu día» (ADR 0042 y 0059). */
+    public boolean isDueBy(LocalDate today) {
+        return scheduledDate != null && !scheduledDate.isAfter(today);
+    }
 }

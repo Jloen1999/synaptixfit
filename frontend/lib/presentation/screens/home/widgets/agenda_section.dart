@@ -34,6 +34,7 @@ class AgendaSection extends StatefulWidget {
     this.onReviewAll,
     this.onSetCompleted,
     this.onStartTraining,
+    this.startEnabled = true,
     this.completingIds = const {},
     this.now,
   });
@@ -65,6 +66,10 @@ class AgendaSection extends StatefulWidget {
 
   /// «Empezar» de un entreno de rutina (el día de rutina del evento).
   final ValueChanged<HomeTodayEvent>? onStartTraining;
+
+  /// `false` con una sesión a medias: «Empezar» se ve pero espera a que se
+  /// guarde o descarte (como en «Tu día», ADR 0059).
+  final bool startEnabled;
 
   /// Eventos que se están marcando o desmarcando.
   final Set<String> completingIds;
@@ -237,21 +242,29 @@ class _AgendaSectionState extends State<AgendaSection> {
                       onStartTraining: widget.onStartTraining == null
                           ? null
                           : () => widget.onStartTraining!(event),
+                      startEnabled: widget.startEnabled,
                     ),
                   if (_hidden(context, events) > 0 || _expanded)
-                    Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: Semantics(
-                        expanded: _expanded,
-                        child: TextButton(
-                          onPressed: () =>
-                              setState(() => _expanded = !_expanded),
-                          child: Text(
-                            _expanded
-                                ? l10n.homeAgendaShowLess
-                                : l10n.homeAgendaShowMore(
-                                    _hidden(context, events),
-                                  ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: TokensSpacing.m,
+                      ),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Semantics(
+                          expanded: _expanded,
+                          // Con forma de botón (ADR 0059): el texto de color
+                          // suelto no parecía pulsable.
+                          child: OutlinedButton(
+                            onPressed: () =>
+                                setState(() => _expanded = !_expanded),
+                            child: Text(
+                              _expanded
+                                  ? l10n.homeAgendaShowLess
+                                  : l10n.homeAgendaShowMore(
+                                      _hidden(context, events),
+                                    ),
+                            ),
                           ),
                         ),
                       ),
@@ -290,7 +303,7 @@ class _AgendaSectionState extends State<AgendaSection> {
                         ),
                         if (widget.reviews.length > 1 &&
                             widget.onReviewAll != null)
-                          TextButton.icon(
+                          OutlinedButton.icon(
                             onPressed: widget.onReviewAll,
                             icon: const Icon(Icons.playlist_play_rounded),
                             label: Text(l10n.homeReviewAll),
@@ -311,11 +324,23 @@ class _AgendaSectionState extends State<AgendaSection> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        trailing: Text(
-                          l10n.homeAgendaReviewAction,
-                          style: context.textStyles.labelLarge?.copyWith(
-                            color: context.colors.primary,
-                          ),
+                        // Toda la fila abre el repaso: la flecha lo dice sin
+                        // texto de color que parezca un enlace suelto.
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.homeAgendaReviewAction,
+                              style: context.textStyles.labelLarge?.copyWith(
+                                color: context.colors.onSurfaceVariant,
+                              ),
+                            ),
+                            Icon(
+                              AppIcons.next,
+                              size: TokensSize.iconS,
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ],
                         ),
                         onTap: () => widget.onOpenReview(review),
                       ),
@@ -543,9 +568,11 @@ class _EventTile extends StatelessWidget {
     this.actionFocus,
     this.onSetCompleted,
     this.onStartTraining,
+    this.startEnabled = true,
   });
 
   final HomeTodayEvent event;
+  final bool startEnabled;
   final VoidCallback onTap;
   final bool isToday;
   final bool busy;
@@ -613,13 +640,16 @@ class _EventTile extends StatelessWidget {
         );
       case _EventAction.start when onStartTraining != null:
         // El lector oye qué se empieza, no solo «Empezar».
+        final start = startEnabled ? onStartTraining : null;
         return Semantics(
           label: '${l10n.homeTrainingStart}: $title',
           excludeSemantics: true,
           button: true,
-          onTap: onStartTraining,
-          child: TextButton(
-            onPressed: onStartTraining,
+          enabled: start != null,
+          onTap: start,
+          // Tonal: secundario frente al único botón destacado de Inicio.
+          child: FilledButton.tonal(
+            onPressed: start,
             child: Text(l10n.homeTrainingStart),
           ),
         );
@@ -630,7 +660,7 @@ class _EventTile extends StatelessWidget {
           button: true,
           enabled: !busy,
           onTap: busy ? null : () => _toggle(context, true),
-          child: TextButton(
+          child: OutlinedButton(
             focusNode: actionFocus,
             onPressed: busy ? null : () => _toggle(context, true),
             child: Text(l10n.homeAgendaDidIt),

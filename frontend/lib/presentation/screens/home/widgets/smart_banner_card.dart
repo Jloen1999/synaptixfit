@@ -7,7 +7,6 @@ import '../../../../domain/models/home/home_dashboard.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
-import '../dashboard/bloc/home_dashboard_bloc.dart';
 import '../home_external_paths.dart';
 import 'agenda_section.dart';
 
@@ -151,115 +150,6 @@ class SmartBannerContent {
   }
 }
 
-bool _isSport(HomeSmartBanner banner) =>
-    HomeEventType.fromApi(banner.labels['activity']) == HomeEventType.sport;
-
-/// Aviso de un bloque concreto sin hacer, con sus dos acciones: cada una es su
-/// propio botón (la tarjeta no es pulsable entera).
-class _MissedBlockBanner extends StatelessWidget {
-  const _MissedBlockBanner({
-    required this.banner,
-    required this.blockId,
-    required this.busy,
-    required this.sport,
-    required this.onReschedule,
-    required this.onComplete,
-  });
-
-  final HomeSmartBanner banner;
-  final String blockId;
-  final HomeBannerAction? busy;
-
-  /// Un bloque de deporte se marca en el calendario (allí se indica el
-  /// esfuerzo): el botón lo dice en vez de «Hecho».
-  final bool sport;
-  final VoidCallback onReschedule;
-  final VoidCallback onComplete;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    final accent = context.palette.warning;
-    final count = banner.param('count').round();
-    return Semantics(
-      container: true,
-      child: AppCard(
-        padding: const EdgeInsets.all(TokensSpacing.sm),
-        color: Color.alphaBlend(
-          accent.withValues(alpha: AppPill.tintAlpha),
-          context.colors.surface,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(TokensSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: AppPill.tintAlpha),
-                    borderRadius: BorderRadius.circular(TokensRadius.m),
-                  ),
-                  child: Icon(AppIcons.history, color: accent),
-                ),
-                const SizedBox(width: TokensSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _missedTitle(context, banner),
-                        style: context.textStyles.titleSmall,
-                      ),
-                      Text(
-                        l10n.homeBannerMissedBlocksMessage(count),
-                        style: context.textStyles.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: TokensSpacing.s),
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: TokensSpacing.s,
-              runSpacing: TokensSpacing.s,
-              children: [
-                AppSecondaryButton(
-                  label: l10n.homeBannerActionNextSlot,
-                  icon: const Icon(Icons.update_rounded),
-                  loading: busy == HomeBannerAction.reschedule,
-                  onPressed: busy == null ? onReschedule : null,
-                ),
-                AppSecondaryButton(
-                  label: sport
-                      ? l10n.homeBannerActionMarkInCalendar
-                      : l10n.homeBannerActionDone,
-                  icon: Icon(sport ? AppIcons.calendar : Icons.check_rounded),
-                  loading: busy == HomeBannerAction.complete,
-                  onPressed: busy == null ? onComplete : null,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Calendario abierto en el bloque del aviso: su semana es la de hoy o la de
-/// ayer, según diga el servidor (`yesterday`).
-String _plannerAtBlock(HomeSmartBanner banner, String blockId, DateTime now) {
-  final yesterday = banner.param('yesterday') == 1;
-  return HomeExternalPaths.plannerAt(
-    yesterday ? DateTime(now.year, now.month, now.day - 1) : now,
-    blockId: blockId,
-  );
-}
-
 /// «Álgebra (hoy a las 16:00) se quedó sin hacer»: el bloque más reciente
 /// por su nombre (o su tipo) y su hora, para saber cuál es sin abrir nada.
 String _missedTitle(BuildContext context, HomeSmartBanner banner) {
@@ -284,53 +174,21 @@ String _missedTitle(BuildContext context, HomeSmartBanner banner) {
 
 enum SmartBannerTone { warning, positive, neutral }
 
-/// Banner inteligente del día con acción contextual opcional. El de bloques sin
-/// hacer, si el servidor dice cuál es (`blockId`), actúa sobre él sin salir:
-/// «Al próximo hueco» y «Hecho» (un bloque de deporte se marca en el
-/// calendario, donde se indica el esfuerzo).
+/// Banner inteligente del día con acción contextual opcional. Lo que quedó
+/// sin marcar no se resuelve aquí: Inicio lo enseña con su propia tarjeta,
+/// evento a evento (`MissedEventsCard`, ADR 0059).
 class SmartBannerCard extends StatelessWidget {
   const SmartBannerCard({
     super.key,
     required this.banner,
     required this.onAction,
-    this.onRescheduleBlock,
-    this.onCompleteBlock,
-    this.busy,
-    this.now,
   });
 
   final HomeSmartBanner banner;
   final ValueChanged<String> onAction;
-  final ValueChanged<String>? onRescheduleBlock;
-  final ValueChanged<String>? onCompleteBlock;
-
-  /// Acción del bloque que se está aplicando (nula si ninguna).
-  final HomeBannerAction? busy;
-
-  /// Momento de referencia (inyectable en tests).
-  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
-    final blockId = banner.type == HomeBannerType.missedBlocks
-        ? banner.labels['blockId']
-        : null;
-    if (blockId != null &&
-        onRescheduleBlock != null &&
-        onCompleteBlock != null) {
-      return _MissedBlockBanner(
-        banner: banner,
-        blockId: blockId,
-        busy: busy,
-        onReschedule: () => onRescheduleBlock!(blockId),
-        sport: _isSport(banner),
-        onComplete: _isSport(banner)
-            ? () => onAction(
-                _plannerAtBlock(banner, blockId, now ?? DateTime.now()),
-              )
-            : () => onCompleteBlock!(blockId),
-      );
-    }
     final content = SmartBannerContent.of(context, banner);
     final accent = switch (content.tone) {
       SmartBannerTone.warning => context.palette.warning,
@@ -344,9 +202,9 @@ class SmartBannerCard extends StatelessWidget {
     final compact =
         MediaQuery.sizeOf(context).width < TokensLayout.twoColumnBreakpoint;
     final action = path != null && content.actionLabel != null
-        ? TextButton.icon(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.xs),
+        // Con forma de botón (ADR 0059), no texto suelto.
+        ? OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
               foregroundColor: context.colors.onSurface,
             ),
             iconAlignment: IconAlignment.end,

@@ -84,7 +84,7 @@ class _SetupChecklistCardState extends State<SetupChecklistCard> {
               if (hidden > 0 || _expanded)
                 Semantics(
                   expanded: _expanded,
-                  child: TextButton(
+                  child: OutlinedButton(
                     onPressed: () => setState(() => _expanded = !_expanded),
                     child: Text(
                       _expanded
@@ -93,7 +93,7 @@ class _SetupChecklistCardState extends State<SetupChecklistCard> {
                     ),
                   ),
                 ),
-              TextButton(
+              OutlinedButton(
                 onPressed: widget.onLater,
                 child: Text(l10n.homeSetupLater),
               ),

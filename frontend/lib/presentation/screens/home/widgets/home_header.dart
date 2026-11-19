@@ -19,6 +19,8 @@ class HomeHeader extends StatelessWidget {
     required this.onCommunity,
     required this.onAdmin,
     required this.onProgress,
+    this.pendingFriendRequests = 0,
+    this.communityKey,
     this.now,
   });
 
@@ -28,8 +30,14 @@ class HomeHeader extends StatelessWidget {
   final VoidCallback onProfile;
   final VoidCallback onNotifications;
 
-  /// Abre el muro de la comunidad (publicaciones de amigos y públicas).
+  /// Abre Comunidad: por ahora Amigos, en las solicitudes si hay (ADR 0059).
   final VoidCallback onCommunity;
+
+  /// Solicitudes de amistad sin responder (número del icono «Comunidad»).
+  final int pendingFriendRequests;
+
+  /// Clave del icono «Comunidad» (la señala la guía la primera vez).
+  final Key? communityKey;
   final VoidCallback onAdmin;
 
   /// Abre la pestaña Progreso (nivel, racha e insignias).
@@ -95,14 +103,23 @@ class HomeHeader extends StatelessWidget {
     );
     final actions = <Widget>[
       _StreakChip(days: greeting.streak, onTap: onProgress),
-      // En el móvil no cabe sin cortar el saludo: allí el muro se abre desde
-      // Perfil («Amigos y comunidad»); con riel lateral sí hay sitio.
-      if (MediaQuery.sizeOf(context).width >= TokensLayout.railBreakpoint)
-        IconButton(
-          tooltip: l10n.homeCommunity,
-          onPressed: onCommunity,
-          icon: const Icon(AppIcons.community),
+      // Comunidad también en el móvil (ADR 0059): el número dice cuántas
+      // solicitudes de amistad esperan respuesta.
+      IconButton(
+        key: communityKey,
+        tooltip: l10n.homeCommunityRequests(pendingFriendRequests),
+        onPressed: onCommunity,
+        // La etiqueta ya dice el número: el de la insignia no se lee otra vez.
+        icon: ExcludeSemantics(
+          child: Badge(
+            isLabelVisible: pendingFriendRequests > 0,
+            label: Text(
+              pendingFriendRequests > 99 ? '99+' : '$pendingFriendRequests',
+            ),
+            child: const Icon(AppIcons.friends),
+          ),
         ),
+      ),
       IconButton(
         tooltip: l10n.homeNotificationsUnread(unreadNotifications),
         onPressed: onNotifications,

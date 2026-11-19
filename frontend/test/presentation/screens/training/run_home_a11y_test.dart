@@ -86,7 +86,9 @@ void main() {
 
   // Un entreno hoy y dos más adelante (ADR 0055).
   final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day, 23, 0);
+  // A última hora del día: si fuera a una hora fija ya pasada (p. ej. 23:00 y la prueba corre a las 23:46),
+  // «Hoy toca» lo trataría como pasado y la prueba fallaría según la hora.
+  final today = DateTime(now.year, now.month, now.day, 23, 59);
   final withToday = full.copyWith(
     planned: [
       PlannedRun(

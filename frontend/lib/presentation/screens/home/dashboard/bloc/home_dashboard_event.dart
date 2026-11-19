@@ -24,14 +24,53 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
   /// «Ahora no» en el aviso de configuración pendiente.
   const factory HomeDashboardEvent.setupSnoozed() = HomeDashboardSetupSnoozed;
 
-  /// «Hecho» en el aviso de bloques sin hacer: marca ese bloque.
-  const factory HomeDashboardEvent.bannerBlockCompleted(String blockId) =
-      HomeDashboardBannerBlockCompleted;
+  /// «Guardar lo hecho» de la sesión a medias (ADR 0059): la termina con lo
+  /// registrado; cuenta en el día en que se hizo (lo decide el servidor).
+  const factory HomeDashboardEvent.unfinishedSaved({
+    required String sessionId,
+    required int minutes,
+    required int rpe,
+  }) = HomeDashboardUnfinishedSaved;
 
-  /// «Al próximo hueco» en el aviso de bloques sin hacer: lo lleva al primer
-  /// hueco libre (lo elige el servidor).
-  const factory HomeDashboardEvent.bannerBlockRescheduled(String blockId) =
-      HomeDashboardBannerBlockRescheduled;
+  /// «Descartar» la sesión a medias: se quita ya y se borra al cerrarse su
+  /// aviso con «Deshacer».
+  const factory HomeDashboardEvent.unfinishedDiscarded(String sessionId) =
+      HomeDashboardUnfinishedDiscarded;
+
+  /// «Lo hice» de un evento de ayer que es un día de rutina: lo apunta como
+  /// sesión de ese día (con minutos y esfuerzo), como en Gimnasio.
+  const factory HomeDashboardEvent.missedLogged({
+    required String eventId,
+    required String routineId,
+    required String dayId,
+    required DateTime date,
+    required int minutes,
+    required int rpe,
+  }) = HomeDashboardMissedLogged;
+
+  /// «Pasar a otro día»: el evento va al día elegido a la misma hora.
+  const factory HomeDashboardEvent.missedMoved({
+    required String eventId,
+    required DateTime start,
+    required DateTime end,
+  }) = HomeDashboardMissedMoved;
+
+  /// «Quitar» un evento del calendario: se quita ya y se borra al cerrarse su
+  /// aviso con «Deshacer».
+  const factory HomeDashboardEvent.missedRemoved(String eventId) =
+      HomeDashboardMissedRemoved;
+
+  /// «Deshacer» de descartar o quitar: [key] vuelve a verse.
+  const factory HomeDashboardEvent.deferredUndone(String key) =
+      HomeDashboardDeferredUndone;
+
+  /// Se cerró el aviso sin «Deshacer»: se hace de verdad.
+  const factory HomeDashboardEvent.deferredCommitted(String key) =
+      HomeDashboardDeferredCommitted;
+
+  /// La página ya ha avisado del resultado de una acción de las tarjetas.
+  const factory HomeDashboardEvent.actionNoticeHandled() =
+      HomeDashboardActionNoticeHandled;
 
   /// «Marcar como hecho» o «Desmarcar» de un evento o una entrega de la agenda
   /// (y «Deshacer» del aviso, que pide lo contrario). Desmarcar devuelve la XP
@@ -58,10 +97,6 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
   /// La página ya ha avisado del resultado de marcar o desmarcar.
   const factory HomeDashboardEvent.completionNoticeHandled() =
       HomeDashboardCompletionNoticeHandled;
-
-  /// La página ya ha avisado del resultado de la acción del aviso.
-  const factory HomeDashboardEvent.bannerNoticeHandled() =
-      HomeDashboardBannerNoticeHandled;
 
   /// La página ya ha navegado al onboarding.
   const factory HomeDashboardEvent.onboardingHandled() =

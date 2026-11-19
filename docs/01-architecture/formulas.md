@@ -242,6 +242,15 @@ La usan: el gasto del estudio (fórmula 1, `PlannerDirectoryJdbcAdapter.findMeta
 - Solo se enseña con entreno por hacer hoy (`Dashboard.trainsToday`): el próximo día de la rutina toca hoy o va con
   retraso, o hay un evento de deporte de hoy sin marcar.
 
+## «Tu semana» y lo que quedó a medias en Inicio (ADR 0059)
+- **Cómo va la semana (`WeekSummary`):** con lo planificado de lunes a domingo (sin descanso, comida ni sueño). Sin nada
+  → «Semana sin plan». «Vas por detrás» si lo que se quedó sin hacer supera la cuarta parte de lo que ya tocaba
+  (sin hacer > 0,25 · (hecho + sin hacer)); si no, «Vas bien». Lo que aún no toca no cuenta.
+- **Marca de un día (`PlanDay.mark`):** nada planificado → «–»; todo hecho → ✓; algo sin hacer → «!» (manda sobre lo
+  demás); algo hecho y algo por hacer → medio lleno; solo por hacer → el número de lo que queda.
+- **Sesión a medias (`TrainingSession.isLeftover`):** sin terminar y abierta más de 6 h (el cambio de día no cuenta: se
+  puede entrenar pasada la medianoche). Al guardarla, si empezó otro día, cuenta en ese día. Ejercicios hechos = ejercicios distintos con al menos una serie de trabajo marcada.
+
 ## Bienestar: ciclo, registro rápido y ritmo (ADR 0033)
 
 - **Estimación del ciclo (`CycleOverview`):** un ciclo empieza el primer día con regla tras un día sin ella. Duración = media de los últimos 6 ciclos completos entre 21 y 45 días, acotada a 21-40 (28 si no hay). Regla = media de los periodos apuntados, acotada a 2-8 (5 si no hay). Con la ovulación estimada 14 días antes de la próxima regla (`duración − 14`): días 1…regla → «Con la regla»; hasta 3 días antes de la ovulación → «Después de la regla»; ±2 días → «Mitad del ciclo»; después → «Días antes de la regla». Próxima regla = último inicio + duración. Sin inicio en los últimos 60 días no se estima. Es orientativo, no médico: la app lo dice.

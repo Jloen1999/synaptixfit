@@ -152,6 +152,11 @@ class InsightsFlowIT {
                 .andExpect(jsonPath("$.todaySummary.done").value(1))
                 .andExpect(jsonPath("$.todaySummary.total").value(1))
                 .andExpect(jsonPath("$.todaySummary.state").value("ALL_DONE"))
+                // ADR 0059: «Tu semana» en una frase, la marca de cada día y nada a medias.
+                .andExpect(jsonPath("$.weekSummary.state").exists())
+                .andExpect(jsonPath("$.planWeek[0].mark").exists())
+                .andExpect(jsonPath("$.pendingFriendRequests").value(0))
+                .andExpect(jsonPath("$.missedEvents").isArray())
                 .andExpect(jsonPath("$.banner.type").value("PHYSICAL_OVERLOAD"))
                 .andExpect(jsonPath("$.banner.params.maxStudyMinutes").value(71));
 

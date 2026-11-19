@@ -38,12 +38,20 @@ abstract class HomeDashboardState with _$HomeDashboardState {
     /// No se pudo empezar el entreno (efecto de un solo uso).
     AppError? trainingError,
 
-    /// Acción del aviso en curso («Hecho» o «Al próximo hueco»); nula si
-    /// no hay ninguna.
-    HomeBannerAction? bannerBusy,
+    /// Empezar falló porque hay una sesión a medias (`SESSION_STALE_OPEN`): la
+    /// página lleva a su tarjeta en vez de avisar sin salida (un solo uso).
+    @Default(false) bool showUnfinished,
 
-    /// Resultado de la acción del aviso (efecto de un solo uso).
-    HomeBannerNotice? bannerNotice,
+    /// Sesión a medias o eventos de ayer con una acción en curso.
+    @Default(<String>{}) Set<String> actingIds,
+
+    /// Descartado o quitado a la espera de su «Deshacer» (no se pinta). Las
+    /// claves son `session:<id>` o `block:<id>` ([HomeDeferred]).
+    @Default(<String>{}) Set<String> deferredKeys,
+
+    /// Resultado de una acción de la sesión a medias o de lo de ayer (efecto
+    /// de un solo uso).
+    HomeActionNotice? actionNotice,
 
     /// Eventos y entregas que se están marcando o desmarcando.
     @Default(<String>{}) Set<String> completingIds,
@@ -75,20 +83,41 @@ sealed class HomeCompletionNotice with _$HomeCompletionNotice {
       HomeCompletionNoticeFailed;
 }
 
-/// Acciones del aviso de bloques sin hacer.
-enum HomeBannerAction { complete, reschedule }
+/// Claves de lo aplazado con «Deshacer»: una sesión descartada o un evento
+/// quitado del calendario.
+abstract final class HomeDeferred {
+  static const _session = 'session:';
+  static const _block = 'block:';
 
-/// Qué pasó al actuar desde el aviso; la página lo dice con un SnackBar.
+  static String session(String id) => '$_session$id';
+  static String block(String id) => '$_block$id';
+
+  static String? sessionId(String key) =>
+      key.startsWith(_session) ? key.substring(_session.length) : null;
+  static String? blockId(String key) =>
+      key.startsWith(_block) ? key.substring(_block.length) : null;
+}
+
+/// Qué pasó con la sesión a medias o con lo de ayer; la página lo dice con
+/// un aviso (y «Deshacer» o «Ver» cuando toca).
 @freezed
-sealed class HomeBannerNotice with _$HomeBannerNotice {
-  /// Bloque marcado como hecho; [xpDelta] es la XP que dio (puede ser 0).
-  const factory HomeBannerNotice.completed(int xpDelta) =
-      HomeBannerNoticeCompleted;
+sealed class HomeActionNotice with _$HomeActionNotice {
+  /// Sesión guardada con lo hecho, en el día en que se hizo.
+  const factory HomeActionNotice.sessionSaved() = HomeActionNoticeSessionSaved;
 
-  /// Bloque llevado al hueco que empieza en [start].
-  const factory HomeBannerNotice.rescheduled(DateTime start) =
-      HomeBannerNoticeRescheduled;
+  /// Sesión quitada a la espera de «Deshacer» ([key] de [HomeDeferred]).
+  const factory HomeActionNotice.sessionDiscarded(String key) =
+      HomeActionNoticeSessionDiscarded;
 
-  const factory HomeBannerNotice.failed(AppError error) =
-      HomeBannerNoticeFailed;
+  /// Día de rutina de ayer apuntado como hecho.
+  const factory HomeActionNotice.logged() = HomeActionNoticeLogged;
+
+  /// Evento llevado al día y la hora de [start].
+  const factory HomeActionNotice.moved(DateTime start) = HomeActionNoticeMoved;
+
+  /// Evento quitado a la espera de «Deshacer» ([key] de [HomeDeferred]).
+  const factory HomeActionNotice.removed(String key) = HomeActionNoticeRemoved;
+
+  const factory HomeActionNotice.failed(AppError error) =
+      HomeActionNoticeFailed;
 }

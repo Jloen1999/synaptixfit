@@ -20,9 +20,13 @@ void registerHomePresentation(GetIt getIt) {
         watchChanges: getIt(),
         startSession: getIt(),
         setBlockCompletion: getIt(),
-        rescheduleToNextSlot: getIt(),
         setDeadlineCompletion: getIt(),
         permissionsIntroPending: getIt(),
+        finishSession: getIt(),
+        cancelSession: getIt(),
+        logPastSession: getIt(),
+        rescheduleBlock: getIt(),
+        deleteBlock: getIt(),
       ),
     );
 }

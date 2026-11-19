@@ -11,6 +11,8 @@ import com.synaptixfit.application.port.input.insights.GetStudyCaloriesTodayUseC
 import com.synaptixfit.application.port.input.insights.GetWellbeingUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayAdaptationUseCase;
+import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
+import com.synaptixfit.application.port.input.social.ListFriendshipsUseCase;
 import com.synaptixfit.application.service.dashboard.DashboardService;
 import com.synaptixfit.domain.port.output.dashboard.DashboardReadPort;
 import com.synaptixfit.domain.port.output.insights.InsightsSourcePort;
@@ -51,10 +53,12 @@ public class DashboardBeanConfiguration {
                                             GetPhysicalLoadUseCase physicalLoad, GetWellbeingUseCase wellbeing,
                                             ListMyChallengesUseCase challenges, GetStreakUseCase streaks,
                                             GetPendingTrainingDayUseCase pendingDays,
-                                            GetTodayAdaptationUseCase todayAdaptation) {
+                                            GetTodayAdaptationUseCase todayAdaptation,
+                                            ListOpenSessionsUseCase openSessions,
+                                            ListFriendshipsUseCase friendships) {
         DashboardService service = new DashboardService(users, reads, insightSources, cognitiveStates,
                 crossRegulation, studyCalories, studyActivity, physicalLoad, wellbeing, challenges, pendingDays,
-                streaks, todayAdaptation, clock, zone);
+                streaks, todayAdaptation, openSessions, friendships, clock, zone);
         return tx.wrap(GetDashboardUseCase.class, service);
     }
 }

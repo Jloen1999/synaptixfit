@@ -6,7 +6,9 @@ import 'package:synaptixfit/data/remote_data_source/home/dto/home_dashboard_dto.
 import 'package:synaptixfit/data/remote_data_source/home/dto/home_due_review_dto.dart';
 import 'package:synaptixfit/domain/enums/home_acwr_zone.dart';
 import 'package:synaptixfit/domain/enums/home_banner_type.dart';
+import 'package:synaptixfit/domain/enums/home_day_mark.dart';
 import 'package:synaptixfit/domain/enums/home_day_state.dart';
+import 'package:synaptixfit/domain/enums/home_week_state.dart';
 import 'package:synaptixfit/domain/enums/home_event_kind.dart';
 import 'package:synaptixfit/domain/enums/home_event_type.dart';
 import 'package:synaptixfit/domain/models/home/home_dashboard.dart';
@@ -210,6 +212,83 @@ void main() {
       HomeDayState.nothingPlanned,
     );
   });
+
+  test(
+    'mapea lo de Inicio al grano (ADR 0059) y tolera un servidor antiguo',
+    () {
+      final dashboard = HomeDashboardDto.fromJson({
+        ...json,
+        'nextTrainingDay': {
+          ...(json['nextTrainingDay'] as Map<String, dynamic>),
+          'dueToday': true,
+        },
+        'planWeek': [
+          {
+            'date': '2026-10-12',
+            'planned': 3,
+            'completed': 1,
+            'missed': 1,
+            'mark': 'MISSED',
+            'pending': 1,
+          },
+        ],
+        'todayEvents': [
+          {
+            'kind': 'BLOCK',
+            'id': 'c1',
+            'title': 'Bases de datos',
+            'type': 'CLASS',
+            'start': '2026-10-18T08:00:00Z',
+            'place': ' Aula 2.4 ',
+            'teacher': '',
+          },
+        ],
+        'todaySummary': {'spotlightEventId': 'c1'},
+        'weekSummary': {
+          'done': 8,
+          'planned': 12,
+          'missed': 2,
+          'state': 'BEHIND',
+        },
+        'unfinishedSession': {
+          'sessionId': 's9',
+          'dayName': 'Pierna y empuje',
+          'dayNumber': 3,
+          'startedAt': '2026-11-18T17:10:00Z',
+          'exercisesDone': 4,
+          'exercisesTotal': 6,
+        },
+        'missedEvents': [
+          {'kind': 'BLOCK', 'id': 'm1', 'title': 'Cálculo', 'type': 'STUDY'},
+        ],
+        'pendingFriendRequests': 2,
+        'week': {'sessions': 2, 'studyMinutesPlanned': 480},
+      }).toDomain();
+
+      expect(dashboard.nextTrainingDay!.dueToday, isTrue);
+      expect(dashboard.planWeek.single.mark, HomeDayMark.missed);
+      expect(dashboard.planWeek.single.pending, 1);
+      expect(dashboard.todayEvents.single.place, 'Aula 2.4');
+      expect(dashboard.todayEvents.single.teacher, isNull);
+      expect(dashboard.todaySummary.spotlightEventId, 'c1');
+      expect(dashboard.weekSummary.state, HomeWeekState.behind);
+      expect(dashboard.weekSummary.done, 8);
+      expect(dashboard.unfinishedSession!.exercisesDone, 4);
+      expect(dashboard.unfinishedSession!.exercisesTotal, 6);
+      expect(dashboard.missedEvents.single.id, 'm1');
+      expect(dashboard.pendingFriendRequests, 2);
+      expect(dashboard.week.studyMinutesPlanned, 480);
+
+      final old = HomeDashboardDto.fromJson({
+        'greeting': {'fullName': 'Ana'},
+        'today': <String, dynamic>{},
+      }).toDomain();
+      expect(old.weekSummary.state, HomeWeekState.noPlan);
+      expect(old.unfinishedSession, isNull);
+      expect(old.missedEvents, isEmpty);
+      expect(old.pendingFriendRequests, 0);
+    },
+  );
 
   test('mapea los repasos', () {
     final review = HomeDueReviewDto.fromJson({

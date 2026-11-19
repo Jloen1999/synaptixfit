@@ -91,6 +91,28 @@ public final class TrainingSession {
         return completedAt == null && isStaleStart(startedAt, now);
     }
 
+    /**
+     * Sesión que se quedó a medias y hay que cerrar (guardar lo hecho o descartar) antes de seguir: abierta más de
+     * {@link #STALE_AFTER} (ADR 0059). Inicio la enseña como «Sin terminar». No cuenta el cambio de día: quien
+     * empieza a las 23:30 sigue entrenando pasada la medianoche sin que la app le pida cerrarla; una sesión de ayer
+     * que de verdad se olvidó ya lleva más de 6 h.
+     */
+    public boolean isLeftover(Instant now) {
+        return isStale(now);
+    }
+
+    /**
+     * Ejercicios distintos con al menos una serie de trabajo hecha («4 de 6 ejercicios»): en una sesión de rutina,
+     * solo los huecos del plan (así nunca sale «7 de 6» por un ejercicio añadido); en una libre, los apuntados.
+     */
+    public int exercisesDone() {
+        boolean routineDay = dayId != null;
+        return (int) sets.stream().filter(SessionSet::completed)
+                .map(s -> routineDay ? s.plannedExerciseId()
+                        : s.plannedExerciseId() != null ? s.plannedExerciseId() : s.exerciseId())
+                .filter(Objects::nonNull).distinct().count();
+    }
+
     /** Una sesión abierta que empezó en {@code startedAt} ya se da por abandonada en {@code now}. */
     public static boolean isStaleStart(Instant startedAt, Instant now) {
         return startedAt.plus(STALE_AFTER).isBefore(now);
@@ -164,9 +186,20 @@ public final class TrainingSession {
      * empezó. Así la carga, la XP y los retos caen en el día en que de verdad se entrenó.
      */
     public Instant completionInstant(long boundedDurationSeconds, Instant now) {
-        if (!isStale(now)) {
-            return now;
-        }
+        return isStale(now) ? leftoverEnd(boundedDurationSeconds, now) : now;
+    }
+
+    /**
+     * Como {@link #completionInstant(long, Instant)}, pero una sesión empezada otro día (en la zona {@code zone} de
+     * quien entrena) también se apunta en ese día aunque no lleve 6 h abierta (ADR 0059): se guarda en el día en que
+     * se hizo. Una sesión terminada con normalidad, el mismo día, sigue terminando ahora.
+     */
+    public Instant completionInstant(long boundedDurationSeconds, Instant now, ZoneId zone) {
+        boolean startedAnotherDay = LocalDate.ofInstant(startedAt, zone).isBefore(LocalDate.ofInstant(now, zone));
+        return isStale(now) || startedAnotherDay ? leftoverEnd(boundedDurationSeconds, now) : now;
+    }
+
+    private Instant leftoverEnd(long boundedDurationSeconds, Instant now) {
         // Las pausas ya cerradas también pasaron ese día; una pausa que quedó abierta no (se dejó así).
         Instant end = startedAt.plusSeconds(Math.max(1, boundedDurationSeconds) + pausedSeconds);
         return end.isAfter(now) ? now : end;
