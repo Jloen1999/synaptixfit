@@ -54,7 +54,7 @@ void main() {
     expect(find.text('Reto c1'), findsOneWidget);
     expect(find.text('1/2 tareas'), findsOneWidget);
     // El tipo, en una pastilla con su acento.
-    expect(find.text('Académico'), findsOneWidget);
+    expect(find.text('Estudio'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

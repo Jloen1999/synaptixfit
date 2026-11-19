@@ -128,7 +128,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Racha'), findsWidgets);
-    expect(find.text('r = -0,62'), findsOneWidget);
+    expect(
+      find.text('Relación fuerte: a más estudio, menos entreno'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('las tarjetas se pintan en tema oscuro', (tester) async {
@@ -206,7 +209,9 @@ void main() {
       expect(find.text('Racha: 5 días · récord 12 días'), findsOneWidget);
       // En riesgo: una línea, sin cajas de aviso.
       expect(
-        find.text('¡No pierdas tu racha! Completa una actividad hoy.'),
+        find.text(
+          'Para no perderla: entrena, concéntrate un rato o contesta «¿Qué tal estás hoy?».',
+        ),
         findsOneWidget,
       );
     });

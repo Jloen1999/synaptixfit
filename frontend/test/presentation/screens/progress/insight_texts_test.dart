@@ -35,7 +35,7 @@ void main() {
     test('BUILDING usa los días en plural', () {
       expect(
         message(InsightType.streak, 'BUILDING', {'days': 4, 'weeks': 0}),
-        startsWith('Llevas 4 días seguidos'),
+        startsWith('4 días seguidos entrenando'),
       );
     });
 
@@ -111,41 +111,38 @@ void main() {
   });
 
   group('correlación', () {
-    test('fuerte negativa usa el porcentaje', () {
+    test('fuerte negativa usa el mensaje marcado, sin porcentaje', () {
       expect(
         message(InsightType.correlation, 'STRONG_NEGATIVE', {
           'coefficient': -0.62,
           'percent': 62,
         }),
-        l10n.progressInsightCorrelationStrongNegative(62),
+        l10n.progressInsightCorrelationStrongNegative,
       );
     });
 
     test('moderada positiva se trata como marcada', () {
       expect(
         message(InsightType.correlation, 'MODERATE_POSITIVE', {'percent': 45}),
-        l10n.progressInsightCorrelationStrongPositive(45),
+        l10n.progressInsightCorrelationStrongPositive,
       );
     });
 
-    test(
-      'débil usa el mensaje leve y deriva el porcentaje del coeficiente',
-      () {
-        expect(
-          message(InsightType.correlation, 'WEAK_NEGATIVE', {
-            'coefficient': -0.25,
-          }),
-          l10n.progressInsightCorrelationMildNegative(25),
-        );
-      },
-    );
+    test('débil usa el mensaje leve', () {
+      expect(
+        message(InsightType.correlation, 'WEAK_NEGATIVE', {
+          'coefficient': -0.25,
+        }),
+        l10n.progressInsightCorrelationMildNegative,
+      );
+    });
 
     test('muy fuerte positiva', () {
       expect(
         message(InsightType.correlation, 'VERY_STRONG_POSITIVE', {
           'percent': 85,
         }),
-        l10n.progressInsightCorrelationStrongPositive(85),
+        l10n.progressInsightCorrelationStrongPositive,
       );
     });
 

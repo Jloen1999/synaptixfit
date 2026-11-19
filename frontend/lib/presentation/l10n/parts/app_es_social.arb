@@ -87,16 +87,16 @@
   "socialPostTypeLabel": "¿Qué quieres compartir?",
   "socialPostDescriptionLabel": "Texto",
   "socialPostDescriptionHint": "Cuenta a tus compañeros qué has conseguido",
-  "socialPostImageLabel": "Imagen (opcional)",
+  "socialPostImageLabel": "Enlace a una imagen (opcional)",
   "socialPostImageHint": "https://…",
   "socialPostImageInvalid": "Introduce un enlace http o https válido",
   "socialPostImageLoadError": "No se ha podido cargar la imagen",
   "socialPostTitle": "Publicación",
   "socialPostDeleteTitle": "¿Eliminar la publicación?",
   "socialPostDeleteMessage": "Se borrará junto con sus comentarios y «me gusta». No se puede deshacer.",
-  "socialReport": "Reportar",
-  "socialReportPostTitle": "¿Reportar esta publicación?",
-  "socialReportCommentTitle": "¿Reportar este comentario?",
+  "socialReport": "Denunciar",
+  "socialReportPostTitle": "¿Denunciar esta publicación?",
+  "socialReportCommentTitle": "¿Denunciar este comentario?",
   "socialReportMessage": "Lo revisará el equipo de moderación. Gracias.",
   "socialCommentLabel": "Comentario",
   "socialCommentHint": "Escribe un comentario…",
@@ -122,7 +122,7 @@
   "socialTabSent": "Enviadas",
   "socialTabBlocked": "Bloqueados",
   "socialFriendsEmptyTitle": "Todavía no tienes amigos",
-  "socialFriendsEmptyMessage": "Busca a tus compañeros por su nombre y envíales una solicitud.",
+  "socialFriendsEmptyMessage": "Búscalos por su nombre y envíales una solicitud.",
   "socialReceivedEmptyTitle": "No tienes solicitudes",
   "socialReceivedEmptyMessage": "Aquí verás las solicitudes de amistad que te envíen.",
   "socialSentEmptyTitle": "No tienes solicitudes enviadas",
@@ -191,7 +191,7 @@
   "socialNotificationsEmptyMessage": "Aquí verás «me gusta», comentarios y solicitudes.",
   "socialNotificationUnread": "No leída",
   "socialNotificationTypeConflict": "Choque de horario en tu plan",
-  "socialNotificationTypeFatigue": "Alerta de fatiga",
+  "socialNotificationTypeFatigue": "Cansancio",
   "socialNotificationTypeMilestone": "Logro",
   "socialNotificationTypeSocial": "Social",
   "socialNotificationTypeAcademic": "Académico",
@@ -224,7 +224,7 @@
   "socialErrorFriendshipInvalidState": "Esta solicitud ya no se puede gestionar.",
   "socialErrorFriendshipBlocked": "Desbloquea a este usuario antes de enviarle una solicitud.",
   "socialErrorSocialUserNotFound": "Usuario no encontrado.",
-  "socialErrorSocialCannotReportOwn": "No puedes reportar tu propio contenido.",
+  "socialErrorSocialCannotReportOwn": "No puedes denunciar tu propio contenido.",
   "socialErrorNotificationNotFound": "Esta notificación ya no existe.",
   "socialErrorNotificationQuietHours": "Indica la hora de inicio y de fin del silencio (distintas).",
   "socialAttachedImage": "Imagen adjunta",
@@ -255,9 +255,9 @@
       }
     }
   },
-  "socialNotifFatigueTitle": "Hoy conviene adaptar el entrenamiento",
-  "socialNotifFatigueBody": "Nos has contado que estás muy cansado: baja la intensidad o tómate el día de descanso.",
-  "socialNotifOvertrainingTitle": "Riesgo de sobreentrenamiento",
+  "socialNotifFatigueTitle": "Hoy, mejor entreno suave",
+  "socialNotifFatigueBody": "Nos has dicho que estás muy cansado: entrena suave o descansa.",
+  "socialNotifOvertrainingTitle": "Semana de mucho entreno",
   "socialNotifOvertrainingBody": "Esta semana entrenas {ratio} veces tu media: descansa y estudia en ratos cortos.",
   "@socialNotifOvertrainingBody": {
     "placeholders": {
@@ -305,8 +305,8 @@
   "socialNotifActionChallenge": "Ver reto",
   "socialNotifActionBadges": "Ver insignias",
   "socialNotifActionProfile": "Ver perfil",
-  "socialNotifActionTraining": "Ver entrenamiento",
-  "socialNotifActionIndicators": "Ver indicadores",
+  "socialNotifActionTraining": "Ver entreno",
+  "socialNotifActionIndicators": "Ver Progreso",
   "socialNotifActionPost": "Ver publicación",
   "socialNotifActionComment": "Ver comentario",
   "socialNotifActionRequest": "Ver solicitud",
@@ -395,8 +395,8 @@
     }
   },
   "togetherTitle": "Con amigos",
-  "togetherEntry": "Retos, rachas y entrenos con tus amigos",
-  "togetherIntro": "Solo con amigos mutuos. Nunca se comparte cómo estás.",
+  "togetherEntry": "Retos, rachas, estudio y entrenos con amigos",
+  "togetherIntro": "Solo con tus amigos. Nunca se comparte cómo estás.",
   "togetherHelp": "Aquí solo ven tu parte los amigos que invites: si has sumado en un reto, si has hecho tu parte de la racha y qué ejercicios llevas al entrenar juntos. Nunca se comparte cómo te encuentras, tu ciclo, tu sueño, tu peso ni dónde estás. Desde el menú de cada persona puedes bloquearla o denunciarla.",
   "togetherEmptyTitle": "Aún no tienes nada con amigos",
   "togetherEmptyMessage": "Crea un reto juntos o proponle una racha a un amigo.",
@@ -438,19 +438,16 @@
   "togetherJoin": "Unirme",
   "togetherDecline": "No, gracias",
   "togetherChallengesSection": "Retos con amigos",
-  "togetherChallengesEmpty": "Sin retos con amigos ahora mismo.",
+  "togetherChallengesEmpty": "Ninguno ahora.",
   "togetherStreaksSection": "Rachas con amigos",
-  "togetherStreaksEmpty": "Hasta 5 rachas: suma cada día que los dos hacéis algo.",
+  "togetherStreaksEmpty": "Hasta 5 rachas: cada una crece cada día que los dos estudiáis o entrenáis.",
   "togetherWorkoutsSection": "Entrenar juntos hoy",
-  "togetherWorkoutsEmpty": "Desde una rutina, en Más › Entrenar con amigos.",
-  "togetherGroupProgress": "Entre todos: {value} de {target}",
+  "togetherWorkoutsEmpty": "Ninguno hoy. Invita desde una rutina: Más acciones › Entrenar con amigos.",
+  "togetherGroupProgress": "Entre todos sumáis: {progress}",
   "@togetherGroupProgress": {
     "placeholders": {
-      "value": {
-        "type": "int"
-      },
-      "target": {
-        "type": "int"
+      "progress": {
+        "type": "String"
       }
     }
   },
@@ -462,14 +459,11 @@
       }
     }
   },
-  "togetherMyProgress": "Tú: {value} de {target}",
+  "togetherMyProgress": "Tú: {progress}",
   "@togetherMyProgress": {
     "placeholders": {
-      "value": {
-        "type": "int"
-      },
-      "target": {
-        "type": "int"
+      "progress": {
+        "type": "String"
       }
     }
   },
@@ -547,7 +541,7 @@
   "togetherViewProfile": "Ver perfil",
   "togetherReport": "Denunciar",
   "togetherNoFriendsTitle": "Aún no tienes amigos",
-  "togetherNoFriendsMessage": "Solo puedes invitar a amigos mutuos.",
+  "togetherNoFriendsMessage": "Añade amigos para poder invitarlos.",
   "togetherFindFriends": "Buscar amigos",
   "togetherPickedCount": "Elegidos: {count} de {max}",
   "@togetherPickedCount": {
@@ -743,7 +737,7 @@
   "socialErrorFriendChallengeNotFound": "Ese reto ya no está disponible.",
   "socialErrorFriendStreakNotFound": "Esa racha ya no existe.",
   "socialErrorWorkoutTogetherNotFound": "Ese entreno ya no está disponible.",
-  "socialErrorTogetherNotFriends": "Solo puedes invitar a amigos mutuos.",
+  "socialErrorTogetherNotFriends": "Solo puedes invitar a tus amigos.",
   "socialErrorTogetherGroupSize": "Elige al menos un amigo y no más de los que caben.",
   "socialErrorTogetherInvalidState": "Eso ya no se puede hacer. Vuelve a cargar la pantalla.",
   "socialErrorFriendChallengeTemplateNotAllowed": "Ese reto no se puede hacer con amigos.",
@@ -822,7 +816,7 @@
   "togetherStudyRounds": "Rondas",
   "togetherStudyInvited": "Sala creada e invitación enviada",
   "togetherStudySection": "Estudiar juntos",
-  "togetherStudyEmpty": "Ninguna sala de estudio ahora.",
+  "togetherStudyEmpty": "Ninguna sala ahora.",
   "togetherInvitedStudy": "{name} te invita a estudiar juntos",
   "@togetherInvitedStudy": {
     "placeholders": {

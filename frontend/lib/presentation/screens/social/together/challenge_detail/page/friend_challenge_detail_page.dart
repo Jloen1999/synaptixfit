@@ -195,13 +195,14 @@ class _Body extends StatelessWidget {
                   value: c.groupTotal,
                   target: c.groupTarget,
                   label: l10n.togetherGroupProgress(
-                    c.groupTotal,
-                    c.groupTarget,
+                    c.amount(context, c.groupTotal, c.groupTarget),
                   ),
                 ),
                 const SizedBox(height: TokensSpacing.xs),
                 Text(
-                  l10n.togetherMyProgress(c.myPoints, c.myTarget),
+                  l10n.togetherMyProgress(
+                    c.amount(context, c.myPoints, c.myTarget),
+                  ),
                   style: context.textStyles.bodySmall?.copyWith(
                     color: context.colors.onSurfaceVariant,
                   ),

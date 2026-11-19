@@ -30,7 +30,8 @@ class BalanceCard extends StatelessWidget {
   final HomeWellbeing wellbeing;
   final UsageFocus focus;
 
-  /// «Ver análisis»; sin él no hay enlace (Progreso ya lo abre desde su tarjeta).
+  /// «Ver cifras de entreno»; sin él no hay enlace (Progreso ya lo abre desde
+  /// su tarjeta).
   final VoidCallback? onOpenAnalytics;
 
   /// Abre el Pomodoro: la recomendación termina en algo que hacer.

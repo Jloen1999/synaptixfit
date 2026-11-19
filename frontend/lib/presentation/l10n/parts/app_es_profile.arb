@@ -494,7 +494,7 @@
   "languageNamePt": "Português",
   "profileEnrollmentTitle": "Importar tu matrícula",
   "profileEnrollmentEntry": "Importar desde tu matrícula",
-  "profileEnrollmentIntro": "Sube la carta de pago o el resguardo de matrícula (PDF) y elige qué asignaturas añadir.",
+  "profileEnrollmentIntro": "Sube la carta de pago o el resguardo (PDF, máx. 5 MB) y elige qué asignaturas añadir.",
   "profileEnrollmentPrivacyTitle": "Tus datos, protegidos",
   "profileEnrollmentPrivacyRead": "Solo leemos la universidad, la carrera, el curso y las asignaturas.",
   "profileEnrollmentPrivacyHidden": "Antes de analizarlo quitamos tu DNI o NIE, tu nombre, tu dirección, tus datos de contacto y la cuenta bancaria.",
@@ -506,8 +506,8 @@
   "profileEnrollmentTooLarge": "El PDF ocupa demasiado (máximo 5 MB).",
   "profileEnrollmentReading": "Leyendo tu matrícula…",
   "profileEnrollmentDegreeUnknown": "Carrera no indicada",
-  "profileEnrollmentDegreeFound": "Carrera en el catálogo",
-  "profileEnrollmentDegreeNotFound": "Carrera no encontrada",
+  "profileEnrollmentDegreeFound": "Carrera reconocida",
+  "profileEnrollmentDegreeNotFound": "Carrera no reconocida",
   "profileEnrollmentSubjects": "{count, plural, =1{1 asignatura} other{{count} asignaturas}}",
   "@profileEnrollmentSubjects": {
     "placeholders": {

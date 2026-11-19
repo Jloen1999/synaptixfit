@@ -99,7 +99,7 @@ void main() {
     );
     expect(find.byIcon(Icons.chevron_right_rounded), findsWidgets);
     // Carga, energía y XP viven en Progreso (ADR 0038).
-    expect(find.text('Carga cognitiva'), findsNothing);
+    expect(find.text('Carga de estudio'), findsNothing);
     expect(find.textContaining('XP'), findsNothing);
     // En la agenda y en «Tu día» (es el bloque que toca a continuación).
     expect(find.text('Cálculo'), findsNWidgets(2));

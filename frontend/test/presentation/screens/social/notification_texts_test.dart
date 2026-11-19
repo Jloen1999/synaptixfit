@@ -37,8 +37,8 @@ void main() {
         messageParams: const {'ratio': '1.73'},
       ),
     );
-    expect(texts.title, 'Riesgo de sobreentrenamiento');
+    expect(texts.title, 'Semana de mucho entreno');
     expect(texts.description, contains('1,73'));
-    expect(texts.action, 'Ver indicadores');
+    expect(texts.action, 'Ver Progreso');
   });
 }

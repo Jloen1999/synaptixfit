@@ -72,7 +72,7 @@ void main() {
     expect(find.text('Mañana'), findsOneWidget);
     expect(find.text('40 %'), findsOneWidget);
     // Sin fecha de fin, el bloque muestra el tipo.
-    expect(find.text('Reto físico'), findsWidgets);
+    expect(find.text('Entreno'), findsWidgets);
   });
 
   testWidgets('a 360 dp y texto al 200 %, sin desbordes', (tester) async {

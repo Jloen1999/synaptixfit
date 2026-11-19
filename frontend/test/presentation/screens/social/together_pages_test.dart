@@ -320,7 +320,7 @@ void main() {
       await pump(tester, const FriendChallengeDetailPage(challengeId: 'c1'));
 
       expect(find.text('Repasa cada día'), findsWidgets);
-      expect(find.text('Entre todos: 3 de 12'), findsWidgets);
+      expect(find.text('Entre todos sumáis: 3 de 12 días'), findsWidgets);
       expect(find.text('Ana'), findsWidgets);
 
       await tester.fling(find.byType(ListView), const Offset(0, 1200), 1000);

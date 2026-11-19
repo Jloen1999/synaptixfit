@@ -53,33 +53,28 @@ class CorrelationCard extends StatelessWidget {
           ? l10n.progressCorrelationSubtitleRpe
           : l10n.progressCorrelationSubtitleMinutes,
       semanticsSummary: c.sufficientData && coefficient != null
-          ? l10n.progressCorrelationSemantics(
-              c.sampleSize,
-              ProgressFormat.signed(coefficient),
-              label,
-            )
+          ? l10n.progressCorrelationSemantics(c.sampleSize, label)
           : null,
+      // La relación en palabras («Relación débil: a más estudio, más
+      // entreno»); el coeficiente r es jerga y no se enseña. El lector ya la
+      // oye en el resumen de la gráfica: aquí no se repite.
       footer: c.sufficientData && coefficient != null
-          ? Wrap(
-              spacing: TokensSpacing.s,
-              runSpacing: TokensSpacing.xs,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Chip(
-                  avatar: Icon(
+          ? ExcludeSemantics(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
                     _directionIcon(c.direction, c.strength),
-                    size: 18,
+                    size: TokensSize.iconS,
                     color: context.colors.primary,
                   ),
-                  label: Text(
-                    l10n.progressCorrelationCoefficient(
-                      ProgressFormat.signed(coefficient),
-                    ),
+                  const SizedBox(width: TokensSpacing.s),
+                  // Flexible: con texto grande la frase baja de línea.
+                  Flexible(
+                    child: Text(label, style: context.textStyles.bodyMedium),
                   ),
-                  visualDensity: VisualDensity.compact,
-                ),
-                Text(label, style: context.textStyles.bodyMedium),
-              ],
+                ],
+              ),
             )
           : null,
       child: Column(

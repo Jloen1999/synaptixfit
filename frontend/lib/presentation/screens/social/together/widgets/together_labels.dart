@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../domain/enums/together_enums.dart';
+import '../../../../../domain/models/challenges/challenge_rule.dart';
+import '../../../../../domain/models/social/together.dart';
 import '../../../../extensions/context_extensions.dart';
+import '../../../challenges/widgets/challenge_labels.dart';
 
 /// Emoji y nombre de cada reacción fija (ADR 0044). El emoji es igual en todos
 /// los idiomas; el nombre es para el lector de pantalla.
@@ -61,6 +64,18 @@ extension WorkoutMemberStateLabel on WorkoutMemberState {
     WorkoutMemberState.training => context.localizations.togetherTraining,
     WorkoutMemberState.finished => context.localizations.togetherFinished,
   };
+}
+
+/// Cifras de un reto con amigos con su unidad («5 de 12 días», «290 de 600
+/// min»), con las mismas palabras que los retos que se cuentan solos.
+extension FriendChallengeAmount on FriendChallenge {
+  String amount(BuildContext context, int met, int target) => ChallengeRule(
+    metric: metric,
+    unit: unit,
+    perUnit: 1,
+    target: target,
+    met: met,
+  ).progressText(context);
 }
 
 /// Nombre de una persona; vacío si borró su cuenta.

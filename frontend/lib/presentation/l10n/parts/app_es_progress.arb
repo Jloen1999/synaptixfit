@@ -20,9 +20,9 @@
       }
     }
   },
-  "progressStreakActiveToday": "Hoy completado",
-  "progressStreakAtRisk": "¡No pierdas tu racha! Completa una actividad hoy.",
-  "progressStreakNextMilestone": "{remaining, plural, =1{Falta 1 día} other{Faltan {remaining} días}} para el hito de {milestone} días",
+  "progressStreakActiveToday": "Hoy ya cuenta",
+  "progressStreakAtRisk": "Para no perderla: entrena, concéntrate un rato o contesta «¿Qué tal estás hoy?».",
+  "progressStreakNextMilestone": "{remaining, plural, =1{Falta 1 día} other{Faltan {remaining} días}} para llegar a {milestone} días",
   "@progressStreakNextMilestone": {
     "placeholders": {
       "remaining": {
@@ -33,7 +33,7 @@
       }
     }
   },
-  "progressStreakAllMilestones": "Has superado todos los hitos. ¡Eres una leyenda!",
+  "progressStreakAllMilestones": "Has llegado a todas las metas de racha.",
   "progressStreakMilestoneShort": "{days} d",
   "@progressStreakMilestoneShort": {
     "placeholders": {
@@ -42,7 +42,7 @@
       }
     }
   },
-  "progressStreakMilestoneReached": "Hito de {days} días alcanzado",
+  "progressStreakMilestoneReached": "Meta de {days} días: conseguida",
   "@progressStreakMilestoneReached": {
     "placeholders": {
       "days": {
@@ -50,7 +50,7 @@
       }
     }
   },
-  "progressStreakMilestonePending": "Hito de {days} días pendiente",
+  "progressStreakMilestonePending": "Meta de {days} días: aún no",
   "@progressStreakMilestonePending": {
     "placeholders": {
       "days": {
@@ -69,7 +69,7 @@
   },
   "progressBadgesEmptyTitle": "Sin insignias todavía",
   "progressBadgesEmptyMessage": "Completa retos y mantén tu racha para desbloquearlas.",
-  "progressAnalyticsTitle": "Analítica",
+  "progressAnalyticsTitle": "Cifras de entreno",
   "progressAnalyticsLastWeeks": "Últimas {weeks} semanas",
   "@progressAnalyticsLastWeeks": {
     "placeholders": {
@@ -78,14 +78,14 @@
       }
     }
   },
-  "progressAnalyticsOpen": "Ver analítica",
-  "progressMetricSessions": "Sesiones",
+  "progressAnalyticsOpen": "Ver cifras de entreno",
+  "progressMetricSessions": "Entrenos",
   "progressMetricMinutes": "Minutos",
   "progressMetricCalories": "Calorías",
   "progressMetricAverageRpe": "Esfuerzo medio",
   "progressLoadTitle": "Cuánto has entrenado · últimos 28 días",
-  "progressLoadSubtitle": "Cuanto más alta la barra, más duro fue el día.",
-  "progressLoadSummary": "Puntos de carga: hoy {today} · máximo {max} · media {average}",
+  "progressLoadSubtitle": "Puntos de cada día: minutos × esfuerzo (de 1 a 10).",
+  "progressLoadSummary": "Puntos: hoy {today} · día más duro {max} · media {average}",
   "@progressLoadSummary": {
     "placeholders": {
       "today": {
@@ -99,8 +99,8 @@
       }
     }
   },
-  "progressLoadEmpty": "Aún no hay carga registrada en los últimos 28 días.",
-  "progressLoadSemantics": "Gráfica de carga física de los últimos 28 días. Hoy {today} puntos de carga, máximo diario {max}, media {average}.",
+  "progressLoadEmpty": "Aún no hay entrenos en los últimos 28 días.",
+  "progressLoadSemantics": "Gráfica de los últimos 28 días. Hoy {today} puntos, día más duro {max}, media {average}.",
   "@progressLoadSemantics": {
     "placeholders": {
       "today": {
@@ -115,7 +115,7 @@
     }
   },
   "progressCommunityTitle": "Comunidad",
-  "progressCommunityEmpty": "No hay publicaciones aún. ¡Sé el primero en compartir!",
+  "progressCommunityEmpty": "Aún no hay publicaciones.",
   "progressCommunityLikes": "{count, plural, =1{1 me gusta} other{{count} me gusta}}",
   "@progressCommunityLikes": {
     "placeholders": {
@@ -311,12 +311,12 @@
   "progressBadgeShareHint": "Añade un comentario (opcional)",
   "progressBadgeShareAction": "Publicar",
   "progressBadgeShared": "Logro compartido. Lo tienes en Comunidad (Inicio › Muro de la comunidad).",
-  "progressPeriodWeekly": "Semanal",
-  "progressPeriodMonthly": "Mensual",
-  "progressPeriodQuarterly": "Trimestral",
+  "progressPeriodWeekly": "1 mes",
+  "progressPeriodMonthly": "3 meses",
+  "progressPeriodQuarterly": "6 meses",
   "progressAnalyticsSummaryTitle": "Resumen",
-  "progressAnalyticsEmptyTitle": "Sin datos de analítica",
-  "progressAnalyticsEmptyMessage": "Completa sesiones para ver tus cifras.",
+  "progressAnalyticsEmptyTitle": "Aún no hay cifras de entreno",
+  "progressAnalyticsEmptyMessage": "Termina un entreno para verlas.",
   "progressAnalyticsEmptyAction": "Ir a Entreno",
   "progressVolumeTitle": "Tu entreno, semana a semana",
   "progressVolumeSubtitle": "Minutos y calorías de cada semana",
@@ -377,27 +377,19 @@
       }
     }
   },
-  "progressCorrelationTitle": "Estudio y entrenamiento",
+  "progressCorrelationTitle": "Estudio y entreno",
   "progressCorrelationSubtitleRpe": "Horas de estudio frente al esfuerzo medio de cada semana",
   "progressCorrelationSubtitleMinutes": "Horas de estudio frente a los minutos entrenados cada semana",
   "progressCorrelationMetricRpe": "Esfuerzo",
   "progressCorrelationMetricMinutes": "Minutos",
-  "progressCorrelationCoefficient": "r = {value}",
-  "@progressCorrelationCoefficient": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "progressCorrelationStrengthNone": "sin relación clara",
+  "progressCorrelationStrengthNone": "no está clara",
   "progressCorrelationStrengthWeak": "débil",
   "progressCorrelationStrengthModerate": "moderada",
   "progressCorrelationStrengthStrong": "fuerte",
   "progressCorrelationStrengthVeryStrong": "muy fuerte",
-  "progressCorrelationDirectionPositive": "positiva",
-  "progressCorrelationDirectionNegative": "negativa",
-  "progressCorrelationLabel": "Correlación {strength}, {direction}",
+  "progressCorrelationDirectionPositive": "a más estudio, más entreno",
+  "progressCorrelationDirectionNegative": "a más estudio, menos entreno",
+  "progressCorrelationLabel": "Relación {strength}: {direction}",
   "@progressCorrelationLabel": {
     "placeholders": {
       "strength": {
@@ -408,7 +400,7 @@
       }
     }
   },
-  "progressCorrelationNoneLabel": "Correlación {strength}",
+  "progressCorrelationNoneLabel": "Relación: {strength}",
   "@progressCorrelationNoneLabel": {
     "placeholders": {
       "strength": {
@@ -416,7 +408,7 @@
       }
     }
   },
-  "progressCorrelationInsufficient": "Faltan semanas con estudio y entrenamiento ({n} de {min}).",
+  "progressCorrelationInsufficient": "Hacen falta {min} semanas con estudio y entreno; llevas {n}.",
   "@progressCorrelationInsufficient": {
     "placeholders": {
       "min": {
@@ -428,32 +420,29 @@
     }
   },
   "progressCorrelationAxisStudy": "Horas de estudio por semana",
-  "progressCorrelationSemantics": "Gráfica de dispersión con {n} semanas. Coeficiente {value}: {label}.",
+  "progressCorrelationSemantics": "Gráfica de puntos con {n} semanas. {label}.",
   "@progressCorrelationSemantics": {
     "placeholders": {
       "n": {
         "type": "int"
-      },
-      "value": {
-        "type": "String"
       },
       "label": {
         "type": "String"
       }
     }
   },
-  "progressCorrelationMetricTooltip": "Métrica de entrenamiento",
-  "progressInsightsTitle": "Interpretación",
+  "progressCorrelationMetricTooltip": "Qué comparar del entreno",
+  "progressInsightsTitle": "Qué dicen tus cifras",
   "progressInsightTitleStreak": "Racha",
   "progressInsightTitleConsistency": "Constancia",
   "progressInsightTitleVolume": "Cuánto entrenas",
-  "progressInsightTitleCorrelation": "Estudio y entrenamiento",
+  "progressInsightTitleCorrelation": "Estudio y entreno",
   "progressInsightSeverityPositive": "Positivo",
   "progressInsightSeverityInfo": "Información",
   "progressInsightSeverityWarning": "Aviso",
-  "progressInsightStreakNone": "Hoy es un buen día para empezar tu racha. Un solo entrenamiento marca la diferencia.",
-  "progressInsightStreakFirstDay": "Llevas 1 día seguido entrenando. El primer paso es el más importante: repite mañana.",
-  "progressInsightStreakBuilding": "Llevas {days, plural, =1{1 día} other{{days} días}} seguidos entrenando. ¡Vas creando el hábito!",
+  "progressInsightStreakNone": "Sin racha: entrena hoy para empezarla.",
+  "progressInsightStreakFirstDay": "1 día seguido entrenando: repite mañana.",
+  "progressInsightStreakBuilding": "{days, plural, =1{1 día seguido} other{{days} días seguidos}} entrenando. ¡Vas cogiendo el hábito!",
   "@progressInsightStreakBuilding": {
     "placeholders": {
       "days": {
@@ -461,7 +450,7 @@
       }
     }
   },
-  "progressInsightStreakWeeks": "Llevas {days} días seguidos ({weeks, plural, =1{una semana} other{{weeks} semanas}}). ¡Bien!",
+  "progressInsightStreakWeeks": "{days} días seguidos entrenando ({weeks, plural, =1{una semana} other{{weeks} semanas}}).",
   "@progressInsightStreakWeeks": {
     "placeholders": {
       "days": {
@@ -472,7 +461,7 @@
       }
     }
   },
-  "progressInsightStreakHabit": "Llevas {days} días sin parar. Has convertido el entrenamiento en un hábito de acero.",
+  "progressInsightStreakHabit": "{days} días seguidos entrenando: ya es un hábito.",
   "@progressInsightStreakHabit": {
     "placeholders": {
       "days": {
@@ -480,7 +469,7 @@
       }
     }
   },
-  "progressInsightStreakUnstoppable": "Llevas {days} días seguidos entrenando. Eres prácticamente imparable.",
+  "progressInsightStreakUnstoppable": "{days} días seguidos entrenando. ¡Imparable!",
   "@progressInsightStreakUnstoppable": {
     "placeholders": {
       "days": {
@@ -488,8 +477,8 @@
       }
     }
   },
-  "progressInsightConsistencyNone": "Esta semana puedes empezar una nueva racha de constancia.",
-  "progressInsightConsistencyFirstWeek": "Completaste tu primera semana de entrenamiento. Una semana más y será un hábito.",
+  "progressInsightConsistencyNone": "Entrena esta semana para empezar a sumar semanas.",
+  "progressInsightConsistencyFirstWeek": "1 semana entrenando: repite la próxima.",
   "progressInsightConsistencyBuilding": "{weeks, plural, =1{1 semana seguida} other{{weeks} semanas seguidas}} entrenando. ¡Sigue así!",
   "@progressInsightConsistencyBuilding": {
     "placeholders": {
@@ -498,7 +487,7 @@
       }
     }
   },
-  "progressInsightConsistencyElite": "{weeks} semanas seguidas sin fallar. Tu constancia es de nivel élite.",
+  "progressInsightConsistencyElite": "{weeks} semanas seguidas sin fallar. ¡Nivel élite!",
   "@progressInsightConsistencyElite": {
     "placeholders": {
       "weeks": {
@@ -506,7 +495,7 @@
       }
     }
   },
-  "progressInsightVolumeLow": "Tu volumen de entrenamiento aún es bajo. Cada minuto cuenta: sigue sumando.",
+  "progressInsightVolumeLow": "Aún entrenas poco: cada minuto suma.",
   "progressInsightVolumeAccumulated": "{weeks, plural, =1{Esta semana} other{En {weeks} semanas}}: {hours} h de entreno ({average} h por semana).",
   "@progressInsightVolumeAccumulated": {
     "placeholders": {
@@ -522,38 +511,10 @@
     }
   },
   "progressInsightCorrelationNone": "Tu estudio y tu entreno no muestran relación clara por ahora.",
-  "progressInsightCorrelationStrongPositive": "Cuando estudias más, también rindes más al entrenar ({percent} %).",
-  "@progressInsightCorrelationStrongPositive": {
-    "placeholders": {
-      "percent": {
-        "type": "int"
-      }
-    }
-  },
-  "progressInsightCorrelationMildPositive": "Hay una ligera tendencia positiva ({percent} %): estudiar más no te frena al entrenar.",
-  "@progressInsightCorrelationMildPositive": {
-    "placeholders": {
-      "percent": {
-        "type": "int"
-      }
-    }
-  },
-  "progressInsightCorrelationStrongNegative": "En semanas de mucho estudio rindes menos al entrenar ({percent} %). Es normal: ajusta la intensidad.",
-  "@progressInsightCorrelationStrongNegative": {
-    "placeholders": {
-      "percent": {
-        "type": "int"
-      }
-    }
-  },
-  "progressInsightCorrelationMildNegative": "En semanas de más estudio rindes un poco menos ({percent} %). Prioriza descansar.",
-  "@progressInsightCorrelationMildNegative": {
-    "placeholders": {
-      "percent": {
-        "type": "int"
-      }
-    }
-  },
+  "progressInsightCorrelationStrongPositive": "Cuando estudias más, también rindes más al entrenar.",
+  "progressInsightCorrelationMildPositive": "Estudiar más no te frena al entrenar.",
+  "progressInsightCorrelationStrongNegative": "En semanas de mucho estudio rindes menos al entrenar: es normal, entrena más suave.",
+  "progressInsightCorrelationMildNegative": "En semanas de más estudio rindes un poco menos: prioriza descansar.",
   "progressErrorBadgeNotFound": "No encontramos esta insignia.",
   "progressErrorInvalidZone": "La zona horaria indicada no es válida.",
   "progressErrorInvalidPeriod": "El periodo seleccionado no es válido.",
@@ -644,7 +605,7 @@
       }
     }
   },
-  "progressStreakFreezes": "{count, plural, =0{Sin días libres} =1{1 día libre: puedes fallar un día sin perder la racha} other{{count} días libres: puedes fallar {count} días sin perder la racha}}",
+  "progressStreakFreezes": "{count, plural, =0{Sin días libres} =1{1 día libre} other{{count} días libres}}",
   "progressStreakFrozen": "El {date} usaste un día libre.",
   "@progressStreakFreezes": {
     "placeholders": {
@@ -742,7 +703,14 @@
     }
   },
   "progressHeadlineStudyMinutes": "{minutes} min de estudio",
-  "@progressHeadlineStudyMinutes": {"description": "Titular de Progreso con menos de una hora de estudio", "placeholders": {"minutes": {"type": "int"}}},
+  "@progressHeadlineStudyMinutes": {
+    "description": "Titular de Progreso con menos de una hora de estudio",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "progressHeadlineTrainings": "{count, plural, =1{1 entreno} other{{count} entrenos}}",
   "@progressHeadlineTrainings": {
     "placeholders": {
@@ -763,7 +731,7 @@
       }
     }
   },
-  "progressStreakFreezesHelp": "Ganas un día libre por cada 7 días seguidos.",
+  "progressStreakFreezesHelp": "Un día libre te deja fallar un día sin perder la racha. Ganas uno por cada 7 días seguidos.",
   "progressStreakFreezesAbout": "Días libres",
   "progressHeadlineStart": "Añadir al calendario",
   "progressHeadlineStreakOnly": "{days, plural, =0{Sin racha} =1{Racha: 1 día} other{Racha: {days} días}}",

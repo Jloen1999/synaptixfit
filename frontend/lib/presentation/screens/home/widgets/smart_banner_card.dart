@@ -38,7 +38,7 @@ class SmartBannerContent {
       HomeBannerType.physicalOverload => SmartBannerContent(
         icon: Icons.monitor_heart_outlined,
         title: l10n.homeBannerPhysicalOverloadTitle,
-        // Sin el ratio: es jerga; quien lo quiera lo ve en la analítica.
+        // Sin el ratio: es jerga; quien lo quiera lo ve en «Cifras de entreno».
         message: l10n.homeBannerPhysicalOverloadMessage(
           asInt('maxStudyMinutes'),
         ),

@@ -73,12 +73,10 @@ abstract final class InsightTexts {
       };
 
   /// Variantes `NONE` o `<FUERZA>_<DIRECCIÓN>` (p. ej. `STRONG_NEGATIVE`).
-  /// Débil = matiz leve; moderada o mayor = mensaje marcado.
+  /// Débil = matiz leve; moderada o mayor = mensaje marcado. Sin el
+  /// porcentaje del coeficiente: es jerga y no dice nada a quien lo lee.
   static String? _correlation(AppLocalizations l10n, AnalyticsInsight i) {
     if (i.variant == 'NONE') return l10n.progressInsightCorrelationNone;
-    final percent = i.params.containsKey('percent')
-        ? _int(i, 'percent')
-        : (_double(i, 'coefficient').abs() * 100).round();
     final negative = i.variant.endsWith('_NEGATIVE');
     if (!negative && !i.variant.endsWith('_POSITIVE')) return null;
     final strength = i.variant.substring(0, i.variant.lastIndexOf('_'));
@@ -89,10 +87,10 @@ abstract final class InsightTexts {
     };
     if (mild == null) return null;
     return switch ((negative, mild)) {
-      (false, false) => l10n.progressInsightCorrelationStrongPositive(percent),
-      (false, true) => l10n.progressInsightCorrelationMildPositive(percent),
-      (true, false) => l10n.progressInsightCorrelationStrongNegative(percent),
-      (true, true) => l10n.progressInsightCorrelationMildNegative(percent),
+      (false, false) => l10n.progressInsightCorrelationStrongPositive,
+      (false, true) => l10n.progressInsightCorrelationMildPositive,
+      (true, false) => l10n.progressInsightCorrelationStrongNegative,
+      (true, true) => l10n.progressInsightCorrelationMildNegative,
     };
   }
 }

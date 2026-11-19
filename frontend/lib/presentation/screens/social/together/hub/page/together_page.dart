@@ -391,7 +391,9 @@ class _ChallengeCard extends StatelessWidget {
               TogetherProgressBar(
                 value: c.groupTotal,
                 target: c.groupTarget,
-                label: l10n.togetherGroupProgress(c.groupTotal, c.groupTarget),
+                label: l10n.togetherGroupProgress(
+                  c.amount(context, c.groupTotal, c.groupTarget),
+                ),
               )
             else
               Text(
