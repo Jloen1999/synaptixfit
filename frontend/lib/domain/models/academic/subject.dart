@@ -37,7 +37,24 @@ abstract class Subject with _$Subject {
     /// Lo que destaca la tarjeta, ya elegido por el servidor (lo urgente
     /// primero); nulo si no hay nada próximo.
     SubjectNextUp? nextUp,
+
+    /// Curso y cuatrimestre (1-2), nulos si no se saben (ADR 0057).
+    int? course,
+    int? term,
+
+    /// Temas hechos del plan docente; nulos sin plan docente.
+    int? topicsDone,
+    int? topicsTotal,
+
+    /// Repasos que tocan hoy en esta asignatura.
+    @Default(0) int reviewsDueToday,
   }) = _Subject;
+
+  const Subject._();
+
+  /// Tiene plan docente con temas («Temas 4 de 10»); si no, se invita a
+  /// importarlo.
+  bool get hasSyllabus => topicsTotal != null && topicsTotal! > 0;
 }
 
 /// Qué es lo próximo de una asignatura.

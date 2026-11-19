@@ -1,13 +1,13 @@
 {
   "@@locale": "es",
   "academicAdd": "Añadir",
-  "academicSubjectsTitle": "Mis asignaturas",
+  "academicSubjectsTitle": "Tus asignaturas",
   "academicFilterActive": "Activas",
   "academicFilterArchived": "Archivadas",
-  "academicOpenPlanner": "Abrir calendario",
+  "academicOpenPlanner": "Calendario",
   "academicMoreActions": "Más acciones",
   "academicEmptyTitle": "Aún no tienes asignaturas",
-  "academicEmptyMessage": "Sube el plan docente o añade la asignatura con +.",
+  "academicEmptyMessage": "Importa la guía docente o toca «Añadir».",
   "academicArchivedEmptyTitle": "No tienes asignaturas archivadas",
   "academicAddFromCatalog": "Desde el plan de estudios",
   "academicAddFromCatalogHint": "Elige varias asignaturas de tu carrera",
@@ -15,49 +15,11 @@
   "academicAddManualHint": "Crea una asignatura con tus propios datos",
   "academicQuickNote": "Nota rápida",
   "academicQuickNoteHint": "Apunta algo sin asignarlo todavía",
-  "academicSubjectCounts": "{notes, plural, =1{1 apunte} other{{notes} apuntes}} · {files, plural, =1{1 archivo} other{{files} archivos}}",
-  "@academicSubjectCounts": {
-    "placeholders": {
-      "notes": {
-        "type": "int"
-      },
-      "files": {
-        "type": "int"
-      }
-    }
-  },
   "academicSubjectArchivedBadge": "Archivada",
   "academicDueReviews": "{count, plural, =1{1 repaso pendiente} other{{count} repasos pendientes}}",
   "@academicDueReviews": {
     "placeholders": {
       "count": {
-        "type": "int"
-      }
-    }
-  },
-  "academicCourseLabel": "{course}.º curso",
-  "@academicCourseLabel": {
-    "placeholders": {
-      "course": {
-        "type": "int"
-      }
-    }
-  },
-  "academicSemesterLabel": "{semester}.º semestre",
-  "@academicSemesterLabel": {
-    "placeholders": {
-      "semester": {
-        "type": "int"
-      }
-    }
-  },
-  "academicCourseSemester": "{course}.º curso · {semester}.º semestre",
-  "@academicCourseSemester": {
-    "placeholders": {
-      "course": {
-        "type": "int"
-      },
-      "semester": {
         "type": "int"
       }
     }
@@ -81,16 +43,14 @@
   "academicSubjectNextAssessment": "Próxima evaluación",
   "academicSubjectNoDate": "Sin fecha",
   "academicSubjectClearDate": "Quitar fecha",
-  "academicSubjectCourseSemester": "Curso y semestre",
+  "academicSubjectCourseSemester": "Curso y cuatrimestre",
   "academicSubjectCourse": "Curso",
-  "academicSubjectSemester": "Semestre",
+  "academicSubjectSemester": "Cuatrimestre",
   "academicSubjectNone": "Sin asignar",
   "academicSubjectDescription": "Descripción",
   "academicPriorityLow": "Baja",
   "academicPriorityMedium": "Media",
   "academicPriorityHigh": "Alta",
-  "academicTabProgress": "Progreso",
-  "academicTabSyllabus": "Apuntes y archivos",
   "academicSubjectArchive": "Archivar",
   "academicSubjectUnarchive": "Restaurar",
   "academicSubjectDeleteTitle": "¿Eliminar la asignatura?",
@@ -119,35 +79,15 @@
       }
     }
   },
-  "academicGuideTitle": "Plan docente",
-  "academicGuideEmptyTitle": "Importa el plan docente y tendrás temario y calculadora de nota",
-  "academicGuideRegenerate": "Importar de nuevo el plan docente",
-  "academicGuideSyllabus": "Temario",
-  "academicGuideNoTopics": "El plan docente no incluye temas.",
+  "academicGuideTitle": "Guía docente",
+  "academicGuideEmptyTitle": "Importa la guía docente y tendrás temario, nota y profesorado.",
+  "academicGuideRegenerate": "Volver a importar la guía",
+  "academicGuideNoTopics": "La guía docente no incluye temas.",
   "academicGuideProfessors": "Profesorado",
-  "academicGuideBibliography": "Bibliografía",
   "academicTopicTheory": "Teoría",
   "academicTopicPractice": "Práctica",
-  "academicGradeSimulator": "Simulador de nota",
-  "academicGradeEstimated": "Nota estimada",
-  "academicGradeCovered": "Evaluado",
-  "academicGradeRequired": "Necesitas un {grade} de media en lo que queda para aprobar.",
-  "@academicGradeRequired": {
-    "placeholders": {
-      "grade": {
-        "type": "String"
-      }
-    }
-  },
-  "academicGradeNextPending": "Siguiente evaluación: {name}",
-  "@academicGradeNextPending": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "academicGradeNoCriteria": "El plan docente no incluye criterios de evaluación.",
+  "academicGradeSimulator": "Tu nota",
+  "academicGradeNoCriteria": "La guía docente no incluye criterios de evaluación.",
   "academicGradeWeight": "Peso: {percent} %",
   "@academicGradeWeight": {
     "placeholders": {
@@ -159,8 +99,8 @@
   "academicGradeLabel": "Nota (0-10)",
   "academicGradeHint": "Por ejemplo, 7,5",
   "academicGradeClear": "Quitar nota",
-  "academicRetentionTitle": "Retención",
-  "academicRetentionEmpty": "Registra apuntes o archivos en el repaso espaciado para ver tu retención.",
+  "academicRetentionTitle": "Lo que dominas",
+  "academicRetentionEmpty": "Repasa tus apuntes y aquí verás cuánto dominas.",
   "academicRetentionSummary": "{percent} % dominado de {total, plural, =1{1 material} other{{total} materiales}}",
   "@academicRetentionSummary": {
     "placeholders": {
@@ -185,8 +125,8 @@
       }
     }
   },
-  "academicTimelineTitle": "Próximos eventos",
-  "academicTimelineEmpty": "No hay eventos ni entregas de esta asignatura en los próximos tres meses.",
+  "academicTimelineTitle": "Lo próximo",
+  "academicTimelineEmpty": "Nada en los próximos tres meses.",
   "academicTimelineStudy": "Estudio",
   "academicTimelineClass": "Clase",
   "academicTimelineReview": "Repaso",
@@ -235,7 +175,7 @@
   },
   "academicActionReview": "Repasar",
   "academicActionPractice": "Practicar",
-  "academicGenerateBanner": "Resúmenes, mapas, flashcards o tests a partir de varios apuntes y archivos.",
+  "academicGenerateBanner": "Resúmenes, mapas, tarjetas o tests a partir de varios apuntes y archivos.",
   "academicNoteNew": "Nuevo apunte",
   "academicNoteEdit": "Editar apunte",
   "academicNotePreview": "Vista previa",
@@ -289,17 +229,17 @@
       }
     }
   },
-  "academicAiPracticeReadyHint": "Practica con corrección inmediata, flashcards o un simulacro.",
+  "academicAiPracticeReadyHint": "Practica con corrección inmediata, tarjetas o un simulacro.",
   "academicMindMapExpand": "Desplegar",
   "academicMindMapCollapse": "Plegar",
   "academicMindMapExpandAll": "Desplegar todo",
   "academicMindMapCollapseAll": "Plegar todo",
-  "academicGenerateTitle": "Centro de generación",
+  "academicGenerateTitle": "Crear material",
   "academicGenerateHint": "Resúmenes, tarjetas y preguntas de tus apuntes y archivos",
   "academicGenerateNoSubjects": "Añade una asignatura con apuntes o archivos para generar material.",
   "academicGenerateStepSubject": "1. Asignatura",
   "academicGenerateStepKind": "2. ¿Qué quieres generar?",
-  "academicGenerateStepSources": "3. Fuentes",
+  "academicGenerateStepSources": "3. De dónde sale",
   "academicGeneratePickSubject": "Elige una asignatura",
   "academicGeneratePickSubjectFirst": "Elige primero una asignatura.",
   "academicGenerateNoSources": "Esta asignatura aún no tiene apuntes ni archivos de los que partir.",
@@ -371,7 +311,7 @@
   "academicFreePracticeTitle": "Práctica libre",
   "academicFreePracticeHint": "Corrección inmediata con explicación",
   "academicFreePracticeDone": "Práctica terminada",
-  "academicFlashcardsTitle": "Flashcards",
+  "academicFlashcardsTitle": "Tarjetas",
   "academicFlashcardsHint": "Clasifica cada tarjeta: dominada, dudosa o fallada",
   "academicFlashcardsQuestion": "Pregunta",
   "academicFlashcardsAnswer": "Respuesta",
@@ -493,7 +433,7 @@
   },
   "academicErrorSubjectNotFound": "No encontramos esa asignatura.",
   "academicErrorSubjectCatalogNotFound": "Esa asignatura del plan de estudios no existe.",
-  "academicErrorSubjectSemesterNotFound": "Esta asignatura no tiene curso ni semestre asignados.",
+  "academicErrorSubjectSemesterNotFound": "Esta asignatura no tiene curso ni cuatrimestre.",
   "academicErrorNoteNotFound": "No encontramos ese apunte.",
   "academicErrorFileNotFound": "No encontramos ese archivo.",
   "academicErrorFileTypeNotAllowed": "Ese tipo de archivo no está permitido.",
@@ -503,7 +443,7 @@
   "academicErrorStudyDocumentNotFound": "Aún no se ha generado este documento.",
   "academicErrorStudySourceNotSupported": "Solo podemos leer apuntes, PDF e imágenes.",
   "academicErrorStudySourceWithoutSubject": "Asigna el apunte a una asignatura para poder repasarlo.",
-  "academicErrorStudyGuideEmpty": "No se ha podido leer el plan docente. Sube un PDF con texto, no escaneado.",
+  "academicErrorStudyGuideEmpty": "No se ha podido leer la guía docente. Sube un PDF con texto, no escaneado.",
   "academicErrorStudyMaterialNotFound": "No encontramos ese material de estudio.",
   "academicErrorQuizBankNotFound": "Este material aún no tiene preguntas.",
   "academicErrorQuizBankEmpty": "No hay preguntas disponibles para practicar.",
@@ -512,21 +452,13 @@
   "academicErrorQuizSessionNotInProgress": "Esta sesión ya ha terminado.",
   "academicQuestionAnswered": "respondida",
   "academicQuestionPending": "sin responder",
-  "academicGuideInfoSemester": "Semestre {semester}",
-  "@academicGuideInfoSemester": {
-    "placeholders": {
-      "semester": {
-        "type": "int"
-      }
-    }
-  },
   "academicModeContinuous": "Continua",
-  "academicModeGlobal": "Global",
-  "academicNotRecoverable": "No recuperable",
-  "academicImportEntry": "Importar plan docente",
+  "academicModeGlobal": "Global (solo examen)",
+  "academicNotRecoverable": "sin segunda oportunidad",
+  "academicImportEntry": "Importar guía docente",
   "academicImportEntryHint": "Sube el PDF y te proponemos la asignatura",
-  "academicImportTitle": "Importar plan docente",
-  "academicImportIntroTitle": "Sube el plan docente de la asignatura",
+  "academicImportTitle": "Importar guía docente",
+  "academicImportIntroTitle": "Sube la guía docente de la asignatura",
   "academicImportIntroBody": "Lo leemos por ti y tú lo revisas antes de guardar.",
   "academicImportBenefitTopics": "Temas, apartados y horas",
   "academicImportBenefitAssessments": "Pruebas y cuánto vale cada una",
@@ -535,7 +467,7 @@
   "academicImportPickHint": "PDF con texto, hasta 15 MB",
   "academicImportTooLarge": "El PDF pesa más de 15 MB.",
   "academicImportStepUpload": "Subiendo el PDF",
-  "academicImportStepRead": "Leyendo el plan docente",
+  "academicImportStepRead": "Leyendo la guía docente",
   "academicImportWaitHint": "Suele tardar menos de un minuto.",
   "academicImportReviewTitle": "Revisa lo que hemos encontrado",
   "academicImportReviewHint": "Corrige lo que haga falta. No se guarda hasta que confirmes.",
@@ -605,7 +537,7 @@
     }
   },
   "academicImportAddDate": "Poner fecha",
-  "academicImportTotalWarning": "Los pesos suman {total} %. Revísalos si no cuadra con tu plan docente.",
+  "academicImportTotalWarning": "Los pesos suman {total} %. Revísalos si no cuadra con tu guía docente.",
   "@academicImportTotalWarning": {
     "placeholders": {
       "total": {
@@ -634,7 +566,7 @@
       }
     }
   },
-  "academicImportDoneUpdated": "Hemos completado «{name}» con su plan docente.",
+  "academicImportDoneUpdated": "Hemos completado «{name}» con su guía docente.",
   "@academicImportDoneUpdated": {
     "placeholders": {
       "name": {
@@ -651,9 +583,9 @@
     }
   },
   "academicImportOpenSubject": "Ver asignatura",
-  "academicErrorTeachingGuideImportNotFound": "No hemos encontrado ese plan docente. Vuelve a subirlo.",
-  "academicErrorTeachingGuideImportNotReady": "El plan docente aún se está analizando. Espera unos segundos.",
-  "academicErrorTeachingGuideImportAlreadyApplied": "Este plan docente ya está aplicado.",
+  "academicErrorTeachingGuideImportNotFound": "No hemos encontrado esa guía docente. Vuelve a subirla.",
+  "academicErrorTeachingGuideImportNotReady": "La guía docente aún se está analizando. Espera unos segundos.",
+  "academicErrorTeachingGuideImportAlreadyApplied": "Esta guía docente ya está aplicada.",
   "academicImportStepDone": "hecho",
   "academicImportStepRunning": "en curso",
   "academicImportStepPending": "pendiente",
@@ -711,25 +643,11 @@
     }
   },
   "academicImportDiscardTitle": "¿Descartar lo revisado?",
-  "academicImportDiscardMessage": "Perderás los cambios que has hecho en este plan docente.",
+  "academicImportDiscardMessage": "Perderás los cambios que has hecho en esta guía docente.",
   "academicImportDiscardConfirm": "Descartar",
-  "academicGuideModeLabel": "Modalidad de evaluación",
-  "academicGuideSyllabusCount": "{done} de {total} temas · {percent} %",
-  "@academicGuideSyllabusCount": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "percent": {
-        "type": "int"
-      }
-    }
-  },
+  "academicGuideModeLabel": "Cómo te evalúan",
   "academicGuideSeeLess": "Ver menos",
-  "academicGuideReimportTitle": "¿Importar de nuevo el plan docente?",
+  "academicGuideReimportTitle": "¿Volver a importar la guía docente?",
   "academicGuideReimportMessage": "Se conservan los temas que has marcado y las notas de las pruebas que se llamen igual.",
   "academicGuideReimportConfirm": "Importar",
   "academicAddGroupSubject": "Asignatura",
@@ -906,7 +824,6 @@
   },
   "academicNoteDraftRestore": "Recuperar",
   "academicNoteDraftDiscard": "Descartar",
-  "academicReviewAll": "Repasar todos",
   "academicInboxMoveSpoken": "Mover «{title}» a una asignatura",
   "@academicInboxMoveSpoken": {
     "placeholders": {
@@ -1035,9 +952,6 @@
   "academicErrorNoteScanTooLarge": "Las fotos pesan demasiado. Prueba con menos páginas a la vez.",
   "academicErrorNoteScanNothingFound": "No hemos podido leer texto en las fotos. Prueba con más luz y la hoja recta.",
   "academicErrorNoteScanUnavailable": "Ahora mismo no podemos leer fotos. Inténtalo en un rato.",
-  "academicMockCardTitle": "Simulacro de la asignatura",
-  "academicMockCardBody": "Preguntas mezcladas de varios apuntes, como en el examen.",
-  "academicMockCardAction": "Hacer un simulacro",
   "academicMockSetupTitle": "Preparar simulacro",
   "academicMockSetupIntro": "Elige qué entra y cuántas preguntas quieres.",
   "academicMockSetupWhat": "¿Qué entra?",
@@ -1321,7 +1235,6 @@
     }
   },
   "academicNewDeadline": "Nueva entrega",
-  "academicSubjectFocusHere": "Concentrarme en esta asignatura",
   "academicExamResumeLater": "El simulacro sigue en curso: al volver a abrirlo, sigues donde lo dejaste.",
   "academicScanZoomIn": "Acercar",
   "academicScanZoomOut": "Alejar",
@@ -1339,15 +1252,213 @@
     }
   },
   "guideAcademicAddTitle": "Añadir",
-  "guideAcademicAddBody": "Asignaturas, apuntes (también con foto) y preguntas o tarjetas con IA: todo empieza aquí.",
-  "guideAcademicReviewsTitle": "Repasos pendientes",
+  "guideAcademicAddBody": "Asignaturas, apuntes (también con foto) y preguntas o tarjetas de tu material: todo empieza aquí.",
+  "guideAcademicReviewsTitle": "Repasos de hoy",
   "guideAcademicReviewsBody": "Lo que toca repasar hoy para no olvidarlo.",
   "guideAcademicSearchTitle": "Buscar",
   "guideAcademicSearchBody": "Encuentra cualquier asignatura, apunte, archivo o entrega.",
-  "guideSubjectProgressTitle": "Progreso",
-  "guideSubjectProgressBody": "Lo que viene, tu temario y tus notas.",
-  "guideSubjectNotesTitle": "Apuntes y archivos",
-  "guideSubjectNotesBody": "Tus apuntes y archivos. Desde cada uno puedes repasar o practicar.",
   "guideSubjectPracticeTitle": "Practicar",
-  "guideSubjectPracticeBody": "Haz un simulacro con preguntas de tus apuntes para ver cómo llegas al examen."
+  "guideSubjectPracticeBody": "Crea preguntas o haz un simulacro para ver cómo llegas al examen.",
+  "academicCourseYear": "{course, select, 1{1.er curso} 3{3.er curso} other{{course}.º curso}}",
+  "@academicCourseYear": {
+    "placeholders": {
+      "course": {
+        "type": "String"
+      }
+    }
+  },
+  "academicTerm": "{term, plural, =1{1.er cuatri} other{{term}.º cuatri}}",
+  "@academicTerm": {
+    "placeholders": {
+      "term": {
+        "type": "int"
+      }
+    }
+  },
+  "academicTopicsProgress": "Temas {done} de {total}",
+  "@academicTopicsProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicNoSyllabusImport": "Sin temario: importa la guía",
+  "academicReviewsToday": "{count, plural, =1{1 repaso hoy} other{{count} repasos hoy}}",
+  "@academicReviewsToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicReviewsForToday": "{count, plural, =1{1 repaso para hoy} other{{count} repasos para hoy}}",
+  "@academicReviewsForToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicReviewNow": "Repasar",
+  "academicNoReviewsToday": "Nada que repasar hoy",
+  "academicSharedNotesHint": "Copia apuntes de tu clase",
+  "academicTabSummary": "Resumen",
+  "academicTabTopics": "Temario",
+  "academicTabEvaluation": "Evaluación",
+  "academicTabNotes": "Apuntes",
+  "academicTabGuide": "Guía",
+  "academicTopicsEmptyTitle": "Aún no hay temario",
+  "academicTopicsEmptyMessage": "Importa la guía docente y marca cada tema cuando lo estudies.",
+  "academicTopicsDoneHeader": "{done} de {total} temas hechos",
+  "@academicTopicsDoneHeader": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicPercent": "{percent} %",
+  "@academicPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "academicTopicsHint": "Marca un tema cuando lo hayas estudiado.",
+  "academicEvaluationEmptyTitle": "Aún no sabes cómo te evalúan",
+  "academicEvaluationEmptyMessage": "Importa la guía docente para ver las pruebas y calcular tu nota.",
+  "academicEvaluationHelpTooltip": "¿Qué es continua y qué es global?",
+  "academicEvaluationHelp": "Continua: tu nota sale de varias pruebas durante el curso. Global: te lo juegas todo en un examen final.",
+  "academicPointsOf": "de {possible} puntos",
+  "@academicPointsOf": {
+    "placeholders": {
+      "possible": {
+        "type": "String"
+      }
+    }
+  },
+  "academicPointsOfTotal": "{earned} de {possible} puntos",
+  "@academicPointsOfTotal": {
+    "placeholders": {
+      "earned": {
+        "type": "String"
+      },
+      "possible": {
+        "type": "String"
+      }
+    }
+  },
+  "academicPointsSoFar": "Lo que llevas de lo ya evaluado ({percent} % de la nota).",
+  "@academicPointsSoFar": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "academicPassNeeds": "Para aprobar te basta un {grade} de media en lo que queda.",
+  "@academicPassNeeds": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "academicPassAlready": "Ya tienes el aprobado asegurado.",
+  "academicPassOutOfReach": "Con estas notas ya no llegas al 5.",
+  "academicPassNoGrades": "Pon tus notas cuando las sepas y verás cuánto te falta para aprobar.",
+  "academicNoGradesYet": "Sin notas aún",
+  "academicTestsTitle": "Pruebas",
+  "academicGradeEnterHint": "Pon tu nota (de 0 a 10) cuando la sepas.",
+  "academicGuideTabEmptyTitle": "Aún no has importado la guía",
+  "academicGuideTabEmptyMessage": "Importa la guía docente para tener a mano el profesorado, las tutorías y la bibliografía.",
+  "academicGuideBibliographyCount": "Bibliografía ({count})",
+  "@academicGuideBibliographyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGuideData": "Datos de la guía",
+  "academicProfessorOffice": "Despacho",
+  "academicProfessorHours": "Tutorías",
+  "academicProfessorWrite": "Escribir",
+  "academicProfessorWriteSpoken": "Escribir a {name}",
+  "@academicProfessorWriteSpoken": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicProfessorWriteFailed": "No se ha podido abrir el correo.",
+  "academicMasteryHelpTooltip": "¿Qué es «Lo que dominas»?",
+  "academicMasteryHelp": "Lo que recuerdas bien de tus apuntes y archivos, según tus repasos. Sube si repasas cuando toca.",
+  "academicMasteryFrom": "{count, plural, =1{De 1 apunte o archivo} other{De {count} apuntes y archivos}}",
+  "@academicMasteryFrom": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicPracticeAction": "Practicar",
+  "academicCreateQuestions": "Crear preguntas",
+  "academicMockShort": "Simulacro",
+  "academicAtAGlance": "De un vistazo",
+  "academicTopicsDone": "Temas hechos",
+  "academicTopicsDoneValue": "{done} de {total}",
+  "@academicTopicsDoneValue": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportProfessors": "{count, plural, =1{Profesorado · 1 persona} other{Profesorado · {count} personas}}",
+  "@academicImportProfessors": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "guideSubjectTabsTitle": "Todo en pestañas",
+  "guideSubjectTabsBody": "Resumen, temario, evaluación, apuntes y guía docente.",
+  "guideSubjectReviewsTitle": "Repasos de hoy",
+  "guideSubjectReviewsBody": "Lo que toca repasar hoy y cuánto dominas ya.",
+  "academicAddSpoken": "Añadir asignatura, apunte o guía",
+  "academicImportGuideFor": "Sin temario: importar la guía de {name}",
+  "@academicImportGuideFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicLabelValue": "{label}: {value}",
+  "@academicLabelValue": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "academicSubjectPickTerm": "Elige también el cuatrimestre",
+  "academicSubjectPickCourse": "Elige también el curso"
 }

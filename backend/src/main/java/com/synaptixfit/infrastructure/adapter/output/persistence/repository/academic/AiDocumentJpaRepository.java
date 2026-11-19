@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.repository.academic;
 
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.academic.AiDocumentEntity;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,9 @@ public interface AiDocumentJpaRepository extends JpaRepository<AiDocumentEntity,
 
     Optional<AiDocumentEntity> findByUserIdAndSourceTypeAndSourceIdAndType(UUID userId, String sourceType,
                                                                             String sourceId, String type);
+
+    List<AiDocumentEntity> findByUserIdAndSourceTypeAndTypeAndSourceIdIn(UUID userId, String sourceType, String type,
+                                                                        Collection<String> sourceIds);
 
     List<AiDocumentEntity> findByUserIdAndSourceTypeAndSourceId(UUID userId, String sourceType, String sourceId);
 

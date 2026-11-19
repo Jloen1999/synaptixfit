@@ -238,10 +238,7 @@ List<RouteBase> academicRoutes() => [
     path: '/academic/subjects/:subjectId',
     builder: (context, state) => SubjectDetailPage(
       subjectId: state.pathParameters['subjectId']!,
-      initialTab:
-          state.uri.queryParameters['tab'] == SubjectDetailTab.notes.name
-          ? SubjectDetailTab.notes
-          : SubjectDetailTab.progress,
+      initialTab: SubjectDetailTab.fromQuery(state.uri.queryParameters['tab']),
     ),
   ),
   GoRoute(

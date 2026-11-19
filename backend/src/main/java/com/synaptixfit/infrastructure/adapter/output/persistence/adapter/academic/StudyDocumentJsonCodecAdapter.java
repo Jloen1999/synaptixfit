@@ -79,7 +79,7 @@ public class StudyDocumentJsonCodecAdapter implements StudyDocumentCodecPort {
         ArrayNode professors = root.putArray("profesores");
         for (TeachingGuide.Professor p : guide.professors()) {
             professors.addObject().put("nombre", nz(p.name())).put("email", nz(p.email()))
-                    .put("despacho", nz(p.office()));
+                    .put("despacho", nz(p.office())).put("papel", p.role()).put("tutorias", p.officeHours());
         }
         ArrayNode topics = root.putArray("temario");
         for (TeachingGuide.Topic t : guide.topics()) {
@@ -125,8 +125,8 @@ public class StudyDocumentJsonCodecAdapter implements StudyDocumentCodecPort {
                 text(s.path("departamento")), text(s.path("descripcion")));
         List<TeachingGuide.Professor> professors = new ArrayList<>();
         for (JsonNode p : root.path("profesores")) {
-            professors.add(new TeachingGuide.Professor(p.path("nombre").asString(""), p.path("email").asString(""),
-                    p.path("despacho").asString("")));
+            professors.add(new TeachingGuide.Professor(p.path("nombre").asString(""), text(p.path("email")),
+                    text(p.path("despacho")), text(p.path("papel")), text(p.path("tutorias"))));
         }
         List<TeachingGuide.Topic> topics = new ArrayList<>();
         for (JsonNode t : root.path("temario")) {

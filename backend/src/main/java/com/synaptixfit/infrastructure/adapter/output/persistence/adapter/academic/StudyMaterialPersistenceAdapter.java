@@ -9,7 +9,9 @@ import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.academic
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.academic.AcademicPersistenceMapper;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.academic.StudyMaterialJpaRepository;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
@@ -47,6 +49,14 @@ public class StudyMaterialPersistenceAdapter implements StudyMaterialRepositoryP
     public List<StudyMaterial> findDue(UUID userId, Instant now, int limit) {
         return repository.findDue(userId, now, PageRequest.of(0, limit)).stream()
                 .map(AcademicPersistenceMapper::toDomain).toList();
+    }
+
+    @Override
+    public Map<UUID, Integer> countDueBySubject(UUID userId, Instant now) {
+        Map<UUID, Integer> counts = new HashMap<>();
+        repository.countDueBySubject(userId, now, AcademicDbCodes.mastery(StudyMaterial.EXCLUDED_FROM_REVIEWS))
+                .forEach(r -> counts.put(r.getSubjectId(), (int) r.getTotal()));
+        return counts;
     }
 
     @Override

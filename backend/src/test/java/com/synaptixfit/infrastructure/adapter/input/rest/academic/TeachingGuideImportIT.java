@@ -125,6 +125,17 @@ class TeachingGuideImportIT {
                 .andExpect(jsonPath("$.subject.ectsCredits").value(6.0))
                 .andExpect(jsonPath("$.effectiveMode").value("CONTINUOUS"))
                 .andExpect(jsonPath("$.assessments[1].active").value(false));
+        // La tarjeta (ADR 0057): «Semestre 6» → 3.er curso, 2.º cuatrimestre; temas de la guía y repasos de hoy.
+        perform(get("/api/v1/subjects/" + subjectId), token, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.course").value(3))
+                .andExpect(jsonPath("$.term").value(2))
+                .andExpect(jsonPath("$.topicsDone").value(0))
+                .andExpect(jsonPath("$.topicsTotal").value(1))
+                .andExpect(jsonPath("$.reviewsDueToday").value(0));
+        perform(get("/api/v1/subjects"), token, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].topicsTotal").value(1));
         perform(put("/api/v1/subjects/" + subjectId + "/teaching-guide/mode"), token, "{\"mode\":\"GLOBAL\"}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.effectiveMode").value("GLOBAL"))

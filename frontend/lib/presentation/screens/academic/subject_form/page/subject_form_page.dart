@@ -285,48 +285,52 @@ class _SubjectFormViewState extends State<_SubjectFormView>
                       style: context.textStyles.labelLarge,
                     ),
                     const SizedBox(height: TokensSpacing.s),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<int?>(
-                            initialValue: _course,
-                            decoration: InputDecoration(
-                              labelText: l10n.academicSubjectCourse,
-                            ),
-                            items: [
-                              DropdownMenuItem(
-                                child: Text(l10n.academicSubjectNone),
-                              ),
-                              for (var c = 1; c <= 6; c++)
-                                DropdownMenuItem(
-                                  value: c,
-                                  child: Text(l10n.academicCourseLabel(c)),
-                                ),
-                            ],
-                            onChanged: (v) => setState(() => _course = v),
-                          ),
+                    _CourseTermFields(
+                      stacked: context.largeText,
+                      course: DropdownButtonFormField<int?>(
+                        initialValue: _course,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: l10n.academicSubjectCourse,
                         ),
-                        const SizedBox(width: TokensSpacing.m),
-                        Expanded(
-                          child: DropdownButtonFormField<int?>(
-                            initialValue: _semester,
-                            decoration: InputDecoration(
-                              labelText: l10n.academicSubjectSemester,
-                            ),
-                            items: [
-                              DropdownMenuItem(
-                                child: Text(l10n.academicSubjectNone),
-                              ),
-                              for (var s = 1; s <= 2; s++)
-                                DropdownMenuItem(
-                                  value: s,
-                                  child: Text(l10n.academicSemesterLabel(s)),
-                                ),
-                            ],
-                            onChanged: (v) => setState(() => _semester = v),
+                        items: [
+                          DropdownMenuItem(
+                            child: Text(l10n.academicSubjectNone),
                           ),
+                          for (var c = 1; c <= 6; c++)
+                            DropdownMenuItem(
+                              value: c,
+                              child: Text(l10n.academicCourseYear('$c')),
+                            ),
+                        ],
+                        // Curso y cuatrimestre van juntos: con uno solo no se
+                        // guardaría nada sin avisar.
+                        validator: (v) => v == null && _semester != null
+                            ? l10n.academicSubjectPickCourse
+                            : null,
+                        onChanged: (v) => setState(() => _course = v),
+                      ),
+                      term: DropdownButtonFormField<int?>(
+                        initialValue: _semester,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: l10n.academicSubjectSemester,
                         ),
-                      ],
+                        items: [
+                          DropdownMenuItem(
+                            child: Text(l10n.academicSubjectNone),
+                          ),
+                          for (var s = 1; s <= 2; s++)
+                            DropdownMenuItem(
+                              value: s,
+                              child: Text(l10n.academicTerm(s)),
+                            ),
+                        ],
+                        validator: (v) => v == null && _course != null
+                            ? l10n.academicSubjectPickTerm
+                            : null,
+                        onChanged: (v) => setState(() => _semester = v),
+                      ),
                     ),
                     const SizedBox(height: TokensSpacing.m),
                     AppTextField(
@@ -349,4 +353,37 @@ class _SubjectFormViewState extends State<_SubjectFormView>
       },
     );
   }
+}
+
+/// Curso y cuatrimestre: uno al lado del otro o, con el texto grande, uno
+/// debajo del otro (a media pantalla «1.er cuatri» no cabe).
+class _CourseTermFields extends StatelessWidget {
+  const _CourseTermFields({
+    required this.stacked,
+    required this.course,
+    required this.term,
+  });
+
+  final bool stacked;
+  final Widget course;
+  final Widget term;
+
+  @override
+  Widget build(BuildContext context) => stacked
+      ? Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            course,
+            const SizedBox(height: TokensSpacing.m),
+            term,
+          ],
+        )
+      : Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: course),
+            const SizedBox(width: TokensSpacing.m),
+            Expanded(child: term),
+          ],
+        );
 }

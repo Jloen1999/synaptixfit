@@ -63,13 +63,15 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
                 "departamento": "departamento",
                 "descripcion": "resumen del contenido en 1-3 frases"
               },
-              "profesores": [{"nombre": "", "email": "", "despacho": ""}],
+              "profesores": [{"nombre": "", "email": "", "despacho": "", "papel": "Coordinador/a · Teoría", "tutorias": "Lun 10:00-12:00 · Mié 16:00-18:00"}],
               "temario": [{"titulo": "Tema 1: título breve", "tipo": "teoria | practica", "subtemas": ["apartado"], "horas": 27}],
               "evaluacion": [{"nombre": "Prueba 1 (temas 1-3)", "porcentaje": 30, "modalidad": "continua | global | null", "tipo": "examen | entrega | presentacion | otro", "duracion_minutos": 120, "temas": [1, 2, 3], "recuperable": true, "fecha": "AAAA-MM-DD"}],
               "bibliografia": ["referencia completa"]
             }
             Reglas:
-            - "semestre" es el número que figura (p. ej. 6). "curso" solo si la guía lo indica.
+            - "semestre" es el número que figura (p. ej. 6). "curso" (1-6) solo si la guía lo escribe; si no, null (nunca lo supongas: con «Semestre 1» o «Semestre 2» sin curso escrito, "curso": null).
+            - "papel": qué hace cada profesor según la guía (coordinador/a, teoría, prácticas, laboratorio…), en pocas palabras y unido con « · »; null si no lo dice.
+            - "tutorias": horario de tutorías en texto corto (días y horas, «con cita» si lo pide); null si no lo dice.
             - "temario": un elemento por TEMA, en orden. Si los temas se agrupan en partes o bloques, no añadas las partes como temas. Los apartados de cada tema van en "subtemas". Las prácticas de laboratorio son un tema de tipo "practica" solo si la guía las presenta como bloque propio.
             - "horas": horas totales de trabajo del alumno de ese tema si hay una tabla de actividades formativas; si no, null.
             - "evaluacion": cada prueba o trabajo puntuable por separado. Si un bloque (p. ej. «Examen 60 %%») se divide en pruebas con su propio peso, devuelve las pruebas y no el bloque.

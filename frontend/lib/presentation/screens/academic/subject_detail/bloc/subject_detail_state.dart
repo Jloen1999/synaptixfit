@@ -7,7 +7,6 @@ abstract class SubjectDetailState with _$SubjectDetailState {
     @Default(true) bool loading,
     AppError? error,
     Subject? subject,
-    SubjectSemester? semester,
     @Default(false) bool busy,
     AppError? actionError,
     @Default(false) bool deleted,

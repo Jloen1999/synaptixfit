@@ -49,7 +49,6 @@ void registerAcademicPresentation(GetIt getIt) {
     ..registerFactory(
       () => SubjectDetailBloc(
         getSubject: getIt(),
-        getSemester: getIt(),
         setArchived: getIt(),
         deleteSubject: getIt(),
       ),
@@ -63,6 +62,7 @@ void registerAcademicPresentation(GetIt getIt) {
         getRetention: getIt(),
         getTimeline: getIt(),
         getMaterials: getIt(),
+        getDue: getIt(),
       ),
     )
     ..registerFactory(

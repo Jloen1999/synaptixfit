@@ -8,7 +8,10 @@ import com.synaptixfit.infrastructure.adapter.output.persistence.entity.academic
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.academic.AcademicDbCodes;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.academic.AcademicPersistenceMapper;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.academic.AiDocumentJpaRepository;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +31,19 @@ public class AiDocumentPersistenceAdapter implements AiDocumentRepositoryPort {
     public Optional<AiDocument> find(UUID userId, AiDocumentSource source, String sourceId, AiDocumentType type) {
         return repository.findByUserIdAndSourceTypeAndSourceIdAndType(userId, AcademicDbCodes.documentSource(source),
                 sourceId, AcademicDbCodes.documentType(type)).map(AcademicPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public Map<String, AiDocument> findAll(UUID userId, AiDocumentSource source, Collection<String> sourceIds,
+                                           AiDocumentType type) {
+        Map<String, AiDocument> found = new HashMap<>();
+        if (sourceIds.isEmpty()) {
+            return found;
+        }
+        repository.findByUserIdAndSourceTypeAndTypeAndSourceIdIn(userId, AcademicDbCodes.documentSource(source),
+                        AcademicDbCodes.documentType(type), sourceIds)
+                .forEach(e -> found.put(e.getSourceId(), AcademicPersistenceMapper.toDomain(e)));
+        return found;
     }
 
     @Override

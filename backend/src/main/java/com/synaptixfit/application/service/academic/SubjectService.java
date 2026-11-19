@@ -14,7 +14,10 @@ import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.StorageUnavailableException;
 import com.synaptixfit.domain.exception.academic.CatalogSubjectNotFoundException;
 import com.synaptixfit.domain.exception.academic.SubjectSemesterNotFoundException;
+import com.synaptixfit.domain.model.academic.AiDocument;
 import com.synaptixfit.domain.model.academic.AiDocumentSource;
+import com.synaptixfit.domain.model.academic.AiDocumentType;
+import com.synaptixfit.domain.model.academic.CourseTerm;
 import com.synaptixfit.domain.model.academic.CatalogSubject;
 import com.synaptixfit.domain.model.academic.CatalogSubjectSelection;
 import com.synaptixfit.domain.model.academic.Subject;
@@ -28,6 +31,8 @@ import com.synaptixfit.domain.port.output.academic.AiDocumentRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectFileRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectSemesterRepositoryPort;
+import com.synaptixfit.domain.port.output.academic.StudyDocumentCodecPort;
+import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
 import com.synaptixfit.domain.port.output.storage.FileStoragePort;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.event.academic.SubjectDeleted;
@@ -38,6 +43,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import com.synaptixfit.domain.model.insights.TimeZones;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +51,10 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/** Asignaturas del usuario, creación desde el catálogo y asignación a curso y semestre. */
+/**
+ * Asignaturas del usuario, creación desde el catálogo y asignación a curso y cuatrimestre. Al listarlas junta lo que
+ * pinta Académico: agenda (SubjectAgendaPort), curso y cuatrimestre, temas hechos del plan docente y repasos de hoy.
+ */
 public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, CreateSubjectUseCase,
         UpdateSubjectUseCase, DeleteSubjectUseCase, ListCatalogSubjectsUseCase, CreateSubjectsFromCatalogUseCase,
         ListSubjectSemestersUseCase, AssignSubjectSemesterUseCase, RemoveSubjectSemesterUseCase {
@@ -65,6 +74,10 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
     private final AcademicLookups lookups;
     private final SubjectAgendaPort agenda;
     private final ZoneId zone;
+    private final StudyMaterialRepositoryPort materials;
+    private final StudyDocumentCodecPort codec;
+
+    private static final System.Logger LOG = System.getLogger(SubjectService.class.getName());
 
     public SubjectService(SubjectRepositoryPort subjects, SubjectSemesterRepositoryPort semesters,
                           AcademicCatalogPort catalog, SubjectFileRepositoryPort files,
@@ -73,11 +86,25 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
         this(subjects, semesters, catalog, files, aiDocuments, storage, events, clock, null, ZoneId.of("UTC"));
     }
 
-    /** Con la agenda de cada asignatura (próxima clase, días de clase y próxima entrega, ADR 0036). */
+    /** Con la agenda, pero sin temas ni repasos (la tarjeta los omite). */
     public SubjectService(SubjectRepositoryPort subjects, SubjectSemesterRepositoryPort semesters,
                           AcademicCatalogPort catalog, SubjectFileRepositoryPort files,
                           AiDocumentRepositoryPort aiDocuments, FileStoragePort storage,
                           DomainEventPublisherPort events, Clock clock, SubjectAgendaPort agenda, ZoneId zone) {
+        this(subjects, semesters, catalog, files, aiDocuments, storage, events, clock, agenda, zone, null, null);
+    }
+
+    /**
+     * Completo: agenda de cada asignatura (ADR 0036) y, para la tarjeta de Académico (ADR 0057), los repasos de hoy
+     * ({@code materials}) y los temas hechos del plan docente guardado ({@code codec}).
+     */
+    public SubjectService(SubjectRepositoryPort subjects, SubjectSemesterRepositoryPort semesters,
+                          AcademicCatalogPort catalog, SubjectFileRepositoryPort files,
+                          AiDocumentRepositoryPort aiDocuments, FileStoragePort storage,
+                          DomainEventPublisherPort events, Clock clock, SubjectAgendaPort agenda, ZoneId zone,
+                          StudyMaterialRepositoryPort materials, StudyDocumentCodecPort codec) {
+        this.materials = materials;
+        this.codec = codec;
         this.agenda = agenda;
         this.zone = zone;
         this.subjects = subjects;
@@ -281,13 +308,44 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
                 : agenda.upcomingClasses(userId, ids, now, now.plus(Duration.ofDays(CLASS_LOOKAHEAD_DAYS)));
         Map<UUID, List<SubjectAgenda.Deadline>> deadlines = agenda == null ? Map.of()
                 : agenda.pendingDeadlines(userId, ids, now);
+        Map<UUID, CourseTerm> placements = semesters.findByUser(userId).stream()
+                .collect(Collectors.toMap(SubjectSemester::subjectId, SubjectSemester::courseTerm, (a, b) -> a));
+        Map<UUID, Integer> due = materials == null ? Map.of() : materials.countDueBySubject(userId, now);
+        Map<UUID, SubjectSummary.SyllabusCount> syllabus = syllabusCounts(userId, ids);
         return list.stream().map(s -> {
             SubjectRepositoryPort.ContentCount c = counts.getOrDefault(s.id(),
                     new SubjectRepositoryPort.ContentCount(0, 0));
             SubjectAgenda next = SubjectAgenda.of(classes.getOrDefault(s.id(), List.of()),
                     deadlines.getOrDefault(s.id(), List.of()), s.room(), s.nextAssessmentAt(), now, userZone);
-            return new SubjectSummary(s, c.notes(), c.files(), next);
+            return new SubjectSummary(s, c.notes(), c.files(), next, placements.get(s.id()), syllabus.get(s.id()),
+                    due.getOrDefault(s.id(), 0));
         }).toList();
+    }
+
+    /**
+     * Temas hechos de la guía docente de cada asignatura; sin plan (o con uno sin temas o que no se puede leer) no hay
+     * entrada y la tarjeta invita a importarlo.
+     */
+    private Map<UUID, SubjectSummary.SyllabusCount> syllabusCounts(UUID userId, List<UUID> ids) {
+        if (codec == null) {
+            return Map.of();
+        }
+        Map<String, AiDocument> guides = aiDocuments.findAll(userId, AiDocumentSource.SUBJECT,
+                ids.stream().map(UUID::toString).toList(), AiDocumentType.TEACHING_GUIDE);
+        Map<UUID, SubjectSummary.SyllabusCount> result = new HashMap<>();
+        guides.forEach((id, doc) -> {
+            try {
+                SubjectSummary.SyllabusCount count = SubjectSummary.SyllabusCount.of(codec.decodeTeachingGuide(
+                        doc.content()));
+                if (count.total() > 0) {
+                    result.put(UUID.fromString(id), count);
+                }
+            } catch (RuntimeException unreadable) {
+                // Una guía guardada que ya no se puede leer no rompe la lista: esa tarjeta sale sin temas.
+                LOG.log(System.Logger.Level.WARNING, "Unreadable teaching guide for subject " + id, unreadable);
+            }
+        });
+        return result;
     }
 
     /** El borrado del objeto es best-effort: un fallo del almacenamiento no bloquea el borrado de datos. */

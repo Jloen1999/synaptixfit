@@ -6,6 +6,7 @@ import 'package:synaptixfit/data/remote_data_source/academic/dto/study_dtos.dart
 import 'package:synaptixfit/data/remote_data_source/academic/dto/subject_dtos.dart';
 import 'package:synaptixfit/domain/enums/ai_document_type.dart';
 import 'package:synaptixfit/domain/enums/mastery_state.dart';
+import 'package:synaptixfit/domain/enums/pass_outlook.dart';
 import 'package:synaptixfit/domain/enums/question_type.dart';
 import 'package:synaptixfit/domain/enums/study_source_type.dart';
 import 'package:synaptixfit/domain/enums/subject_priority.dart';
@@ -33,6 +34,57 @@ void main() {
     expect(subject.noteCount, 3);
     expect(subject.nextAssessmentAt!.isUtc, isFalse);
     expect(subject.nextAssessmentAt, DateTime.utc(2026, 11, 2, 9).toLocal());
+  });
+
+  test('SubjectDto lee curso, temas y repasos de hoy; sin ellos, nulos', () {
+    final full = SubjectDto.fromJson({
+      'id': 's1',
+      'name': 'Bases de datos',
+      'credits': 6,
+      'course': 2,
+      'term': 1,
+      'topicsDone': 4,
+      'topicsTotal': 10,
+      'reviewsDueToday': 3,
+    }).toDomain();
+    expect(full.course, 2);
+    expect(full.term, 1);
+    expect(full.topicsDone, 4);
+    expect(full.hasSyllabus, isTrue);
+    expect(full.reviewsDueToday, 3);
+
+    // Un servidor anterior no los manda: la tarjeta los omite.
+    final old = SubjectDto.fromJson({'id': 's2', 'name': 'Cálculo'}).toDomain();
+    expect(old.course, isNull);
+    expect(old.hasSyllabus, isFalse);
+    expect(old.reviewsDueToday, 0);
+  });
+
+  test('GradeEstimateDto y ProfessorDto leen «Tu nota» y el profesorado', () {
+    final e = GradeEstimateDto.fromJson({
+      'estimatedGrade': 6.9,
+      'coveredPercentage': 45,
+      'earnedPoints': 3.1,
+      'possiblePoints': 4.5,
+      'requiredGradeToPass': 3.5,
+      'outlook': 'NEEDS_AVERAGE',
+    }).toDomain();
+    expect(e.earnedPoints, 3.1);
+    expect(e.possiblePoints, 4.5);
+    expect(e.outlook, PassOutlook.needsAverage);
+    expect(
+      GradeEstimateDto.fromJson({'outlook': 'ALGO_NUEVO'}).toDomain().outlook,
+      PassOutlook.noGrades,
+    );
+
+    final p = ProfessorDto.fromJson({
+      'name': 'Ana Ruiz',
+      'role': 'Coordinadora · Teoría',
+      'officeHours': 'Lun 10:00-12:00',
+    }).toDomain();
+    expect(p.role, 'Coordinadora · Teoría');
+    expect(p.officeHours, 'Lun 10:00-12:00');
+    expect(p.email, isNull);
   });
 
   test('SubjectTimelineItemDto distingue bloques y entregas', () {

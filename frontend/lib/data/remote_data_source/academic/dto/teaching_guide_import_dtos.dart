@@ -24,6 +24,8 @@ abstract class TeachingGuideImportDto with _$TeachingGuideImportDto {
     String? suggestedSubjectName,
     String? appliedSubjectId,
     GuideDraftDto? guide,
+    int? course,
+    int? term,
   }) = _TeachingGuideImportDto;
 
   const TeachingGuideImportDto._();
@@ -41,6 +43,8 @@ abstract class TeachingGuideImportDto with _$TeachingGuideImportDto {
     suggestedSubjectName: suggestedSubjectName,
     appliedSubjectId: appliedSubjectId,
     draft: guide?.toDomain(),
+    course: course,
+    term: term,
   );
 }
 
@@ -65,7 +69,13 @@ abstract class GuideDraftDto with _$GuideDraftDto {
     subject: SubjectGuideInfoDto.fromDomain(d.info),
     professors: d.professors
         .map(
-          (p) => ProfessorDto(name: p.name, email: p.email, office: p.office),
+          (p) => ProfessorDto(
+            name: p.name,
+            email: p.email,
+            office: p.office,
+            role: p.role,
+            officeHours: p.officeHours,
+          ),
         )
         .toList(),
     topics: d.topics

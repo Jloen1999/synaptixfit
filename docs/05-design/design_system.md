@@ -47,7 +47,7 @@ Manrope para títulos y cifras (pesos 700–800; `display*`, `headline*` en 800,
 - Anchos (`TokensLayout`): `contentMaxWidth` (960) para páginas y pestañas (todas, Progreso incluido), `readingMaxWidth` (720) para formularios y lectura, `wideMaxWidth` (1120) para paneles de varias columnas (Inicio, administración) y `formMaxWidth` (420) para acceso y registro. Ninguna pantalla escribe un ancho a mano.
 - **La barra y el contenido usan el mismo ancho:** `AppPageBar` + `AppContentWidth` (o el envoltorio del módulo), `AppPageBar.reading` + `.reading`, `AppPageBar.wide` + `.wide`.
 - Cortes: `railBreakpoint` (840, la barra inferior pasa a riel lateral), `twoColumnBreakpoint` (880, Inicio en dos columnas) y `compactHeight` (560: con menos alto se ocultan los paneles decorativos, como el de marca del acceso). `minTouchTarget` (48) para todo lo pulsable.
-- Tamaños (`TokensSize`): `controlHeight` (52, botones), `toolbarHeight` (64), `navBarHeight` (72), `railWidth` (88), `progressBar` (8: grosor único de las barras de progreso, vía `progressIndicatorTheme`; no se pasa `minHeight`), iconos `iconXs` 16 · `iconS` 20 · `iconM` 24 · `iconL` 36 · `iconXl` 48, `emptyBadge` (72) / `emptyBadgeCompact` (48), `medallion` (88), `thumbnailS` (48, miniatura pequeña de ejercicio), `postImageMaxHeight` (360, imagen de una publicación), `subjectCardHeight` (184) / `subjectCardMaxWidth` (260) de la rejilla de asignaturas y `reviewCardWidth` (220) / `reviewCardHeight` (104) de los repasos pendientes, que crecen con el texto (`context.scaled`). Cortes de tarjeta (`TokensLayout`): `cardSideBySideMin` (280, bloque de fecha al lado) y `cardActionsInlineMin` (336, acciones de una fila de usuario a la derecha).
+- Tamaños (`TokensSize`): `controlHeight` (52, botones), `toolbarHeight` (64), `navBarHeight` (72), `railWidth` (88), `progressBar` (8: grosor único de las barras de progreso, vía `progressIndicatorTheme`; no se pasa `minHeight`), iconos `iconXs` 16 · `iconS` 20 · `iconM` 24 · `iconL` 36 · `iconXl` 48, `emptyBadge` (72) / `emptyBadgeCompact` (48), `medallion` (88), `thumbnailS` (48, miniatura pequeña de ejercicio), `postImageMaxHeight` (360, imagen de una publicación), `subjectCardHeight` (184) / `subjectCardMaxWidth` (260) y `reviewCardWidth` (220) / `reviewCardHeight` (104), que crecen con el texto (`context.scaled`); desde el ADR 0057 Académico es una lista de una columna y un aviso «N repasos para hoy», y estos cuatro ya no se usan allí. Cortes de tarjeta (`TokensLayout`): `cardSideBySideMin` (280, bloque de fecha al lado) y `cardActionsInlineMin` (336, acciones de una fila de usuario a la derecha).
 - Duraciones (`TokensDuration`): `fast` 150 · `normal` 250 · `slow` 400 · `emphasized` 900 · `tooltipWait` 600. Siempre a través de `context.motion(...)`.
 - **Nada de valores visuales sueltos en `screens/`:** ni `size: 18`, ni `minTileHeight: 56`, ni `withValues(alpha: 0.14)`, ni `TextStyle(...)`; se usan `TokensSize.*`, `AppPill.tintAlpha` y `context.textStyles.*.copyWith(...)`. El trinquete `test/presentation/theme/hardcoded_values_test.dart` cuenta los que quedan y falla si suben; cuando arregles alguno, baja su máximo en el mismo cambio.
 
@@ -109,8 +109,17 @@ Antes de maquetar una tarjeta se decide qué necesita la persona para actuar (cu
 | Fila de usuario (amigos, búsqueda) | Nombre y nivel (pastilla de logro); una solicitud recibida lleva franja `primary` y «Quiere ser tu amigo» | Acciones a la derecha, o debajo con el texto grande |
 | Entrega / examen (Planificador) | Bloque de fecha y «Vence mañana · 23:59» (aviso hoy/mañana, error y «Venció el…» si el servidor la da por vencida; «Hecha» si lo está) | Título, pastillas de tipo, asignatura, dificultad; marcar como hecha y borrar, aparte |
 | Reto activo (Inicio) | Bloque de fecha y «Termina mañana» | Título y barra con el % en el acento del tipo |
-| Asignatura (Académico) | Siglas en su color y la próxima evaluación («Evaluación en 5 días», aviso si es hoy o mañana) | Nombre y recuento de apuntes y archivos |
+| Asignatura (Académico, ADR 0057) | Nombre, «6 ECTS · 2.º curso · 1.er cuatri» y la barra «Temas 4 de 10» (o «Sin temario: importa la guía», botón aparte); franja en su color | «3 repasos hoy» (pastilla de estudio, solo si hay) y lo próximo en una franja suave (icono de aviso si es hoy o mañana). Profesor y apuntes, en el detalle |
 | Apunte compartido | Autor (botón al perfil) y fecha; la asignatura en violeta | Título, extracto y visibilidad |
+
+### Asignatura en pestañas (ADR 0057)
+
+Resumen · Temario · Evaluación · Apuntes · Guía, con la barra de pestañas desplazable. Piezas de `subject_detail/page/`:
+`SubjectTabBody` (carga, error, avisos y «tirar para recargar» comunes), `GuideMissingView` (vacío útil sin guía docente,
+con «Importar guía docente»), `YourGradeCard` («Tu nota»: puntos grandes, «de N puntos» y una frase en un panel tintado
+con icono: aprobado en `success`, no se llega en `warning`, lo que falta en `primary`) y `ProfessorCard` (iniciales,
+papel en pastilla, despacho, tutorías y «Escribir» solo con email). Las ayudas opcionales («Lo que dominas», «Cómo te
+evalúan») usan `AppHelpToggle`.
 
 ## Principios
 

@@ -40,7 +40,9 @@ void main() {
       when(
         () => getSubjects(archived: false),
       ).thenAnswer((_) async => const Success([subject]));
-      when(() => getDue()).thenAnswer((_) async => const Success([material]));
+      when(
+        () => getDue(limit: any(named: 'limit')),
+      ).thenAnswer((_) async => const Success([material]));
     });
 
     tearDown(() => changes.close());

@@ -118,6 +118,17 @@ public final class StudyMaterial {
     }
 
     /**
+     * Cuenta como repaso de hoy (cola de repasos, aviso de Académico y tarjeta): vencido y no abandonado. El SQL de
+     * los adaptadores aplica lo mismo con {@link #EXCLUDED_FROM_REVIEWS} como parámetro.
+     */
+    public boolean isPendingReview(Instant now) {
+        return masteryState != EXCLUDED_FROM_REVIEWS && isDue(now);
+    }
+
+    /** Lo abandonado no se repasa ni se cuenta. */
+    public static final MasteryState EXCLUDED_FROM_REVIEWS = MasteryState.ABANDONED;
+
+    /**
      * ¿Le toca un repaso? Vence su fecha SM-2 o nunca se ha repasado (el primer repaso está
      * pendiente). Solo los repasos que tocaban dan XP: tras repasar, la siguiente fecha queda al
      * menos a un día, así que repetir el repaso el mismo día no vuelve a puntuar (anti-farmeo).

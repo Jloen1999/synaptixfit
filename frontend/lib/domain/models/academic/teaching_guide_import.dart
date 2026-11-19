@@ -24,6 +24,11 @@ abstract class TeachingGuideImport with _$TeachingGuideImport {
     String? suggestedSubjectName,
     String? appliedSubjectId,
     GuideDraft? draft,
+
+    /// Curso y cuatrimestre (1-2) que el servidor deduce de la guía; nulos si
+    /// no quedan claros.
+    int? course,
+    int? term,
   }) = _TeachingGuideImport;
 }
 

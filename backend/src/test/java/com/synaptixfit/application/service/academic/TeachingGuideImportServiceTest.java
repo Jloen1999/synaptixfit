@@ -19,6 +19,7 @@ import com.synaptixfit.domain.exception.academic.TeachingGuideImportNotReadyExce
 import com.synaptixfit.domain.model.academic.AiDocumentSource;
 import com.synaptixfit.domain.model.academic.AiDocumentType;
 import com.synaptixfit.domain.model.academic.Subject;
+import com.synaptixfit.domain.model.academic.SubjectSemester;
 import com.synaptixfit.domain.model.academic.TeachingGuide;
 import com.synaptixfit.domain.model.academic.TeachingGuide.AssessmentKind;
 import com.synaptixfit.domain.model.academic.TeachingGuide.EvaluationMode;
@@ -58,7 +59,7 @@ class TeachingGuideImportServiceTest {
     };
     private final TeachingGuideImportService service = new TeachingGuideImportService(imports, f.subjects, f.files,
             f.aiDocuments, f.codec, assistant, f.storage, f.events::add, f.catalogPort, AcademicFakes.CLOCK,
-            ZoneId.of("Europe/Madrid"));
+            ZoneId.of("Europe/Madrid"), f.semesters);
     private final UUID user = UUID.randomUUID();
 
     private TeachingGuide guide(LocalDate examDay) {
@@ -142,6 +143,40 @@ class TeachingGuideImportServiceTest {
         assertThat(updated.name()).isEqualTo("Hardware (mi nombre)");
         assertThat(updated.code()).isEqualTo("502376");
         assertThat(f.events).noneMatch(TeachingGuideApplied.class::isInstance);
+    }
+
+    @Test
+    void applyingPlacesTheSubjectInItsCourseAndTermFromTheDegreeSemester() {
+        TeachingGuideImportView started = start(null);
+        when(assistant.extractTeachingGuide(any())).thenReturn(guide(null));
+        service.process(started.guideImport().id());
+
+        ApplyTeachingGuideImportUseCase.Result result = service.apply(new ApplyTeachingGuideImportUseCase.Command(user,
+                started.guideImport().id(), null, null, false));
+
+        // La guía dice «Semestre 6»: 3.er curso, 2.º cuatrimestre.
+        assertThat(f.semesters.findBySubject(user, result.subjectId())).hasValueSatisfying(a -> {
+            assertThat(a.course()).isEqualTo(3);
+            assertThat(a.semester()).isEqualTo(2);
+        });
+    }
+
+    @Test
+    void applyingDoesNotOverwriteTheCourseTheStudentChose() {
+        Subject mine = f.subject(user, "Hardware");
+        f.semesters.save(new SubjectSemester(UUID.randomUUID(), user,
+                mine.id(), 4, 1, AcademicFakes.NOW));
+        TeachingGuideImportView started = start(mine.id());
+        when(assistant.extractTeachingGuide(any())).thenReturn(guide(null));
+        service.process(started.guideImport().id());
+
+        service.apply(new ApplyTeachingGuideImportUseCase.Command(user, started.guideImport().id(), mine.id(), null,
+                false));
+
+        assertThat(f.semesters.findBySubject(user, mine.id())).hasValueSatisfying(a -> {
+            assertThat(a.course()).isEqualTo(4);
+            assertThat(a.semester()).isEqualTo(1);
+        });
     }
 
     @Test

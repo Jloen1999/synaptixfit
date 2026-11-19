@@ -165,7 +165,7 @@ public class AcademicBeanConfiguration {
     @Bean(autowireCandidate = false)
     SubjectService subjectService() {
         return new SubjectService(subjects, semesters, catalog, files, aiDocuments, storage, events, clock,
-                subjectAgenda, zone);
+                subjectAgenda, zone, materials, codec);
     }
 
     @Bean

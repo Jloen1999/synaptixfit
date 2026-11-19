@@ -24,6 +24,7 @@ import com.synaptixfit.domain.model.academic.FileUploadTicket;
 import com.synaptixfit.domain.model.academic.SignedUrl;
 import com.synaptixfit.domain.model.academic.Subject;
 import com.synaptixfit.domain.model.academic.SubjectFile;
+import com.synaptixfit.domain.model.academic.SubjectSemester;
 import com.synaptixfit.domain.model.academic.TeachingGuide;
 import com.synaptixfit.domain.model.academic.TeachingGuideImport;
 import com.synaptixfit.domain.model.academic.TeachingGuideImportView;
@@ -35,6 +36,7 @@ import com.synaptixfit.domain.port.output.academic.StudyAssistantPort;
 import com.synaptixfit.domain.port.output.academic.StudyDocumentCodecPort;
 import com.synaptixfit.domain.port.output.academic.SubjectFileRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectRepositoryPort;
+import com.synaptixfit.domain.port.output.academic.SubjectSemesterRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.TeachingGuideImportRepositoryPort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.storage.FileStoragePort;
@@ -52,9 +54,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Importación del plan docente en PDF: subida firmada, análisis con la IA en segundo plano
+ * Importación de la guía docente en PDF: subida firmada, análisis con la IA en segundo plano
  * (publica {@link TeachingGuideImportRequested}), consulta, reintento, descarte y aplicación a una
- * asignatura (publica {@link TeachingGuideApplied} para que el planificador cree las pruebas con fecha).
+ * asignatura (publica {@link TeachingGuideApplied} para que el planificador cree las pruebas con fecha). Al aplicar,
+ * también coloca la asignatura en su curso y cuatrimestre ({@link SubjectSemesterRepositoryPort}) si aún no lo tenía.
  */
 public class TeachingGuideImportService implements RequestTeachingGuideUploadUseCase,
         StartTeachingGuideImportUseCase, ProcessTeachingGuideImportUseCase, GetTeachingGuideImportUseCase,
@@ -75,6 +78,7 @@ public class TeachingGuideImportService implements RequestTeachingGuideUploadUse
     private final AcademicCatalogPort catalog;
     private final Clock clock;
     private final ZoneId zone;
+    private final SubjectSemesterRepositoryPort semesters;
 
     private static final System.Logger LOG = System.getLogger(TeachingGuideImportService.class.getName());
 
@@ -83,6 +87,16 @@ public class TeachingGuideImportService implements RequestTeachingGuideUploadUse
                                       StudyDocumentCodecPort codec, StudyAssistantPort assistant,
                                       FileStoragePort storage, DomainEventPublisherPort events,
                                       AcademicCatalogPort catalog, Clock clock, ZoneId zone) {
+        this(imports, subjects, files, aiDocuments, codec, assistant, storage, events, catalog, clock, zone, null);
+    }
+
+    public TeachingGuideImportService(TeachingGuideImportRepositoryPort imports, SubjectRepositoryPort subjects,
+                                      SubjectFileRepositoryPort files, AiDocumentRepositoryPort aiDocuments,
+                                      StudyDocumentCodecPort codec, StudyAssistantPort assistant,
+                                      FileStoragePort storage, DomainEventPublisherPort events,
+                                      AcademicCatalogPort catalog, Clock clock, ZoneId zone,
+                                      SubjectSemesterRepositoryPort semesters) {
+        this.semesters = semesters;
         this.imports = imports;
         this.subjects = subjects;
         this.files = files;
@@ -176,7 +190,8 @@ public class TeachingGuideImportService implements RequestTeachingGuideUploadUse
         Instant now = clock.instant();
         TeachingGuideImport current = find(c.userId(), c.importId());
         current.requireReady(now);
-        TeachingGuide guide = c.guide() != null ? c.guide() : current.guide();
+        TeachingGuide guide = c.guide() != null ? c.guide().keepingProfessorDetailsOf(current.guide())
+                : current.guide();
         if (guide == null || !guide.hasData()) {
             throw new TeachingGuideEmptyException(current.id());
         }
@@ -198,6 +213,7 @@ public class TeachingGuideImportService implements RequestTeachingGuideUploadUse
             subject.scheduleNextAssessment(nextDated);
         }
         subject = subjects.save(subject);
+        placeInCourse(c.userId(), subject.id(), guide, now);
 
         TeachingGuide finalGuide = guide.keepingProgressOf(previousGuide(c.userId(), subject.id()));
         saveGuide(c.userId(), subject, finalGuide, now);
@@ -285,6 +301,18 @@ public class TeachingGuideImportService implements RequestTeachingGuideUploadUse
     }
 
     /**
+     * Curso y cuatrimestre según la guía (el semestre del grado se convierte, {@code CourseTerm.fromGuide}). Como el
+     * resto de datos, no pisa lo que ya puso el estudiante.
+     */
+    private void placeInCourse(UUID userId, UUID subjectId, TeachingGuide guide, Instant now) {
+        if (semesters == null || semesters.findBySubject(userId, subjectId).isPresent()) {
+            return;
+        }
+        guide.subject().courseTerm().ifPresent(ct -> semesters.save(new SubjectSemester(UUID.randomUUID(), userId,
+                subjectId, ct.course(), ct.term(), now)));
+    }
+
+    /**
      * Enlaza la asignatura nueva con la del plan de estudios de su carrera (mismo código oficial o
      * nombre): así el catálogo la muestra como «ya añadida» y no se duplica al elegir asignaturas.
      */
@@ -316,7 +344,7 @@ public class TeachingGuideImportService implements RequestTeachingGuideUploadUse
         return day.atTime(DEFAULT_ASSESSMENT_TIME).atZone(zone).toInstant();
     }
 
-    /** «30 % de la nota · Temas 1, 2, 3 · 120 min · No recuperable». */
+    /** «30 % de la nota · Temas 1, 2, 3 · 120 min · Sin segunda oportunidad». */
     private static String describe(TeachingGuide.Assessment a) {
         StringBuilder sb = new StringBuilder();
         sb.append(Math.round(a.percentage())).append(" % de la nota");
@@ -328,7 +356,7 @@ public class TeachingGuideImportService implements RequestTeachingGuideUploadUse
             sb.append(" · ").append(a.durationMinutes()).append(" min");
         }
         if (Boolean.FALSE.equals(a.recoverable())) {
-            sb.append(" · No recuperable");
+            sb.append(" · Sin segunda oportunidad");
         }
         return sb.toString();
     }

@@ -13,9 +13,17 @@ import com.synaptixfit.domain.model.academic.AiDocumentSource;
 import com.synaptixfit.domain.model.academic.AiDocumentType;
 import com.synaptixfit.domain.model.academic.CatalogSubject;
 import com.synaptixfit.domain.model.academic.Subject;
+import com.synaptixfit.domain.model.academic.MasteryState;
+import com.synaptixfit.domain.model.academic.StudySourceType;
+import com.synaptixfit.domain.model.academic.StudyMaterial;
+import com.synaptixfit.domain.model.academic.CourseTerm;
+import com.synaptixfit.domain.model.academic.TeachingGuide;
+import com.synaptixfit.domain.model.academic.SubjectSemester;
 import com.synaptixfit.domain.model.academic.SubjectFile;
 import com.synaptixfit.domain.model.academic.SubjectPriority;
 import com.synaptixfit.domain.model.academic.SubjectSummary;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -25,6 +33,9 @@ class SubjectServiceTest {
     private final AcademicFakes f = new AcademicFakes();
     private final SubjectService service = new SubjectService(f.subjects, f.semesters, f.catalogPort, f.files,
             f.aiDocuments, f.storage, f.events::add, AcademicFakes.CLOCK);
+    private final SubjectService full = new SubjectService(f.subjects, f.semesters, f.catalogPort, f.files,
+            f.aiDocuments, f.storage, f.events::add, AcademicFakes.CLOCK, null, ZoneOffset.UTC, f.materials,
+            f.codec);
     private final UUID user = UUID.randomUUID();
     private final UUID stranger = UUID.randomUUID();
 
@@ -59,6 +70,53 @@ class SubjectServiceTest {
         assertThat(active.getFirst().noteCount()).isEqualTo(2);
         assertThat(active.getFirst().fileCount()).isEqualTo(1);
         assertThat(service.listSubjects(user, true, null)).extracting(x -> x.subject().name()).containsExactly("Historia");
+    }
+
+    @Test
+    void listBringsCourseTermTopicsDoneAndReviewsDueToday() {
+        Subject withGuide = f.subject(user, "Bases de datos");
+        Subject bare = f.subject(user, "Inglés técnico");
+        f.semesters.save(new SubjectSemester(UUID.randomUUID(), user,
+                withGuide.id(), 2, 1, AcademicFakes.NOW));
+        TeachingGuide guide = new TeachingGuide(List.of(), List.of(
+                        new TeachingGuide.Topic("Tema 1",
+                                TeachingGuide.TopicKind.THEORY, true),
+                        new TeachingGuide.Topic("Tema 2",
+                                TeachingGuide.TopicKind.THEORY, false)),
+                List.of(), List.of());
+        f.aiDocuments.save(AiDocument.create(user, withGuide.id(), AiDocumentSource.SUBJECT,
+                withGuide.id().toString(), AiDocumentType.TEACHING_GUIDE, "Bases de datos",
+                f.codec.encodeTeachingGuide(guide), AcademicFakes.NOW));
+        dueMaterial(withGuide.id(), AcademicFakes.NOW.minusSeconds(60), null);
+        dueMaterial(withGuide.id(), AcademicFakes.NOW.minusSeconds(3600), null);
+        dueMaterial(withGuide.id(), AcademicFakes.NOW.plusSeconds(86_400), null);
+        dueMaterial(withGuide.id(), AcademicFakes.NOW.minusSeconds(60),
+                MasteryState.ABANDONED);
+
+        List<SubjectSummary> list = full.listSubjects(user, false, null);
+
+        SubjectSummary db = list.stream().filter(x -> x.subject().id().equals(withGuide.id())).findFirst()
+                .orElseThrow();
+        assertThat(db.courseTerm()).isEqualTo(new CourseTerm(2, 1));
+        assertThat(db.syllabus()).isEqualTo(new SubjectSummary.SyllabusCount(1, 2));
+        assertThat(db.dueReviews()).isEqualTo(2);
+        SubjectSummary other = list.stream().filter(x -> x.subject().id().equals(bare.id())).findFirst()
+                .orElseThrow();
+        assertThat(other.courseTerm()).isNull();
+        assertThat(other.syllabus()).isNull();
+        assertThat(other.dueReviews()).isZero();
+    }
+
+    private void dueMaterial(UUID subjectId, Instant nextReview,
+                             MasteryState state) {
+        var builder = StudyMaterial.builder().id(UUID.randomUUID())
+                .userId(user).subjectId(subjectId)
+                .originType(StudySourceType.NOTE).originId(UUID.randomUUID())
+                .title("Material").nextReviewAt(nextReview).createdAt(AcademicFakes.NOW);
+        if (state != null) {
+            builder.masteryState(state);
+        }
+        f.materials.save(builder.build());
     }
 
     @Test

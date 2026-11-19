@@ -106,6 +106,20 @@ class StudyAssistantAiAdapterTest {
     }
 
     @Test
+    void teachingGuideReadsProfessorRoleAndOfficeHours() {
+        nextResponse = """
+                {"profesores":[{"nombre":"Ana Ruiz","email":null,"despacho":"2.15","papel":"Coordinadora · Teoría",
+                  "tutorias":"Lun 10:00-12:00"},{"nombre":"Luis","papel":null}]}""";
+        TeachingGuide g = adapter.extractTeachingGuide(StudyAssistantPort.Source.binary("g.pdf", "application/pdf",
+                new byte[]{1}));
+        assertThat(g.professors()).hasSize(2);
+        assertThat(g.professors().get(0).role()).isEqualTo("Coordinadora · Teoría");
+        assertThat(g.professors().get(0).officeHours()).isEqualTo("Lun 10:00-12:00");
+        assertThat(g.professors().get(0).email()).isNull();
+        assertThat(g.professors().get(1).role()).isNull();
+    }
+
+    @Test
     void codecRoundTripsDocuments() {
         MindMap map = new MindMap("C", List.of(new MindMapNode("R", List.of(new MindMapNode("H", List.of())))));
         assertThat(codec.decodeMindMap(codec.encodeMindMap(map))).isEqualTo(map);

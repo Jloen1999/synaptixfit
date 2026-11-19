@@ -54,6 +54,58 @@ class TeachingGuideTest {
     }
 
     @Test
+    void yourGradeSaysPointsAndWhichSentenceApplies() {
+        TeachingGuide none = hardwareGuide();
+        assertThat(none.estimate().outlook()).isEqualTo(TeachingGuide.PassOutlook.NO_GRADES);
+        assertThat(none.estimate().possiblePoints()).isZero();
+
+        // 8 en el 30 % → 2,4 de 3 puntos; faltan 2,6 puntos en el 70 % que queda: un 3,71 de media.
+        TeachingGuide some = hardwareGuide().withGrade(0, 8.0);
+        assertThat(some.estimate().earnedPoints()).isEqualTo(2.4);
+        assertThat(some.estimate().possiblePoints()).isEqualTo(3.0);
+        assertThat(some.estimate().outlook()).isEqualTo(TeachingGuide.PassOutlook.NEEDS_AVERAGE);
+        assertThat(some.estimate().requiredGradeToPass()).isEqualTo(3.71);
+
+        TeachingGuide passed = hardwareGuide().withGrade(0, 10.0).withGrade(1, 7.0);
+        assertThat(passed.estimate().earnedPoints()).isEqualTo(5.1);
+        assertThat(passed.estimate().outlook()).isEqualTo(TeachingGuide.PassOutlook.ALREADY_PASSED);
+
+        // 1 y 0 en el 60 %: faltan 4,7 puntos en el 40 % que queda (haría falta un 11,75).
+        TeachingGuide lost = hardwareGuide().withGrade(0, 1.0).withGrade(1, 0.0);
+        assertThat(lost.estimate().outlook()).isEqualTo(TeachingGuide.PassOutlook.OUT_OF_REACH);
+
+        TeachingGuide allFailed = hardwareGuide().withGrade(0, 4.0).withGrade(1, 4.0).withGrade(2, 4.0)
+                .withGrade(3, 4.0);
+        assertThat(allFailed.estimate().outlook()).isEqualTo(TeachingGuide.PassOutlook.OUT_OF_REACH);
+    }
+
+    @Test
+    void professorKeepsRoleAndOfficeHoursTrimmed() {
+        TeachingGuide g = new TeachingGuide(List.of(new TeachingGuide.Professor("Ana Ruiz", null, "2.15",
+                "  Coordinadora ·  Teoría ", " ")), List.of(), List.of(), List.of());
+        assertThat(g.professors()).singleElement().satisfies(p -> {
+            assertThat(p.role()).isEqualTo("Coordinadora · Teoría");
+            assertThat(p.officeHours()).isNull();
+            assertThat(p.email()).isNull();
+        });
+    }
+
+    @Test
+    void draftFromAnOldAppKeepsRoleAndOfficeHoursOfTheExtractedGuide() {
+        TeachingGuide extracted = new TeachingGuide(List.of(new TeachingGuide.Professor("Ana Ruiz", "a@u.es", "2.15",
+                "Coordinadora", "Lun 10:00")), List.of(), List.of(), List.of());
+        TeachingGuide oldAppDraft = new TeachingGuide(List.of(new TeachingGuide.Professor("Ana Ruiz", "a@u.es",
+                "2.16"), new TeachingGuide.Professor("Luis", null, null)), List.of(), List.of(), List.of());
+
+        TeachingGuide merged = oldAppDraft.keepingProfessorDetailsOf(extracted);
+
+        assertThat(merged.professors().get(0).role()).isEqualTo("Coordinadora");
+        assertThat(merged.professors().get(0).officeHours()).isEqualTo("Lun 10:00");
+        assertThat(merged.professors().get(0).office()).isEqualTo("2.16");
+        assertThat(merged.professors().get(1).role()).isNull();
+    }
+
+    @Test
     void reimportKeepsCompletedTopicsGradesAndChosenMode() {
         TeachingGuide previous = hardwareGuide().withTopicCompleted(0, true).withGrade(1, 7.0)
                 .withSelectedMode(EvaluationMode.GLOBAL);

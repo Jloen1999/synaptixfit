@@ -10,7 +10,6 @@ import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/academic/widgets/shared_note_card.dart';
 import 'package:synaptixfit/presentation/screens/academic/widgets/subject_card.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
-import 'package:synaptixfit/presentation/theme/tokens.g.dart';
 
 Future<void> _pump(
   WidgetTester tester,
@@ -51,74 +50,92 @@ Future<void> _pump(
 void main() {
   setUpAll(() => initializeDateFormatting('es'));
 
-  testWidgets('la asignatura destaca su próxima evaluación (200 %, 360 dp)', (
-    tester,
-  ) async {
-    final today = DateTime.now();
-    final subject = Subject(
-      id: 's1',
-      name: 'Ampliación de Matemáticas',
-      code: 'AMAT',
-      credits: 6,
-      perceivedDifficulty: 3,
-      priority: SubjectPriority.values.first,
-      nextAssessmentAt: DateTime(today.year, today.month, today.day + 1, 9),
-      archived: false,
-      noteCount: 4,
-      fileCount: 2,
-      nextUp: SubjectNextUp(
-        kind: SubjectNextUpKind.assessment,
-        at: DateTime(today.year, today.month, today.day + 1, 9),
-        daysLeft: 1,
-        urgent: true,
-      ),
-    );
-    await _pump(
-      tester,
-      // El mismo alto que le da la rejilla de Académico con el texto al 200 %.
-      SizedBox(
-        height: TokensSize.subjectCardHeight * 2,
-        child: SubjectCard(subject: subject, onTap: () {}),
-      ),
-    );
-    expect(tester.takeException(), isNull);
-    expect(find.text('AMAT'), findsOneWidget);
-    expect(find.text('Evaluación mañana'), findsOneWidget);
-
-    // Rejilla de dos columnas en un móvil (unos 160 dp) a texto normal y en
-    // claro: la evaluación se lee entera (dos líneas, sin puntos suspensivos).
-    await _pump(
-      tester,
-      Align(
-        alignment: Alignment.topLeft,
-        child: SizedBox(
-          width: 160,
-          height: TokensSize.subjectCardHeight,
-          child: SubjectCard(
-            subject: subject.copyWith(
-              nextUp: SubjectNextUp(
-                kind: SubjectNextUpKind.assessment,
-                at: DateTime(today.year, today.month, today.day + 5),
-                daysLeft: 5,
-                urgent: false,
-              ),
-            ),
-            onTap: () {},
-          ),
+  testWidgets(
+    'la tarjeta enseña ECTS, curso, temas, repasos y lo próximo (200 %, 360 dp)',
+    (tester) async {
+      final today = DateTime.now();
+      final subject = Subject(
+        id: 's1',
+        name: 'Bases de datos',
+        code: 'BD',
+        credits: 6,
+        perceivedDifficulty: 3,
+        priority: SubjectPriority.values.first,
+        teacher: 'Ana Ruiz',
+        archived: false,
+        noteCount: 4,
+        fileCount: 2,
+        course: 2,
+        term: 1,
+        topicsDone: 4,
+        topicsTotal: 10,
+        reviewsDueToday: 3,
+        nextUp: SubjectNextUp(
+          kind: SubjectNextUpKind.assessment,
+          at: DateTime(today.year, today.month, today.day + 1, 9),
+          daysLeft: 1,
+          urgent: true,
         ),
-      ),
-      scale: 1,
-      dark: false,
-    );
-    expect(tester.takeException(), isNull);
-    final text = tester.widget<Text>(find.text('Evaluación en 5 días'));
-    final painter = TextPainter(
-      text: TextSpan(text: text.data, style: text.style),
-      textDirection: TextDirection.ltr,
-      maxLines: text.maxLines,
-    )..layout(maxWidth: tester.getSize(find.byWidget(text)).width);
-    expect(painter.didExceedMaxLines, isFalse);
-  });
+      );
+      var imported = false;
+      await _pump(
+        tester,
+        SubjectCard(
+          subject: subject,
+          onTap: () {},
+          onImportGuide: () => imported = true,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('6 ECTS · 2.º curso · 1.er cuatri'), findsOneWidget);
+      expect(find.text('Temas 4 de 10'), findsOneWidget);
+      expect(find.text('3 repasos hoy'), findsOneWidget);
+      expect(find.text('Evaluación mañana'), findsOneWidget);
+      // Profesor, siglas y apuntes van en el detalle; con temario no se
+      // invita a importar la guía.
+      expect(find.text('Ana Ruiz'), findsNothing);
+      expect(find.text('BD'), findsNothing);
+      expect(find.text('Sin temario: importa la guía'), findsNothing);
+      expect(imported, isFalse);
+    },
+  );
+
+  testWidgets(
+    'sin guía: omite lo que falta e invita a importarla (sin toques anidados)',
+    (tester) async {
+      var opened = false;
+      var imported = false;
+      await _pump(
+        tester,
+        SubjectCard(
+          subject: const Subject(
+            id: 's3',
+            name: 'Inglés técnico',
+            credits: 3,
+            perceivedDifficulty: 3,
+            priority: SubjectPriority.medium,
+            archived: false,
+            noteCount: 0,
+            fileCount: 0,
+            term: 2,
+          ),
+          onTap: () => opened = true,
+          onImportGuide: () => imported = true,
+        ),
+        scale: 1,
+        dark: false,
+      );
+      expect(tester.takeException(), isNull);
+      // Sin curso: «3 ECTS · 2.º cuatri», sin huecos.
+      expect(find.text('3 ECTS · 2.º cuatri'), findsOneWidget);
+      expect(find.textContaining('repasos hoy'), findsNothing);
+      await tester.tap(find.text('Sin temario: importa la guía'));
+      expect(imported, isTrue);
+      expect(opened, isFalse);
+      await tester.tap(find.text('Inglés técnico'));
+      expect(opened, isTrue);
+    },
+  );
 
   testWidgets(
     'la tarjeta pinta lo próximo que elige el servidor: entrega o clase',
@@ -150,40 +167,29 @@ void main() {
         ),
       );
       expect(SubjectNextUpView.of(subject)!.urgent, isTrue);
-      await _pump(
-        tester,
-        SizedBox(
-          height: TokensSize.subjectCardHeight * 2,
-          child: SubjectCard(subject: subject, onTap: () {}),
-        ),
-      );
+      await _pump(tester, SubjectCard(subject: subject, onTap: () {}));
       expect(tester.takeException(), isNull);
       expect(find.text('Física Cuántica'), findsOneWidget);
       expect(find.text('Entrega mañana'), findsOneWidget);
-      expect(find.text('Marta Ruiz'), findsOneWidget);
 
       // Sin entrega urgente: la próxima clase con su aula.
       await _pump(
         tester,
-        SizedBox(
-          height: TokensSize.subjectCardHeight * 2,
-          child: SubjectCard(
-            subject: subject.copyWith(
-              nextUp: SubjectNextUp(
-                kind: SubjectNextUpKind.classSession,
-                at: DateTime(2026, 11, 9, 10),
-                place: 'Aula 2.3',
-                daysLeft: 0,
-                urgent: false,
-              ),
+        SubjectCard(
+          subject: subject.copyWith(
+            nextUp: SubjectNextUp(
+              kind: SubjectNextUpKind.classSession,
+              at: DateTime(2026, 11, 9, 10),
+              place: 'Aula 2.3',
+              daysLeft: 0,
+              urgent: false,
             ),
-            onTap: () {},
           ),
+          onTap: () {},
         ),
       );
       expect(tester.takeException(), isNull);
-      // En la tarjeta, en corto (el icono ya dice «clase»); el lector oye la
-      // frase entera.
+      // La frase entera: en la lista de una columna cabe.
       expect(find.bySemanticsLabel(RegExp('Próxima clase:')), findsOneWidget);
       expect(find.textContaining('Aula 2.3'), findsOneWidget);
     },

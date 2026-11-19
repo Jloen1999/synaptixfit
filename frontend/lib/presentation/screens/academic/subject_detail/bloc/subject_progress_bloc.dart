@@ -7,6 +7,7 @@ import '../../../../../domain/models/academic/study_material.dart';
 import '../../../../../domain/models/academic/subject.dart';
 import '../../../../../domain/models/academic/subject_timeline_item.dart';
 import '../../../../../domain/models/academic/teaching_guide.dart';
+import '../../../../../domain/use_cases/academic/get_due_study_materials_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_study_materials_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_subject_retention_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_subject_timeline_use_case.dart';
@@ -19,8 +20,9 @@ part 'subject_progress_bloc.freezed.dart';
 part 'subject_progress_event.dart';
 part 'subject_progress_state.dart';
 
-/// Pestaña Progreso: guía docente (temario, simulador de nota, profesores,
-/// bibliografía), retención por estado de dominio y línea de tiempo.
+/// Datos de las pestañas Resumen, Temario, Evaluación y Guía de la asignatura
+/// (ADR 0057): guía docente (temas, «Tu nota», profesorado, bibliografía), lo
+/// que dominas, los repasos de hoy y lo próximo.
 class SubjectProgressBloc
     extends Bloc<SubjectProgressEvent, SubjectProgressState> {
   SubjectProgressBloc({
@@ -31,6 +33,7 @@ class SubjectProgressBloc
     required this._getRetention,
     required this._getTimeline,
     required this._getMaterials,
+    required this._getDue,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        super(const SubjectProgressState()) {
@@ -51,7 +54,12 @@ class SubjectProgressBloc
   final GetSubjectRetentionUseCaseContract _getRetention;
   final GetSubjectTimelineUseCaseContract _getTimeline;
   final GetStudyMaterialsUseCaseContract _getMaterials;
+  final GetDueStudyMaterialsUseCaseContract _getDue;
   final DateTime Function() _clock;
+
+  /// El servidor no da más repasos vencidos de una vez; se filtran por
+  /// asignatura aquí (filtrar no es una regla: qué vence lo decide él).
+  static const _dueLimit = 100;
 
   /// Horizonte de la línea de tiempo.
   static const _timelineDays = 90;
@@ -64,7 +72,7 @@ class SubjectProgressBloc
     final id = state.subjectId;
     final now = _clock();
     final from = DateTime(now.year, now.month, now.day);
-    final (guide, retention, timeline, materials) = await (
+    final (guide, retention, timeline, materials, due) = await (
       _getGuide(id),
       _getRetention(id),
       _getTimeline(
@@ -73,6 +81,7 @@ class SubjectProgressBloc
         to: from.add(const Duration(days: _timelineDays)),
       ),
       _getMaterials(subjectId: id),
+      _getDue(limit: _dueLimit),
     ).wait;
     // La guía es la pieza principal; el resto se degrada sin bloquear.
     emit(
@@ -84,8 +93,17 @@ class SubjectProgressBloc
           retention: retention.valueOrNull ?? state.retention,
           timeline: timeline.valueOrNull ?? state.timeline,
           materials: materials.valueOrNull ?? state.materials,
+          due: switch (due.valueOrNull) {
+            final list? => [
+              for (final m in list)
+                if (m.subjectId == id) m,
+            ],
+            null => state.due,
+          },
         ),
-        (error) => state.copyWith(loading: false, error: error),
+        (error) => silent
+            ? state.copyWith(loading: false, actionError: error)
+            : state.copyWith(loading: false, error: error),
       ),
     );
   }

@@ -20,6 +20,11 @@ public record SubjectSemester(UUID id, UUID userId, UUID subjectId, int course, 
         Objects.requireNonNull(createdAt, "createdAt");
     }
 
+    /** Curso y cuatrimestre en el formato de la app («2.º curso · 1.er cuatri»). */
+    public CourseTerm courseTerm() {
+        return new CourseTerm(course, semester);
+    }
+
     public SubjectSemester reassign(int newCourse, int newSemester) {
         return new SubjectSemester(id, userId, subjectId, newCourse, newSemester, createdAt);
     }

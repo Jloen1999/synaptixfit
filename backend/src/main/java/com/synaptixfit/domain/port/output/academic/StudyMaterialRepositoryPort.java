@@ -5,7 +5,9 @@ import com.synaptixfit.domain.model.academic.ReviewLoadBalancer;
 import com.synaptixfit.domain.model.academic.StudyMaterial;
 import com.synaptixfit.domain.model.academic.StudySourceType;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +23,20 @@ public interface StudyMaterialRepositoryPort {
 
     /** Materiales con repaso vencido (siguiente repaso anterior o igual a {@code now}), el más antiguo primero. */
     List<StudyMaterial> findDue(UUID userId, Instant now, int limit);
+
+    /**
+     * Cuántos repasos vencidos ({@link #findDue}) tiene cada asignatura del usuario: la píldora «3 repasos hoy» de
+     * Académico. La versión por defecto filtra {@link #findByUser}; el adaptador cuenta con una consulta.
+     */
+    default Map<UUID, Integer> countDueBySubject(UUID userId, Instant now) {
+        Map<UUID, Integer> counts = new HashMap<>();
+        for (StudyMaterial m : findByUser(userId, null)) {
+            if (m.subjectId() != null && m.isPendingReview(now)) {
+                counts.merge(m.subjectId(), 1, Integer::sum);
+            }
+        }
+        return counts;
+    }
 
     /**
      * Repasos programados entre {@code from} y {@code to} (para repartirlos sin picos, ADR 0042). La versión por

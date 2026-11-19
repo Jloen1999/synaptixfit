@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../enums/assessment_kind.dart';
 import '../../enums/evaluation_mode.dart';
+import '../../enums/pass_outlook.dart';
 import '../../enums/syllabus_topic_kind.dart';
 
 part 'teaching_guide.freezed.dart';
@@ -24,6 +25,11 @@ abstract class TeachingGuide with _$TeachingGuide {
     GradeEstimate? estimate,
     DateTime? updatedAt,
   }) = _TeachingGuide;
+
+  const TeachingGuide._();
+
+  /// Temas marcados como hechos (con el marcado optimista, al momento).
+  int get topicsDone => topics.where((t) => t.completed).length;
 }
 
 /// Datos de identificación de la asignatura según su plan docente.
@@ -45,13 +51,16 @@ abstract class SubjectGuideInfo with _$SubjectGuideInfo {
   }) = _SubjectGuideInfo;
 }
 
-/// Profesor de la asignatura.
+/// Profesor de la asignatura: su papel («Coordinadora · Teoría») y las
+/// tutorías en texto corto, si la guía los da.
 @freezed
 abstract class Professor with _$Professor {
   const factory Professor({
     required String name,
     String? email,
     String? office,
+    String? role,
+    String? officeHours,
   }) = _Professor;
 }
 
@@ -92,7 +101,8 @@ abstract class Assessment with _$Assessment {
   }) = _Assessment;
 }
 
-/// Estimación de la nota final calculada por el servidor.
+/// Estimación de la nota final calculada por el servidor: «Tu nota» enseña
+/// [earnedPoints] de [possiblePoints] y la frase que toca según [outlook].
 @freezed
 abstract class GradeEstimate with _$GradeEstimate {
   const factory GradeEstimate({
@@ -100,5 +110,8 @@ abstract class GradeEstimate with _$GradeEstimate {
     required double coveredPercentage,
     double? requiredGradeToPass,
     String? nextPendingAssessment,
+    @Default(0) double earnedPoints,
+    @Default(0) double possiblePoints,
+    @Default(PassOutlook.noGrades) PassOutlook outlook,
   }) = _GradeEstimate;
 }

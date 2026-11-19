@@ -16,20 +16,34 @@ import '../../widgets/academic_widgets.dart';
 import '../bloc/subject_detail_bloc.dart';
 import '../bloc/subject_progress_bloc.dart';
 import '../bloc/subject_syllabus_bloc.dart';
-import 'progress_tab.dart';
+import 'evaluation_tab.dart';
+import 'guide_tab.dart';
+import 'summary_tab.dart';
 import 'syllabus_tab.dart';
+import 'topics_tab.dart';
 
-/// Pestañas del detalle de asignatura; `?tab=notes` abre la segunda.
-enum SubjectDetailTab { progress, notes }
+/// Pestañas del detalle de asignatura, en orden (ADR 0057); `?tab=<nombre>`
+/// abre una (`?tab=notes`, el «Ver» de mover un apunte).
+enum SubjectDetailTab {
+  summary,
+  topics,
+  evaluation,
+  notes,
+  guide;
 
-/// Detalle de asignatura con dos pestañas planas: Progreso y «Apuntes y
-/// archivos». [initialTab] la elige quien enlaza (p. ej. el «Ver» de mover un
-/// apunte).
+  /// La de `?tab=`; un valor desconocido (p. ej. `progress` de un enlace
+  /// antiguo) abre el Resumen.
+  static SubjectDetailTab fromQuery(String? value) =>
+      values.asNameMap()[value] ?? summary;
+}
+
+/// Detalle de asignatura en cinco pestañas: Resumen, Temario, Evaluación,
+/// Apuntes y Guía (ADR 0057). [initialTab] la elige quien enlaza.
 class SubjectDetailPage extends StatelessWidget {
   const SubjectDetailPage({
     super.key,
     required this.subjectId,
-    this.initialTab = SubjectDetailTab.progress,
+    this.initialTab = SubjectDetailTab.summary,
   });
 
   final String subjectId;
@@ -71,23 +85,24 @@ class _SubjectDetailViewState extends State<_SubjectDetailView>
     with ErrorsMessageMixin {
   SubjectDetailTab get initialTab => widget.initialTab;
 
-  /// Partes que señala la guía la primera vez (ADR 0049).
-  final _progressKey = GlobalKey(debugLabel: 'guide-subject-progress');
-  final _notesKey = GlobalKey(debugLabel: 'guide-subject-notes');
+  /// Partes que señala la guía la primera vez (ADR 0049): las pestañas, los
+  /// repasos de hoy y practicar (las dos últimas, en el Resumen).
+  final _tabsKey = GlobalKey(debugLabel: 'guide-subject-tabs');
+  final _reviewsKey = GlobalKey(debugLabel: 'guide-subject-reviews');
   final _practiceKey = GlobalKey(debugLabel: 'guide-subject-practice');
 
   List<AppGuideStep> _guideSteps(BuildContext context) {
     final l10n = context.localizations;
     return [
       AppGuideStep(
-        target: _progressKey,
-        title: l10n.guideSubjectProgressTitle,
-        body: l10n.guideSubjectProgressBody,
+        target: _tabsKey,
+        title: l10n.guideSubjectTabsTitle,
+        body: l10n.guideSubjectTabsBody,
       ),
       AppGuideStep(
-        target: _notesKey,
-        title: l10n.guideSubjectNotesTitle,
-        body: l10n.guideSubjectNotesBody,
+        target: _reviewsKey,
+        title: l10n.guideSubjectReviewsTitle,
+        body: l10n.guideSubjectReviewsBody,
       ),
       AppGuideStep(
         target: _practiceKey,
@@ -137,8 +152,8 @@ class _SubjectDetailViewState extends State<_SubjectDetailView>
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    // La guía, con la asignatura y su progreso ya cargados (el simulacro está
-    // ahí); montada desde el principio para saber cómo se llegó (ADR 0049).
+    // La guía, con la asignatura y el Resumen ya cargados (repasos y practicar
+    // están ahí); montada desde el principio para saber cómo se llegó.
     final loaded = context.select<SubjectDetailBloc, bool>(
       (b) => b.state.subject != null,
     );
@@ -150,248 +165,188 @@ class _SubjectDetailViewState extends State<_SubjectDetailView>
       guide: GuideId.subject,
       ready: ready,
       steps: _guideSteps,
-      child: BlocConsumer<SubjectDetailBloc, SubjectDetailState>(
+      // Errores de marcar temas, poner notas o cambiar la modalidad: un aviso.
+      child: BlocListener<SubjectProgressBloc, SubjectProgressState>(
         listenWhen: (a, b) =>
-            a.deleted != b.deleted ||
-            a.actionError != b.actionError ||
-            (a.subject != null &&
-                b.subject != null &&
-                a.subject!.archived != b.subject!.archived),
-        listener: (context, state) {
-          final archivedNow = state.subject?.archived;
-          if (state.deleted) {
-            context.showSnack(l10n.academicSubjectDeleted);
-            context.popOrGo(AcademicPaths.root, true);
-          } else if (state.actionError != null) {
-            context.showSnack(errorMessage(context, state.actionError!));
-          } else if (archivedNow == true) {
-            // Nunca «se puede recuperar» sin decir dónde (vocabulario.md).
-            context.showActionSnack(
-              l10n.academicSubjectArchivedWhere,
-              actionLabel: l10n.commonView,
-              onAction: () => context.go(AcademicPaths.archived),
-            );
-          } else if (archivedNow == false) {
-            context.showSnack(l10n.academicSubjectUnarchivedWhere);
-          }
-        },
-        builder: (context, state) {
-          final subject = state.subject;
-          if (subject == null) {
-            return Scaffold(
-              appBar: const AppPageBar(
-                leading: AppBackButton(fallback: AcademicPaths.root),
-              ),
-              body: state.error != null
-                  ? AppErrorView(
-                      error: state.error!,
-                      onRetry: () => context.read<SubjectDetailBloc>().add(
-                        SubjectDetailEvent.started(state.subjectId),
-                      ),
-                    )
-                  : const AppLoadingView(),
-            );
-          }
-          final color = subjectColor(context, subject.id);
-          return DefaultTabController(
-            length: SubjectDetailTab.values.length,
-            initialIndex: initialTab.index,
-            child: Scaffold(
-              appBar: AppPageBar(
-                leading: const AppBackButton(fallback: AcademicPaths.root),
-                title: Text(
-                  subject.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            a.actionError != b.actionError && b.actionError != null,
+        listener: (context, state) =>
+            context.showSnack(errorMessage(context, state.actionError!)),
+        child: BlocConsumer<SubjectDetailBloc, SubjectDetailState>(
+          listenWhen: (a, b) =>
+              a.deleted != b.deleted ||
+              a.actionError != b.actionError ||
+              (a.subject != null &&
+                  b.subject != null &&
+                  a.subject!.archived != b.subject!.archived),
+          listener: (context, state) {
+            final archivedNow = state.subject?.archived;
+            if (state.deleted) {
+              context.showSnack(l10n.academicSubjectDeleted);
+              context.popOrGo(AcademicPaths.root, true);
+            } else if (state.actionError != null) {
+              context.showSnack(errorMessage(context, state.actionError!));
+            } else if (archivedNow == true) {
+              // Nunca «se puede recuperar» sin decir dónde (vocabulario.md).
+              context.showActionSnack(
+                l10n.academicSubjectArchivedWhere,
+                actionLabel: l10n.commonView,
+                onAction: () => context.go(AcademicPaths.archived),
+              );
+            } else if (archivedNow == false) {
+              context.showSnack(l10n.academicSubjectUnarchivedWhere);
+            }
+          },
+          builder: (context, state) {
+            final subject = state.subject;
+            if (subject == null) {
+              return Scaffold(
+                appBar: const AppPageBar(
+                  leading: AppBackButton(fallback: AcademicPaths.root),
                 ),
-                // Solo el ⋮: el título no se recorta por los iconos y lo
-                // ocasional (editar, archivar, eliminar) no compite con el
-                // estudio (ADR 0039).
-                actions: [
-                  _SubjectMenu(
-                    subject: subject,
-                    busy: state.busy,
-                    onEdit: () => _edit(context, subject),
-                    onArchiveToggled: () => _toggleArchived(context, subject),
-                    onDelete: () => _delete(context, subject),
-                  ),
-                ],
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(
-                    TokensLayout.minTouchTarget,
-                  ),
-                  child: AcademicBody(
-                    child: TabBar(
-                      indicatorColor: color,
-                      labelColor: color,
-                      dividerColor: context.colors.outlineVariant,
-                      tabs: [
-                        Tab(key: _progressKey, text: l10n.academicTabProgress),
-                        Tab(key: _notesKey, text: l10n.academicTabSyllabus),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // La cabecera se desplaza con el contenido: con el texto al 200 %
-              // (o en horizontal) no deja las pestañas sin sitio.
-              body: NestedScrollView(
-                headerSliverBuilder: (context, _) => [
-                  if (state.busy)
-                    const SliverToBoxAdapter(child: LinearProgressIndicator()),
-                  SliverToBoxAdapter(
-                    child: AcademicBody(
-                      child: _SubjectHeader(
-                        subject: subject,
-                        semester: state.semester,
-                        color: color,
-                        onFocus: () => context.push(
-                          AcademicPaths.pomodoro(
-                            subjectId: subject.id,
-                            title: subject.name,
-                          ),
+                body: state.error != null
+                    ? AppErrorView(
+                        error: state.error!,
+                        onRetry: () => context.read<SubjectDetailBloc>().add(
+                          SubjectDetailEvent.started(state.subjectId),
                         ),
-                        onNewDeadline: () => context.push(
-                          AcademicPaths.newDeadline(subjectId: subject.id),
-                        ),
-                      ),
+                      )
+                    : const AppLoadingView(),
+              );
+            }
+            final color = subjectColor(context, subject.id);
+            return DefaultTabController(
+              length: SubjectDetailTab.values.length,
+              initialIndex: initialTab.index,
+              child: Scaffold(
+                appBar: AppPageBar(
+                  leading: const AppBackButton(fallback: AcademicPaths.root),
+                  // Solo el ⋮: el título no se recorta por los iconos y lo
+                  // ocasional (editar, archivar, eliminar) no compite con el
+                  // estudio (ADR 0039).
+                  actions: [
+                    _SubjectMenu(
+                      subject: subject,
+                      busy: state.busy,
+                      onEdit: () => _edit(context, subject),
+                      onArchiveToggled: () => _toggleArchived(context, subject),
+                      onDelete: () => _delete(context, subject),
                     ),
-                  ),
-                ],
-                body: TabBarView(
-                  children: [
-                    ProgressTab(practiceKey: _practiceKey),
-                    const SyllabusTab(),
                   ],
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(
+                      TokensLayout.minTouchTarget,
+                    ),
+                    child: AcademicBody(
+                      child: TabBar(
+                        key: _tabsKey,
+                        // Cinco pestañas: con el texto grande o en un móvil
+                        // estrecho se desplazan en vez de cortarse.
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.start,
+                        indicatorColor: color,
+                        labelColor: color,
+                        dividerColor: context.colors.outlineVariant,
+                        tabs: [
+                          Tab(text: l10n.academicTabSummary),
+                          Tab(text: l10n.academicTabTopics),
+                          Tab(text: l10n.academicTabEvaluation),
+                          Tab(text: l10n.academicTabNotes),
+                          Tab(text: l10n.academicTabGuide),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // La cabecera se desplaza con el contenido: con el texto al 200 %
+                // (o en horizontal) no deja las pestañas sin sitio.
+                body: NestedScrollView(
+                  headerSliverBuilder: (context, _) => [
+                    if (state.busy)
+                      const SliverToBoxAdapter(
+                        child: LinearProgressIndicator(),
+                      ),
+                    SliverToBoxAdapter(
+                      child: AcademicBody(
+                        child: _SubjectHeader(subject: subject),
+                      ),
+                    ),
+                  ],
+                  body: TabBarView(
+                    children: [
+                      SummaryTab(
+                        reviewsKey: _reviewsKey,
+                        practiceKey: _practiceKey,
+                      ),
+                      const TopicsTab(),
+                      const EvaluationTab(),
+                      const SyllabusTab(),
+                      const GuideTab(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
+/// El nombre entero (en varias líneas si hace falta), «6 ECTS · 2.º curso ·
+/// 1.er cuatri», los días de clase y, si lo está, «Archivada». Las acciones van
+/// en el Resumen.
 class _SubjectHeader extends StatelessWidget {
-  const _SubjectHeader({
-    required this.subject,
-    required this.semester,
-    required this.color,
-    required this.onFocus,
-    required this.onNewDeadline,
-  });
+  const _SubjectHeader({required this.subject});
 
   final Subject subject;
-  final SubjectSemester? semester;
-  final Color color;
-
-  /// «Concentrarme en esta asignatura» (Pomodoro que cuenta para ella).
-  final VoidCallback onFocus;
-
-  /// «+ Entrega» con la asignatura ya puesta.
-  final VoidCallback onNewDeadline;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final days = classDaysText(context, subject.classDays);
-    final details = [
-      if (subject.teacher != null && subject.teacher!.isNotEmpty)
-        (Icons.person_outline_rounded, subject.teacher!),
-      if (subject.room != null && subject.room!.isNotEmpty)
-        (Icons.meeting_room_outlined, subject.room!),
-      if (days != null) (Icons.event_repeat_rounded, days),
-      if (subject.credits > 0)
-        (Icons.stars_outlined, l10n.academicCreditsShort(subject.credits)),
-      if (semester != null)
-        (
-          Icons.calendar_view_week_outlined,
-          l10n.academicCourseSemester(semester!.course, semester!.semester),
-        ),
-      if (subject.nextAssessmentAt != null)
-        (
-          Icons.event_rounded,
-          l10n.academicNextAssessment(shortDate(subject.nextAssessmentAt!)),
-        ),
-    ];
+    final meta = [
+      subjectMetaText(context, subject),
+      ?classDaysText(context, subject.classDays),
+    ].where((t) => t.isNotEmpty).join(' · ');
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         TokensSpacing.m,
-        TokensSpacing.m,
+        TokensSpacing.s,
         TokensSpacing.m,
         TokensSpacing.xs,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: TokensSize.emblem,
-            height: TokensSize.emblem,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: AppPill.tintAlpha),
-              borderRadius: BorderRadius.circular(TokensRadius.m),
-            ),
+          Semantics(
+            header: true,
             child: Text(
-              subjectAcronym(subject),
-              maxLines: 1,
-              style: context.textStyles.titleMedium?.copyWith(
-                color: color,
+              subject.name,
+              style: context.textStyles.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          const SizedBox(width: TokensSpacing.m),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: TokensSpacing.s,
-                  runSpacing: TokensSpacing.xs,
-                  children: [
-                    if (subject.archived)
-                      AppPill(
-                        label: l10n.academicSubjectArchivedBadge,
-                        color: context.colors.onSurfaceVariant,
-                        icon: AppIcons.archive,
-                      ),
-                    AppPill(
-                      label: context.priorityLabel(subject.priority),
-                      color: color,
-                      icon: AppIcons.priority,
-                    ),
-                    for (final (icon, text) in details)
-                      AppPill(
-                        label: text,
-                        color: context.colors.onSurfaceVariant,
-                        icon: icon,
-                      ),
-                  ],
+          const SizedBox(height: TokensSpacing.xxs),
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (subject.archived)
+                AppPill(
+                  label: l10n.academicSubjectArchivedBadge,
+                  color: context.colors.onSurfaceVariant,
+                  icon: AppIcons.archive,
                 ),
-                const SizedBox(height: TokensSpacing.s),
-                // Lo que más se hace con una asignatura, a la vista y con
-                // texto: estudiarla y apuntar una entrega (ADR 0039). Una
-                // archivada no los lleva, como en Académico.
-                if (!subject.archived)
-                  Wrap(
-                    spacing: TokensSpacing.s,
-                    runSpacing: TokensSpacing.xs,
-                    children: [
-                      AppSecondaryButton(
-                        label: l10n.academicSubjectFocusHere,
-                        icon: const Icon(AppIcons.focusTimer),
-                        onPressed: onFocus,
-                      ),
-                      AppSecondaryButton(
-                        label: l10n.academicNewDeadline,
-                        icon: const Icon(AppIcons.add),
-                        onPressed: onNewDeadline,
-                      ),
-                    ],
+              if (meta.isNotEmpty)
+                Text(
+                  meta,
+                  style: context.textStyles.bodyMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ],
       ),

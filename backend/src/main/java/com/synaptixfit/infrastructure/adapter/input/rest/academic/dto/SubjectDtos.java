@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.academic.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.synaptixfit.domain.model.academic.CatalogSubjectSelection;
+import com.synaptixfit.domain.model.academic.CourseTerm;
 import com.synaptixfit.domain.model.academic.RetentionMetrics;
 import com.synaptixfit.domain.model.academic.Subject;
 import com.synaptixfit.domain.model.academic.SubjectAgenda;
@@ -54,24 +55,29 @@ public final class SubjectDtos {
 
     /**
      * Asignatura con su agenda (ADR 0036): {@code nextClassAt}/{@code nextClassPlace} (próxima clase y su aula),
-     * {@code classDays} (1 = lunes) y la próxima entrega o examen sin hacer.
+     * {@code classDays} (1 = lunes) y la próxima entrega o examen sin hacer. Para la tarjeta de Académico (ADR 0057):
+     * {@code course} y {@code term} (curso y cuatrimestre 1-2; nulos si no se saben), {@code topicsDone} de
+     * {@code topicsTotal} (nulos sin plan docente) y {@code reviewsDueToday}.
      */
     public record SubjectResponse(UUID id, String name, String code, String description, int credits,
                                   int perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,
                                   String teacher, String room, boolean archived, UUID catalogSubjectId, String icsUrl,
                                   Instant lastSyncedAt, Instant createdAt, long noteCount, long fileCount,
                                   Instant nextClassAt, String nextClassPlace, List<Integer> classDays,
-                                  NextDeadlineResponse nextDeadline, NextUpResponse nextUp) {
+                                  NextDeadlineResponse nextDeadline, NextUpResponse nextUp, Integer course,
+                                  Integer term, Integer topicsDone, Integer topicsTotal, int reviewsDueToday) {
 
         public static SubjectResponse from(SubjectSummary s) {
-            return from(s.subject(), s.noteCount(), s.fileCount(), s.agenda());
+            return from(s.subject(), s.noteCount(), s.fileCount(), s.agenda(), s.courseTerm(), s.syllabus(),
+                    s.dueReviews());
         }
 
         public static SubjectResponse from(Subject s) {
-            return from(s, 0, 0, SubjectAgenda.EMPTY);
+            return from(s, 0, 0, SubjectAgenda.EMPTY, null, null, 0);
         }
 
-        private static SubjectResponse from(Subject s, long notes, long files, SubjectAgenda a) {
+        private static SubjectResponse from(Subject s, long notes, long files, SubjectAgenda a, CourseTerm ct,
+                                            SubjectSummary.SyllabusCount syllabus, int due) {
             return new SubjectResponse(s.id(), s.name(), s.code(), s.description(), s.credits(),
                     s.perceivedDifficulty(), s.priority(), s.nextAssessmentAt(), s.teacher(), s.room(), s.archived(),
                     s.catalogSubjectId(), s.icsUrl(), s.lastSyncedAt(), s.createdAt(), notes, files,
@@ -79,7 +85,9 @@ public final class SubjectDtos {
                     a.nextDeadline() == null ? null : new NextDeadlineResponse(a.nextDeadline().title(),
                             a.nextDeadline().dueAt(), a.nextDeadline().exam()),
                     a.nextUp() == null ? null : new NextUpResponse(a.nextUp().kind(), a.nextUp().at(),
-                            a.nextUp().place(), a.nextUp().daysLeft(), a.nextUp().urgent()));
+                            a.nextUp().place(), a.nextUp().daysLeft(), a.nextUp().urgent()),
+                    ct == null ? null : ct.course(), ct == null ? null : ct.term(),
+                    syllabus == null ? null : syllabus.done(), syllabus == null ? null : syllabus.total(), due);
         }
     }
 

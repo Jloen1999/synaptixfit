@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/guide_id.dart';
 import '../../../../../domain/models/academic/note.dart';
-import '../../../../../domain/models/academic/study_material.dart';
 import '../../../../../domain/models/academic/subject.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -18,7 +17,8 @@ import '../../widgets/academic_widgets.dart';
 import '../../widgets/subject_card.dart';
 import '../bloc/academic_home_bloc.dart';
 
-/// Pestaña Académico: cuadrícula de asignaturas, repasos pendientes y accesos.
+/// Pestaña Académico (ADR 0057): buscador, los repasos de hoy y las
+/// asignaturas, cada una con lo que importa de un vistazo.
 class AcademicHomePage extends StatelessWidget {
   const AcademicHomePage({super.key, this.showArchived = false});
 
@@ -129,7 +129,7 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
               children: [
                 group(l10n.academicAddGroupSubject),
                 option(
-                  Icons.description_rounded,
+                  AppIcons.importGuide,
                   l10n.academicImportEntry,
                   l10n.academicImportEntryHint,
                   AcademicPaths.importGuide(),
@@ -165,6 +165,14 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                   l10n.academicGenerateHint,
                   AcademicPaths.generate(),
                 ),
+                // Antes era un botón de la lista; copiar apuntes de clase es
+                // otra forma de tenerlos.
+                option(
+                  AppIcons.sharedNotes,
+                  l10n.academicSharedNotesTitle,
+                  l10n.academicSharedNotesHint,
+                  AcademicPaths.sharedNotes,
+                ),
                 const SizedBox(height: TokensSpacing.s),
               ],
             ),
@@ -186,12 +194,33 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
       ready: ready,
       steps: _guideSteps,
       child: Scaffold(
-        appBar: AppPageBar(title: Text(l10n.tabAcademic)),
-        floatingActionButton: FloatingActionButton.extended(
-          key: _addKey,
-          onPressed: () => _showAddSheet(context),
-          icon: const Icon(AppIcons.add),
-          label: Text(l10n.academicAdd),
+        appBar: AppPageBar(
+          title: Text(l10n.tabAcademic),
+          actions: [
+            // Con el texto grande no cabe en la barra: solo el icono.
+            Padding(
+              key: _addKey,
+              padding: const EdgeInsetsDirectional.only(end: TokensSpacing.s),
+              child: context.largeText
+                  ? IconButton(
+                      tooltip: l10n.academicAddSpoken,
+                      icon: const Icon(AppIcons.add),
+                      onPressed: () => _showAddSheet(context),
+                    )
+                  : Semantics(
+                      container: true,
+                      button: true,
+                      excludeSemantics: true,
+                      label: l10n.academicAddSpoken,
+                      onTap: () => _showAddSheet(context),
+                      child: AppSecondaryButton(
+                        label: l10n.academicAdd,
+                        icon: const Icon(AppIcons.add),
+                        onPressed: () => _showAddSheet(context),
+                      ),
+                    ),
+            ),
+          ],
         ),
         body: BlocConsumer<AcademicHomeBloc, AcademicHomeState>(
           listenWhen: (a, b) => b.notice != null && a.notice != b.notice,
@@ -244,28 +273,13 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                         onTap: () => context.push(AcademicPaths.search),
                       ),
                     ),
-                    // Lo de cada día, a un toque: apuntar una entrega y ponerse
-                    // a estudiar (ADR 0039; antes, en el ⋮ del calendario).
-                    if (!state.showArchived)
-                      SliverToBoxAdapter(
-                        child: _QuickActions(
-                          onNewDeadline: () =>
-                              _open(context, AcademicPaths.newDeadline()),
-                          onFocus: () => context.push(AcademicPaths.focus),
-                          // Con texto: el icono de personas solo parecía
-                          // «Amigos», y en la barra recortaba el título.
-                          onSharedNotes: () =>
-                              context.push(AcademicPaths.sharedNotes),
-                        ),
-                      ),
+                    // Lo primero que se hace al abrir: repasar lo de hoy.
                     if (state.due.isNotEmpty && !state.showArchived)
                       SliverToBoxAdapter(
-                        child: _DueReviews(
+                        child: _ReviewsBanner(
                           key: _reviewsKey,
-                          due: state.due,
-                          onOpen: (m) =>
-                              _open(context, AcademicPaths.review(m.id)),
-                          onReviewAll: () => _open(
+                          count: state.due.length,
+                          onReview: () => _open(
                             context,
                             AcademicPaths.review(
                               state.due.first.id,
@@ -299,35 +313,14 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                         TokensSpacing.s,
                       ),
                       sliver: SliverToBoxAdapter(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                l10n.academicSubjectsTitle,
-                                style: context.textStyles.titleMedium,
+                        child: _SubjectsHeader(
+                          archived: state.showArchived,
+                          onChanged: (archived) =>
+                              context.read<AcademicHomeBloc>().add(
+                                AcademicHomeEvent.archivedToggled(
+                                  archived: archived,
+                                ),
                               ),
-                            ),
-                            SegmentedButton<bool>(
-                              showSelectedIcon: false,
-                              segments: [
-                                ButtonSegment(
-                                  value: false,
-                                  label: Text(l10n.academicFilterActive),
-                                ),
-                                ButtonSegment(
-                                  value: true,
-                                  label: Text(l10n.academicFilterArchived),
-                                ),
-                              ],
-                              selected: {state.showArchived},
-                              onSelectionChanged: (s) =>
-                                  context.read<AcademicHomeBloc>().add(
-                                    AcademicHomeEvent.archivedToggled(
-                                      archived: s.first,
-                                    ),
-                                  ),
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -352,7 +345,7 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                               ? null
                               : AppPrimaryButton(
                                   label: l10n.academicImportEntry,
-                                  icon: Icons.description_rounded,
+                                  icon: AppIcons.importGuide,
                                   onPressed: () => _open(
                                     context,
                                     AcademicPaths.importGuide(),
@@ -366,23 +359,12 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                           TokensSpacing.m,
                           0,
                           TokensSpacing.m,
-                          TokensSpacing.xxl * 2,
+                          TokensSpacing.xl,
                         ),
-                        sliver: SliverGrid.builder(
-                          // El alto y el ancho crecen con el texto: al 200 %
-                          // la tarjeta no se desborda (una columna en móvil).
-                          gridDelegate:
-                              SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: context.scaled(
-                                  TokensSize.subjectCardMaxWidth,
-                                ),
-                                mainAxisExtent: context.scaled(
-                                  TokensSize.subjectCardHeight,
-                                ),
-                                crossAxisSpacing: TokensSpacing.s,
-                                mainAxisSpacing: TokensSpacing.s,
-                              ),
+                        sliver: SliverList.separated(
                           itemCount: state.subjects.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: TokensSpacing.s),
                           itemBuilder: (context, index) {
                             final subject = state.subjects[index];
                             return SubjectCard(
@@ -390,6 +372,12 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                               onTap: () => _open(
                                 context,
                                 AcademicPaths.subject(subject.id),
+                              ),
+                              onImportGuide: () => _open(
+                                context,
+                                AcademicPaths.importGuide(
+                                  subjectId: subject.id,
+                                ),
                               ),
                             );
                           },
@@ -406,22 +394,76 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
   }
 }
 
-/// «Nueva entrega», «Concentrarme» y «Apuntes compartidos», a la vista bajo
-/// el buscador.
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({
-    required this.onNewDeadline,
-    required this.onFocus,
-    required this.onSharedNotes,
-  });
+/// «Tus asignaturas» (cabecera) y el filtro Activas / Archivadas; con el texto
+/// grande, el filtro baja debajo (en fila se salía de la pantalla).
+class _SubjectsHeader extends StatelessWidget {
+  const _SubjectsHeader({required this.archived, required this.onChanged});
 
-  final VoidCallback onNewDeadline;
-  final VoidCallback onFocus;
-  final VoidCallback onSharedNotes;
+  final bool archived;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    final title = Semantics(
+      header: true,
+      child: Text(
+        l10n.academicSubjectsTitle,
+        style: context.textStyles.titleMedium,
+      ),
+    );
+    final filter = SegmentedButton<bool>(
+      showSelectedIcon: false,
+      segments: [
+        ButtonSegment(value: false, label: Text(l10n.academicFilterActive)),
+        ButtonSegment(value: true, label: Text(l10n.academicFilterArchived)),
+      ],
+      selected: {archived},
+      onSelectionChanged: (s) => onChanged(s.first),
+    );
+    if (context.largeText) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: TokensSpacing.s),
+          AppSegmentedChoice<bool>(
+            label: l10n.academicSubjectsTitle,
+            values: const [false, true],
+            selected: archived,
+            labelOf: (v) =>
+                v ? l10n.academicFilterArchived : l10n.academicFilterActive,
+            onChanged: (v) {
+              if (v != null) onChanged(v);
+            },
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: title),
+        filter,
+      ],
+    );
+  }
+}
+
+/// «7 repasos para hoy · Repasar»: un solo toque repasa todos seguidos.
+class _ReviewsBanner extends StatelessWidget {
+  const _ReviewsBanner({
+    super.key,
+    required this.count,
+    required this.onReview,
+  });
+
+  final int count;
+  final VoidCallback onReview;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final onTint = context.colors.onTertiaryContainer;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         TokensSpacing.m,
@@ -429,134 +471,37 @@ class _QuickActions extends StatelessWidget {
         TokensSpacing.m,
         0,
       ),
-      child: Wrap(
-        spacing: TokensSpacing.s,
-        runSpacing: TokensSpacing.xs,
-        children: [
-          AppSecondaryButton(
-            label: l10n.academicNewDeadline,
-            icon: const Icon(AppIcons.add),
-            onPressed: onNewDeadline,
-          ),
-          AppSecondaryButton(
-            label: l10n.academicFocus,
-            icon: const Icon(AppIcons.focusTimer),
-            onPressed: onFocus,
-          ),
-          AppSecondaryButton(
-            label: l10n.academicSharedNotesTitle,
-            icon: const Icon(AppIcons.sharedNotes),
-            onPressed: onSharedNotes,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DueReviews extends StatelessWidget {
-  const _DueReviews({
-    super.key,
-    required this.due,
-    required this.onOpen,
-    required this.onReviewAll,
-  });
-
-  final List<StudyMaterial> due;
-  final ValueChanged<StudyMaterial> onOpen;
-
-  /// Repasa todos los pendientes seguidos (se ofrece con dos o más).
-  final VoidCallback onReviewAll;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    return Padding(
-      padding: const EdgeInsets.only(top: TokensSpacing.m),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
-            child: Row(
-              children: [
-                Icon(Icons.replay_rounded, color: context.palette.study),
-                const SizedBox(width: TokensSpacing.s),
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    child: Text(
-                      l10n.academicDueReviews(due.length),
-                      style: context.textStyles.titleMedium,
-                    ),
+      child: AppCard(
+        color: context.colors.tertiaryContainer,
+        onTap: onReview,
+        child: Semantics(
+          excludeSemantics: true,
+          label:
+              '${l10n.academicReviewsForToday(count)}. ${l10n.academicReviewNow}',
+          child: Row(
+            children: [
+              Icon(AppIcons.review, color: onTint),
+              const SizedBox(width: TokensSpacing.sm),
+              Expanded(
+                child: Text(
+                  l10n.academicReviewsForToday(count),
+                  style: context.textStyles.titleSmall?.copyWith(
+                    color: onTint,
+                    fontWeight: FontWeight.w700,
                   ),
-                ),
-                if (due.length > 1 && !context.largeText)
-                  TextButton.icon(
-                    onPressed: onReviewAll,
-                    icon: const Icon(Icons.playlist_play_rounded),
-                    label: Text(l10n.academicReviewAll),
-                  ),
-              ],
-            ),
-          ),
-          // Con el texto grande, el botón baja: al lado dejaba el título en
-          // una letra por línea.
-          if (due.length > 1 && context.largeText)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: TextButton.icon(
-                  onPressed: onReviewAll,
-                  icon: const Icon(Icons.playlist_play_rounded),
-                  label: Text(l10n.academicReviewAll),
                 ),
               ),
-            ),
-          const SizedBox(height: TokensSpacing.s),
-          SizedBox(
-            height: context.scaled(TokensSize.reviewCardHeight),
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
-              scrollDirection: Axis.horizontal,
-              itemCount: due.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: TokensSpacing.s),
-              itemBuilder: (context, index) {
-                final material = due[index];
-                return SizedBox(
-                  width: context.scaled(TokensSize.reviewCardWidth),
-                  child: AppCard(
-                    onTap: () => onOpen(material),
-                    color: Color.alphaBlend(
-                      context.palette.study.withValues(
-                        alpha: AppPill.tintAlpha,
-                      ),
-                      context.colors.surface,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          material.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.textStyles.titleSmall,
-                        ),
-                        const Spacer(),
-                        AppPill(
-                          label: context.masteryLabel(material.masteryState),
-                          color: context.masteryColor(material.masteryState),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+              const SizedBox(width: TokensSpacing.s),
+              Text(
+                l10n.academicReviewNow,
+                style: context.textStyles.labelLarge?.copyWith(
+                  color: onTint,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

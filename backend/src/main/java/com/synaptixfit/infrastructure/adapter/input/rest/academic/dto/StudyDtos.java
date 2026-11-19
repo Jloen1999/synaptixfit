@@ -165,7 +165,8 @@ public final class StudyDtos {
     public record AssessmentGradeRequest(@DecimalMin("0") @DecimalMax("10") Double grade) {
     }
 
-    public record ProfessorDto(String name, String email, String office) {
+    /** Profesor de la guía: papel («Coordinadora · Teoría») y tutorías en texto corto, si la guía los da. */
+    public record ProfessorDto(String name, String email, String office, String role, String officeHours) {
     }
 
     public record TopicDto(int index, String title, TeachingGuide.TopicKind kind, boolean completed,
@@ -179,8 +180,14 @@ public final class StudyDtos {
                                 LocalDate dueDate, boolean active) {
     }
 
+    /**
+     * «Tu nota»: {@code earnedPoints} de {@code possiblePoints} (puntos de la nota final en lo ya evaluado) y
+     * {@code outlook}, qué frase toca ({@code NO_GRADES}, {@code NEEDS_AVERAGE} con {@code requiredGradeToPass},
+     * {@code ALREADY_PASSED} u {@code OUT_OF_REACH}). Lo decide el servidor.
+     */
     public record GradeEstimateDto(double estimatedGrade, double coveredPercentage, Double requiredGradeToPass,
-                                   String nextPendingAssessment) {
+                                   String nextPendingAssessment, double earnedPoints, double possiblePoints,
+                                   TeachingGuide.PassOutlook outlook) {
     }
 
     public record EvaluationModeRequest(@NotNull TeachingGuide.EvaluationMode mode) {
@@ -208,11 +215,12 @@ public final class StudyDtos {
             }
             TeachingGuide.GradeEstimate e = g.estimate();
             return new TeachingGuideResponse(d.subjectId(), TeachingGuideDtos.SubjectInfoDto.from(g.subject()),
-                    g.professors().stream().map(p -> new ProfessorDto(p.name(), p.email(), p.office())).toList(),
+                    g.professors().stream().map(p -> new ProfessorDto(p.name(), p.email(), p.office(), p.role(),
+                            p.officeHours())).toList(),
                     topics, assessments, g.bibliography(), g.availableModes(), g.effectiveMode(),
                     g.syllabusProgress(),
                     new GradeEstimateDto(e.estimatedGrade(), e.coveredPercentage(), e.requiredGradeToPass(),
-                            e.nextPendingAssessment()),
+                            e.nextPendingAssessment(), e.earnedPoints(), e.possiblePoints(), e.outlook()),
                     d.updatedAt());
         }
     }

@@ -282,3 +282,22 @@ String _joinList(BuildContext context, List<String> items) {
     items.last,
   );
 }
+
+/// «2.º curso · 1.er cuatri»: el único formato de curso y cuatrimestre de la
+/// app (ADR 0057). Lo que no se sabe se omite; sin nada, nulo.
+String? courseTermText(BuildContext context, int? course, int? term) {
+  final l10n = context.localizations;
+  final parts = [
+    if (course != null) l10n.academicCourseYear('$course'),
+    if (term != null) l10n.academicTerm(term),
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
+}
+
+/// «6 ECTS · 2.º curso · 1.er cuatri» de la tarjeta y la cabecera de la
+/// asignatura; cada parte que falta se omite sin dejar huecos.
+String subjectMetaText(BuildContext context, Subject subject) => [
+  if (subject.credits > 0)
+    context.localizations.academicCreditsShort(subject.credits),
+  ?courseTermText(context, subject.course, subject.term),
+].join(' · ');

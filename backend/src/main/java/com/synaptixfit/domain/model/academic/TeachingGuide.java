@@ -8,9 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Guía docente (plan docente) de una asignatura extraída por la IA: datos de la asignatura,
+ * Guía docente de una asignatura extraída por la IA: datos de la asignatura,
  * profesorado, temario con progreso, criterios de evaluación con la nota obtenida y bibliografía.
  *
  * <p>Muchas guías tienen dos sistemas de evaluación (continua y global) que suman 100 % cada uno:
@@ -70,13 +71,26 @@ public record TeachingGuide(SubjectInfo subject, List<Professor> professors, Lis
                     .replaceAll("[^\\p{Alnum}]+", " ").strip().toLowerCase(Locale.ROOT);
         }
 
+        /** Curso y cuatrimestre según la guía ({@link CourseTerm#fromGuide}), si se pueden saber. */
+        public Optional<CourseTerm> courseTerm() {
+            return CourseTerm.fromGuide(courseYear, semester);
+        }
+
         /** Créditos enteros para la asignatura del usuario (1-30): 4,5 ECTS se redondean a 5. */
         public Integer roundedCredits() {
             return ectsCredits == null ? null : (int) Math.max(1, Math.min(30, Math.round(ectsCredits)));
         }
     }
 
-    public record Professor(String name, String email, String office) {
+    /**
+     * Profesor según la guía: {@code role} es su papel tal como lo dice la guía («Coordinadora · Teoría») y
+     * {@code officeHours} las tutorías en texto corto («Lun 10:00–12:00»); los dos son opcionales.
+     */
+    public record Professor(String name, String email, String office, String role, String officeHours) {
+
+        public Professor(String name, String email, String office) {
+            this(name, email, office, null, null);
+        }
     }
 
     public record Topic(String title, TopicKind kind, boolean completed, List<String> subtopics, Double hours) {
@@ -127,9 +141,26 @@ public record TeachingGuide(SubjectInfo subject, List<Professor> professors, Lis
         }
     }
 
-    /** Estado de la calculadora: nota estimada, porcentaje calificado y lo necesario para aprobar. */
+    /**
+     * Cómo va el aprobado, para que la app diga una sola frase sin calcular nada: sin notas todavía, cuánto falta
+     * de media, ya aprobado o ya no se llega al 5.
+     */
+    public enum PassOutlook { NO_GRADES, NEEDS_AVERAGE, ALREADY_PASSED, OUT_OF_REACH }
+
+    /**
+     * Estado de la calculadora: nota estimada, porcentaje calificado y lo necesario para aprobar. {@code earnedPoints}
+     * son los puntos de la nota final que ya se tienen (3,1) sobre {@code possiblePoints}, los que se podían sacar en
+     * lo ya evaluado (4,5 si se calificó el 45 %).
+     */
     public record GradeEstimate(double estimatedGrade, double coveredPercentage, Double requiredGradeToPass,
-                                String nextPendingAssessment) {
+                                String nextPendingAssessment, double earnedPoints, double possiblePoints,
+                                PassOutlook outlook) {
+
+        public GradeEstimate(double estimatedGrade, double coveredPercentage, Double requiredGradeToPass,
+                             String nextPendingAssessment) {
+            this(estimatedGrade, coveredPercentage, requiredGradeToPass, nextPendingAssessment, 0, 0,
+                    PassOutlook.NO_GRADES);
+        }
     }
 
     /*
@@ -145,11 +176,14 @@ public record TeachingGuide(SubjectInfo subject, List<Professor> professors, Lis
     static final int MAX_TITLE = 300;
     static final int MAX_ASSESSMENT_NAME = 200;
     static final int MAX_REFERENCE = 1000;
+    static final int MAX_PROFESSOR_ROLE = 100;
+    static final int MAX_OFFICE_HOURS = 300;
 
     public TeachingGuide {
         subject = subject == null ? SubjectInfo.empty() : subject;
         professors = professors == null ? List.of() : professors.stream().limit(MAX_PROFESSORS)
-                .map(p -> new Professor(clean(p.name(), 150), clean(p.email(), 200), clean(p.office(), 100)))
+                .map(p -> new Professor(clean(p.name(), 150), clean(p.email(), 200), clean(p.office(), 100),
+                        clean(p.role(), MAX_PROFESSOR_ROLE), clean(p.officeHours(), MAX_OFFICE_HOURS)))
                 .toList();
         topics = topics == null ? List.of() : topics.stream().filter(t -> !t.title().isEmpty()).limit(MAX_TOPICS)
                 .map(t -> new Topic(clip(t.title(), MAX_TITLE), t.kind(), t.completed(),
@@ -254,6 +288,32 @@ public record TeachingGuide(SubjectInfo subject, List<Professor> professors, Lis
         return new TeachingGuide(subject, professors, mergedTopics, mergedAssessments, bibliography, mode);
     }
 
+    /**
+     * Nota sobre 10 (escala española, aprobado con 5). Los puntos son el peso por la nota: un 8 en una prueba del
+     * 15 % da 1,2 puntos de la nota final. Para aprobar hacen falta 5 puntos; lo que falta se reparte entre las
+     * pruebas sin nota, así que la media necesaria es (5 − puntos) / (peso que queda / 10).
+     */
+    /**
+     * Completa el papel y las tutorías que falten con los del mismo profesor (por nombre) en {@code extracted}: una
+     * versión anterior de la app devuelve el borrador revisado sin esos campos y no deben perderse al aplicarlo.
+     */
+    public TeachingGuide keepingProfessorDetailsOf(TeachingGuide extracted) {
+        if (extracted == null || extracted.professors.isEmpty()) {
+            return this;
+        }
+        Map<String, Professor> byName = new HashMap<>();
+        extracted.professors.forEach(p -> byName.putIfAbsent(key(p.name()), p));
+        List<Professor> merged = professors.stream().map(p -> {
+            Professor source = byName.get(key(p.name()));
+            if (source == null) {
+                return p;
+            }
+            return new Professor(p.name(), p.email(), p.office(), p.role() != null ? p.role() : source.role(),
+                    p.officeHours() != null ? p.officeHours() : source.officeHours());
+        }).toList();
+        return new TeachingGuide(subject, merged, topics, assessments, bibliography, selectedMode);
+    }
+
     public GradeEstimate estimate() {
         double weighted = 0;
         double covered = 0;
@@ -275,11 +335,38 @@ public record TeachingGuide(SubjectInfo subject, List<Professor> professors, Lis
         }
         double estimated = covered > 0 ? clamp(weighted / covered * 10) : 0;
         Double required = null;
+        Double rawRequired = null;
         if (covered < 100 && remaining > 0) {
-            required = clamp((50.0 - weighted) / remaining * 10);
+            rawRequired = (PASS_POINTS * 10 - weighted) / remaining * 10;
+            required = clamp(rawRequired);
         }
-        return new GradeEstimate(round2(estimated), covered, required == null ? null : round2(required), pending);
+        double earned = weighted / 10;
+        return new GradeEstimate(round2(estimated), covered, required == null ? null : round2(required), pending,
+                round2(earned), round2(covered / 10), outlook(covered, earned, rawRequired));
     }
+
+    /** Puntos (sobre 10) para aprobar. */
+    static final double PASS_POINTS = 5;
+
+    /*
+     * Ya aprobado gana a todo: con 5 puntos asegurados da igual lo que quede. Fuera de alcance si hace falta más de un
+     * 10 de media en lo que queda, o si ya no queda nada y no se llegó. Se compara con un margen para que 4,999… por
+     * redondeo no diga «no llegas».
+     */
+    private static PassOutlook outlook(double covered, double earned, Double rawRequired) {
+        if (covered <= 0) {
+            return PassOutlook.NO_GRADES;
+        }
+        if (earned >= PASS_POINTS - EPSILON) {
+            return PassOutlook.ALREADY_PASSED;
+        }
+        if (rawRequired == null || rawRequired > 10 + EPSILON) {
+            return PassOutlook.OUT_OF_REACH;
+        }
+        return PassOutlook.NEEDS_AVERAGE;
+    }
+
+    private static final double EPSILON = 1e-6;
 
     private static String key(String text) {
         return text == null ? "" : text.strip().toLowerCase(Locale.ROOT);

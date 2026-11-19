@@ -105,6 +105,15 @@ abstract final class AppIcons {
   static const IconData howTo = Icons.ondemand_video_rounded;
   static const IconData help = Icons.help_outline_rounded;
 
+  /// Repasar (repaso espaciado): aviso de Académico, tarjeta y Resumen.
+  static const IconData review = Icons.replay_rounded;
+
+  /// Escribir un correo (profesorado de la guía docente).
+  static const IconData email = Icons.mail_outline_rounded;
+
+  /// Importar la guía docente (PDF de la asignatura).
+  static const IconData importGuide = Icons.description_rounded;
+
   /// Más detalles de algo pequeño (p. ej. los créditos de una foto). No es la
   /// «?» de las ayudas opcionales.
   static const IconData info = Icons.info_outline_rounded;
@@ -112,13 +121,13 @@ abstract final class AppIcons {
   /// Lo que propone la app (IA o reglas, se ven igual: vocabulario).
   static const IconData proposal = Icons.lightbulb_outline_rounded;
 
-  /// Racha (días seguidos): la llama, solo para la racha.
   /// Empezar (una sesión, un entreno).
   static const IconData start = Icons.play_arrow_rounded;
 
   /// Reto (Progreso › Retos y sus plantillas).
   static const IconData challenge = Icons.flag_outlined;
 
+  /// Racha (días seguidos): la llama, solo para la racha.
   static const IconData streak = Icons.local_fire_department_rounded;
 
   /// Kilocalorías gastadas: energía, distinta de la llama de la racha.

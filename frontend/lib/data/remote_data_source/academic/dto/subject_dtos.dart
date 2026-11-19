@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/assessment_kind.dart';
 import '../../../../domain/enums/evaluation_mode.dart';
+import '../../../../domain/enums/pass_outlook.dart';
 import '../../../../domain/enums/subject_priority.dart';
 import '../../../../domain/enums/subject_timeline_type.dart';
 import '../../../../domain/enums/syllabus_topic_kind.dart';
@@ -35,6 +36,11 @@ abstract class SubjectDto with _$SubjectDto {
     @Default(<int>[]) List<int> classDays,
     SubjectDeadlineDto? nextDeadline,
     SubjectNextUpDto? nextUp,
+    int? course,
+    int? term,
+    int? topicsDone,
+    int? topicsTotal,
+    @Default(0) int reviewsDueToday,
   }) = _SubjectDto;
 
   const SubjectDto._();
@@ -63,6 +69,11 @@ abstract class SubjectDto with _$SubjectDto {
     classDays: classDays,
     nextDeadline: nextDeadline?.toDomain(),
     nextUp: nextUp?.toDomain(),
+    course: course,
+    term: term,
+    topicsDone: topicsDone,
+    topicsTotal: topicsTotal,
+    reviewsDueToday: reviewsDueToday,
   );
 }
 
@@ -251,16 +262,26 @@ abstract class SubjectGuideInfoDto with _$SubjectGuideInfoDto {
 
 @freezed
 abstract class ProfessorDto with _$ProfessorDto {
-  const factory ProfessorDto({String? name, String? email, String? office}) =
-      _ProfessorDto;
+  const factory ProfessorDto({
+    String? name,
+    String? email,
+    String? office,
+    String? role,
+    String? officeHours,
+  }) = _ProfessorDto;
 
   const ProfessorDto._();
 
   factory ProfessorDto.fromJson(Map<String, dynamic> json) =>
       _$ProfessorDtoFromJson(json);
 
-  Professor toDomain() =>
-      Professor(name: name ?? '', email: email, office: office);
+  Professor toDomain() => Professor(
+    name: name ?? '',
+    email: email,
+    office: office,
+    role: role,
+    officeHours: officeHours,
+  );
 }
 
 @freezed
@@ -332,6 +353,9 @@ abstract class GradeEstimateDto with _$GradeEstimateDto {
     @Default(0) double coveredPercentage,
     double? requiredGradeToPass,
     String? nextPendingAssessment,
+    @Default(0) double earnedPoints,
+    @Default(0) double possiblePoints,
+    String? outlook,
   }) = _GradeEstimateDto;
 
   const GradeEstimateDto._();
@@ -344,6 +368,9 @@ abstract class GradeEstimateDto with _$GradeEstimateDto {
     coveredPercentage: coveredPercentage,
     requiredGradeToPass: requiredGradeToPass,
     nextPendingAssessment: nextPendingAssessment,
+    earnedPoints: earnedPoints,
+    possiblePoints: possiblePoints,
+    outlook: PassOutlook.fromApi(outlook),
   );
 }
 

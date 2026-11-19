@@ -15,6 +15,7 @@ import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/academic/delete_note_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/delete_subject_file_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_document_availability_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/get_due_study_materials_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_notes_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_study_materials_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_subject_files_use_case.dart';
@@ -57,6 +58,8 @@ class _GetTimeline extends Mock implements GetSubjectTimelineUseCaseContract {}
 
 class _GetMaterials extends Mock implements GetStudyMaterialsUseCaseContract {}
 
+class _GetDue extends Mock implements GetDueStudyMaterialsUseCaseContract {}
+
 class _GetFiles extends Mock implements GetSubjectFilesUseCaseContract {}
 
 class _GetNotes extends Mock implements GetNotesUseCaseContract {}
@@ -90,6 +93,10 @@ void main() {
     late _GetRetention getRetention;
     late _GetTimeline getTimeline;
     late _GetMaterials getMaterials;
+    late _GetDue getDue;
+
+    /// Repaso vencido de otra asignatura: no cuenta en esta.
+    final otherDue = material.copyWith(id: 'm9', subjectId: 's9');
 
     setUp(() {
       getGuide = _GetGuide();
@@ -99,6 +106,10 @@ void main() {
       getRetention = _GetRetention();
       getTimeline = _GetTimeline();
       getMaterials = _GetMaterials();
+      getDue = _GetDue();
+      when(
+        () => getDue(limit: any(named: 'limit')),
+      ).thenAnswer((_) async => Success([otherDue, material]));
       when(
         () => getRetention('s1'),
       ).thenAnswer((_) async => const Success(retention));
@@ -122,11 +133,12 @@ void main() {
       getRetention: getRetention,
       getTimeline: getTimeline,
       getMaterials: getMaterials,
+      getDue: getDue,
       clock: () => DateTime(2026, 10, 18, 12),
     );
 
     blocTest<SubjectProgressBloc, SubjectProgressState>(
-      'sin guía: carga retención y materiales',
+      'sin guía: carga retención, materiales y solo sus repasos de hoy',
       setUp: () => when(
         () => getGuide('s1'),
       ).thenAnswer((_) async => const Success(null)),
@@ -139,6 +151,7 @@ void main() {
           loading: false,
           retention: retention,
           materials: [material],
+          due: [material],
         ),
       ],
     );

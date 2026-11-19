@@ -34,6 +34,14 @@ void main() {
           'Grado en Ingeniería Informática en Tecnologías de la Información',
       university: 'Universidad de Extremadura',
     ),
+    professors: [
+      Professor(
+        name: 'Ana Ruiz',
+        office: '2.15',
+        role: 'Coordinadora · Teoría',
+        officeHours: 'Lun 10:00-12:00',
+      ),
+    ],
     topics: [
       TopicDraft(
         title: 'Tema 1: Técnicas de aumento de prestaciones',
@@ -79,6 +87,8 @@ void main() {
     suggestedSubjectId: 's1',
     suggestedSubjectName: 'Hardware',
     draft: draft,
+    course: 3,
+    term: 2,
   );
 
   final states = <String, TeachingGuideImportState>{
@@ -149,6 +159,15 @@ void main() {
     expect(find.text('Prueba global'), findsNothing);
     expect(find.text('20 nov'), findsOneWidget);
     expect(find.text('Poner fecha'), findsOneWidget);
+    // «Semestre 6» de la guía, en el formato de toda la app (ADR 0057).
+    expect(find.text('3.er curso · 2.º cuatri'), findsOneWidget);
+    expect(find.text('Semestre 6'), findsNothing);
+    // Profesorado con su papel, despacho y tutorías.
+    expect(find.text('Ana Ruiz · Coordinadora · Teoría'), findsOneWidget);
+    expect(
+      find.text('Despacho: 2.15\nTutorías: Lun 10:00-12:00'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('sin nombre, crear asignatura señala el campo en vez de enviar', (

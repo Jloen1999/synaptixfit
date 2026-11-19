@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.academic.dto;
 
 import com.synaptixfit.application.port.input.academic.ApplyTeachingGuideImportUseCase;
+import com.synaptixfit.domain.model.academic.CourseTerm;
 import com.synaptixfit.domain.model.academic.TeachingGuide;
 import com.synaptixfit.domain.model.academic.TeachingGuide.AssessmentKind;
 import com.synaptixfit.domain.model.academic.TeachingGuide.EvaluationMode;
@@ -48,8 +49,10 @@ public final class TeachingGuideDtos {
         }
     }
 
+    /** Profesor del borrador; {@code role} («Coordinadora · Teoría») y {@code officeHours} son opcionales. */
     public record ProfessorDraftDto(@Size(max = 150) String name, @Size(max = 200) String email,
-                                    @Size(max = 100) String office) {
+                                    @Size(max = 100) String office, @Size(max = 100) String role,
+                                    @Size(max = 300) String officeHours) {
     }
 
     public record TopicDraftDto(@Size(max = 300) String title, TopicKind kind,
@@ -72,7 +75,8 @@ public final class TeachingGuideDtos {
 
         public static GuideDraftDto from(TeachingGuide g) {
             return new GuideDraftDto(SubjectInfoDto.from(g.subject()),
-                    g.professors().stream().map(p -> new ProfessorDraftDto(p.name(), p.email(), p.office())).toList(),
+                    g.professors().stream().map(p -> new ProfessorDraftDto(p.name(), p.email(), p.office(), p.role(),
+                            p.officeHours())).toList(),
                     g.topics().stream().map(t -> new TopicDraftDto(t.title(), t.kind(), t.subtopics(), t.hours()))
                             .toList(),
                     g.assessments().stream().map(a -> new AssessmentDraftDto(a.name(), a.percentage(), a.mode(),
@@ -83,7 +87,8 @@ public final class TeachingGuideDtos {
         public TeachingGuide toDomain() {
             return new TeachingGuide(subject == null ? null : subject.toDomain(),
                     professors == null ? List.of() : professors.stream()
-                            .map(p -> new TeachingGuide.Professor(p.name(), p.email(), p.office())).toList(),
+                            .map(p -> new TeachingGuide.Professor(p.name(), p.email(), p.office(), p.role(),
+                                    p.officeHours())).toList(),
                     topics == null ? List.of() : topics.stream()
                             .map(t -> new TeachingGuide.Topic(t.title(), t.kind(), false, t.subtopics(), t.hours()))
                             .toList(),
@@ -119,18 +124,24 @@ public final class TeachingGuideDtos {
         }
     }
 
-    /** Estado de la importación; {@code guide} solo llega cuando está lista o aplicada. */
+    /**
+     * Estado de la importación; {@code guide} solo llega cuando está lista o aplicada, y con ella {@code course} y
+     * {@code term}: el curso y cuatrimestre que se le pondrán a la asignatura (nulos si la guía no los deja claros).
+     */
     public record ImportResponse(UUID id, TeachingGuideImport.Status status, String errorCode, String fileName,
                                  UUID targetSubjectId, UUID suggestedSubjectId, String suggestedSubjectName,
-                                 UUID appliedSubjectId, GuideDraftDto guide, Instant createdAt, Instant updatedAt) {
+                                 UUID appliedSubjectId, GuideDraftDto guide, Instant createdAt, Instant updatedAt,
+                                 Integer course, Integer term) {
 
         public static ImportResponse from(TeachingGuideImportView v) {
             TeachingGuideImport i = v.guideImport();
             boolean withGuide = i.guide() != null && (v.status() == TeachingGuideImport.Status.READY
                     || v.status() == TeachingGuideImport.Status.APPLIED);
+            CourseTerm ct = withGuide ? i.guide().subject().courseTerm().orElse(null) : null;
             return new ImportResponse(i.id(), v.status(), v.errorCode(), i.fileName(), i.targetSubjectId(),
                     v.suggestedSubjectId(), v.suggestedSubjectName(), i.appliedSubjectId(),
-                    withGuide ? GuideDraftDto.from(i.guide()) : null, i.createdAt(), i.updatedAt());
+                    withGuide ? GuideDraftDto.from(i.guide()) : null, i.createdAt(), i.updatedAt(),
+                    ct == null ? null : ct.course(), ct == null ? null : ct.term());
         }
     }
 }

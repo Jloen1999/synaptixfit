@@ -14,6 +14,7 @@ import com.synaptixfit.domain.port.output.academic.StudyAssistantPort;
 import com.synaptixfit.domain.port.output.academic.StudyDocumentCodecPort;
 import com.synaptixfit.domain.port.output.academic.SubjectFileRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectRepositoryPort;
+import com.synaptixfit.domain.port.output.academic.SubjectSemesterRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.TeachingGuideImportRepositoryPort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.storage.FileStoragePort;
@@ -36,12 +37,12 @@ public class TeachingGuideImportBeanConfiguration {
                                                 AiDocumentRepositoryPort aiDocuments, StudyDocumentCodecPort codec,
                                                 StudyAssistantPort assistant, FileStoragePort storage,
                                                 DomainEventPublisherPort events, AcademicCatalogPort catalog,
-                                                Clock clock,
+                                                Clock clock, SubjectSemesterRepositoryPort semesters,
                                                 @Value("${synaptixfit.insights.default-zone:Europe/Madrid}")
                                                 String zone) {
         this.tx = tx;
         this.service = new TeachingGuideImportService(imports, subjects, files, aiDocuments, codec, assistant,
-                storage, events, catalog, clock, ZoneId.of(zone));
+                storage, events, catalog, clock, ZoneId.of(zone), semesters);
     }
 
     @Bean

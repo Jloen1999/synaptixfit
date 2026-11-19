@@ -4,7 +4,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/subject.dart';
 import '../../../../../domain/use_cases/academic/delete_subject_use_case.dart';
-import '../../../../../domain/use_cases/academic/get_subject_semester_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_subject_use_case.dart';
 import '../../../../../domain/use_cases/academic/set_subject_archived_use_case.dart';
 
@@ -12,11 +11,11 @@ part 'subject_detail_bloc.freezed.dart';
 part 'subject_detail_event.dart';
 part 'subject_detail_state.dart';
 
-/// Cabecera del detalle de asignatura: datos, archivar y borrar.
+/// Cabecera del detalle de asignatura: datos (con curso y cuatrimestre, que
+/// llegan con la asignatura), archivar y borrar.
 class SubjectDetailBloc extends Bloc<SubjectDetailEvent, SubjectDetailState> {
   SubjectDetailBloc({
     required this._getSubject,
-    required this._getSemester,
     required this._setArchived,
     required this._deleteSubject,
   }) : super(const SubjectDetailState()) {
@@ -30,7 +29,6 @@ class SubjectDetailBloc extends Bloc<SubjectDetailEvent, SubjectDetailState> {
   }
 
   final GetSubjectUseCaseContract _getSubject;
-  final GetSubjectSemesterUseCaseContract _getSemester;
   final SetSubjectArchivedUseCaseContract _setArchived;
   final DeleteSubjectUseCaseContract _deleteSubject;
 
@@ -39,18 +37,10 @@ class SubjectDetailBloc extends Bloc<SubjectDetailEvent, SubjectDetailState> {
     required bool silent,
   }) async {
     if (!silent) emit(state.copyWith(loading: true, error: null));
-    final (subject, semester) = await (
-      _getSubject(state.subjectId),
-      _getSemester(state.subjectId),
-    ).wait;
+    final subject = await _getSubject(state.subjectId);
     emit(
       subject.fold(
-        (s) => state.copyWith(
-          loading: false,
-          error: null,
-          subject: s,
-          semester: semester.valueOrNull,
-        ),
+        (s) => state.copyWith(loading: false, error: null, subject: s),
         (error) => state.copyWith(loading: false, error: error),
       ),
     );

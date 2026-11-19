@@ -8,6 +8,7 @@ import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/evaluation_mode.dart';
 import '../../../../../domain/enums/syllabus_topic_kind.dart';
 import '../../../../../domain/errors/app_error.dart';
+import '../../../../../domain/models/academic/teaching_guide.dart';
 import '../../../../../domain/models/academic/teaching_guide_import.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -531,6 +532,7 @@ class _ReviewStepState extends State<_ReviewStep> {
       draft.info.degree,
       draft.info.university,
     ].whereType<String>().join(' · ');
+    final courseTerm = courseTermText(context, import.course, import.term);
 
     return Column(
       children: [
@@ -649,18 +651,18 @@ class _ReviewStepState extends State<_ReviewStep> {
                             onChanged: (_) => _onInfoChanged(),
                           ),
                         ),
-                        if (draft.info.semester != null ||
+                        if (courseTerm != null ||
                             draft.info.character != null) ...[
                           const SizedBox(height: TokensSpacing.s),
                           Wrap(
                             spacing: TokensSpacing.s,
                             runSpacing: TokensSpacing.xs,
                             children: [
-                              if (draft.info.semester != null)
+                              // El mismo formato que en toda la app: «3.er
+                              // curso · 2.º cuatri» (ADR 0057).
+                              if (courseTerm != null)
                                 AppPill(
-                                  label: l10n.academicGuideInfoSemester(
-                                    draft.info.semester!,
-                                  ),
+                                  label: courseTerm,
                                   icon: Icons.calendar_view_month_rounded,
                                 ),
                               if (draft.info.character != null)
@@ -682,6 +684,25 @@ class _ReviewStepState extends State<_ReviewStep> {
                       ],
                     ),
                   ),
+
+                  // Profesorado: lo que se verá en la pestaña Guía.
+                  if (draft.professors.isNotEmpty) ...[
+                    const SizedBox(height: TokensSpacing.l),
+                    AppSectionHeader(
+                      title: l10n.academicImportProfessors(
+                        draft.professors.length,
+                      ),
+                    ),
+                    AppCard(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          for (final p in draft.professors)
+                            _ProfessorTile(professor: p),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   // Temario
                   const SizedBox(height: TokensSpacing.l),
@@ -911,6 +932,37 @@ class _ModeSelector extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Profesor tal como lo leyó la guía: nombre, papel y, debajo, despacho,
+/// tutorías y correo (solo lectura).
+class _ProfessorTile extends StatelessWidget {
+  const _ProfessorTile({required this.professor});
+
+  final Professor professor;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final p = professor;
+    final details = [
+      if (p.office != null && p.office!.trim().isNotEmpty)
+        l10n.academicLabelValue(l10n.academicProfessorOffice, p.office!),
+      if (p.officeHours != null && p.officeHours!.trim().isNotEmpty)
+        l10n.academicLabelValue(l10n.academicProfessorHours, p.officeHours!),
+      if (p.email != null && p.email!.trim().isNotEmpty) p.email!,
+    ];
+    return ListTile(
+      leading: ExcludeSemantics(child: AppAvatar(name: p.name)),
+      title: Text(
+        [
+          p.name,
+          if (p.role != null && p.role!.trim().isNotEmpty) p.role!,
+        ].join(' · '),
+      ),
+      subtitle: details.isEmpty ? null : Text(details.join('\n')),
     );
   }
 }

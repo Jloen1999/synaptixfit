@@ -93,7 +93,8 @@ class AcademicHomeBloc extends Bloc<AcademicHomeEvent, AcademicHomeState>
     if (!silent) emit(state.copyWith(loading: true, error: null));
     final (subjects, due, inbox) = await (
       _getSubjects(archived: state.showArchived),
-      _getDue(),
+      // Todos los de hoy (el servidor da 100 como mucho): el aviso los cuenta.
+      _getDue(limit: 100),
       _getInbox(),
     ).wait;
     emit(
