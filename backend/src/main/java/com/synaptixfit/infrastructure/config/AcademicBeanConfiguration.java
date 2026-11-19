@@ -18,6 +18,8 @@ import com.synaptixfit.application.port.input.academic.DeleteStudyMaterialUseCas
 import com.synaptixfit.application.port.input.academic.DeleteSubjectFileUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteSubjectUseCase;
 import com.synaptixfit.application.port.input.academic.GenerateQuestionBankUseCase;
+import com.synaptixfit.application.port.input.academic.SaveCreatedQuestionsUseCase;
+import com.synaptixfit.application.port.input.academic.ScanDocumentQuestionsUseCase;
 import com.synaptixfit.application.port.input.academic.GenerateStudyArtifactUseCase;
 import com.synaptixfit.application.port.input.academic.GenerateStudyDocumentUseCase;
 import com.synaptixfit.application.port.input.academic.GenerateTeachingGuideUseCase;
@@ -60,6 +62,7 @@ import com.synaptixfit.application.port.input.academic.UpdateSubjectUseCase;
 import com.synaptixfit.application.port.input.academic.UpdateTeachingGuideTopicUseCase;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.service.academic.NoteService;
+import com.synaptixfit.application.service.academic.QuestionCreationService;
 import com.synaptixfit.application.service.academic.QuizService;
 import com.synaptixfit.application.service.academic.SharedNoteService;
 import com.synaptixfit.application.service.academic.StudyAssistantService;
@@ -457,8 +460,29 @@ public class AcademicBeanConfiguration {
     }
 
     @Bean
+    SaveCreatedQuestionsUseCase saveCreatedQuestionsUseCase() {
+        return tx.wrap(SaveCreatedQuestionsUseCase.class, quizService());
+    }
+
+    @Bean(autowireCandidate = false)
+    QuestionCreationService questionCreationService() {
+        return new QuestionCreationService(banks, materials, subjects, notes, files, aiDocuments, codec, assistant,
+                storage, saveCreatedQuestionsUseCase(), getQuestionBankUseCase(), clock);
+    }
+
+    /**
+     * Sin transacción envolvente a propósito (ADR 0058): las tandas de la IA pueden durar minutos y no deben
+     * retener una conexión de la base de datos; el guardado va en {@link SaveCreatedQuestionsUseCase}.
+     */
+    @Bean
     GenerateQuestionBankUseCase generateQuestionBankUseCase() {
-        return tx.wrap(GenerateQuestionBankUseCase.class, quizService());
+        return questionCreationService()::generateBank;
+    }
+
+    /** Sin transacción: solo lee y llama a la IA. */
+    @Bean
+    ScanDocumentQuestionsUseCase scanDocumentQuestionsUseCase() {
+        return questionCreationService()::scanDocumentQuestions;
     }
 
     @Bean

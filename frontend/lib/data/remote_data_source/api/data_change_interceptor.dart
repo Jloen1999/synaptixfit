@@ -27,6 +27,11 @@ class DataChangeInterceptor extends Interceptor {
   /// insignias como celebradas se excluye además para no crear un bucle (el
   /// armazón lo hace al refrescarse); `/badges/evaluate` ya no lo llama el
   /// cliente, pero sigue excluido por seguridad.
+  /// Acciones de solo lectura que van por POST y llevan un id en medio de la
+  /// ruta: se reconocen por el final. Leer las preguntas que ya trae un
+  /// apunte llama a la IA pero no guarda nada (ADR 0058).
+  static const _ignoredEndings = ['/document-questions'];
+
   static const _ignored = [
     '/api/v1/auth/',
     '/api/v1/badges/evaluate',
@@ -137,7 +142,9 @@ class DataChangeInterceptor extends Interceptor {
   /// Áreas que cambia una petición, o vacío si no cambia ninguna.
   static Set<DataTopic> topicsFor(String method, String path) {
     if (!_mutating.contains(method.toUpperCase())) return const {};
-    if (_ignored.any(path.startsWith)) return const {};
+    if (_ignored.any(path.startsWith) || _ignoredEndings.any(path.endsWith)) {
+      return const {};
+    }
     for (final MapEntry(key: prefix, value: topics) in _routes.entries) {
       if (path == prefix || path.startsWith('$prefix/')) return topics;
     }

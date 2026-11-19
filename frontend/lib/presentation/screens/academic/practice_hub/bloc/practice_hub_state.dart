@@ -12,7 +12,5 @@ abstract class PracticeHubState with _$PracticeHubState {
     QuestionBank? bank,
     TestSession? activeSession,
     @Default(<TestSessionSummary>[]) List<TestSessionSummary> sessions,
-    @Default(false) bool generating,
-    AppError? actionError,
   }) = _PracticeHubState;
 }

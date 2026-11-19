@@ -19,6 +19,7 @@ abstract class QuestionDto with _$QuestionDto {
     @Default(0) int order,
     @Default('') String correctAnswer,
     String? explanation,
+    @Default(<String>[]) List<String> correctAnswers,
   }) = _QuestionDto;
 
   const QuestionDto._();
@@ -34,8 +35,13 @@ abstract class QuestionDto with _$QuestionDto {
     order: order,
     correctAnswer: correctAnswer,
     explanation: explanation,
+    correctAnswers: _answersOr(correctAnswers, correctAnswer),
   );
 }
+
+/// Las correctas de la API o, de una versión anterior, la única que traía.
+List<String> _answersOr(List<String> answers, String? single) =>
+    answers.isNotEmpty || single == null || single.isEmpty ? answers : [single];
 
 @freezed
 abstract class QuestionBankDto with _$QuestionBankDto {
@@ -46,6 +52,8 @@ abstract class QuestionBankDto with _$QuestionBankDto {
     @Default(0) int attemptedQuestions,
     @Default(0) int correctQuestions,
     @Default(<QuestionDto>[]) List<QuestionDto> questions,
+    int? requestedQuestions,
+    int? createdQuestions,
   }) = _QuestionBankDto;
 
   const QuestionBankDto._();
@@ -62,6 +70,8 @@ abstract class QuestionBankDto with _$QuestionBankDto {
     correctQuestions: correctQuestions,
     questions: (questions.map((q) => q.toDomain()).toList()
       ..sort((a, b) => a.order.compareTo(b.order))),
+    requestedQuestions: requestedQuestions,
+    createdQuestions: createdQuestions,
   );
 }
 
@@ -72,6 +82,7 @@ abstract class AnswerResultDto with _$AnswerResultDto {
     @Default(false) bool correct,
     String? correctAnswer,
     String? explanation,
+    @Default(<String>[]) List<String> correctAnswers,
   }) = _AnswerResultDto;
 
   const AnswerResultDto._();
@@ -84,6 +95,7 @@ abstract class AnswerResultDto with _$AnswerResultDto {
     correct: correct,
     correctAnswer: correctAnswer,
     explanation: explanation,
+    correctAnswers: _answersOr(correctAnswers, correctAnswer),
   );
 }
 
@@ -176,6 +188,7 @@ abstract class SessionQuestionDto with _$SessionQuestionDto {
     bool? correct,
     String? correctAnswer,
     String? explanation,
+    @Default(<String>[]) List<String> correctAnswers,
   }) = _SessionQuestionDto;
 
   const SessionQuestionDto._();
@@ -193,6 +206,7 @@ abstract class SessionQuestionDto with _$SessionQuestionDto {
     correct: correct,
     correctAnswer: correctAnswer,
     explanation: explanation,
+    correctAnswers: _answersOr(correctAnswers, correctAnswer),
   );
 }
 

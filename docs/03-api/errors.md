@@ -38,7 +38,7 @@ flowchart LR
 | `BAD_REQUEST` | 4xx | Backend | Otra petición inválida del framework | `AppError.validation()` | `errorValidation` | Revisa los datos marcados. |
 | `NETWORK_UNAVAILABLE` | — | Cliente | Sin respuesta del servidor (sin conexión, timeout) | `AppError.network()` | `errorNetwork` | No hay conexión. Comprueba tu red e inténtalo de nuevo. |
 | `UNKNOWN` | — | Cliente | `code` no reconocido o error no clasificado | `AppError.unknown()` | `errorUnknown` | Ha ocurrido un error inesperado. |
-| `AI_UNAVAILABLE` | 503 | Backend | El proveedor de IA ha fallado o su respuesta no es válida | `AppError.business` | `errorAiUnavailable` | El asistente de IA no está disponible ahora mismo. Inténtalo más tarde. |
+| `AI_UNAVAILABLE` | 503 | Backend | El proveedor de IA ha fallado o su respuesta no es válida (en «Crear preguntas», cuando no se consiguió ninguna tanda tras reintentarla, ADR 0058) | `AppError.business` | `errorAiUnavailable` | El asistente de IA no está disponible ahora mismo. Inténtalo más tarde. |
 | `AI_QUOTA_EXCEEDED` | 429 | Backend | Cuota del proveedor de IA agotada | `AppError.business` | `errorAiQuotaExceeded` | Se ha alcanzado el límite de uso de la IA. Inténtalo dentro de un rato. |
 | `AI_ATTACHMENT_UNSUPPORTED` | 422 | Backend | La IA (DeepSeek, solo texto) no puede leer el adjunto: imagen o PDF escaneado sin texto | `AppError.business` | `errorAiAttachmentUnsupported` | La IA solo puede leer PDF con texto. Las imágenes y los PDF escaneados no se pueden analizar. |
 | `STORAGE_UNAVAILABLE` | 503 | Backend | El almacenamiento de archivos no responde o no está configurado (sin endpoint o credenciales de R2) | `AppError.business` | `errorStorageUnavailable` | No se ha podido acceder a los archivos. Inténtalo de nuevo. |

@@ -2,7 +2,9 @@ package com.synaptixfit.infrastructure.adapter.output.external.ai.academic;
 
 import com.synaptixfit.domain.exception.AiUnavailableException;
 import com.synaptixfit.domain.exception.DomainException;
+import com.synaptixfit.domain.model.academic.DocumentQuestion;
 import com.synaptixfit.domain.model.academic.MindMap;
+import com.synaptixfit.domain.model.academic.QuestionBatch;
 import com.synaptixfit.domain.model.academic.QuestionDraft;
 import com.synaptixfit.domain.model.academic.QuestionType;
 import com.synaptixfit.domain.model.academic.TeachingGuide;
@@ -228,6 +230,67 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
         List<QuestionDraft> questions = new ArrayList<>();
         for (JsonNode q : json.path("preguntas")) {
             QuestionDraft draft = toDraft(q);
+            // Este camino (asistente y «Crear material») llega a apps anteriores: sin «Varias correctas».
+            if (draft != null && draft.type() != QuestionType.MULTIPLE_ANSWER) {
+                questions.add(draft);
+            }
+        }
+        if (questions.isEmpty()) {
+            throw new AiUnavailableException("AI returned no valid questions");
+        }
+        return new PracticeQuestions(json.path("titulo_personalizado").asString(""), questions);
+    }
+
+    @Override
+    public PracticeQuestions practiceQuestions(List<Source> sources, QuestionBatch batch, List<String> avoid) {
+        StringBuilder kinds = new StringBuilder();
+        if (batch.singleChoice() > 0) {
+            kinds.append("- ").append(batch.singleChoice()).append(" de tipo \"opcion_multiple\": 4 opciones y UNA ")
+                    .append("sola correcta; \"respuestas_correctas\" lleva el texto EXACTO de esa opción.\n");
+        }
+        if (batch.multipleAnswer() > 0) {
+            kinds.append("- ").append(batch.multipleAnswer()).append(" de tipo \"varias_correctas\": 4 o 5 opciones ")
+                    .append("y entre 2 y 3 correctas; \"respuestas_correctas\" lleva el texto EXACTO de cada opción ")
+                    .append("correcta. El enunciado no dice cuántas son.\n");
+        }
+        if (batch.fillInBlank() > 0) {
+            kinds.append("- ").append(batch.fillInBlank()).append(" de tipo \"rellenar_hueco\": una frase con un ")
+                    .append("hueco ____ y la palabra que falta (1 a 3 palabras) en \"respuestas_correctas\".\n");
+        }
+        if (batch.flashcards() > 0) {
+            kinds.append("- ").append(batch.flashcards()).append(" de tipo \"tarjeta\": pregunta directa ")
+                    .append("(«¿Qué es…?», «¿Cómo se llama…?») con respuesta de 1 a 4 palabras.\n");
+        }
+        String prompt = SYSTEM + """
+
+                TAREA: Crea preguntas de práctica a partir de todas las fuentes.
+
+                ESQUEMA JSON EXACTO (responde SOLO este JSON):
+                {
+                  "titulo_personalizado": "%s",
+                  "preguntas": [
+                    {
+                      "tipo": "opcion_multiple | varias_correctas | rellenar_hueco | tarjeta",
+                      "enunciado": "¿Qué establece...?",
+                      "opciones": ["Opción 1", "Opción 2", "Opción 3", "Opción 4"],
+                      "respuestas_correctas": ["Opción 1"],
+                      "explicacion": "Porque..."
+                    }
+                  ]
+                }
+
+                REGLAS:
+                - Exactamente %d preguntas:
+                %s- Sin opciones ("opciones": []) en rellenar_hueco y tarjeta.
+                - Cubre todo el contenido de las fuentes, no solo el principio.
+                - Opciones verosímiles. Enunciados claros. Explicaciones de 1-2 frases.
+                - %s Solo conceptos de las fuentes.
+                - Ordena de más sencilla a más difícil.
+                """.formatted(TITLE_RULE, batch.total(), kinds, AiLanguage.rule()) + avoidRule(avoid);
+        JsonNode json = call(prompt, sources);
+        List<QuestionDraft> questions = new ArrayList<>();
+        for (JsonNode q : json.path("preguntas")) {
+            QuestionDraft draft = toDraft(q);
             if (draft != null) {
                 questions.add(draft);
             }
@@ -236,6 +299,75 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
             throw new AiUnavailableException("AI returned no valid questions");
         }
         return new PracticeQuestions(json.path("titulo_personalizado").asString(""), questions);
+    }
+
+    /*
+     * Preguntas que ya trae el documento (ADR 0058). Se pide una tanda por posición («de la 11 a la 20») y el
+     * total, para no superar el tope de tokens de salida con un examen largo. El texto se copia tal cual: no
+     * se traduce ni se reescribe, porque la persona tiene que reconocer sus preguntas.
+     */
+    @Override
+    public DocumentQuestionPage documentQuestions(Source source, int from, int limit) {
+        String prompt = SYSTEM + """
+
+                TAREA: Busca en el documento las preguntas que YA están escritas en él (ejercicios, autoevaluación,
+                preguntas de examen o test). NO inventes preguntas ni conviertas el temario en preguntas: si el
+                documento no trae preguntas, "total_preguntas": 0 y "preguntas": [].
+
+                Numera las preguntas en el orden en que aparecen (la primera es la 1). Devuelve en
+                "total_preguntas" cuántas hay en todo el documento y en "preguntas" SOLO de la %d a la %d.
+
+                ESQUEMA JSON EXACTO (responde SOLO este JSON):
+                {
+                  "total_preguntas": 12,
+                  "preguntas": [
+                    {
+                      "numero": 1,
+                      "tipo": "opcion_multiple | varias_correctas | rellenar_hueco | respuesta_corta | respuesta_larga",
+                      "enunciado": "texto tal cual",
+                      "opciones": ["texto de la opción tal cual"],
+                      "respuestas_correctas": ["texto exacto de la opción correcta"],
+                      "respuesta_en_documento": true,
+                      "explicacion": null
+                    }
+                  ]
+                }
+
+                REGLAS:
+                - Copia enunciados y opciones tal cual, sin traducirlos y sin la letra de delante («a)», «B.»).
+                - "opcion_multiple": opciones y una correcta. "varias_correctas": opciones y se pide marcar varias.
+                  "rellenar_hueco": una frase con un hueco. "respuesta_corta": sin opciones, se responde con 1 a 4
+                  palabras. "respuesta_larga": pide explicar, desarrollar, razonar, demostrar o resolver con pasos.
+                - Si el documento da la respuesta (solucionario, clave, «Respuesta:»), ponla en
+                  "respuestas_correctas" (el texto exacto de la opción) y "respuesta_en_documento": true.
+                - Si no la da y no es de respuesta larga, propón la correcta según el propio documento y pon
+                  "respuesta_en_documento": false. Si no puedes deducirla con seguridad, deja [].
+                - En "respuesta_larga", "respuestas_correctas": [].
+                """.formatted(from + 1, from + limit);
+        JsonNode json = callOne(prompt, source);
+        List<DocumentQuestion> questions = new ArrayList<>();
+        for (JsonNode q : json.path("preguntas")) {
+            if (questions.size() >= limit) {
+                break;
+            }
+            String statement = q.path("enunciado").asString("");
+            if (statement.isBlank()) {
+                continue;
+            }
+            QuestionType type = switch (q.path("tipo").asString("")) {
+                case "varias_correctas" -> QuestionType.MULTIPLE_ANSWER;
+                case "rellenar_hueco", "respuesta_corta" -> QuestionType.FILL_IN_BLANK;
+                case "respuesta_larga" -> null;
+                default -> QuestionType.MULTIPLE_CHOICE;
+            };
+            List<String> options = texts(q.path("opciones"));
+            List<String> answers = letterAnswers(texts(q.path("respuestas_correctas")), options);
+            String explanation = q.path("explicacion").asString("");
+            questions.add(DocumentQuestion.of(type, statement, type == null ? List.of() : options, answers,
+                    q.path("respuesta_en_documento").asBoolean(false), explanation));
+        }
+        int total = Math.max(json.path("total_preguntas").asInt(0), from + questions.size());
+        return new DocumentQuestionPage(total, questions);
     }
 
     @Override
@@ -286,25 +418,78 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
         }
     }
 
-    /** Convierte una pregunta del modelo; las inválidas se descartan. */
-    private static QuestionDraft toDraft(JsonNode q) {
-        QuestionType type = "rellenar_hueco".equals(q.path("tipo").asString("")) ? QuestionType.FILL_IN_BLANK
-                : QuestionType.MULTIPLE_CHOICE;
-        List<String> options = new ArrayList<>();
-        for (JsonNode o : q.path("opciones")) {
-            options.add(o.asString(""));
+    /** Un solo documento, tal cual (sin la instrucción de sintetizar varias fuentes). */
+    private JsonNode callOne(String prompt, Source source) {
+        StringBuilder full = new StringBuilder(prompt).append("\n[DOCUMENTO: \"").append(source.title()).append("\"]\n");
+        if (!source.isBinary()) {
+            full.append(source.text() == null ? "" : source.text()).append('\n');
         }
-        String answer = q.path("respuesta_correcta").asString("");
-        // Algunos modelos responden con la letra de la opción («B») en lugar de su texto.
-        if (type == QuestionType.MULTIPLE_CHOICE && answer.strip().length() == 1 && !options.contains(answer)) {
-            int index = Character.toUpperCase(answer.strip().charAt(0)) - 'A';
-            if (index >= 0 && index < options.size()) {
-                answer = options.get(index);
+        return parse(ai.generateJson(full.toString(), attachments(List.of(source)), TEMPERATURE));
+    }
+
+    /** Enunciados que no se deben repetir; se recortan para no inflar el prompt. */
+    static String avoidRule(List<String> avoid) {
+        if (avoid == null || avoid.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder("\nNO repitas ni reformules estas preguntas, que ya existen:\n");
+        avoid.stream().skip(Math.max(0, avoid.size() - MAX_AVOID)).forEach(a -> sb.append("- ")
+                .append(a.length() > 200 ? a.substring(0, 200) : a).append('\n'));
+        return sb.toString();
+    }
+
+    /** Máximo de enunciados a evitar en el prompt (los últimos): bastan para no repetir y caben de sobra. */
+    static final int MAX_AVOID = 80;
+
+    private static List<String> texts(JsonNode array) {
+        List<String> out = new ArrayList<>();
+        for (JsonNode n : array) {
+            String t = n.asString("");
+            if (!t.isBlank()) {
+                out.add(t.strip());
             }
+        }
+        return out;
+    }
+
+    /** Algunos modelos responden con la letra de la opción («B») en lugar de su texto. */
+    private static List<String> letterAnswers(List<String> answers, List<String> options) {
+        return answers.stream().map(a -> {
+            if (a.length() == 1 && !options.contains(a)) {
+                int index = Character.toUpperCase(a.charAt(0)) - 'A';
+                if (index >= 0 && index < options.size()) {
+                    return options.get(index);
+                }
+            }
+            return a;
+        }).toList();
+    }
+
+    /**
+     * Convierte una pregunta del modelo; las inválidas se descartan. Acepta «respuesta_correcta» (un texto,
+     * prompt antiguo) o «respuestas_correctas» (lista); «tarjeta» se guarda como respuesta corta.
+     */
+    private static QuestionDraft toDraft(JsonNode q) {
+        QuestionType type = switch (q.path("tipo").asString("")) {
+            case "rellenar_hueco", "tarjeta" -> QuestionType.FILL_IN_BLANK;
+            case "varias_correctas" -> QuestionType.MULTIPLE_ANSWER;
+            default -> QuestionType.MULTIPLE_CHOICE;
+        };
+        List<String> options = texts(q.path("opciones"));
+        List<String> answers = new ArrayList<>(texts(q.path("respuestas_correctas")));
+        String single = q.path("respuesta_correcta").asString("");
+        if (answers.isEmpty() && !single.isBlank()) {
+            answers.add(single.strip());
+        }
+        if (type != QuestionType.FILL_IN_BLANK) {
+            answers = letterAnswers(answers, options);
         }
         String explanation = q.path("explicacion").asString("");
         try {
-            return new QuestionDraft(type, q.path("enunciado").asString(""), options, answer, explanation);
+            return type == QuestionType.MULTIPLE_ANSWER
+                    ? QuestionDraft.multipleAnswer(q.path("enunciado").asString(""), options, answers, explanation)
+                    : new QuestionDraft(type, q.path("enunciado").asString(""), options,
+                    answers.isEmpty() ? "" : answers.getFirst(), explanation);
         } catch (DomainException e) {
             return null;
         }

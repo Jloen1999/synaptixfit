@@ -50,6 +50,12 @@ public class QuestionBankPersistenceAdapter implements QuestionBankRepositoryPor
     }
 
     @Override
+    public void addQuestions(UUID bankId, List<Question> list) {
+        questions.saveAll(list.stream().map(AcademicPersistenceMapper::toEntity).toList());
+        questions.flush();
+    }
+
+    @Override
     public List<Question> findQuestions(UUID bankId) {
         return questions.findByBankIdOrderByPositionAsc(bankId).stream().map(AcademicPersistenceMapper::toDomain)
                 .toList();

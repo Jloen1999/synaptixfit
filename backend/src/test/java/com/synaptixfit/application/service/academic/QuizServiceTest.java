@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.synaptixfit.application.port.input.academic.AnswerTestQuestionUseCase;
+import com.synaptixfit.application.port.input.academic.GenerateQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.StartTestSessionUseCase;
 import com.synaptixfit.domain.exception.academic.QuestionBankNotFoundException;
 import com.synaptixfit.domain.exception.academic.QuestionNotFoundException;
@@ -164,18 +165,23 @@ class QuizServiceTest {
 
     @Test
     void generateBankReplacesQuestionsAndMarksPracticeDocument() {
-        when(assistant.practiceQuestions(org.mockito.ArgumentMatchers.anyList()))
+        when(assistant.practiceQuestions(org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn(new StudyAssistantPort.PracticeQuestions("Edad Media", List.of(
                         new QuestionDraft(QuestionType.MULTIPLE_CHOICE, "¿Capital?", List.of("Toledo", "Roma"),
                                 "Toledo", "Era la capital"))));
 
-        QuestionBankView view = service.generateBank(user, material.id());
+        QuestionCreationService creation = new QuestionCreationService(f.banks, f.materials, f.subjects, f.notes,
+                f.files, f.aiDocuments, f.codec, assistant, f.storage, service, service, AcademicFakes.CLOCK);
+        QuestionBankView view = creation.generateBank(
+                GenerateQuestionBankUseCase.Command.legacy(user, material.id())).view();
 
         assertThat(view.bank().id()).isEqualTo(bank.id());
         assertThat(view.questions()).singleElement().satisfies(q -> assertThat(q.options()).hasSize(2));
         assertThat(f.docStore.values()).singleElement()
                 .satisfies(d -> assertThat(d.type()).isEqualTo(AiDocumentType.PRACTICE));
-        assertThatThrownBy(() -> service.generateBank(stranger, material.id()))
+        assertThatThrownBy(() -> creation.generateBank(GenerateQuestionBankUseCase.Command.legacy(stranger,
+                material.id())))
                 .hasFieldOrPropertyWithValue("code", "STUDY_MATERIAL_NOT_FOUND");
     }
 }

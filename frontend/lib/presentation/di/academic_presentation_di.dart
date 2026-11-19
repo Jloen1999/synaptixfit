@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../screens/academic/academic_home/bloc/academic_home_bloc.dart';
 import '../screens/academic/academic_search/bloc/academic_search_bloc.dart';
 import '../screens/academic/ai_document/bloc/ai_document_bloc.dart';
+import '../screens/academic/create_questions/bloc/create_questions_bloc.dart';
 import '../screens/academic/file_viewer/bloc/file_viewer_bloc.dart';
 import '../screens/academic/flashcards/bloc/flashcards_bloc.dart';
 import '../screens/academic/free_practice/bloc/free_practice_bloc.dart';
@@ -146,10 +147,19 @@ void registerAcademicPresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(
+      () => CreateQuestionsBloc(
+        getNotes: getIt(),
+        getFiles: getIt(),
+        registerMaterial: getIt(),
+        getBank: getIt(),
+        scan: getIt(),
+        generate: getIt(),
+      ),
+    )
+    ..registerFactory(
       () => PracticeHubBloc(
         getMaterial: getIt(),
         getBank: getIt(),
-        generateBank: getIt(),
         getActiveSession: getIt(),
         getSessions: getIt(),
       ),

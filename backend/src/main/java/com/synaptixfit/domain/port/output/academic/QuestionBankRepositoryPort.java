@@ -19,6 +19,9 @@ public interface QuestionBankRepositoryPort {
     /** Sustituye todas las preguntas del banco. */
     void replaceQuestions(UUID bankId, List<Question> questions);
 
+    /** Añade preguntas al banco sin tocar las que tiene (ni su historial). */
+    void addQuestions(UUID bankId, List<Question> questions);
+
     /** Preguntas del banco por orden. */
     List<Question> findQuestions(UUID bankId);
 

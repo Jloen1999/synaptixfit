@@ -11,6 +11,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../academic_routes.dart';
+import '../../create_questions/page/create_questions_sheet.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
 import '../bloc/subject_detail_bloc.dart';
@@ -36,6 +37,25 @@ class SummaryTab extends StatelessWidget {
     final progress = context.read<SubjectProgressBloc>();
     final detail = context.read<SubjectDetailBloc>();
     await context.push<Object?>(location);
+    progress.add(const SubjectProgressEvent.refreshed());
+    detail.add(const SubjectDetailEvent.refreshed());
+  }
+
+  /// Hoja «Crear preguntas» (ADR 0058): primero se elige el apunte si hay
+  /// varios. Al guardar, aviso con «Practicar» y se recarga la asignatura.
+  static Future<void> _createQuestions(
+    BuildContext context,
+    String subjectId,
+  ) async {
+    final progress = context.read<SubjectProgressBloc>();
+    final detail = context.read<SubjectDetailBloc>();
+    final bank = await showCreateQuestionsSheet(context, subjectId: subjectId);
+    if (bank == null || !context.mounted) return;
+    showQuestionsSavedSnack(
+      context,
+      bank,
+      onPractice: () => context.push(AcademicPaths.practice(bank.materialId)),
+    );
     progress.add(const SubjectProgressEvent.refreshed());
     detail.add(const SubjectDetailEvent.refreshed());
   }
@@ -68,10 +88,7 @@ class SummaryTab extends StatelessWidget {
         const SizedBox(height: TokensSpacing.m),
         _PracticeCard(
           key: practiceKey,
-          onCreateQuestions: () => _open(
-            context,
-            AcademicPaths.generate(subjectId: state.subjectId),
-          ),
+          onCreateQuestions: () => _createQuestions(context, state.subjectId),
           onMockExam: () =>
               _open(context, AcademicPaths.subjectMockExam(state.subjectId)),
         ),
@@ -327,8 +344,8 @@ class _ReviewsCard extends StatelessWidget {
   }
 }
 
-/// «Practicar»: crear preguntas (por ahora, el flujo de «Crear material») y
-/// el simulacro de la asignatura.
+/// «Practicar»: crear preguntas (hoja «Crear preguntas») y el simulacro de
+/// la asignatura.
 class _PracticeCard extends StatelessWidget {
   const _PracticeCard({
     super.key,

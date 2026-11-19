@@ -1,9 +1,14 @@
 import 'package:dio/dio.dart';
 
+import '../../../domain/enums/question_type.dart';
 import '../api/api_client.dart';
+import 'dto/question_creation_dtos.dart';
 import 'dto/quiz_dtos.dart';
 
-/// Endpoints de bancos de preguntas, práctica, flashcards y sesiones de test.
+/// Endpoints de bancos de preguntas, «Crear preguntas», práctica, tarjetas y
+/// sesiones de test. Cada llamada declara en `X-Question-Types` los tipos de
+/// pregunta que sabe pintar esta app (ADR 0058): sin la cabecera, el servidor
+/// no manda «Varias correctas» (apps anteriores).
 class QuizRemoteDataSource {
   QuizRemoteDataSource(ApiClient client) : _dio = client.dio;
 
@@ -11,24 +16,60 @@ class QuizRemoteDataSource {
 
   static const _sessions = '/api/v1/test-sessions';
 
+  /// Crear o leer preguntas va por tandas en el servidor (hasta 4, cada una
+  /// con un reintento y 2 min de tope): se espera el peor caso para no dar
+  /// por fallado algo que el servidor acaba guardando (ADR 0058).
+  static const _aiTimeout = Duration(minutes: 16);
+
+  static final Options _types = Options(
+    headers: {
+      'X-Question-Types': [
+        for (final t in QuestionType.values) t.apiValue,
+      ].join(','),
+    },
+  );
+
+  /// `answers` (lista) si se eligieron varias; si no, `answer`.
+  static Map<String, dynamic> _answerBody(String answer) {
+    final parts = QuestionAnswers.split(answer);
+    return parts.length > 1 ? {'answers': parts} : {'answer': answer};
+  }
+
   Future<QuestionBankDto> getBank(String materialId) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/api/v1/study-materials/$materialId/question-bank',
+      options: _types,
     );
     return QuestionBankDto.fromJson(response.data!);
   }
 
-  Future<QuestionBankDto> generateBank(String materialId) async {
+  Future<QuestionBankDto> generateBank(
+    String materialId,
+    Map<String, dynamic> body,
+  ) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/study-materials/$materialId/question-bank',
+      data: body,
+      options: _types.copyWith(receiveTimeout: _aiTimeout),
     );
     return QuestionBankDto.fromJson(response.data!);
+  }
+
+  Future<DocumentQuestionScanDto> scanDocumentQuestions(
+    String materialId,
+  ) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/study-materials/$materialId/document-questions',
+      options: _types.copyWith(receiveTimeout: _aiTimeout),
+    );
+    return DocumentQuestionScanDto.fromJson(response.data!);
   }
 
   Future<AnswerResultDto> answer(String questionId, String answer) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/questions/$questionId/attempts',
-      data: {'answer': answer},
+      data: _answerBody(answer),
+      options: _types,
     );
     return AnswerResultDto.fromJson(response.data!);
   }
@@ -39,7 +80,18 @@ class QuizRemoteDataSource {
   ) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/question-banks/$bankId/practice-completions',
-      data: {'answers': answers},
+      data: {
+        'answers': {
+          for (final e in answers.entries)
+            if (QuestionAnswers.split(e.value).length <= 1) e.key: e.value,
+        },
+        'selections': {
+          for (final e in answers.entries)
+            if (QuestionAnswers.split(e.value).length > 1)
+              e.key: QuestionAnswers.split(e.value),
+        },
+      },
+      options: _types,
     );
     return PracticeResultDto.fromJson(response.data!);
   }
@@ -71,6 +123,7 @@ class QuizRemoteDataSource {
     final response = await _dio.post<Map<String, dynamic>>(
       _sessions,
       data: {'materialIds': materialIds, 'questionCount': ?questionCount},
+      options: _types,
     );
     return TestSessionDto.fromJson(response.data!);
   }
@@ -80,6 +133,7 @@ class QuizRemoteDataSource {
     final response = await _dio.get<Map<String, dynamic>>(
       '$_sessions/active',
       queryParameters: {'materialId': materialId},
+      options: _types,
     );
     final data = response.data;
     return response.statusCode == 204 || data == null
@@ -90,6 +144,7 @@ class QuizRemoteDataSource {
   Future<TestSessionDto> getSession(String sessionId) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '$_sessions/$sessionId',
+      options: _types,
     );
     return TestSessionDto.fromJson(response.data!);
   }
@@ -115,9 +170,10 @@ class QuizRemoteDataSource {
       '$_sessions/$sessionId/answers',
       data: {
         'questionId': questionId,
-        'answer': answer,
+        ..._answerBody(answer),
         'nextIndex': ?nextIndex,
       },
+      options: _types,
     );
     return SessionAnswerDto.fromJson(response.data!);
   }
@@ -125,6 +181,7 @@ class QuizRemoteDataSource {
   Future<TestSessionDto> complete(String sessionId) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '$_sessions/$sessionId/complete',
+      options: _types,
     );
     return TestSessionDto.fromJson(response.data!);
   }

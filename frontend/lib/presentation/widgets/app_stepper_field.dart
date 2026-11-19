@@ -18,6 +18,10 @@ class AppStepperField extends StatefulWidget {
     required this.onChanged,
     this.step = 1,
     this.display,
+    this.hint,
+    this.decreaseLabel,
+    this.increaseLabel,
+    this.spokenValueOf,
   });
 
   final String label;
@@ -29,6 +33,17 @@ class AppStepperField extends StatefulWidget {
 
   /// Cómo se muestra el valor (p. ej. «25 min»); por defecto, el número.
   final String Function(int value)? display;
+
+  /// Línea corta bajo la etiqueta (p. ej. «De 5 a 30»).
+  final String? hint;
+
+  /// Nombres de − y + si «Reducir/Aumentar» + etiqueta no se entienden (una
+  /// etiqueta en pregunta: «¿Cuántas?» → «5 menos», «5 más»).
+  final String? decreaseLabel;
+  final String? increaseLabel;
+
+  /// Lo que dice el lector del valor («10 preguntas»); por defecto, lo que se ve.
+  final String Function(int value)? spokenValueOf;
 
   @override
   State<AppStepperField> createState() => _AppStepperFieldState();
@@ -92,10 +107,26 @@ class _AppStepperFieldState extends State<AppStepperField> {
       padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xxs),
       child: Row(
         children: [
-          Expanded(child: Text(w.label, style: context.textStyles.bodyLarge)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(w.label, style: context.textStyles.bodyLarge),
+                if (w.hint case final hint?)
+                  Text(
+                    hint,
+                    style: context.textStyles.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
           IconButton.outlined(
             focusNode: _decrease,
-            tooltip: l10n.commonDecrease(AppStepperField.inSentence(w.label)),
+            tooltip:
+                w.decreaseLabel ??
+                l10n.commonDecrease(AppStepperField.inSentence(w.label)),
             onPressed: _canDecrease ? () => w.onChanged(_stepped(-1)) : null,
             icon: const Icon(AppIcons.decrease),
           ),
@@ -104,7 +135,7 @@ class _AppStepperFieldState extends State<AppStepperField> {
             child: Semantics(
               liveRegion: true,
               label: w.label,
-              value: text,
+              value: w.spokenValueOf?.call(w.value) ?? text,
               excludeSemantics: true,
               child: Text(
                 text,
@@ -115,7 +146,9 @@ class _AppStepperFieldState extends State<AppStepperField> {
           ),
           IconButton.outlined(
             focusNode: _increase,
-            tooltip: l10n.commonIncrease(AppStepperField.inSentence(w.label)),
+            tooltip:
+                w.increaseLabel ??
+                l10n.commonIncrease(AppStepperField.inSentence(w.label)),
             onPressed: _canIncrease ? () => w.onChanged(_stepped(1)) : null,
             icon: const Icon(AppIcons.increase),
           ),

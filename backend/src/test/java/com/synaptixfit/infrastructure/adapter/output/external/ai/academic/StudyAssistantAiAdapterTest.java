@@ -91,6 +91,48 @@ class StudyAssistantAiAdapterTest {
     }
 
     @Test
+    void batchPromptAsksForEachFormatAndParsesMultipleAnswersAndCards() {
+        nextResponse = """
+                {"titulo_personalizado":"SQL","preguntas":[
+                  {"tipo":"varias_correctas","enunciado":"¿Cuáles agregan?","opciones":["SUM","JOIN","AVG"],
+                   "respuestas_correctas":["SUM","C"]},
+                  {"tipo":"tarjeta","enunciado":"¿Qué cláusula agrupa?","opciones":[],
+                   "respuestas_correctas":["GROUP BY"]}
+                ]}""";
+        StudyAssistantPort.PracticeQuestions p = adapter.practiceQuestions(
+                List.of(StudyAssistantPort.Source.text("a", "b")),
+                new com.synaptixfit.domain.model.academic.QuestionBatch(0, 1, 0, 1), List.of("¿Qué es SQL?"));
+
+        assertThat(prompts.getFirst()).contains("Exactamente 2 preguntas").contains("\"varias_correctas\"")
+                .contains("\"tarjeta\"").doesNotContain("de tipo \"rellenar_hueco\"").contains("- ¿Qué es SQL?");
+        assertThat(p.questions().getFirst().correctAnswers()).containsExactly("SUM", "AVG");
+        assertThat(p.questions().get(1).type()).isEqualTo(QuestionType.FILL_IN_BLANK);
+    }
+
+    @Test
+    void documentQuestionsAreCopiedWithTheirStatus() {
+        nextResponse = """
+                {"total_preguntas":14,"preguntas":[
+                  {"numero":11,"tipo":"opcion_multiple","enunciado":"¿Qué filtra grupos?",
+                   "opciones":["WHERE","HAVING"],"respuestas_correctas":["B"],"respuesta_en_documento":true},
+                  {"numero":12,"tipo":"respuesta_corta","enunciado":"Una clave ____ identifica la fila",
+                   "respuestas_correctas":["primaria"],"respuesta_en_documento":false},
+                  {"numero":13,"tipo":"respuesta_larga","enunciado":"Explica DELETE y TRUNCATE"},
+                  {"numero":14,"tipo":"opcion_multiple","enunciado":"","opciones":["A","B"]}
+                ]}""";
+        StudyAssistantPort.DocumentQuestionPage page = adapter.documentQuestions(
+                StudyAssistantPort.Source.text("Examen", "1. ¿...?"), 10, 10);
+
+        assertThat(prompts.getFirst()).contains("SOLO de la 11 a la 20").contains("Examen").contains("1. ¿...?");
+        assertThat(page.total()).isEqualTo(14);
+        assertThat(page.questions()).extracting(com.synaptixfit.domain.model.academic.DocumentQuestion::status)
+                .containsExactly(com.synaptixfit.domain.model.academic.DocumentQuestion.Status.READY,
+                        com.synaptixfit.domain.model.academic.DocumentQuestion.Status.ANSWER_PROPOSED,
+                        com.synaptixfit.domain.model.academic.DocumentQuestion.Status.LONG_ANSWER);
+        assertThat(page.questions().getFirst().answers()).containsExactly("HAVING");
+    }
+
+    @Test
     void teachingGuideUsesLegacySchemaAndPercentStrings() {
         nextResponse = """
                 {"profesores":[{"nombre":"Ana","email":"ana@u.es","despacho":"D-1"}],

@@ -198,11 +198,17 @@ extension AcademicLabels on BuildContext {
     };
   }
 
-  String questionTypeLabel(QuestionType type) {
+  /// Nombre del tipo de pregunta. Con [statement], las de respuesta corta
+  /// que llevan un hueco («____») se llaman «Completar la frase».
+  String questionTypeLabel(QuestionType type, {String? statement}) {
     final l10n = localizations;
     return switch (type) {
       QuestionType.multipleChoice => l10n.academicQuestionMultipleChoice,
-      QuestionType.fillInBlank => l10n.academicQuestionFillInBlank,
+      QuestionType.multipleAnswer => l10n.academicQuestionMultipleAnswer,
+      QuestionType.fillInBlank =>
+        statement != null && statement.contains('__')
+            ? l10n.academicQuestionCompleteSentence
+            : l10n.academicQuestionFillInBlank,
     };
   }
 

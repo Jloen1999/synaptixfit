@@ -91,6 +91,12 @@ Al fijar la fecha del siguiente repaso, SM-2 propone `hoy + intervalo`. Antes de
 - La vista previa del repaso enseña ya la fecha repartida (la misma que dará el repaso de verdad).
 - Origen: el «load balancer» de Anki (2024) y el *fuzz* de SuperMemo; ±2 días en intervalos de 14 o más es como mucho un 14 % del intervalo, por debajo del margen con el que SM-2 ya redondea (`ceil(intervalo × EF)`).
 
+## «Varias correctas»: todo o nada (ADR 0058, `Question.isCorrect`)
+
+- Una pregunta de varias correctas cuenta como acierto **solo** si el conjunto marcado es exactamente el de las correctas: todas las correctas y ninguna incorrecta. Marcar de más o de menos es fallo; no hay puntos parciales.
+- Las opciones se comparan como las demás respuestas (sin mayúsculas, tildes, espacios repetidos ni puntuación final) y el orden en que se marcan no importa.
+- Por qué: con puntos parciales marcarlo todo saldría a cuenta, y el SM-2 y el simulacro esperan un acierto o un fallo por pregunta (decisión del propietario, maqueta de la fase 4B).
+
 ## Progreso justo (ADR 0019)
 
 | Qué | Regla |

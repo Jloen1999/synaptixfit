@@ -94,11 +94,19 @@ public final class AcademicDbCodes {
     }
 
     public static String questionType(QuestionType t) {
-        return t == QuestionType.FILL_IN_BLANK ? "rellenar_hueco" : "opcion_multiple";
+        return switch (t) {
+            case FILL_IN_BLANK -> "rellenar_hueco";
+            case MULTIPLE_ANSWER -> "varias_correctas";
+            case MULTIPLE_CHOICE -> "opcion_multiple";
+        };
     }
 
     public static QuestionType questionType(String v) {
-        return "rellenar_hueco".equals(v) ? QuestionType.FILL_IN_BLANK : QuestionType.MULTIPLE_CHOICE;
+        return switch (v == null ? "" : v) {
+            case "rellenar_hueco" -> QuestionType.FILL_IN_BLANK;
+            case "varias_correctas" -> QuestionType.MULTIPLE_ANSWER;
+            default -> QuestionType.MULTIPLE_CHOICE;
+        };
     }
 
     public static String sessionStatus(TestSessionStatus s) {

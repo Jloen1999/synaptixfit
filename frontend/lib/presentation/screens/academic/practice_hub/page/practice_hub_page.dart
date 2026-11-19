@@ -6,10 +6,10 @@ import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/test_session_status.dart';
 import '../../../../../domain/models/academic/quiz.dart';
 import '../../../../extensions/context_extensions.dart';
-import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../academic_routes.dart';
+import '../../create_questions/page/create_questions_sheet.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
 import '../bloc/practice_hub_bloc.dart';
@@ -28,7 +28,7 @@ class PracticeHubPage extends StatelessWidget {
   );
 }
 
-class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
+class _PracticeHubView extends StatelessWidget {
   const _PracticeHubView();
 
   Future<void> _open(BuildContext context, String location) async {
@@ -37,28 +37,27 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
     bloc.add(const PracticeHubEvent.refreshed());
   }
 
-  /// Generar preguntas nuevas sustituye las de ahora y, con ellas, las
-  /// estadísticas por pregunta: se avisa antes de hacerlo.
-  Future<void> _regenerate(BuildContext context) async {
-    final l10n = context.localizations;
+  /// Hoja «Crear preguntas» (ADR 0058): añadir o cambiar las que hay se elige
+  /// en ella. Al guardar, aviso y se recarga el banco.
+  static Future<void> createQuestions(
+    BuildContext context,
+    PracticeHubState state,
+  ) async {
     final bloc = context.read<PracticeHubBloc>();
-    final ok = await confirmDestructive(
+    final bank = await showCreateQuestionsSheet(
       context,
-      title: l10n.academicPracticeRegenerateTitle,
-      message: l10n.academicPracticeRegenerateMessage,
-      confirmLabel: l10n.academicPracticeRegenerateConfirm,
+      materialId: state.materialId,
+      title: state.material?.title,
     );
-    if (ok) bloc.add(const PracticeHubEvent.bankRequested());
+    if (bank == null || !context.mounted) return;
+    showQuestionsSavedSnack(context, bank);
+    bloc.add(const PracticeHubEvent.refreshed());
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return BlocConsumer<PracticeHubBloc, PracticeHubState>(
-      listenWhen: (a, b) =>
-          a.actionError != b.actionError && b.actionError != null,
-      listener: (context, state) =>
-          context.showSnack(errorMessage(context, state.actionError!)),
+    return BlocBuilder<PracticeHubBloc, PracticeHubState>(
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar(
@@ -78,7 +77,7 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
               ),
             ),
             PracticeHubState(bank: null) => _NoBank(
-              generating: state.generating,
+              onCreate: () => createQuestions(context, state),
             ),
             _ => RefreshIndicator(
               onRefresh: () async => context.read<PracticeHubBloc>().add(
@@ -136,18 +135,9 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: TextButton.icon(
-                        onPressed: state.generating
-                            ? null
-                            : () => _regenerate(context),
-                        icon: state.generating
-                            ? const SizedBox.square(
-                                dimension: TokensSize.iconXs,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(AppIcons.refresh),
-                        label: Text(l10n.academicPracticeRegenerate),
+                        onPressed: () => createQuestions(context, state),
+                        icon: const Icon(AppIcons.add),
+                        label: Text(l10n.academicCreateQuestions),
                       ),
                     ),
                     if (state.sessions.isNotEmpty) ...[
@@ -190,9 +180,9 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
 }
 
 class _NoBank extends StatelessWidget {
-  const _NoBank({required this.generating});
+  const _NoBank({required this.onCreate});
 
-  final bool generating;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -200,16 +190,11 @@ class _NoBank extends StatelessWidget {
     return AppEmptyState(
       icon: Icons.quiz_outlined,
       title: l10n.academicPracticeNoBankTitle,
-      message: generating
-          ? l10n.academicAiGenerating
-          : l10n.academicPracticeNoBankMessage,
+      message: l10n.academicPracticeNoBankMessage,
       action: AppPrimaryButton(
-        label: l10n.academicPracticeGenerate,
+        label: l10n.academicCreateQuestions,
         icon: AppIcons.proposal,
-        loading: generating,
-        onPressed: () => context.read<PracticeHubBloc>().add(
-          const PracticeHubEvent.bankRequested(),
-        ),
+        onPressed: onCreate,
       ),
     );
   }

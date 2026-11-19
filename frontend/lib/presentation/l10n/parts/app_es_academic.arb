@@ -395,7 +395,7 @@
       }
     }
   },
-  "academicQuestionMultipleChoice": "Opción múltiple",
+  "academicQuestionMultipleChoice": "Elegir una",
   "academicQuestionFillInBlank": "Respuesta corta",
   "academicAnswerLabel": "Tu respuesta",
   "academicAnswerCorrect": "¡Correcto!",
@@ -1460,5 +1460,176 @@
     }
   },
   "academicSubjectPickTerm": "Elige también el cuatrimestre",
-  "academicSubjectPickCourse": "Elige también el curso"
+  "academicSubjectPickCourse": "Elige también el curso",
+  "academicQuestionMultipleAnswer": "Varias correctas",
+  "academicQuestionCompleteSentence": "Completar la frase",
+  "academicChooseAllCorrect": "Elige todas las correctas",
+  "createQuestionsFrom": "De: {title}",
+  "@createQuestionsFrom": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "createQuestionsChangeSource": "Cambiar",
+  "createQuestionsChangeSourceLabel": "Cambiar el apunte",
+  "createQuestionsPickSource": "¿De qué apunte?",
+  "createQuestionsPickSourceEmpty": "Esta asignatura aún no tiene apuntes ni archivos. Añade uno para crear preguntas.",
+  "createQuestionsFileLabel": "Archivo",
+  "createQuestionsNoteLabel": "Apunte",
+  "createQuestionsType": "Tipo de pregunta",
+  "createQuestionsFormatSingle": "Elegir una",
+  "createQuestionsFormatMultiple": "Varias correctas",
+  "createQuestionsFormatFill": "Completar la frase",
+  "createQuestionsFormatCards": "Tarjetas",
+  "createQuestionsFormatMixed": "Mezcla",
+  "createQuestionsHowMany": "¿Cuántas?",
+  "createQuestionsHowManyRange": "De 5 a 30",
+  "createQuestionsLess": "5 menos",
+  "createQuestionsMore": "5 más",
+  "createQuestionsCountValue": "{count} preguntas",
+  "@createQuestionsCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createQuestionsSearching": "Mirando si tu apunte ya trae preguntas…",
+  "createQuestionsSearchFailed": "No hemos podido mirar si tu apunte trae preguntas.",
+  "createQuestionsDocFound": "{count, plural, =1{Tu apunte ya trae 1 pregunta} other{Tu apunte ya trae {count} preguntas}}",
+  "@createQuestionsDocFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createQuestionsDocNone": "No usarlas",
+  "createQuestionsDocOnly": "Usar solo esas",
+  "createQuestionsDocMix": "Mezclarlas con nuevas",
+  "createQuestionsExisting": "{count, plural, =1{Ya tienes 1 de este apunte} other{Ya tienes {count} de este apunte}}",
+  "@createQuestionsExisting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createQuestionsAdd": "Añadir a las que tienes",
+  "createQuestionsReplace": "Cambiarlas por las nuevas",
+  "createQuestionsReplaceHint": "Se borran las de ahora y sus aciertos.",
+  "createQuestionsSubmit": "{count, plural, =1{Crear 1 pregunta} other{Crear {count} preguntas}}",
+  "@createQuestionsSubmit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createQuestionsReviewOnly": "Revisar las de tu apunte",
+  "createQuestionsReviewFirst": "Antes de guardarlas, revisas las de tu apunte.",
+  "createQuestionsCreating": "Creando preguntas… Puede tardar un minuto.",
+  "createQuestionsSaved": "{count, plural, =1{1 pregunta guardada} other{{count} preguntas guardadas}}",
+  "@createQuestionsSaved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createQuestionsPartial": "Se han guardado {created} de {requested}: las demás ya las tenías o no se pudieron crear.",
+  "@createQuestionsPartial": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "requested": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewQuestionsTitle": "Revisa las de tu apunte",
+  "reviewQuestionsSubtitle": "Quita las que no quieras. Usarás {used} de {total}.",
+  "@reviewQuestionsSubtitle": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewQuestionsIncomplete": "Solo hemos podido leer una parte de tu apunte.",
+  "reviewQuestionsUse": "Usar",
+  "reviewQuestionsCorrectOption": "{option} · correcta",
+  "@reviewQuestionsCorrectOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewQuestionsAllOrNothing": "Solo cuenta si marcas todas las correctas.",
+  "reviewQuestionsProposed": "Tu apunte no traía la respuesta. Propuesta: «{answer}». Revísala.",
+  "@reviewQuestionsProposed": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewQuestionsAnswer": "Respuesta: {answer}",
+  "@reviewQuestionsAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewQuestionsChangeAnswer": "Cambiar la respuesta",
+  "reviewQuestionsLongAnswer": "Respuesta larga",
+  "reviewQuestionsLongAnswerReason": "No se puede corregir sola: no se usará.",
+  "reviewQuestionsNoAnswerReason": "No trae la respuesta: no se usará.",
+  "reviewQuestionsSave": "{count, plural, =1{Guardar 1 pregunta} other{Guardar {count} preguntas}}",
+  "@reviewQuestionsSave": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewQuestionsSplit": "{fromDocument} de tu apunte y {fresh, plural, =1{1 nueva} other{{fresh} nuevas}}",
+  "@reviewQuestionsSplit": {
+    "placeholders": {
+      "fromDocument": {
+        "type": "int"
+      },
+      "fresh": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewQuestionsOnlyDocument": "{count, plural, =1{1 de tu apunte} other{{count} de tu apunte}}",
+  "@reviewQuestionsOnlyDocument": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewQuestionsPickOne": "Marca al menos una para guardar.",
+  "reviewQuestionsAnswerField": "Respuesta",
+  "createQuestionsNoSources": "Aún no hay apuntes",
+  "createQuestionsSearchAgain": "Volver a mirar",
+  "reviewQuestionsChangeAnswerFor": "Cambiar la respuesta de «{question}»",
+  "@reviewQuestionsChangeAnswerFor": {
+    "placeholders": {
+      "question": {
+        "type": "String"
+      }
+    }
+  }
 }

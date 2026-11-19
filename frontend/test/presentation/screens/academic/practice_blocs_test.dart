@@ -10,7 +10,6 @@ import 'package:synaptixfit/domain/use_cases/academic/answer_question_use_case.d
 import 'package:synaptixfit/domain/use_cases/academic/complete_practice_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/complete_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/export_flashcards_to_anki_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/academic/generate_question_bank_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_active_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_question_bank_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_study_material_use_case.dart';
@@ -28,9 +27,6 @@ import 'academic_fixtures.dart';
 class _GetMaterial extends Mock implements GetStudyMaterialUseCaseContract {}
 
 class _GetBank extends Mock implements GetQuestionBankUseCaseContract {}
-
-class _GenerateBank extends Mock
-    implements GenerateQuestionBankUseCaseContract {}
 
 class _GetActive extends Mock implements GetActiveTestSessionUseCaseContract {}
 
@@ -67,14 +63,12 @@ void main() {
   group('PracticeHubBloc', () {
     late _GetMaterial getMaterial;
     late _GetBank getBank;
-    late _GenerateBank generateBank;
     late _GetActive getActive;
     late _GetSessions getSessions;
 
     setUp(() {
       getMaterial = _GetMaterial();
       getBank = _GetBank();
-      generateBank = _GenerateBank();
       getActive = _GetActive();
       getSessions = _GetSessions();
       when(
@@ -87,34 +81,28 @@ void main() {
     PracticeHubBloc build() => PracticeHubBloc(
       getMaterial: getMaterial,
       getBank: getBank,
-      generateBank: generateBank,
       getActiveSession: getActive,
       getSessions: getSessions,
     );
 
     blocTest<PracticeHubBloc, PracticeHubState>(
-      'sin banco permite generarlo con IA',
+      'sin banco queda vacío (las preguntas se crean en la hoja) y al '
+      'refrescar lee el banco nuevo',
       setUp: () {
-        when(() => getBank('m1')).thenAnswer((_) async => const Success(null));
-        when(
-          () => generateBank('m1'),
-        ).thenAnswer((_) async => const Success(bank));
+        var calls = 0;
+        when(() => getBank('m1')).thenAnswer(
+          (_) async => calls++ == 0 ? const Success(null) : const Success(bank),
+        );
       },
       build: build,
       act: (bloc) async {
         bloc.add(const PracticeHubEvent.started('m1'));
         await Future<void>.delayed(Duration.zero);
-        bloc.add(const PracticeHubEvent.bankRequested());
+        bloc.add(const PracticeHubEvent.refreshed());
       },
       expect: () => const [
         PracticeHubState(materialId: 'm1'),
         PracticeHubState(materialId: 'm1', loading: false, material: material),
-        PracticeHubState(
-          materialId: 'm1',
-          loading: false,
-          material: material,
-          generating: true,
-        ),
         PracticeHubState(
           materialId: 'm1',
           loading: false,

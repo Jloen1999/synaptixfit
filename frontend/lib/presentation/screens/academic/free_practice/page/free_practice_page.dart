@@ -143,6 +143,9 @@ class _FreePracticeView extends StatelessWidget with ErrorsMessageMixin {
                             correct: checked.correct,
                             correctAnswer:
                                 checked.correctAnswer ?? question.correctAnswer,
+                            correctAnswers: checked.correctAnswers.isNotEmpty
+                                ? checked.correctAnswers
+                                : question.correctAnswers,
                             explanation:
                                 checked.explanation ?? question.explanation,
                           ),

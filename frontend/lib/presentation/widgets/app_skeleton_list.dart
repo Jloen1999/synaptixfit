@@ -20,24 +20,28 @@ class AppSkeletonGroup extends StatelessWidget {
   );
 }
 
-/// Lista de esqueletos iguales para el estado de carga de un listado.
+/// Lista de esqueletos iguales para el estado de carga de un listado. Dentro
+/// de otra lista (una hoja), [shrinkWrap] la ajusta a su contenido.
 class AppSkeletonList extends StatelessWidget {
   const AppSkeletonList({
     super.key,
     this.count = 4,
     this.height = 72,
     this.padding = const EdgeInsets.all(TokensSpacing.m),
+    this.shrinkWrap = false,
   });
 
   final int count;
   final double height;
   final EdgeInsetsGeometry padding;
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context) => AppSkeletonGroup(
     child: ListView.separated(
       // Sin desplazamiento propio: es un hueco temporal, no contenido.
       physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: shrinkWrap,
       padding: padding,
       itemCount: count,
       separatorBuilder: (_, _) => const SizedBox(height: TokensSpacing.s),

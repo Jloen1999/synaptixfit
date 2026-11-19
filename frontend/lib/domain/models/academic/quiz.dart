@@ -15,6 +15,11 @@ abstract class QuestionBank with _$QuestionBank {
     required int attemptedQuestions,
     required int correctQuestions,
     @Default(<Question>[]) List<Question> questions,
+
+    /// Solo al crear preguntas: cuántas se pidieron y cuántas se guardaron
+    /// (menos si falló una tanda de la IA o ya las tenías).
+    int? requestedQuestions,
+    int? createdQuestions,
   }) = _QuestionBank;
 }
 
@@ -29,6 +34,9 @@ abstract class Question with _$Question {
     required int order,
     required String correctAnswer,
     String? explanation,
+
+    /// Todas las correctas («Varias correctas»); en el resto, la única.
+    @Default(<String>[]) List<String> correctAnswers,
   }) = _Question;
 }
 
@@ -40,6 +48,7 @@ abstract class AnswerResult with _$AnswerResult {
     required bool correct,
     String? correctAnswer,
     String? explanation,
+    @Default(<String>[]) List<String> correctAnswers,
   }) = _AnswerResult;
 }
 
@@ -98,6 +107,7 @@ abstract class SessionQuestion with _$SessionQuestion {
     bool? correct,
     String? correctAnswer,
     String? explanation,
+    @Default(<String>[]) List<String> correctAnswers,
   }) = _SessionQuestion;
 }
 

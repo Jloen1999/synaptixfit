@@ -1,6 +1,8 @@
 package com.synaptixfit.domain.port.output.academic;
 
+import com.synaptixfit.domain.model.academic.DocumentQuestion;
 import com.synaptixfit.domain.model.academic.MindMap;
+import com.synaptixfit.domain.model.academic.QuestionBatch;
 import com.synaptixfit.domain.model.academic.QuestionDraft;
 import com.synaptixfit.domain.model.academic.TeachingGuide;
 import java.util.List;
@@ -43,6 +45,10 @@ public interface StudyAssistantPort {
     record PracticeQuestions(String title, List<QuestionDraft> questions) {
     }
 
+    /** Tanda de preguntas ya escritas en un documento y cuántas tiene en total. */
+    record DocumentQuestionPage(int total, List<DocumentQuestion> questions) {
+    }
+
     Summary summarize(List<Source> sources);
 
     GeneratedMindMap mindMap(List<Source> sources);
@@ -51,6 +57,18 @@ public interface StudyAssistantPort {
 
     /** 10 preguntas: 5 de opción múltiple (4 opciones) y 5 de rellenar hueco. */
     PracticeQuestions practiceQuestions(List<Source> sources);
+
+    /**
+     * Una tanda de «Crear preguntas» (ADR 0058) con los formatos de {@code batch}, sin repetir los
+     * enunciados de {@code avoid} (las que ya tienes y las de tandas anteriores).
+     */
+    PracticeQuestions practiceQuestions(List<Source> sources, QuestionBatch batch, List<String> avoid);
+
+    /**
+     * Preguntas que ya están escritas en el documento, en su orden, desde la posición {@code from} (base 0)
+     * y como mucho {@code limit}. La IA las copia, no las inventa.
+     */
+    DocumentQuestionPage documentQuestions(Source source, int from, int limit);
 
     TeachingGuide extractTeachingGuide(Source document);
 }

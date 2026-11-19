@@ -336,7 +336,7 @@ public class StudyAssistantService implements GetStudyDocumentUseCase, GenerateS
             for (String option : d.options()) {
                 sb.append("- ").append(option).append('\n');
             }
-            sb.append("\n**Respuesta:** ").append(d.correctAnswer()).append('\n');
+            sb.append("\n**Respuesta:** ").append(String.join(" · ", d.correctAnswers())).append('\n');
             if (d.explanation() != null) {
                 sb.append("\n_").append(d.explanation()).append("_\n");
             }

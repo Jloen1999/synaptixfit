@@ -16,10 +16,15 @@ class AppInlineMessage extends StatelessWidget {
     super.key,
     required this.message,
     this.tone = AppMessageTone.error,
+    this.live = true,
   });
 
   final String message;
   final AppMessageTone tone;
+
+  /// Región viva (se lee al aparecer). En falso para un aviso fijo dentro de
+  /// una lista, que si no se leería al desplazarse.
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +62,7 @@ class AppInlineMessage extends StatelessWidget {
           Expanded(
             child: Semantics(
               container: true,
-              liveRegion: true,
+              liveRegion: live,
               child: Text(message, style: context.textStyles.bodyMedium),
             ),
           ),

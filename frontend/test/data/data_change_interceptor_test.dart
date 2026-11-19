@@ -71,6 +71,23 @@ void main() {
       );
     });
 
+    test('leer las preguntas de un apunte no avisa; crearlas sí', () {
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'POST',
+          '/api/v1/study-materials/m1/document-questions',
+        ),
+        isEmpty,
+      );
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'POST',
+          '/api/v1/study-materials/m1/question-bank',
+        ),
+        contains(DataTopic.academic),
+      );
+    });
+
     test('las lecturas no avisan', () {
       expect(
         DataChangeInterceptor.topicsFor('GET', '/api/v1/training'),

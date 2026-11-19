@@ -17,6 +17,7 @@ import '../use_cases/academic/delete_study_material_use_case.dart';
 import '../use_cases/academic/delete_subject_file_use_case.dart';
 import '../use_cases/academic/delete_subject_use_case.dart';
 import '../use_cases/academic/generate_question_bank_use_case.dart';
+import '../use_cases/academic/scan_document_questions_use_case.dart';
 import '../use_cases/academic/generate_study_artifact_use_case.dart';
 import '../use_cases/academic/generate_study_document_use_case.dart';
 import '../use_cases/academic/apply_teaching_guide_import_use_case.dart';
@@ -112,6 +113,9 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GenerateQuestionBankUseCaseContract>(
       () => GenerateQuestionBankUseCase(getIt()),
+    )
+    ..registerLazySingleton<ScanDocumentQuestionsUseCaseContract>(
+      () => ScanDocumentQuestionsUseCase(getIt()),
     )
     ..registerLazySingleton<GenerateStudyArtifactUseCaseContract>(
       () => GenerateStudyArtifactUseCase(getIt()),

@@ -290,6 +290,9 @@ final class AcademicFakes {
             questionStore.values().removeIf(q -> q.bankId().equals(bankId));
             list.forEach(q -> questionStore.put(q.id(), q));
         }
+        public void addQuestions(UUID bankId, List<Question> list) {
+            list.forEach(q -> questionStore.put(q.id(), q));
+        }
         public List<Question> findQuestions(UUID bankId) {
             return questionStore.values().stream().filter(q -> q.bankId().equals(bankId))
                     .sorted(Comparator.comparingInt(Question::order)).toList();

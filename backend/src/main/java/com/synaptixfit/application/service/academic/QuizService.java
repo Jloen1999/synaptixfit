@@ -5,11 +5,11 @@ import com.synaptixfit.application.port.input.academic.AnswerQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.AnswerTestQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteBankPracticeUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteTestSessionUseCase;
-import com.synaptixfit.application.port.input.academic.GenerateQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetActiveTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.GetQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.ListTestSessionsUseCase;
+import com.synaptixfit.application.port.input.academic.SaveCreatedQuestionsUseCase;
 import com.synaptixfit.application.port.input.academic.StartTestSessionUseCase;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.domain.event.academic.TestSessionCompleted;
@@ -26,10 +26,10 @@ import com.synaptixfit.domain.model.academic.PracticeResult;
 import com.synaptixfit.domain.model.academic.Question;
 import com.synaptixfit.domain.model.academic.QuestionAttempt;
 import com.synaptixfit.domain.model.academic.QuestionBank;
+import com.synaptixfit.domain.model.academic.QuestionType;
 import com.synaptixfit.domain.model.academic.QuestionBankView;
 import com.synaptixfit.domain.model.academic.SessionAnswer;
 import com.synaptixfit.domain.model.academic.StudyMaterial;
-import com.synaptixfit.domain.model.academic.StudySourceRef;
 import com.synaptixfit.domain.model.academic.TestSession;
 import com.synaptixfit.domain.model.academic.TestSessionStatus;
 import com.synaptixfit.domain.model.academic.TestSessionView;
@@ -65,9 +65,11 @@ import java.util.stream.Collectors;
  * Bancos de preguntas, práctica libre y sesiones de test persistentes (práctica y simulacro).
  * Las respuestas se corrigen en el servidor. XP con anti-farmeo: una vez por banco en la
  * práctica libre y una vez por sesión completada con todas las preguntas respondidas. Al terminar
- * una sesión publica {@link TestSessionCompleted} (carga cognitiva e insignias).
+ * una sesión publica {@link TestSessionCompleted} (carga cognitiva e insignias). Guarda lo que crea
+ * «Crear preguntas» ({@link QuestionCreationService}, ADR 0058); cada app solo recibe los tipos de pregunta
+ * que sabe pintar.
  */
-public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBankUseCase, AnswerQuestionUseCase,
+public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestionsUseCase, AnswerQuestionUseCase,
         CompleteBankPracticeUseCase, StartTestSessionUseCase, GetTestSessionUseCase, GetActiveTestSessionUseCase,
         ListTestSessionsUseCase, AnswerTestQuestionUseCase, CompleteTestSessionUseCase, AbandonTestSessionUseCase {
 
@@ -107,19 +109,17 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
     // ------------------------------------------------------------------ bancos
 
     @Override
-    public QuestionBankView getBank(UUID userId, UUID materialId) {
+    public QuestionBankView getBank(UUID userId, UUID materialId, Set<QuestionType> visibleTypes) {
         StudyMaterial m = lookups.material(userId, materialId);
         QuestionBank bank = banks.findByMaterial(m.id()).orElseThrow(() -> new QuestionBankNotFoundException(materialId));
-        return view(userId, bank);
+        return view(userId, bank, visibleTypes);
     }
 
     @Override
-    public QuestionBankView generateBank(UUID userId, UUID materialId) {
-        StudyMaterial m = lookups.material(userId, materialId);
-        AcademicLookups.ResolvedSource source = lookups.resolve(userId, new StudySourceRef(m.originType(),
-                m.originId()));
-        practiceBanks.generate(userId, m, source);
-        return view(userId, banks.findByMaterial(m.id()).orElseThrow(() -> new QuestionBankNotFoundException(materialId)));
+    public int saveCreatedQuestions(SaveCreatedQuestionsUseCase.Command c) {
+        StudyMaterial m = lookups.material(c.userId(), c.materialId());
+        String title = lookups.origin(c.userId(), m.originType(), m.originId()).title();
+        return practiceBanks.save(c.userId(), m, title, c.mode(), c.questions());
     }
 
     @Override
@@ -130,10 +130,11 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
     }
 
     @Override
-    public PracticeResult completePractice(UUID userId, UUID bankId, Map<UUID, String> answers) {
+    public PracticeResult completePractice(UUID userId, UUID bankId, Map<UUID, String> answers,
+                                           Set<QuestionType> visibleTypes) {
         QuestionBank bank = banks.findByIdAndUser(bankId, userId)
                 .orElseThrow(() -> new QuestionBankNotFoundException(bankId));
-        List<Question> questions = banks.findQuestions(bank.id());
+        List<Question> questions = visible(banks.findQuestions(bank.id()), visibleTypes);
         if (questions.isEmpty()) {
             throw new QuestionBankEmptyException(bankId);
         }
@@ -181,7 +182,8 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
                 }
                 continue;
             }
-            chosen.addAll(prioritize(c.userId(), banks.findQuestions(bank.get().id()), perMaterial));
+            chosen.addAll(prioritize(c.userId(), visible(banks.findQuestions(bank.get().id()), c.supportedTypes()),
+                    perMaterial));
         }
         if (chosen.isEmpty()) {
             throw new QuestionBankEmptyException(materialIds.getFirst());
@@ -222,7 +224,8 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
         }
         Question q = banks.findQuestionsByIds(List.of(c.questionId())).stream().findFirst()
                 .orElseThrow(() -> new QuestionNotFoundException(c.questionId()));
-        AnswerResult result = new AnswerResult(q.id(), q.isCorrect(c.answer()), q.correctAnswer(), q.explanation());
+        AnswerResult result = new AnswerResult(q.id(), q.isCorrect(c.answer()), q.correctAnswer(), q.explanation(),
+                q.type());
         session.answer(q.id(), c.answer(), result.correct(), c.nextIndex());
         attempts.save(QuestionAttempt.of(c.userId(), q.id(), result.correct(), clock.instant()));
         return new SessionAnswer(result, view(sessions.save(session), 0));
@@ -273,11 +276,16 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
     private AnswerResult grade(UUID userId, Question q, String answer) {
         boolean correct = q.isCorrect(answer);
         attempts.save(QuestionAttempt.of(userId, q.id(), correct, clock.instant()));
-        return new AnswerResult(q.id(), correct, q.correctAnswer(), q.explanation());
+        return new AnswerResult(q.id(), correct, q.correctAnswer(), q.explanation(), q.type());
     }
 
-    private QuestionBankView view(UUID userId, QuestionBank bank) {
-        List<Question> questions = banks.findQuestions(bank.id());
+    /** Solo las preguntas de los tipos que la app sabe pintar (las antiguas no conocen «Varias correctas»). */
+    private static List<Question> visible(List<Question> questions, Set<QuestionType> types) {
+        return questions.stream().filter(q -> types.contains(q.type())).toList();
+    }
+
+    private QuestionBankView view(UUID userId, QuestionBank bank, Set<QuestionType> visibleTypes) {
+        List<Question> questions = visible(banks.findQuestions(bank.id()), visibleTypes);
         List<QuestionAttempt> history = questions.isEmpty() ? List.of()
                 : attempts.findByUserAndQuestions(userId, questions.stream().map(Question::id).toList());
         Set<UUID> attempted = new HashSet<>();

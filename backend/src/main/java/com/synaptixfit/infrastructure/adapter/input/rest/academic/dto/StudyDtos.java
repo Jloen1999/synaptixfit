@@ -107,19 +107,29 @@ public final class StudyDtos {
     public record FlashcardDto(String question, String answer) {
     }
 
-    /** Pregunta de práctica (generada o enviada para guardarla). */
+    /**
+     * Pregunta de práctica (generada o enviada para guardarla). En «Varias correctas» las respuestas van en
+     * {@code correctAnswers}; en el resto basta {@code correctAnswer} (ADR 0058).
+     */
     public record QuestionDraftDto(@NotNull QuestionType type,
                                    @NotBlank @Size(max = 2000) String statement,
                                    @Size(max = 10) List<@Size(max = 500) String> options,
-                                   @NotBlank @Size(max = 1000) String correctAnswer,
-                                   @Size(max = 2000) String explanation) {
+                                   @Size(max = 1000) String correctAnswer,
+                                   @Size(max = 2000) String explanation,
+                                   @Size(max = 10) List<@Size(max = 500) String> correctAnswers) {
 
         public static QuestionDraftDto from(QuestionDraft d) {
-            return new QuestionDraftDto(d.type(), d.statement(), d.options(), d.correctAnswer(), d.explanation());
+            return new QuestionDraftDto(d.type(), d.statement(), d.options(),
+                    String.join(" · ", d.correctAnswers()), d.explanation(), d.correctAnswers());
         }
 
         public QuestionDraft toDomain() {
-            return new QuestionDraft(type, statement, options, correctAnswer, explanation);
+            List<String> answers = correctAnswers != null && !correctAnswers.isEmpty() ? correctAnswers
+                    : correctAnswer == null ? List.of() : List.of(correctAnswer);
+            return type == QuestionType.MULTIPLE_ANSWER
+                    ? QuestionDraft.multipleAnswer(statement, options, answers, explanation)
+                    : new QuestionDraft(type, statement, options, answers.isEmpty() ? null : answers.getFirst(),
+                    explanation);
         }
     }
 

@@ -1,8 +1,10 @@
 import '../../domain/models/academic/mock_exam_options.dart';
+import '../../domain/models/academic/question_creation.dart';
 import '../../domain/models/academic/quiz.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/repositories/quiz_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
+import '../remote_data_source/academic/dto/question_creation_dtos.dart';
 import '../remote_data_source/academic/quiz_remote_data_source.dart';
 
 class QuizRepository implements QuizRepositoryContract {
@@ -17,10 +19,22 @@ class QuizRepository implements QuizRepositoryContract {
       );
 
   @override
-  Future<AppResult<QuestionBank>> generateQuestionBank(String materialId) =>
-      RepositoryErrorHandler.guard(
-        () async => (await _remote.generateBank(materialId)).toDomain(),
-      );
+  Future<AppResult<QuestionBank>> generateQuestionBank(
+    String materialId,
+    CreateQuestionsRequest request,
+  ) => RepositoryErrorHandler.guard(
+    () async => (await _remote.generateBank(
+      materialId,
+      CreateQuestionsRequestDto.from(request).toJson(),
+    )).toDomain(),
+  );
+
+  @override
+  Future<AppResult<DocumentQuestionScan>> scanDocumentQuestions(
+    String materialId,
+  ) => RepositoryErrorHandler.guard(
+    () async => (await _remote.scanDocumentQuestions(materialId)).toDomain(),
+  );
 
   @override
   Future<AppResult<AnswerResult>> answerQuestion(

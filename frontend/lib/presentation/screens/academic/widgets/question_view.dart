@@ -11,16 +11,25 @@ class QuestionFeedback {
   const QuestionFeedback({
     required this.correct,
     this.correctAnswer,
+    this.correctAnswers = const [],
     this.explanation,
   });
 
   final bool correct;
   final String? correctAnswer;
+
+  /// Todas las correctas («Varias correctas»); si va vacía, [correctAnswer].
+  final List<String> correctAnswers;
   final String? explanation;
+
+  List<String> get answers =>
+      correctAnswers.isNotEmpty ? correctAnswers : [?correctAnswer];
 }
 
-/// Enunciado y respuesta de una pregunta (opción múltiple o respuesta corta).
-/// Con [feedback] se bloquea y muestra la corrección.
+/// Enunciado y respuesta de una pregunta (elegir una, varias correctas o
+/// respuesta corta). En «Varias correctas» la respuesta son las opciones
+/// marcadas unidas con [QuestionAnswers.join]. Con [feedback] se bloquea y
+/// muestra la corrección.
 class QuestionView extends StatefulWidget {
   const QuestionView({
     super.key,
@@ -69,8 +78,12 @@ class _QuestionViewState extends State<QuestionView> {
     final feedback = widget.feedback;
     final locked = feedback != null;
     final l10n = context.localizations;
-    final isChoice =
-        widget.type == QuestionType.multipleChoice && widget.options.isNotEmpty;
+    final isChoice = widget.type.hasOptions && widget.options.isNotEmpty;
+    final multiple = widget.type == QuestionType.multipleAnswer;
+    final chosen = multiple
+        ? QuestionAnswers.split(widget.answer).toSet()
+        : {?widget.answer};
+    final correctOnes = feedback?.answers.toSet() ?? const <String>{};
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -85,25 +98,48 @@ class _QuestionViewState extends State<QuestionView> {
         Text(widget.statement, style: context.textStyles.titleLarge),
         const SizedBox(height: TokensSpacing.xs),
         Text(
-          context.questionTypeLabel(widget.type),
-          style: context.textStyles.labelMedium?.copyWith(
-            color: context.colors.onSurfaceVariant,
-          ),
+          multiple
+              ? l10n.academicChooseAllCorrect
+              : context.questionTypeLabel(
+                  widget.type,
+                  statement: widget.statement,
+                ),
+          // «Elige todas las correctas» es lo que distingue el tipo: resaltado.
+          style: multiple
+              ? context.textStyles.labelLarge?.copyWith(
+                  color: context.colors.tertiary,
+                )
+              : context.textStyles.labelMedium?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
         ),
         const SizedBox(height: TokensSpacing.m),
         if (isChoice)
           for (final option in widget.options)
             _OptionTile(
               label: option,
-              selected: widget.answer == option,
+              multiple: multiple,
+              selected: chosen.contains(option),
               state: !locked
                   ? _OptionState.idle
-                  : option == feedback.correctAnswer
+                  : correctOnes.contains(option)
                   ? _OptionState.correct
-                  : widget.answer == option
+                  : chosen.contains(option)
                   ? _OptionState.wrong
                   : _OptionState.idle,
-              onTap: locked ? null : () => widget.onAnswerChanged(option),
+              onTap: locked
+                  ? null
+                  : () => widget.onAnswerChanged(
+                      multiple
+                          ? QuestionAnswers.join(
+                              widget.options.where(
+                                (o) => o == option
+                                    ? !chosen.contains(o)
+                                    : chosen.contains(o),
+                              ),
+                            )
+                          : option,
+                    ),
             )
         else
           TextField(
@@ -119,7 +155,7 @@ class _QuestionViewState extends State<QuestionView> {
                 (feedback.correct
                         ? context.palette.success
                         : context.colors.error)
-                    .withValues(alpha: 0.12),
+                    .withValues(alpha: AppPill.tintAlpha),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -142,9 +178,11 @@ class _QuestionViewState extends State<QuestionView> {
                     ),
                   ],
                 ),
-                if (!feedback.correct && feedback.correctAnswer != null) ...[
+                if (!feedback.correct && feedback.answers.isNotEmpty) ...[
                   const SizedBox(height: TokensSpacing.xs),
-                  Text(l10n.academicCorrectAnswer(feedback.correctAnswer!)),
+                  Text(
+                    l10n.academicCorrectAnswer(feedback.answers.join(' · ')),
+                  ),
                 ],
                 if (feedback.explanation != null &&
                     feedback.explanation!.isNotEmpty) ...[
@@ -170,12 +208,16 @@ enum _OptionState { idle, correct, wrong }
 class _OptionTile extends StatelessWidget {
   const _OptionTile({
     required this.label,
+    required this.multiple,
     required this.selected,
     required this.state,
     required this.onTap,
   });
 
   final String label;
+
+  /// Casilla («Varias correctas») en vez de botón de opción.
+  final bool multiple;
   final bool selected;
   final _OptionState state;
   final VoidCallback? onTap;
@@ -191,6 +233,10 @@ class _OptionTile extends StatelessWidget {
     final icon = switch (state) {
       _OptionState.correct => Icons.check_circle_rounded,
       _OptionState.wrong => Icons.cancel_rounded,
+      _OptionState.idle when multiple =>
+        selected
+            ? Icons.check_box_rounded
+            : Icons.check_box_outline_blank_rounded,
       _OptionState.idle =>
         selected
             ? Icons.radio_button_checked_rounded
@@ -200,7 +246,7 @@ class _OptionTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: TokensSpacing.s),
       child: Material(
         color: selected || state != _OptionState.idle
-            ? color.withValues(alpha: 0.1)
+            ? color.withValues(alpha: AppPill.tintAlpha)
             : context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(TokensRadius.m),
@@ -208,24 +254,36 @@ class _OptionTile extends StatelessWidget {
         ),
         child: AppFocusOutline(
           borderRadius: BorderRadius.circular(TokensRadius.m),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(TokensRadius.m),
-            onTap: onTap,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: TokensLayout.minTouchTarget,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: TokensSpacing.m,
-                  vertical: TokensSpacing.s,
+          child: Semantics(
+            checked: selected,
+            inMutuallyExclusiveGroup: !multiple,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(TokensRadius.m),
+              onTap: onTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: TokensLayout.minTouchTarget,
                 ),
-                child: Row(
-                  children: [
-                    Icon(icon, color: color, size: 20),
-                    const SizedBox(width: TokensSpacing.m),
-                    Expanded(child: Text(label)),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TokensSpacing.m,
+                    vertical: TokensSpacing.s,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        icon,
+                        // Sin marcar, el icono con contraste suficiente (WCAG
+                        // 1.4.11): su forma distingue casilla de círculo.
+                        color: state == _OptionState.idle && !selected
+                            ? context.colors.outline
+                            : color,
+                        size: TokensSize.iconS,
+                      ),
+                      const SizedBox(width: TokensSpacing.m),
+                      Expanded(child: Text(label)),
+                    ],
+                  ),
                 ),
               ),
             ),
