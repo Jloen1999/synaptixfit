@@ -46,5 +46,6 @@ export 'app_tile_grid.dart';
 export 'app_swipe_to_delete.dart';
 export 'app_undo_shortcut.dart';
 export 'app_working_view.dart';
+export 'move_day_sheet.dart';
 export 'xp_guide_sheet.dart';
 export 'xp_progress_bar.dart';

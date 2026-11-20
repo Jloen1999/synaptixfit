@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
-import '../../../../../domain/enums/item_time_status.dart';
 import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/models/planner/block_draft.dart';
 import '../../../../../domain/models/planner/calendar_block.dart';
@@ -22,7 +21,9 @@ import '../bloc/block_editor_bloc.dart';
 
 /// Hoja de crear/editar un evento del calendario en tres pasos («¿Qué es?»,
 /// «¿Cuándo?», «Repetir y aviso») y «Más opciones» con lo que aplica a su
-/// tipo. Al crear incluye la pestaña para repartir una rutina. Devuelve un
+/// tipo. Al crear incluye la pestaña para repartir una rutina. Al editar solo
+/// cambia el evento: marcarlo, moverlo, concentrarse o eliminarlo está en su
+/// ficha de lectura (ADR 0060), que es desde donde se abre. Devuelve un
 /// [BlockEditorOutcome] al cerrarse; lo resuelve el calendario.
 class BlockEditorSheet extends StatelessWidget {
   const BlockEditorSheet({super.key, this.block, this.start});
@@ -410,16 +411,6 @@ class _EditorViewState extends State<_EditorView>
                       ),
                     ),
                   ),
-                  if (_editing)
-                    IconButton(
-                      tooltip: l10n.plannerDeleteBlock,
-                      onPressed: state.submitting
-                          ? null
-                          : () => Navigator.of(context).pop(
-                              BlockEditorOutcome.deleteRequested(widget.block!),
-                            ),
-                      icon: Icon(AppIcons.delete, color: context.colors.error),
-                    ),
                   IconButton(
                     tooltip: l10n.commonClose,
                     onPressed: () => Navigator.of(context).pop(),
@@ -486,108 +477,6 @@ class _EditorViewState extends State<_EditorView>
     );
   }
 
-  /// Marcar hecho, reprogramar (si se quedó sin hacer) o concentrarse en él
-  /// (estudio o repaso que aún no pasó). Cada acción cierra la hoja y la
-  /// resuelve el calendario.
-  List<Widget> _blockActions(BuildContext context, BlockEditorState state) {
-    final l10n = context.localizations;
-    final block = widget.block!;
-    final missed = block.timeStatus == ItemTimeStatus.missed;
-    void close(BlockEditorOutcome outcome) =>
-        Navigator.of(context).pop(outcome);
-    // El evento de un día de rutina sigue a su sesión: no se marca a mano, se
-    // entrena (o se registra como sesión pasada) desde la rutina.
-    final routineDay = block.routineDayId != null && block.routineId != null;
-    final actions = <Widget>[
-      if (routineDay)
-        AppSecondaryButton(
-          label: l10n.plannerOpenRoutine,
-          icon: const Icon(Icons.fitness_center_rounded),
-          onPressed: state.submitting
-              ? null
-              : () => close(
-                  BlockEditorOutcome.trainingRequested(block.routineId!),
-                ),
-        )
-      else if (block.timeStatus == ItemTimeStatus.upcoming && !block.completed)
-        // Un evento que aún no ha empezado no se marca como hecho.
-        block.type == BlockType.classSession
-            ? _note(context, l10n.plannerClassAttendsLater)
-            : AppInlineMessage(
-                message: l10n.plannerCompleteWhenStarted,
-                tone: AppMessageTone.warning,
-              )
-      else if (block.type == BlockType.classSession) ...[
-        // Las clases se dan por asistidas solas al terminar (ADR 0029): lo
-        // que se apunta es «No fui» (o corregirlo con «Sí fui»).
-        _note(
-          context,
-          block.absent
-              ? l10n.plannerClassMarkedAbsent
-              : block.completed
-              ? l10n.plannerClassAttended
-              : l10n.plannerClassAttendsByItself,
-        ),
-        if (!block.completed)
-          AppSecondaryButton(
-            label: l10n.plannerClassWent,
-            icon: const Icon(AppIcons.markDone),
-            onPressed: state.submitting
-                ? null
-                : () => close(BlockEditorOutcome.completionRequested(block.id)),
-          ),
-        if (!block.absent)
-          AppSecondaryButton(
-            label: l10n.plannerClassDidNotGo,
-            icon: const Icon(Icons.event_busy_rounded),
-            onPressed: state.submitting
-                ? null
-                : () => close(BlockEditorOutcome.absenceRequested(block.id)),
-          ),
-      ] else
-        AppSecondaryButton(
-          label: block.completed
-              ? l10n.plannerMarkPending
-              : l10n.plannerMarkCompleted,
-          icon: Icon(block.completed ? AppIcons.undo : AppIcons.markDone),
-          onPressed: state.submitting
-              ? null
-              : () => close(BlockEditorOutcome.completionRequested(block.id)),
-        ),
-      if (missed && !block.isLocked && block.type != BlockType.classSession)
-        AppSecondaryButton(
-          label: l10n.plannerRescheduleNext,
-          icon: const Icon(Icons.update_rounded),
-          onPressed: state.submitting
-              ? null
-              : () => close(BlockEditorOutcome.rescheduleRequested(block.id)),
-        ),
-      // Concentrarse: estudio o repaso que no está hecho ni se quedó sin hacer.
-      if (!block.completed && !missed && block.type.isStudy)
-        AppSecondaryButton(
-          label: l10n.plannerFocusOnBlock,
-          icon: const Icon(AppIcons.focusTimer),
-          onPressed: state.submitting
-              ? null
-              : () => close(BlockEditorOutcome.focusRequested(block)),
-        ),
-    ];
-    return [
-      for (final (i, action) in actions.indexed) ...[
-        if (i > 0) const SizedBox(height: TokensSpacing.s),
-        action,
-      ],
-    ];
-  }
-
-  /// Nota de cómo cuenta una clase (no es un aviso: no hay nada mal).
-  Widget _note(BuildContext context, String text) => Text(
-    text,
-    style: context.textStyles.bodyMedium?.copyWith(
-      color: context.colors.onSurfaceVariant,
-    ),
-  );
-
   Widget _blockForm(BuildContext context, BlockEditorState state) {
     final l10n = context.localizations;
     final locked = widget.block?.isLocked ?? false;
@@ -611,9 +500,6 @@ class _EditorViewState extends State<_EditorView>
         TokensSpacing.xl,
       ),
       children: [
-        // Acciones del evento arriba del formulario: el pie fijo solo lleva
-        // el botón principal (con texto grande no se come la pantalla).
-        if (_editing) ...[..._blockActions(context, state), gap],
         if (state.optionsError != null) ...[
           AppInlineMessage(
             message: l10n.plannerOptionsError,

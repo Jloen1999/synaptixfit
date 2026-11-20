@@ -8,7 +8,11 @@ import 'package:synaptixfit/domain/models/planner/weekly_planning.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/delete_block_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
+import 'package:synaptixfit/domain/enums/training_enums.dart';
+import 'package:synaptixfit/domain/models/planner/planner_options.dart';
+import 'package:synaptixfit/domain/models/training/session.dart';
+import 'package:synaptixfit/domain/use_cases/planner/get_planner_challenges_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_week_balance_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_week_blocks_use_case.dart';
@@ -37,8 +41,9 @@ class _Account extends Mock implements GetAccountUseCaseContract {}
 
 class _DeleteBlock extends Mock implements DeleteBlockUseCaseContract {}
 
-class _RescheduleNext extends Mock
-    implements RescheduleBlockToNextFreeSlotUseCaseContract {}
+class _Challenges extends Mock implements GetPlannerChallengesUseCaseContract {}
+
+class _StartSession extends Mock implements StartSessionUseCaseContract {}
 
 void main() {
   setUpAll(registerPlannerFallbacks);
@@ -52,7 +57,8 @@ void main() {
   late FakeDataChanges changes;
   late _Account getAccount;
   late _DeleteBlock deleteBlock;
-  late _RescheduleNext rescheduleNext;
+  late _Challenges getChallenges;
+  late _StartSession startSession;
 
   final b1 = block();
   final deadlineEntry = TimelineEntry(
@@ -77,7 +83,8 @@ void main() {
     setCompletion: setCompletion,
     getAccount: getAccount,
     deleteBlock: deleteBlock,
-    rescheduleNext: rescheduleNext,
+    getChallenges: getChallenges,
+    startSession: startSession,
     watchChanges: changes.useCase,
     now: () => testNow,
   );
@@ -99,7 +106,8 @@ void main() {
     changes = FakeDataChanges();
     getAccount = _Account();
     deleteBlock = _DeleteBlock();
-    rescheduleNext = _RescheduleNext();
+    getChallenges = _Challenges();
+    startSession = _StartSession();
     when(() => deleteBlock(any())).thenAnswer((_) async => const Success(unit));
     when(() => getBlocks(any())).thenAnswer((_) async => Success([b1]));
     when(() => getConflicts(any())).thenAnswer((_) async => const Success([]));
@@ -131,9 +139,49 @@ void main() {
           .having((s) => s.blocks, 'blocks', [b1])
           .having((s) => s.deadlines, 'deadlines', [deadlineEntry])
           .having((s) => s.blockTitles, 'titles', {'b1': 'Cálculo'})
+          .having((s) => s.blockSubjects, 'asignaturas', {'b1': 'Cálculo'})
           .having((s) => s.balance, 'balance', testBalance),
     ],
-    verify: (_) => verify(() => getBlocks(testMonday)).called(1),
+    verify: (_) {
+      verify(() => getBlocks(testMonday)).called(1);
+      // Sin eventos con reto no se piden los retos.
+      verifyNever(() => getChallenges());
+    },
+  );
+
+  blocTest<CalendarBloc, CalendarState>(
+    'con un evento que adelanta un reto, pide los retos una vez y nombra la tarea',
+    setUp: () {
+      when(() => getBlocks(any())).thenAnswer(
+        (_) async => Success([b1.copyWith(challengeId: 'c1', milestoneId: 't2')]),
+      );
+      when(() => getChallenges()).thenAnswer(
+        (_) async => const Success([
+          ChallengeOption(
+            id: 'c1',
+            title: 'Estudia y muévete',
+            tasks: [
+              ChallengeTaskOption(id: 't1', title: 'Día 1'),
+              ChallengeTaskOption(id: 't2', title: 'Día 2'),
+            ],
+          ),
+        ]),
+      );
+    },
+    build: build,
+    act: (bloc) async {
+      bloc.add(const CalendarEvent.started());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      bloc.add(const CalendarEvent.refreshed());
+    },
+    wait: const Duration(milliseconds: 10),
+    verify: (bloc) {
+      verify(() => getChallenges()).called(1);
+      expect(bloc.state.challengeOf(bloc.state.blocks.single), (
+        challenge: 'Estudia y muévete',
+        task: 'Día 2',
+      ));
+    },
   );
 
   blocTest<CalendarBloc, CalendarState>(
@@ -461,32 +509,107 @@ void main() {
     });
   });
 
-  blocTest<CalendarBloc, CalendarState>(
-    'reprogramar un bloque no hecho avisa de su nuevo horario y recarga',
-    setUp: () => when(() => rescheduleNext(b1.id)).thenAnswer(
-      (_) async => Success(BlockChange(block: b1.copyWith(start: testNow))),
-    ),
-    build: build,
-    seed: ready,
-    act: (bloc) => bloc.add(CalendarEvent.rescheduleNextRequested(b1.id)),
-    verify: (bloc) {
-      verify(() => rescheduleNext(b1.id)).called(1);
-      verify(() => getBlocks(any())).called(1);
-      expect(bloc.state.busyBlockIds, isEmpty);
-    },
-  );
+  group('ficha del evento', () {
+    final friday = DateTime(2025, 10, 17, 9);
+    final moved = b1.copyWith(start: friday, end: friday.add(b1.duration));
 
-  blocTest<CalendarBloc, CalendarState>(
-    'sin hueco libre se avisa del error',
-    setUp: () => when(() => rescheduleNext(b1.id)).thenAnswer(
-      (_) async => const Failure(AppError.business('BLOCK_NO_FREE_SLOT')),
-    ),
-    build: build,
-    seed: ready,
-    act: (bloc) => bloc.add(CalendarEvent.rescheduleNextRequested(b1.id)),
-    verify: (bloc) => expect(
-      bloc.state.notice,
-      const CalendarNotice.failure(AppError.business('BLOCK_NO_FREE_SLOT')),
-    ),
-  );
+    blocTest<CalendarBloc, CalendarState>(
+      '«Pasar a otro día» mueve el evento y avisa de adónde fue',
+      setUp: () => when(
+        () => reschedule(
+          'b1',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenAnswer((_) async => Success(BlockChange(block: moved))),
+      build: build,
+      seed: ready,
+      act: (bloc) => bloc.add(
+        CalendarEvent.blockMoved(
+          blockId: 'b1',
+          start: moved.start,
+          end: moved.end,
+        ),
+      ),
+      verify: (bloc) {
+        expect(bloc.state.blocks.single, moved);
+        expect(bloc.state.notice, CalendarNotice.moved(friday));
+      },
+    );
+
+    blocTest<CalendarBloc, CalendarState>(
+      'no pasa a otro día lo que ya está hecho',
+      build: build,
+      seed: () => ready().copyWith(blocks: [b1.copyWith(completed: true)]),
+      act: (bloc) => bloc.add(
+        CalendarEvent.blockMoved(
+          blockId: 'b1',
+          start: moved.start,
+          end: moved.end,
+        ),
+      ),
+      expect: () => [
+        isA<CalendarState>().having(
+          (s) => s.notice,
+          'notice',
+          const CalendarNotice.completedLocked(),
+        ),
+      ],
+    );
+
+    final routineDay = b1.copyWith(
+      type: BlockType.sport,
+      routineId: 'r1',
+      routineDayId: 'd2',
+    );
+
+    blocTest<CalendarBloc, CalendarState>(
+      '«Empezar el entreno» abre la sesión de ese día de rutina',
+      setUp: () => when(
+        () => startSession(routineId: 'r1', dayId: 'd2'),
+      ).thenAnswer(
+        (_) async => Success(
+          TrainingSession(
+            id: 's1',
+            type: SessionType.routine,
+            status: SessionStatus.inProgress,
+            startedAt: testNow,
+          ),
+        ),
+      ),
+      build: build,
+      seed: () => ready().copyWith(blocks: [routineDay]),
+      act: (bloc) => bloc.add(const CalendarEvent.trainingStartRequested('b1')),
+      expect: () => [
+        isA<CalendarState>().having(
+          (s) => s.startingTraining,
+          'abriendo',
+          isTrue,
+        ),
+        isA<CalendarState>()
+            .having((s) => s.startingTraining, 'abriendo', isFalse)
+            .having(
+              (s) => s.notice,
+              'notice',
+              const CalendarNotice.sessionOpened('s1'),
+            ),
+      ],
+    );
+
+    blocTest<CalendarBloc, CalendarState>(
+      'con una sesión a medias, avisa con el error del servidor',
+      setUp: () => when(
+        () => startSession(routineId: 'r1', dayId: 'd2'),
+      ).thenAnswer(
+        (_) async => const Failure(AppError.business('SESSION_STALE_OPEN')),
+      ),
+      build: build,
+      seed: () => ready().copyWith(blocks: [routineDay]),
+      act: (bloc) => bloc.add(const CalendarEvent.trainingStartRequested('b1')),
+      verify: (bloc) => expect(
+        bloc.state.notice,
+        const CalendarNotice.failure(AppError.business('SESSION_STALE_OPEN')),
+      ),
+    );
+  });
 }

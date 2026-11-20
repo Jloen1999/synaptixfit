@@ -72,6 +72,16 @@ abstract final class PlannerPaths {
       '${day.month.toString().padLeft(2, '0')}-'
       '${day.day.toString().padLeft(2, '0')}';
 
+  /// Calendario colocado en el día de [day] (su semana y su primer evento):
+  /// «Ver» tras pasar un evento a otro día.
+  static String day(DateTime day) {
+    final date =
+        '${day.year.toString().padLeft(4, '0')}-'
+        '${day.month.toString().padLeft(2, '0')}-'
+        '${day.day.toString().padLeft(2, '0')}';
+    return '$root?week=$date&day=$date';
+  }
+
   static DateTime? parseWeek(String? value) =>
       value == null ? null : DateTime.tryParse(value);
 }
@@ -80,6 +90,12 @@ abstract final class PlannerPaths {
 abstract final class PlannerExternalPaths {
   /// Detalle de una rutina (Entrenamiento), para entrenar el día de un bloque.
   static String routine(String routineId) => '/training/routines/$routineId';
+
+  /// Ficha de una asignatura (Académico, pantalla completa: `push`).
+  static String subject(String subjectId) => '/academic/subjects/$subjectId';
+
+  /// Sesión en vivo (Entreno, pantalla completa: `push`).
+  static String session(String sessionId) => '/training/sessions/$sessionId';
 
   /// Ajustes › Avisos (Perfil, pantalla completa): la antelación de los avisos
   /// es global, no de cada evento.

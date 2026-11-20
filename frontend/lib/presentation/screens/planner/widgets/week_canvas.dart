@@ -17,7 +17,9 @@ import 'week_grid_geometry.dart';
 /// rejilla desplazable en ambos ejes con los bloques posicionados. El día va
 /// entero, de 0:00 a 24:00, y lo que cruza la medianoche se pinta en sus dos
 /// días (ADR 0050). Si los 7 días no caben, una tira arriba lleva a cualquiera
-/// y marca el que se ve.
+/// y marca el que se ve, y la cabecera de días se queda en una línea fina que
+/// solo dice qué columna es cada día (ADR 0060). Tocar o mantener pulsado un
+/// hueco vacío añade ahí.
 ///
 /// Toda la conversión hora ↔ píxel la hace [WeekGridGeometry]; aquí solo se
 /// guarda el estado efímero del gesto (vista previa del arrastre).
@@ -32,7 +34,9 @@ class WeekCanvas extends StatefulWidget {
     this.focusAt,
     this.focusDay,
     this.onVisibleDayChanged,
+    this.summary,
     required this.onSlotTap,
+    this.onSlotLongPress,
     required this.onBlockTap,
     required this.onReschedule,
     required this.onLockedBlockTouched,
@@ -55,7 +59,14 @@ class WeekCanvas extends StatefulWidget {
   /// Día de la semana que se ve (0 = lunes) cuando no caben los 7; nulo si
   /// caben todos. La página lo usa para enseñar «Hoy» solo cuando hace falta.
   final ValueChanged<int?>? onVisibleDayChanged;
+
+  /// Lo que va entre la tira de días y la rejilla (las cifras de la semana).
+  final Widget? summary;
   final ValueChanged<DateTime> onSlotTap;
+
+  /// Mantener pulsado un hueco vacío (que empieza en ese momento): añade ahí,
+  /// igual que tocarlo. Sobre un evento, la pulsación larga lo arrastra.
+  final ValueChanged<DateTime>? onSlotLongPress;
   final ValueChanged<CalendarBlock> onBlockTap;
   final void Function(CalendarBlock block, DateTime start, DateTime end)
   onReschedule;
@@ -63,6 +74,10 @@ class WeekCanvas extends StatefulWidget {
 
   static const axisWidth = 52.0;
   static const headerHeight = 48.0;
+
+  /// Cabecera de días cuando no caben los 7: la tira ya dice la fecha y lleva
+  /// a cada día; esta línea solo nombra las columnas que se ven.
+  static const compactHeaderHeight = TokensSize.calendarDayHeaderCompact;
   static const minDayWidth = 108.0;
   static const hourHeight = 60.0;
 
@@ -260,14 +275,17 @@ class _WeekCanvasState extends State<WeekCanvas> {
           context.scaled(WeekCanvas.axisWidth),
           WeekCanvas.axisWidth * 2,
         );
-        final headerHeight = math.min(
-          context.scaled(WeekCanvas.headerHeight),
-          WeekCanvas.headerHeight * 2,
-        );
         final available = constraints.maxWidth - axisWidth;
         // Si los 7 días no caben, cada uno conserva su ancho mínimo y la tira
         // de arriba lleva a cualquiera.
         final narrow = available / 7 < WeekCanvas.minDayWidth;
+        final baseHeader = narrow
+            ? WeekCanvas.compactHeaderHeight
+            : WeekCanvas.headerHeight;
+        final headerHeight = math.min(
+          context.scaled(baseHeader),
+          baseHeader * 2,
+        );
         final geometry = WeekGridGeometry(
           dayWidth: math.max(available / 7, WeekCanvas.minDayWidth),
           hourHeight: WeekCanvas.hourHeight,
@@ -284,6 +302,7 @@ class _WeekCanvasState extends State<WeekCanvas> {
                 selected: _selectedDay,
                 onSelected: _goToDay,
               ),
+            ?widget.summary,
             SizedBox(
               height: headerHeight,
               child: Row(
@@ -298,6 +317,7 @@ class _WeekCanvasState extends State<WeekCanvas> {
                         geometry: geometry,
                         weekStart: widget.weekStart,
                         now: widget.now,
+                        compact: narrow,
                       ),
                     ),
                   ),
@@ -441,6 +461,9 @@ class _WeekCanvasState extends State<WeekCanvas> {
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
+                // Para el lector no es un botón: un hueco de la rejilla no se
+                // puede elegir con él. Se añade con el «+», que sí lo nombra.
+                excludeFromSemantics: true,
                 onTapUp: (d) => widget.onSlotTap(
                   g.slotAt(
                     widget.weekStart,
@@ -448,6 +471,15 @@ class _WeekCanvasState extends State<WeekCanvas> {
                     d.localPosition.dy,
                   ),
                 ),
+                onLongPressStart: widget.onSlotLongPress == null
+                    ? null
+                    : (d) => widget.onSlotLongPress!(
+                        g.slotAt(
+                          widget.weekStart,
+                          d.localPosition.dx,
+                          d.localPosition.dy,
+                        ),
+                      ),
                 child: CustomPaint(
                   painter: TimeGridPainter(
                     geometry: g,
@@ -564,11 +596,15 @@ class _DayHeader extends StatelessWidget {
     required this.geometry,
     required this.weekStart,
     required this.now,
+    this.compact = false,
   });
 
   final WeekGridGeometry geometry;
   final DateTime weekStart;
   final DateTime now;
+
+  /// Línea fina bajo la tira de días (móvil): menos relleno y letra menor.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -594,9 +630,9 @@ class _DayHeader extends StatelessWidget {
       excludeSemantics: true,
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(
+          padding: EdgeInsets.symmetric(
             horizontal: TokensSpacing.s,
-            vertical: TokensSpacing.xs,
+            vertical: compact ? TokensSpacing.xxs : TokensSpacing.xs,
           ),
           decoration: isToday
               ? BoxDecoration(
@@ -606,7 +642,10 @@ class _DayHeader extends StatelessWidget {
               : null,
           child: Text(
             PlannerFormats.dayShort(day),
-            style: context.textStyles.labelLarge?.copyWith(
+            style: (compact
+                    ? context.textStyles.labelMedium
+                    : context.textStyles.labelLarge)
+                ?.copyWith(
               color: isToday
                   ? context.colors.onPrimary
                   : context.colors.onSurfaceVariant,

@@ -86,7 +86,10 @@ class AppFocusAnchor extends StatelessWidget {
   /// está en pantalla) y lo hace visible.
   static void focusSoon(FocusNode node) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (node.context != null) revealFocusedNode(node);
+      // La pantalla puede haberse cerrado o cambiado en ese cuadro (p. ej.
+      // «Hoy» en el calendario cambia de semana): sin montar no se toca.
+      final context = node.context;
+      if (context != null && context.mounted) revealFocusedNode(node);
     });
   }
 

@@ -85,6 +85,24 @@ abstract final class AppIcons {
   /// Cuánto dura algo (minutos de una sesión, de una actividad).
   static const IconData duration = Icons.schedule_rounded;
 
+  /// Asignatura de un evento o de una entrega (el birrete de Académico).
+  static const IconData subject = Icons.school_outlined;
+
+  /// Rutina de entreno (un evento que es un día de rutina).
+  static const IconData routine = Icons.fitness_center_rounded;
+
+  /// Lugar de algo (aula, gimnasio).
+  static const IconData location = Icons.place_outlined;
+
+  /// Nota o temas escritos a mano en un evento.
+  static const IconData note = Icons.notes_rounded;
+
+  /// Aviso de algo que conviene revisar (no es un error).
+  static const IconData warning = Icons.warning_amber_rounded;
+
+  /// Dos eventos que coinciden a la misma hora (choque de horario).
+  static const IconData conflict = Icons.compare_arrows_rounded;
+
   // Ir a otro sitio.
   static const IconData back = Icons.arrow_back_rounded;
   static const IconData previous = Icons.chevron_left_rounded;

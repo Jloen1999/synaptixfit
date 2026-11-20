@@ -98,7 +98,9 @@ class TimeBlockTile extends StatelessWidget {
           opacity: busy ? 0.6 : 1,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final compact = constraints.maxHeight < 44;
+              // Con el texto grande la línea de la hora no cabe en un bloque
+              // de una hora: el umbral crece con el texto (WCAG 1.4.4).
+              final compact = constraints.maxHeight < context.scaled(44);
               final radius = BorderRadius.circular(TokensRadius.s);
               return AppFocusOutline(
                 borderRadius: radius,
@@ -184,14 +186,14 @@ class TimeBlockTile extends StatelessWidget {
         Tooltip(
           message: context.localizations.plannerMissedLabel,
           child: Icon(
-            AppIcons.history,
+            AppIcons.overdue,
             size: TokensSize.iconXs,
             color: context.palette.warning,
           ),
         ),
       if (block.isLocked)
         Icon(
-          Icons.lock_rounded,
+          AppIcons.readOnly,
           size: TokensSize.iconXs,
           color: context.colors.onSurfaceVariant,
         ),

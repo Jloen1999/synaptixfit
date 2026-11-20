@@ -41,9 +41,18 @@ sealed class CalendarEvent with _$CalendarEvent {
   const factory CalendarEvent.blockDeleteRequested(CalendarBlock block) =
       CalendarBlockDeleteRequested;
 
-  /// Lleva un bloque que se quedó sin hacer al primer hueco libre.
-  const factory CalendarEvent.rescheduleNextRequested(String blockId) =
-      CalendarRescheduleNextRequested;
+  /// «Pasar a otro día» de la ficha: misma hora en el día elegido. Como
+  /// [CalendarEvent.blockRescheduled], pero avisa de adónde fue (con «Ver»).
+  const factory CalendarEvent.blockMoved({
+    required String blockId,
+    required DateTime start,
+    required DateTime end,
+  }) = CalendarBlockMoved;
+
+  /// «Empezar el entreno» de la ficha de un día de rutina de hoy: abre la
+  /// sesión de ese día (la misma que «Empezar» de Inicio).
+  const factory CalendarEvent.trainingStartRequested(String blockId) =
+      CalendarTrainingStartRequested;
 
   /// «Deshacer» del aviso: el bloque vuelve y no se borra.
   const factory CalendarEvent.blockDeleteUndone(String blockId) =

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -23,6 +24,38 @@ extension AppContext on BuildContext {
   /// Texto por encima del 130 %: las tarjetas pasan a su forma apilada
   /// (bloque de fecha encima, acciones debajo). Un solo umbral para todas.
   bool get largeText => scaled(1) > TokensLayout.largeTextScale;
+
+  /// Ancho de [text] en una sola línea, con el tamaño de texto del sistema.
+  /// Sirve para decidir una disposición por el sitio real (WCAG 1.4.10), no
+  /// solo por la escala del texto.
+  double textWidth(String text, TextStyle? style) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(this),
+      textScaler: MediaQuery.textScalerOf(this),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
+  }
+
+  /// Ancho que necesita un botón de texto con [style] (o el del tema) para
+  /// que [label] quepa en una línea: texto, relleno y, si lo lleva, icono.
+  double buttonWidth(String label, ButtonStyle? style, {bool icon = false}) {
+    final padding = style?.padding?.resolve({})?.horizontal ?? 0;
+    final iconSize = icon
+        ? (style?.iconSize?.resolve({}) ?? TokensSize.iconM) + TokensSpacing.s
+        : 0;
+    final text = textWidth(
+      label,
+      style?.textStyle?.resolve({}) ?? textStyles.labelLarge,
+    );
+    return math.max(
+      TokensLayout.minTouchTarget,
+      text + padding + iconSize,
+    );
+  }
 
   /// El usuario ha pedido reducir el movimiento en su sistema.
   bool get reduceMotion => MediaQuery.disableAnimationsOf(this);

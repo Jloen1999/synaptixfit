@@ -136,6 +136,7 @@ abstract final class TokensLayout {
   static const double segmentMinWidth = 112;
   static const double fabClearance = 96;
   static const double filterMaxWidth = 280;
+  static const double weekNavMaxWidth = 360;
 }
 
 abstract final class TokensSize {
@@ -161,6 +162,7 @@ abstract final class TokensSize {
   static const double listTileMin = 56;
   static const double dayChipWidth = 56;
   static const double dayChipHeight = 76;
+  static const double calendarDayHeaderCompact = 28;
   static const double weekBarHeight = 72;
   static const double weekSegmentMin = 8;
   static const double dot = 5;

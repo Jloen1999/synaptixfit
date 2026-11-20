@@ -55,34 +55,8 @@ sealed class BlockEditorOutcome with _$BlockEditorOutcome {
 
   const factory BlockEditorOutcome.updated() = BlockEditorUpdated;
 
-  /// El usuario quiere borrar el bloque: lo borra el calendario, que permite
-  /// deshacerlo unos segundos.
-  const factory BlockEditorOutcome.deleteRequested(CalendarBlock block) =
-      BlockEditorDeleteRequested;
-
   const factory BlockEditorOutcome.distributed(int count) =
       BlockEditorDistributed;
-
-  /// El usuario quiere concentrarse en este bloque ahora (abre el Pomodoro).
-  const factory BlockEditorOutcome.focusRequested(CalendarBlock block) =
-      BlockEditorFocusRequested;
-
-  /// El usuario quiere llevar el bloque no hecho al primer hueco libre.
-  const factory BlockEditorOutcome.rescheduleRequested(String blockId) =
-      BlockEditorRescheduleRequested;
-
-  /// El usuario pide marcar/desmarcar el bloque (lo resuelve el calendario).
-  const factory BlockEditorOutcome.completionRequested(String blockId) =
-      BlockEditorCompletionRequested;
-
-  /// «No fui» a una clase: se desmarca y no se da por asistida sola.
-  const factory BlockEditorOutcome.absenceRequested(String blockId) =
-      BlockEditorAbsenceRequested;
-
-  /// Bloque de un día de rutina: se abre la rutina para entrenarlo (su estado
-  /// lo marca la sesión, no la persona).
-  const factory BlockEditorOutcome.trainingRequested(String routineId) =
-      BlockEditorTrainingRequested;
 
   /// Al crear se eligió «Examen» o «Entrega»: no es un evento aparte, sino
   /// una entrega (un solo concepto, ADR 0039). El calendario abre su

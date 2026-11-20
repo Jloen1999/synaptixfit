@@ -31,7 +31,8 @@ void registerPlannerPresentation(GetIt getIt) {
         setCompletion: getIt(),
         getAccount: getIt(),
         deleteBlock: getIt(),
-        rescheduleNext: getIt(),
+        getChallenges: getIt(),
+        startSession: getIt(),
         watchChanges: getIt(),
       ),
     )

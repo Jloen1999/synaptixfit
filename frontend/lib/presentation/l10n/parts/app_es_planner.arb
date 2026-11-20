@@ -72,8 +72,7 @@
   },
   "plannerReminderSettings": "Ajustar los avisos",
   "plannerAddBlock": "Añadir al calendario",
-  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un evento.",
-  "plannerDragHint": "Mantén pulsado para mover; arrastra el borde para cambiar la duración.",
+  "plannerEmptyWeekHint": "Semana libre: toca un hueco para añadir un evento.",
   "plannerResizeHandle": "Cambiar duración",
   "plannerBlockSemantics": "{type}, de {start} a {end}",
   "@plannerBlockSemantics": {
@@ -220,7 +219,6 @@
   "plannerFieldDifficulty": "Dificultad",
   "plannerCreateBlock": "Añadir al calendario",
   "plannerSaveChanges": "Guardar cambios",
-  "plannerDeleteBlock": "Eliminar evento",
   "plannerMarkCompleted": "Marcar como hecho",
   "plannerMarkPending": "Desmarcar",
   "plannerBlockLockedHint": "Este evento es fijo: no puedes cambiar el día ni la hora.",
@@ -230,6 +228,7 @@
   "plannerBlockCreated": "Añadido al calendario",
   "plannerBlockUpdated": "Cambios guardados",
   "plannerBlockDeleted": "Quitado del calendario",
+  "plannerEventDeleted": "Eliminado del calendario",
   "plannerRoutineDistributed": "{count, plural, =0{No se ha añadido ninguna sesión} =1{1 sesión añadida al calendario} other{{count} sesiones añadidas al calendario}}",
   "@plannerRoutineDistributed": {
     "placeholders": {
@@ -871,9 +870,11 @@
     }
   },
   "guideCalendarAddTitle": "Añadir al calendario",
-  "guideCalendarAddBody": "Apunta clases, estudio, entrenos o lo que quieras.",
-  "guideCalendarDoneTitle": "Marcar como hecho",
-  "guideCalendarDoneBody": "Lo que apuntes sale aquí: tócalo para marcarlo como hecho.",
+  "guideCalendarAddBody": "Toca + para apuntar clases, estudio o entrenos. También puedes mantener pulsado un hueco libre de la rejilla.",
+  "guideCalendarDoneTitle": "Toca un evento",
+  "guideCalendarDoneBody": "Se abre su ficha: márcalo como hecho, pásalo a otro día o cámbialo con «Editar».",
+  "guideCalendarMoveTitle": "Mover un evento",
+  "guideCalendarMoveBody": "Mantén pulsado un evento para moverlo; arrastra su borde de abajo para cambiar cuánto dura.",
   "guideCalendarDeadlinesTitle": "Entregas y exámenes",
   "guideCalendarDeadlinesBody": "Todas tus entregas y exámenes, con los días que faltan.",
   "guideFocusStartTitle": "Empezar a concentrarme",
@@ -883,5 +884,121 @@
   "guideFocusSubjectTitle": "Qué estudias",
   "guideFocusSubjectBody": "Elige la asignatura: el tiempo cuenta para ella.",
   "guideFocusMinutesTitle": "Cuántos minutos",
-  "guideFocusMinutesBody": "Ajusta el tiempo de concentración antes de empezar."
+  "guideFocusMinutesBody": "Ajusta el tiempo de concentración antes de empezar.",
+  "plannerWeekRangeSameMonth": "{start} – {end} {month}",
+  "@plannerWeekRangeSameMonth": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerWeekHeaderLabel": "{title}, semana del {start} al {end}",
+  "@plannerWeekHeaderLabel": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerTomorrow": "Mañana",
+  "plannerChipDeadlines": "{count, plural, =1{1 entrega o examen} other{{count} entregas y exámenes}}",
+  "@plannerChipDeadlines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerChipBalance": "{study} h estudio · {sport} h deporte",
+  "@plannerChipBalance": {
+    "placeholders": {
+      "study": {
+        "type": "String"
+      },
+      "sport": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerChipBalanceLabel": "{chip}: lo planificado esta semana. {state}. Abre la carga semanal",
+  "@plannerChipBalanceLabel": {
+    "placeholders": {
+      "chip": {
+        "type": "String"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerChipConflicts": "{count, plural, =1{1 choque de horario} other{{count} choques de horario}}",
+  "@plannerChipConflicts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerWeekDeadlinesTitle": "Entregas y exámenes de esta semana",
+  "plannerWeekDeadlinesAll": "Ver todas las entregas y exámenes",
+  "plannerDetailsWhen": "{day}, {time}",
+  "@plannerDetailsWhen": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerDetailsNote": "Nota",
+  "plannerDetailsOpenSubject": "Abrir asignatura",
+  "plannerDetailsOpenSubjectFor": "Abrir asignatura {name}",
+  "@plannerDetailsOpenSubjectFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerDetailsChallenge": "Adelanta el reto «{challenge}»",
+  "@plannerDetailsChallenge": {
+    "placeholders": {
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerDetailsChallengeTask": "Adelanta «{task}» del reto «{challenge}»",
+  "@plannerDetailsChallengeTask": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerDetailsChallengeUnknown": "Adelanta una tarea de un reto",
+  "plannerDetailsStartTraining": "Empezar el entreno",
+  "plannerDetailsMove": "Pasar a otro día",
+  "plannerDetailsDelete": "Eliminar",
+  "plannerDetailsEdit": "Editar",
+  "guideCalendarSummaryTitle": "Tu semana en cifras",
+  "guideCalendarSummaryBody": "Toca una cifra para ver el detalle: entregas, horas de estudio y deporte o choques de horario."
 }

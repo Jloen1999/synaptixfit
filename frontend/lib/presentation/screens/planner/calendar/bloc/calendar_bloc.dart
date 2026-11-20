@@ -1,4 +1,3 @@
-import '../../../../../domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,17 +7,20 @@ import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/account/account.dart';
 import '../../../../../domain/models/planner/calendar_block.dart';
+import '../../../../../domain/models/planner/planner_options.dart';
 import '../../../../../domain/models/planner/planner_week.dart';
 import '../../../../../domain/models/planner/weekly_planning.dart';
 import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 import '../../../../../domain/use_cases/planner/delete_block_use_case.dart';
+import '../../../../../domain/use_cases/planner/get_planner_challenges_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_timeline_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_week_balance_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_week_blocks_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_week_conflicts_use_case.dart';
 import '../../../../../domain/use_cases/planner/reschedule_block_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
+import '../../../../../domain/use_cases/training/start_session_use_case.dart';
 import '../../../../../domain/enums/data_topic.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../mixins/data_change_refresh_mixin.dart';
@@ -38,14 +40,16 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
     required this._getConflicts,
     required this._getTimeline,
     required this._getBalance,
-    required this._reschedule,
+    required RescheduleBlockUseCaseContract reschedule,
     required this._setCompletion,
     required this._getAccount,
     required this._deleteBlock,
-    required this._rescheduleNext,
+    required this._getChallenges,
+    required this._startSession,
     required this._watchChanges,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
+       _rescheduleBlock = reschedule,
        super(
          CalendarState(
            weekStart: PlannerWeek.mondayOf((now ?? DateTime.now)()),
@@ -56,11 +60,28 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
     on<CalendarTodayRequested>(_onToday);
     on<CalendarRefreshed>(_onRefreshed);
     on<CalendarSlotTapped>(_onSlotTapped);
-    on<CalendarBlockRescheduled>(_onRescheduled);
+    on<CalendarBlockRescheduled>(
+      (event, emit) => _reschedule(
+        emit,
+        event.blockId,
+        start: event.start,
+        end: event.end,
+        announce: false,
+      ),
+    );
+    on<CalendarBlockMoved>(
+      (event, emit) => _reschedule(
+        emit,
+        event.blockId,
+        start: event.start,
+        end: event.end,
+        announce: true,
+      ),
+    );
+    on<CalendarTrainingStartRequested>(_onTrainingStart);
     on<CalendarLockedBlockTouched>(_onLockedTouched);
     on<CalendarCompletionToggled>(_onCompletionToggled);
     on<CalendarBlockDeleteRequested>(_onDeleteRequested);
-    on<CalendarRescheduleNextRequested>(_onRescheduleNext);
     on<CalendarBlockDeleteUndone>(_onDeleteUndone);
     on<CalendarBlockDeleteCommitted>(_onDeleteCommitted);
   }
@@ -138,35 +159,48 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
   final GetWeekConflictsUseCaseContract _getConflicts;
   final GetTimelineUseCaseContract _getTimeline;
   final GetWeekBalanceUseCaseContract _getBalance;
-  final RescheduleBlockUseCaseContract _reschedule;
+  final RescheduleBlockUseCaseContract _rescheduleBlock;
   final SetBlockCompletionUseCaseContract _setCompletion;
   final WatchDataChangesUseCaseContract _watchChanges;
   final GetAccountUseCaseContract _getAccount;
   final DeleteBlockUseCaseContract _deleteBlock;
-  final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleNext;
+  final GetPlannerChallengesUseCaseContract _getChallenges;
+  final StartSessionUseCaseContract _startSession;
 
-  Future<void> _onRescheduleNext(
-    CalendarRescheduleNextRequested event,
+  /// «Empezar el entreno» de la ficha: abre la sesión del día de rutina del
+  /// evento. Con una sesión a medias el servidor lo dice (su `code` tiene
+  /// texto propio) y se avisa como cualquier fallo.
+  Future<void> _onTrainingStart(
+    CalendarTrainingStartRequested event,
     Emitter<CalendarState> emit,
   ) async {
-    if (state.busyBlockIds.contains(event.blockId)) return;
-    emit(state.copyWith(busyBlockIds: {...state.busyBlockIds, event.blockId}));
-    final result = await _rescheduleNext(event.blockId);
-    final busy = {...state.busyBlockIds}..remove(event.blockId);
-    switch (result) {
-      case Success(:final value):
-        emit(
-          _withNotice(
-            CalendarNotice.rescheduled(value.block.start),
-          ).copyWith(busyBlockIds: busy),
-        );
-        add(const CalendarEvent.refreshed());
-      case Failure(:final error):
-        emit(
-          _withNotice(
-            CalendarNotice.failure(error),
-          ).copyWith(busyBlockIds: busy),
-        );
+    final block = _find(event.blockId);
+    final routineId = block?.routineId;
+    if (block == null || routineId == null || state.startingTraining) return;
+    emit(state.copyWith(startingTraining: true));
+    final result = await _startSession(
+      routineId: routineId,
+      dayId: block.routineDayId,
+    );
+    emit(
+      _withNotice(switch (result) {
+        Success(:final value) => CalendarNotice.sessionOpened(value.id),
+        Failure(:final error) => CalendarNotice.failure(error),
+      }).copyWith(startingTraining: false),
+    );
+  }
+
+  /// Pide los retos activos una vez, solo si algún evento de la semana
+  /// adelanta uno: con ellos la ficha nombra la tarea. Si fallan, la ficha
+  /// dice «una tarea de un reto» sin más.
+  Future<void> _loadChallengesIfNeeded(Emitter<CalendarState> emit) async {
+    if (state.challenges != null ||
+        !state.blocks.any((b) => b.challengeId != null)) {
+      return;
+    }
+    final result = await _getChallenges();
+    if (result case Success(:final value)) {
+      emit(state.copyWith(challenges: value));
     }
   }
 
@@ -272,9 +306,17 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
                           (t.subjectName ?? t.title) != null)
                         t.id: (t.subjectName ?? t.title)!,
                   },
+            blockSubjects: entries == null
+                ? state.blockSubjects
+                : {
+                    for (final t in entries)
+                      if (t.kind == TimelineKind.block && t.subjectName != null)
+                        t.id: t.subjectName!,
+                  },
             balance: balance.valueOrNull ?? state.balance,
           ),
         );
+        await _loadChallengesIfNeeded(emit);
     }
   }
 
@@ -314,13 +356,18 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
     for (final b in state.blocks) b.id == block.id ? block : b,
   ];
 
-  Future<void> _onRescheduled(
-    CalendarBlockRescheduled event,
+  /// Mover o redimensionar en el lienzo y «Pasar a otro día» de la ficha
+  /// ([announce]: dice adónde fue).
+  Future<void> _reschedule(
     Emitter<CalendarState> emit,
-  ) async {
-    final original = _find(event.blockId);
+    String blockId, {
+    required DateTime start,
+    required DateTime end,
+    required bool announce,
+  }) async {
+    final original = _find(blockId);
     if (original == null || state.busyBlockIds.contains(original.id)) return;
-    if (original.start == event.start && original.end == event.end) return;
+    if (original.start == start && original.end == end) return;
     if (original.isLocked) {
       emit(_withNotice(const CalendarNotice.blockLocked()));
       return;
@@ -329,7 +376,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
       emit(_withNotice(const CalendarNotice.completedLocked()));
       return;
     }
-    if (event.start.isBefore(_now())) {
+    if (start.isBefore(_now())) {
       emit(_withNotice(const CalendarNotice.inPast()));
       return;
     }
@@ -337,15 +384,11 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
     // Actualización optimista: el bloque se ve ya en su nuevo sitio.
     emit(
       state.copyWith(
-        blocks: _replace(original.copyWith(start: event.start, end: event.end)),
+        blocks: _replace(original.copyWith(start: start, end: end)),
         busyBlockIds: {...state.busyBlockIds, original.id},
       ),
     );
-    final result = await _reschedule(
-      original.id,
-      start: event.start,
-      end: event.end,
-    );
+    final result = await _rescheduleBlock(original.id, start: start, end: end);
     final busy = {...state.busyBlockIds}..remove(original.id);
     switch (result) {
       case Failure(:final error):
@@ -359,7 +402,9 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
         );
       case Success(:final value):
         emit(state.copyWith(blocks: _replace(value.block), busyBlockIds: busy));
-        if (value.conflicts.isNotEmpty) {
+        if (announce) {
+          emit(_withNotice(CalendarNotice.moved(value.block.start)));
+        } else if (value.conflicts.isNotEmpty) {
           emit(_withNotice(CalendarNotice.overlaps(value.conflicts.length)));
         }
         await _refreshConflicts(emit);
