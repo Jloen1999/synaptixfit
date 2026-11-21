@@ -183,8 +183,10 @@ void main() {
     expect(find.text('Tu primer reto empieza aquí'), findsOneWidget);
     expect(find.text('Filtros'), findsNothing);
     expect(find.text('Tus retos'), findsNothing);
+    // Sin botón flotante (ADR 0061): las cuatro tarjetitas están arriba.
+    expect(find.byType(FloatingActionButton), findsNothing);
 
-    await tester.tap(find.text('Ver retos de la comunidad'));
+    await tester.tap(find.text('De otros'));
     await tester.pumpAndSettle();
     expect(find.text('comunidad'), findsOneWidget);
   });
@@ -222,6 +224,32 @@ void main() {
     expect(find.text('Ver menos'), findsOneWidget);
   });
 
+  testWidgets('cuatro accesos arriba, cada uno con su nombre completo', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await pump(tester);
+
+    for (final label in ['Nuevo', 'Plantillas', 'Con amigos', 'De otros']) {
+      expect(find.text(label), findsOneWidget);
+    }
+    // El lector oye el nombre entero, que contiene el texto visible.
+    for (final label in [
+      'Nuevo reto',
+      'Plantillas de retos',
+      'Retos con amigos',
+      'Retos de otros',
+    ]) {
+      expect(find.bySemanticsLabel(label), findsOneWidget, reason: label);
+    }
+    // Los accesos van antes que la lista.
+    expect(
+      tester.getTopLeft(find.text('Nuevo')).dy,
+      lessThan(tester.getTopLeft(find.text('Tus retos')).dy),
+    );
+    semantics.dispose();
+  });
+
   group('accesibilidad', () {
     testWidgets('cumple las guías de tamaño táctil, etiquetas y contraste', (
       tester,
@@ -242,6 +270,11 @@ void main() {
     ) async {
       await pump(tester, textScale: 2);
       expect(find.text('Filtros (1)'), findsOneWidget);
+      // Con el texto al 200 % los accesos pasan a filas de la mitad.
+      expect(
+        tester.getTopLeft(find.text('De otros')).dy,
+        greaterThan(tester.getTopLeft(find.text('Nuevo')).dy),
+      );
 
       await tester.tap(find.byType(ActionChip));
       await tester.pumpAndSettle();

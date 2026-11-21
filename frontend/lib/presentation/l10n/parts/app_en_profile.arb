@@ -320,12 +320,8 @@
   "profileWeeklyEmailHintPending": "Open the email we sent and tap “Confirm”.",
   "profileWeeklyEmailHintActive": "Every Sunday from 7 pm. You can unsubscribe from the email itself.",
   "profileWeeklyEmailPendingPill": "Waiting for confirmation",
-  "profileSocialSection": "Friends and community",
   "profileFriends": "Friends",
   "profileFriendsPending": "{count, plural, =1{1 pending request} other{{count} pending requests}}",
-  "profilePublicProfile": "View my public profile",
-  "profileCommunity": "Community",
-  "profilePublicProfilePrivateHint": "Your profile is private: only you can see it",
   "profileReminderOptionsTitle": "More reminders",
   "profileReminderStreak": "Streak at risk",
   "profileReminderStreakHint": "In the evening, if you haven’t trained or studied yet today.",
@@ -428,5 +424,14 @@
   "profileSettingsHelpGroup": "Help",
   "profileGuidesReset": "Show the guides again",
   "profileGuidesResetHint": "They show up again when you open each screen.",
-  "profileGuidesResetDone": "Done: the guides will show up again."
+  "profileGuidesResetDone": "Done: the guides will show up again.",
+  "profileSectionsLabel": "Profile sections",
+  "profileWall": "Wall",
+  "profileWallDetail": "Posts",
+  "profilePublicProfileTile": "How others see me",
+  "profilePhysicalTile": "Physical",
+  "profileAcademicTile": "Academic",
+  "profileTileMissing": "Not filled in",
+  "profileSettingsDetail": "Reminders, language…",
+  "profileStreakOpenHint": "See your streak and level in You"
 }

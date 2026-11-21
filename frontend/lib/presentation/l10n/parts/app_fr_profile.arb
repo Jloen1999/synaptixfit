@@ -320,12 +320,8 @@
   "profileWeeklyEmailHintPending": "Ouvre l’e-mail envoyé et appuie sur « Confirmer ».",
   "profileWeeklyEmailHintActive": "Chaque dimanche dès 19 h. Tu peux te désabonner depuis l’e-mail.",
   "profileWeeklyEmailPendingPill": "En attente de confirmation",
-  "profileSocialSection": "Amis et communauté",
   "profileFriends": "Amis",
   "profileFriendsPending": "{count, plural, =0{{count} demandes en attente} =1{1 demande en attente} other{{count} demandes en attente}}",
-  "profilePublicProfile": "Voir mon profil public",
-  "profileCommunity": "Communauté",
-  "profilePublicProfilePrivateHint": "Ton profil est privé : il n’est visible que par toi",
   "profileReminderOptionsTitle": "Autres rappels",
   "profileReminderStreak": "Série en danger",
   "profileReminderStreakHint": "En soirée, si tu n’as encore ni fait d’entraînement ni étudié aujourd’hui.",
@@ -428,5 +424,14 @@
   "profileSettingsHelpGroup": "Aide",
   "profileGuidesReset": "Revoir les guides",
   "profileGuidesResetHint": "Ils réapparaissent quand tu ouvres chaque écran.",
-  "profileGuidesResetDone": "C'est fait : les guides vont réapparaître."
+  "profileGuidesResetDone": "C'est fait : les guides vont réapparaître.",
+  "profileSectionsLabel": "Sections du profil",
+  "profileWall": "Mur",
+  "profileWallDetail": "Publications",
+  "profilePublicProfileTile": "Comment on me voit",
+  "profilePhysicalTile": "Physique",
+  "profileAcademicTile": "Études",
+  "profileTileMissing": "À compléter",
+  "profileSettingsDetail": "Rappels, langue…",
+  "profileStreakOpenHint": "Voir ta série et ton niveau dans Moi"
 }

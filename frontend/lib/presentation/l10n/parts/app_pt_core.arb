@@ -20,7 +20,6 @@
   "tabHome": "Início",
   "tabAcademic": "Académico",
   "tabTraining": "Treino",
-  "tabProgress": "Progresso",
   "fieldEmail": "Email",
   "fieldPassword": "Palavra-passe",
   "fieldPasswordHint": "Mínimo 8 caracteres, com letras e números",
@@ -128,7 +127,7 @@
   "xpGuideDeadlinesDetail": "Marcar uma entrega como feita dá XP; no máximo 5 a cada 24 horas.",
   "xpGuideChallenges": "Desafios",
   "xpGuideChallengesDetail": "Cada tarefa dá XP conforme a sua dificuldade; no máximo 140 XP por desafio.",
-  "xpGuideFooter": "O que ganhas soma ao teu nível aqui, em Progresso.",
+  "xpGuideFooter": "O que ganhas soma ao teu nível, no separador Tu.",
   "commonArrowSpoken": " para ",
   "registerLegalRequired": "Marca a caixa para criar a tua conta.",
   "commonListAnd": "{items} e {last}",
@@ -148,5 +147,6 @@
   "guideNext": "Seguinte ({current} de {total})",
   "guideSkip": "Saltar guia",
   "guideDone": "Entendido",
-  "guideStepLabel": "Guia, passo {current} de {total}: {title}"
+  "guideStepLabel": "Guia, passo {current} de {total}: {title}",
+  "tabYou": "Tu"
 }

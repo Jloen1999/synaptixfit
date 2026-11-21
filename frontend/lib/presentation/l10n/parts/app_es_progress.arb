@@ -1,6 +1,5 @@
 {
   "@@locale": "es",
-  "progressTitle": "Progreso",
   "progressSectionUnavailable": "No se ha podido cargar esta sección.",
   "progressNoValue": "–",
   "progressStreakTitle": "Racha",
@@ -114,7 +113,7 @@
       }
     }
   },
-  "progressCommunityTitle": "Comunidad",
+  "progressCommunityTitle": "Lo último del muro",
   "progressCommunityEmpty": "Aún no hay publicaciones.",
   "progressCommunityLikes": "{count, plural, =1{1 me gusta} other{{count} me gusta}}",
   "@progressCommunityLikes": {
@@ -310,7 +309,7 @@
   "progressBadgeShareTitle": "Compartir logro",
   "progressBadgeShareHint": "Añade un comentario (opcional)",
   "progressBadgeShareAction": "Publicar",
-  "progressBadgeShared": "Logro compartido. Lo tienes en Comunidad (Inicio › Muro de la comunidad).",
+  "progressBadgeShared": "Logro compartido. Lo tienes en el Muro (Tú › Comunidad).",
   "progressPeriodWeekly": "1 mes",
   "progressPeriodMonthly": "3 meses",
   "progressPeriodQuarterly": "6 meses",
@@ -764,5 +763,75 @@
     }
   },
   "progressStreakPausedChip": "En pausa",
-  "progressErrorStreakPauseLimit": "Ya has usado tus días de pausa. Podrás volver a pausar más adelante."
+  "progressErrorStreakPauseLimit": "Ya has usado tus días de pausa. Podrás volver a pausar más adelante.",
+  "progressTabCommunity": "Comunidad",
+  "@progressTabCommunity": {
+    "description": "Apartado «Comunidad» de la pestaña Tú (ADR 0061)."
+  },
+  "progressSeeProfile": "Ver perfil",
+  "@progressSeeProfile": {
+    "description": "Bajo tu nombre, en la cabecera de la pestaña Tú (abre el Perfil)."
+  },
+  "progressCommunityRequestsTitle": "{count, plural, =1{1 solicitud de amistad} other{{count} solicitudes de amistad}}",
+  "@progressCommunityRequestsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressCommunityRejectNamed": "Rechazar a {name}",
+  "@progressCommunityRejectNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "progressCommunitySeeAllRequests": "Ver las {count}",
+  "@progressCommunitySeeAllRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressCommunityFriendsTile": "Mis amigos",
+  "progressCommunityFriendsCount": "{count, plural, =0{Aún ninguno} =1{1 amigo} other{{count} amigos}}",
+  "@progressCommunityFriendsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressCommunitySearchTile": "Buscar",
+  "progressCommunitySearchSemantics": "Buscar personas",
+  "@progressCommunitySearchSemantics": {
+    "description": "Nombre para el lector de la tarjetita «Buscar» (contiene el texto visible)."
+  },
+  "progressCommunitySearchDetail": "Por nombre",
+  "progressCommunityWallTile": "Muro",
+  "progressCommunityWallDetail": "Publicaciones",
+  "progressCommunityOthersChallengesTile": "Retos de otros",
+  "progressCommunityOthersChallengesDetail": "De la comunidad",
+  "progressCommunityTogetherTitle": "Con amigos ahora",
+  "progressCommunityTogetherEmpty": "Ahora no tienes nada en marcha con amigos. En «Ver todo» puedes proponer un reto, una racha o estudiar juntos.",
+  "progressCommunityTogetherInvitations": "{count, plural, =1{1 invitación de amigos} other{{count} invitaciones de amigos}}",
+  "@progressCommunityTogetherInvitations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressCommunityTogetherInvitationsDetail": "Contéstalas en «Con amigos»",
+  "progressCommunityAcceptNamed": "Aceptar a {name}",
+  "@progressCommunityAcceptNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -8,8 +8,8 @@ import '../../../widgets/widgets.dart';
 import 'chart_card.dart';
 import 'progress_labels.dart';
 
-/// Puerta al muro social: solo la última publicación, para no repetir aquí
-/// el muro entero (está a un toque con «Ver todo»).
+/// Puerta al muro en Tú › Comunidad (ADR 0061): solo la última publicación,
+/// para no repetir aquí el muro entero (está a un toque con «Ver todo»).
 class CommunityPreviewCard extends StatelessWidget {
   const CommunityPreviewCard({
     super.key,
@@ -34,17 +34,23 @@ class CommunityPreviewCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  l10n.progressCommunityTitle,
-                  style: context.textStyles.titleMedium,
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.progressCommunityTitle,
+                    style: context.textStyles.titleMedium,
+                  ),
                 ),
               ),
-              TextButton(onPressed: onOpenWall, child: Text(l10n.commonSeeAll)),
+              OutlinedButton(
+                onPressed: onOpenWall,
+                child: Text(l10n.commonSeeAll),
+              ),
             ],
           ),
           if (items == null)
             InlineNotice(
-              icon: Icons.cloud_off_rounded,
+              icon: AppIcons.unavailable,
               message: l10n.progressSectionUnavailable,
             )
           else if (items.isEmpty)
@@ -89,7 +95,7 @@ class _PostTile extends StatelessWidget {
                 AppAvatar(
                   name: post.authorName,
                   imageUrl: post.authorAvatarUrl,
-                  radius: 18,
+                  radius: TokensSize.thumbnailXs / 2,
                 ),
                 const SizedBox(width: TokensSpacing.s + TokensSpacing.xs),
                 Expanded(
@@ -119,7 +125,7 @@ class _PostTile extends StatelessWidget {
                         children: [
                           Icon(
                             _kindIcon(post.kind),
-                            size: 14,
+                            size: TokensSize.iconXs,
                             color: context.colors.primary,
                           ),
                           const SizedBox(width: TokensSpacing.xxs),
@@ -153,12 +159,13 @@ class _PostTile extends StatelessWidget {
   }
 
   static IconData _kindIcon(CommunityPostKind kind) => switch (kind) {
-    CommunityPostKind.sessionCompleted => Icons.fitness_center_rounded,
-    CommunityPostKind.challengeCompleted => Icons.flag_rounded,
-    CommunityPostKind.milestoneReached => Icons.local_fire_department_rounded,
-    CommunityPostKind.badgeUnlocked => Icons.military_tech_rounded,
-    CommunityPostKind.routine => Icons.list_alt_rounded,
-    CommunityPostKind.challenge => Icons.outlined_flag_rounded,
-    CommunityPostKind.other => Icons.chat_bubble_outline_rounded,
+    CommunityPostKind.sessionCompleted => AppIcons.routine,
+    CommunityPostKind.challengeCompleted => AppIcons.done,
+    // Una meta del reto, no la racha: la llama es solo de la racha.
+    CommunityPostKind.milestoneReached => AppIcons.markDone,
+    CommunityPostKind.badgeUnlocked => AppIcons.badge,
+    CommunityPostKind.routine => AppIcons.routineList,
+    CommunityPostKind.challenge => AppIcons.challenge,
+    CommunityPostKind.other => AppIcons.community,
   };
 }

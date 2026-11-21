@@ -282,7 +282,7 @@ void main() {
         TrainingPaths.history,
       ),
       (
-        'reto → Progreso › Retos',
+        'reto → Tú › Retos',
         challengesRoutes,
         ChallengesPaths.detail('c1'),
         ChallengesPaths.list,
@@ -426,10 +426,21 @@ void main() {
   });
 
   test('los padres fuera de una pestaña acaban en una pestaña', () {
-    // «Con amigos» y el panel de admin son pantallas completas: su propia
-    // flecha lleva a una pestaña (Progreso) o al perfil, que lleva a Inicio.
+    // «Con amigos», Amigos y el muro son pantallas completas: su propia
+    // flecha lleva a Tú › Comunidad (ADR 0061); el perfil, a «Tú»; el panel
+    // de admin, al perfil.
     expect(SocialExternalPaths.progressChallenges, ProgressPaths.challenges);
+    expect(SocialExternalPaths.community, ProgressPaths.community);
+    expect(
+      SocialExternalPaths.isTabRoot(SocialExternalPaths.community),
+      isTrue,
+    );
     expect(SocialExternalPaths.isTabRoot(SocialExternalPaths.home), isTrue);
+    expect(
+      SocialExternalPaths.isTabRoot(ProgressPaths.communityShortcut),
+      isTrue,
+    );
+    expect(ProfilePaths.you, ProgressPaths.root);
     expect(ProfilePaths.home, HomePaths.root);
   });
 }

@@ -9,6 +9,7 @@ import 'package:synaptixfit/domain/repositories/analytics_repository_contract.da
 import 'package:synaptixfit/domain/repositories/badge_repository_contract.dart';
 import 'package:synaptixfit/domain/repositories/progress_repository_contract.dart';
 import 'package:synaptixfit/domain/use_cases/progress/get_analytics_report_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/progress/get_community_preview_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/get_progress_overview_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/get_unnotified_badges_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/mark_badges_notified_use_case.dart';
@@ -60,9 +61,6 @@ void main() {
       () => progress.getPhysicalLoad(),
     ).thenAnswer((_) async => const Failure(AppError.network()));
     when(
-      () => progress.getCommunityPreview(),
-    ).thenAnswer((_) async => const Success([]));
-    when(
       () => analytics.getStudyWeek(),
     ).thenAnswer((_) async => const Failure(AppError.network()));
     when(
@@ -90,7 +88,8 @@ void main() {
     final value = result.valueOrNull!;
     expect(value.weekly, isNull);
     expect(value.physicalLoad, isNull);
-    expect(value.communityPosts, isEmpty);
+    // El muro ya no se pide aquí: lo lee Tú › Comunidad (ADR 0061).
+    verifyNever(() => progress.getCommunityPreview(size: any(named: 'size')));
     expect(value.studyWeek, isNull);
     // Las insignias se ordenan de la más reciente a la más antigua.
     expect(value.earnedBadges.map((b) => b.id), ['new', 'old']);
@@ -155,5 +154,17 @@ void main() {
       metric: CorrelationMetric.rpe,
     );
     expect(result.errorOrNull, const AppError.network());
+  });
+
+  test('Tú › Comunidad pide al repositorio solo las publicaciones que '
+      'enseña', () async {
+    when(
+      () => progress.getCommunityPreview(size: any(named: 'size')),
+    ).thenAnswer((_) async => const Success([]));
+
+    final result = await GetCommunityPreviewUseCase(progress)(size: 1);
+
+    expect(result.valueOrNull, isEmpty);
+    verify(() => progress.getCommunityPreview(size: 1)).called(1);
   });
 }

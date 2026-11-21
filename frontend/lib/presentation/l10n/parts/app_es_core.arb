@@ -45,7 +45,6 @@
   "tabHome": "Inicio",
   "tabAcademic": "Académico",
   "tabTraining": "Entreno",
-  "tabProgress": "Progreso",
   "fieldEmail": "Email",
   "fieldPassword": "Contraseña",
   "fieldPasswordHint": "Mínimo 8 caracteres, con letras y números",
@@ -223,7 +222,7 @@
   "xpGuideDeadlinesDetail": "Marcar una entrega como hecha da XP; como mucho 5 cada 24 horas.",
   "xpGuideChallenges": "Retos",
   "xpGuideChallengesDetail": "Cada tarea da XP según su dificultad; como mucho 140 XP por reto.",
-  "xpGuideFooter": "Lo que ganas se suma a tu nivel aquí, en Progreso.",
+  "xpGuideFooter": "Lo que ganas se suma a tu nivel, en la pestaña Tú.",
   "commonArrowSpoken": " a ",
   "registerLegalRequired": "Marca la casilla para crear tu cuenta.",
   "commonListAnd": "{items} y {last}",
@@ -328,5 +327,9 @@
         "type": "String"
       }
     }
+  },
+  "tabYou": "Tú",
+  "@tabYou": {
+    "description": "Pestaña inferior «Tú» (antes «Progreso», ADR 0061)."
   }
 }

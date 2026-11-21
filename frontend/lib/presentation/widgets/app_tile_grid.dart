@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import '../extensions/context_extensions.dart';
 import '../theme/tokens.g.dart';
 
-/// Rejilla de accesos rápidos (Inicio, Rutinas): todos en una fila y, si a
-/// cada uno le tocarían menos de [minTileWidth] (escalado con el texto), en
-/// filas de la mitad. Así las etiquetas no se cortan con el texto al 200 %.
+/// Rejilla de accesos y cifras: todos en una fila y, si a cada uno le
+/// tocarían menos de [minTileWidth] (escalado con el texto), en filas de la
+/// mitad. Así las etiquetas no se cortan con el texto al 200 %. La usan los
+/// atajos de Entreno (`TrainingQuickActions`), las tarjetitas de Tú › Retos,
+/// Tú › Comunidad y el Perfil (a través de `AppShortcutGrid`), los tipos de
+/// evento del calendario y las cifras de retos, sesiones y carreras.
 class AppTileGrid extends StatelessWidget {
   const AppTileGrid({
     super.key,

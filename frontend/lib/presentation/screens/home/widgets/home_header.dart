@@ -7,7 +7,7 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
 /// Cabecera del inicio: saludo, avatar, fecha, racha, comunidad, campana y
-/// admin. La racha lleva a la pestaña Progreso, donde está la barra de XP.
+/// admin. La racha lleva a la pestaña «Tú», donde está la barra de XP.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
@@ -30,7 +30,7 @@ class HomeHeader extends StatelessWidget {
   final VoidCallback onProfile;
   final VoidCallback onNotifications;
 
-  /// Abre Comunidad: por ahora Amigos, en las solicitudes si hay (ADR 0059).
+  /// Abre Tú › Comunidad, con las solicitudes recibidas arriba (ADR 0061).
   final VoidCallback onCommunity;
 
   /// Solicitudes de amistad sin responder (número del icono «Comunidad»).
@@ -114,9 +114,12 @@ class HomeHeader extends StatelessWidget {
           child: Badge(
             isLabelVisible: pendingFriendRequests > 0,
             label: Text(
-              pendingFriendRequests > 99 ? '99+' : '$pendingFriendRequests',
+              pendingFriendRequests > 99
+                  ? l10n.socialBadgeOverflow
+                  : '$pendingFriendRequests',
             ),
-            child: const Icon(AppIcons.friends),
+            // El mismo icono que el apartado al que lleva (Tú › Comunidad).
+            child: const Icon(AppIcons.communityTab),
           ),
         ),
       ),
@@ -126,7 +129,9 @@ class HomeHeader extends StatelessWidget {
         icon: Badge(
           isLabelVisible: unreadNotifications > 0,
           label: Text(
-            unreadNotifications > 99 ? '99+' : '$unreadNotifications',
+            unreadNotifications > 99
+                ? l10n.socialBadgeOverflow
+                : '$unreadNotifications',
           ),
           child: const Icon(AppIcons.notifications),
         ),

@@ -609,8 +609,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
               focusAt: _focusOf(state),
               focusDay: _focusDayOf(),
               summary: summary,
-              onSlotTap: (start) =>
-                  _bloc.add(CalendarEvent.slotTapped(start)),
+              onSlotTap: (start) => _bloc.add(CalendarEvent.slotTapped(start)),
               // Mantener pulsado un hueco también añade ahí (sobre un
               // evento, la pulsación larga lo arrastra).
               onSlotLongPress: (start) =>
@@ -776,13 +775,7 @@ class _WeekHeader extends StatelessWidget {
           return Column(
             children: [
               Center(child: week),
-              Row(
-                children: [
-                  ?todayButton,
-                  const Spacer(),
-                  ...tools,
-                ],
-              ),
+              Row(children: [?todayButton, const Spacer(), ...tools]),
             ],
           );
         },

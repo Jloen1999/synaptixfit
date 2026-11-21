@@ -189,7 +189,7 @@ La edad ya no se pide ni se guarda: sale de la fecha de nacimiento opcional de l
 
 La usan: el gasto del estudio (fórmula 1, `PlannerDirectoryJdbcAdapter.findMetabolic` e `InsightsSourceJdbcAdapter.bodyProfile`), la propuesta de rutina (`TrainingContextPersistenceAdapter.profile`) y los objetivos sugeridos (`WellnessProfileService.suggestGoals`, que sin ninguna edad no orienta por edad en vez de usar la de referencia). Validación de la fecha (dominio): no futura y edad entre 14 y 100 años (`INVALID_BIRTH_DATE`).
 
-## «Tu estudio» (Progreso) y valores por defecto
+## «Tu estudio» (Tú › Resumen) y valores por defecto
 
 - **Semana:** de lunes a domingo en la zona de la app (`StudyWeekSummary`).
   - Minutos de concentración: solo las fases de foco completadas del Pomodoro, por su día registrado. No es la actividad de estudio completa de `StudyActivity`.

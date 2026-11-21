@@ -1,7 +1,7 @@
 # ADR 0044 — «Con amigos» asíncrono: retos privados entre amigos, racha con un amigo y «Entrenamos juntos»
 
 - **Fecha:** 2026-11-15
-- **Estado:** aceptado
+- **Estado:** aceptado («Con amigos» se abre desde las tarjetitas de Tú › Retos y desde Tú › Comunidad, ADR 0061)
 
 ## Contexto
 

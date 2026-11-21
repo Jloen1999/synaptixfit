@@ -33,6 +33,10 @@ abstract final class SocialPaths {
   static const friends = '/social/friends';
   static const friendRequests = '/social/friends/requests';
 
+  /// Amigos con el buscador de personas ya enfocado (Tú › Comunidad ›
+  /// Buscar).
+  static const friendSearch = '/social/friends/search';
+
   /// Amigos con la pestaña «Bloqueados» abierta (desde el aviso de bloquear).
   static const blocked = '/social/friends/blocked';
   static const userPattern = '/social/users/:userId';
@@ -68,7 +72,8 @@ abstract final class SocialPaths {
 abstract final class SocialExternalPaths {
   /// Raíces de las pestañas de la barra inferior: se abren cambiando de
   /// pestaña (`go`), porque apilarlas encima duplicaría la barra. `/challenges`
-  /// y `/progress/badges` son direcciones antiguas que redirigen a Progreso.
+  /// y `/progress/badges` son direcciones antiguas y `/community` una corta:
+  /// redirigen a un apartado de «Tú».
   static const tabRoots = {
     '/home',
     '/planner',
@@ -77,16 +82,18 @@ abstract final class SocialExternalPaths {
     '/progress',
     '/challenges',
     '/progress/badges',
+    '/community',
   };
 
   /// Inicio: de ahí cuelgan el muro y los avisos sociales (su flecha sin pila).
   static const home = '/home';
 
-  /// Perfil (módulo profile): de ahí cuelgan los amigos.
-  static const profile = '/profile';
-
-  /// Progreso › Retos: de ahí cuelga «Con amigos» (es pestaña: con `go`).
+  /// Tú › Retos (es pestaña: con `go`).
   static const progressChallenges = '/progress?tab=challenges';
+
+  /// Tú › Comunidad (es pestaña: con `go`, ADR 0061): de ahí cuelgan los
+  /// amigos, el muro y «Con amigos».
+  static const community = '/progress?tab=community';
 
   /// Rutina dentro de la pestaña Entreno (con `go`): de ahí sale «Entrenar
   /// con amigos».
@@ -137,6 +144,10 @@ List<RouteBase> socialRoutes() => [
     path: SocialPaths.friendRequests,
     builder: (_, _) =>
         const FriendsPage(initialTab: FriendshipListKind.received),
+  ),
+  GoRoute(
+    path: SocialPaths.friendSearch,
+    builder: (_, _) => const FriendsPage(searchFirst: true),
   ),
   GoRoute(
     path: SocialPaths.userPattern,

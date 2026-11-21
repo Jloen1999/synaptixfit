@@ -51,10 +51,7 @@ extension AppContext on BuildContext {
       label,
       style?.textStyle?.resolve({}) ?? textStyles.labelLarge,
     );
-    return math.max(
-      TokensLayout.minTouchTarget,
-      text + padding + iconSize,
-    );
+    return math.max(TokensLayout.minTouchTarget, text + padding + iconSize);
   }
 
   /// El usuario ha pedido reducir el movimiento en su sistema.

@@ -337,7 +337,7 @@
   "trainingShared": "Shared",
   "trainingShareText": "{minutes}-min session: {kg} kg moved.",
   "trainingShareRecord": "New record in {exercise}: {value}",
-  "trainingMsgSessionShared": "Posted. Find it in Community (Home › Community wall).",
+  "trainingMsgSessionShared": "Posted. Find it on the Wall (You › Community).",
   "trainingMsgPendingSetDiscarded": "A set saved offline couldn’t be uploaded. Log it again.",
   "trainingShareTextNoVolume": "{minutes}-min session done.",
   "trainingShareRecordUnnamed": "New record: {value}",

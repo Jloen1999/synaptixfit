@@ -14,6 +14,7 @@ import 'edit_account/page/edit_account_page.dart';
 import 'edit_wellness/page/edit_wellness_page.dart';
 import 'notification_settings/page/notification_settings_page.dart';
 import 'onboarding/page/onboarding_page.dart';
+import 'profile/page/profile_detail_pages.dart';
 import 'profile/page/profile_page.dart';
 import 'settings/page/settings_page.dart';
 import 'subject_selector/page/subject_selector_page.dart';
@@ -24,6 +25,10 @@ abstract final class ProfilePaths {
   static const root = '/profile';
   static const editAccount = '/profile/account';
   static const editWellness = '/profile/wellness';
+
+  /// Fichas de lectura «Físico» y «Académico» (tarjetitas del perfil).
+  static const physical = '/profile/physical';
+  static const studies = '/profile/studies';
   static const wellnessHistory = '/profile/wellness-history';
   static const editAcademic = '/profile/academic';
   static const degrees = '/profile/degrees';
@@ -44,8 +49,14 @@ abstract final class ProfilePaths {
 
   /// Rutas de otros módulos a las que navega este.
   static const home = '/home';
+
+  /// Pestaña «Tú» (con `go`): el padre del perfil cuando se abre en frío.
+  static const you = '/progress';
   static const adminPanel = '/admin';
   static const friends = '/social/friends';
+  static const friendRequests = '/social/friends/requests';
+
+  /// El muro.
   static const community = '/social';
   static String publicProfile(String userId) => '/social/users/$userId';
 }
@@ -58,6 +69,8 @@ List<RouteBase> profileRoutes() => [
     routes: [
       GoRoute(path: 'account', builder: (_, _) => const EditAccountPage()),
       GoRoute(path: 'wellness', builder: (_, _) => const EditWellnessPage()),
+      GoRoute(path: 'physical', builder: (_, _) => const ProfilePhysicalPage()),
+      GoRoute(path: 'studies', builder: (_, _) => const ProfileStudiesPage()),
       GoRoute(
         path: 'wellness-history',
         builder: (_, _) => const WellnessHistoryPage(),

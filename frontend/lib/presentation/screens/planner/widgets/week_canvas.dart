@@ -642,15 +642,16 @@ class _DayHeader extends StatelessWidget {
               : null,
           child: Text(
             PlannerFormats.dayShort(day),
-            style: (compact
-                    ? context.textStyles.labelMedium
-                    : context.textStyles.labelLarge)
-                ?.copyWith(
-              color: isToday
-                  ? context.colors.onPrimary
-                  : context.colors.onSurfaceVariant,
-              fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-            ),
+            style:
+                (compact
+                        ? context.textStyles.labelMedium
+                        : context.textStyles.labelLarge)
+                    ?.copyWith(
+                      color: isToday
+                          ? context.colors.onPrimary
+                          : context.colors.onSurfaceVariant,
+                      fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                    ),
           ),
         ),
       ),

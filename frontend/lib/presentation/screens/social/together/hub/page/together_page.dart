@@ -66,7 +66,7 @@ class _TogetherView extends StatelessWidget with ErrorsMessageMixin {
         builder: (context, state) => Scaffold(
           appBar: AppPageBar.reading(
             leading: const AppBackButton(
-              fallback: SocialExternalPaths.progressChallenges,
+              fallback: SocialExternalPaths.community,
             ),
             title: Text(l10n.togetherTitle),
           ),

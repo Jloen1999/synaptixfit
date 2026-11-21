@@ -39,6 +39,6 @@ void main() {
     );
     expect(texts.title, 'Semana de mucho entreno');
     expect(texts.description, contains('1,73'));
-    expect(texts.action, 'Ver Progreso');
+    expect(texts.action, 'Ver tu progreso');
   });
 }

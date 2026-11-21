@@ -4,7 +4,8 @@ import '../../enums/community_post_kind.dart';
 
 part 'community_post_preview.freezed.dart';
 
-/// Resumen de una publicación del muro para la vista previa de Progreso.
+/// Resumen de una publicación del muro para «Lo último del muro» de
+/// Tú › Comunidad.
 @freezed
 abstract class CommunityPostPreview with _$CommunityPostPreview {
   const factory CommunityPostPreview({

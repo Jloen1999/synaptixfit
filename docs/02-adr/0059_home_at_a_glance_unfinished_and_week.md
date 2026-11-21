@@ -2,7 +2,7 @@
 
 - **Fecha:** 2026-11-19
 - **Estado:** aceptado (maqueta `inicio-calendario.html`, pantallas 1, 2 y 6, aprobada por el propietario el 19 nov 2026,
-  tanda 1)
+  tanda 1). El icono «Comunidad» de la cabecera lleva a Tú › Comunidad desde el ADR 0061.
 
 ## Contexto
 

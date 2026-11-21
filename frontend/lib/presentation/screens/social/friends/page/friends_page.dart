@@ -17,12 +17,20 @@ import '../../widgets/social_layout.dart';
 import '../../widgets/user_tile.dart';
 import '../bloc/friends_bloc.dart';
 
-/// Amistades (`/social/friends`) y solicitudes (`/social/friends/requests`,
-/// que abre directamente la pestaña de recibidas).
+/// Amistades (`/social/friends`), solicitudes (`/social/friends/requests`,
+/// que abre directamente la pestaña de recibidas) y buscar personas
+/// (`/social/friends/search`, con el buscador ya enfocado).
 class FriendsPage extends StatelessWidget {
-  const FriendsPage({super.key, this.initialTab = FriendshipListKind.friends});
+  const FriendsPage({
+    super.key,
+    this.initialTab = FriendshipListKind.friends,
+    this.searchFirst = false,
+  });
 
   final FriendshipListKind initialTab;
+
+  /// Abre con el teclado en el buscador (tarjetita «Buscar» de Comunidad).
+  final bool searchFirst;
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +39,16 @@ class FriendsPage extends StatelessWidget {
       child: DefaultTabController(
         length: FriendshipListKind.values.length,
         initialIndex: initialTab.index,
-        child: const _FriendsView(),
+        child: _FriendsView(searchFirst: searchFirst),
       ),
     );
   }
 }
 
 class _FriendsView extends StatefulWidget {
-  const _FriendsView();
+  const _FriendsView({required this.searchFirst});
+
+  final bool searchFirst;
 
   @override
   State<_FriendsView> createState() => _FriendsViewState();
@@ -62,7 +72,7 @@ class _FriendsViewState extends State<_FriendsView> {
           showSocialFeedback(context, state.feedback!, inFriends: true),
       child: Scaffold(
         appBar: AppPageBar.reading(
-          leading: const AppBackButton(fallback: SocialExternalPaths.profile),
+          leading: const AppBackButton(fallback: SocialExternalPaths.community),
           title: Text(l10n.socialFriendsTitle),
           actions: [
             IconButton(
@@ -85,6 +95,7 @@ class _FriendsViewState extends State<_FriendsView> {
                 child: AppSearchField(
                   label: l10n.socialSearchUsersHint,
                   controller: _search,
+                  autofocus: widget.searchFirst,
                   onChanged: (value) => context.read<FriendsBloc>().add(
                     FriendsEvent.queryChanged(value),
                   ),

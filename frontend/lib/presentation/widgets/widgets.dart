@@ -37,6 +37,7 @@ export 'app_search_field.dart';
 export 'app_segmented_choice.dart';
 export 'app_secondary_button.dart';
 export 'app_section_header.dart';
+export 'app_shortcut_tile.dart';
 export 'app_skeleton.dart';
 export 'app_skeleton_list.dart';
 export 'app_step_badge.dart';

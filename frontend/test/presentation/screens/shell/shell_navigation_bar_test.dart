@@ -64,9 +64,9 @@ void main() {
                       label: l10n.tabTraining,
                     ),
                     (
-                      icon: AppIcons.tabProgress,
-                      selected: AppIcons.tabProgressSelected,
-                      label: l10n.tabProgress,
+                      icon: AppIcons.tabYou,
+                      selected: AppIcons.tabYouSelected,
+                      label: l10n.tabYou,
                     ),
                   ],
                 ),
@@ -83,7 +83,7 @@ void main() {
         l10n.tabCalendar,
         l10n.tabAcademic,
         l10n.tabTraining,
-        l10n.tabProgress,
+        l10n.tabYou,
       ];
       final boxes = [
         for (final label in labels)

@@ -1,6 +1,6 @@
 # ADR 0038 — Navegación con Calendario, Inicio al grano y XP solo donde aporta
 
-- **Estado:** aceptado
+- **Estado:** aceptado (la pestaña «Progreso» se llama «Tú» y suma «Comunidad» desde el ADR 0061)
 - **Fecha:** 2026-11-13
 
 ## Contexto

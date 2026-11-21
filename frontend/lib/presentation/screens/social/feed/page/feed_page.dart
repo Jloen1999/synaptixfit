@@ -190,7 +190,7 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
           showSocialFeedback(context, state.feedback!),
       child: Scaffold(
         appBar: AppPageBar.reading(
-          leading: const AppBackButton(fallback: SocialExternalPaths.home),
+          leading: const AppBackButton(fallback: SocialExternalPaths.community),
           title: Text(l10n.socialFeedTitle),
           actions: [
             IconButton(

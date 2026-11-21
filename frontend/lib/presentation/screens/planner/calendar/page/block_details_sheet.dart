@@ -270,7 +270,10 @@ class BlockDetailsSheet extends StatelessWidget {
         buttons.add((l10n.plannerClassWent, BlockDetailsAction.classWent));
       }
       if (!upcoming && !block.absent) {
-        buttons.add((l10n.plannerClassDidNotGo, BlockDetailsAction.classAbsent));
+        buttons.add((
+          l10n.plannerClassDidNotGo,
+          BlockDetailsAction.classAbsent,
+        ));
       }
     } else if (upcoming) {
       notes.add(l10n.plannerCompleteWhenStarted);
@@ -295,9 +298,7 @@ class BlockDetailsSheet extends StatelessWidget {
         _Note(note),
         const SizedBox(height: TokensSpacing.s),
       ],
-      _ActionsRow(
-        actions: [for (final (label, a) in buttons) (label, run(a))],
-      ),
+      _ActionsRow(actions: [for (final (label, a) in buttons) (label, run(a))]),
       // Borrar va siempre en su propia línea, al final y separado de lo
       // habitual: no se pulsa por error al ir a mover o marcar.
       const SizedBox(height: TokensSpacing.l),
@@ -379,9 +380,7 @@ class _Header extends StatelessWidget {
       ],
     );
     final edit = TextButton.icon(
-      onPressed: details.busy
-          ? null
-          : () => onAction(BlockDetailsAction.edit),
+      onPressed: details.busy ? null : () => onAction(BlockDetailsAction.edit),
       icon: const Icon(AppIcons.edit),
       label: Text(l10n.plannerDetailsEdit),
     );

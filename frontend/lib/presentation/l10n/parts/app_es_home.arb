@@ -560,7 +560,6 @@
     }
   },
   "homeReviewAll": "Repasar todos",
-  "homeCommunity": "Muro de la comunidad",
   "homeTodayClassesNote": "{count, plural, =1{Y 1 clase} other{Y {count} clases}}",
   "@homeTodayClassesNote": {
     "placeholders": {
@@ -962,7 +961,7 @@
   "guideHomeAgendaTitle": "Agenda",
   "guideHomeAgendaBody": "Lo que tienes hoy y los próximos días. Marca aquí lo que ya hiciste.",
   "guideHomeCommunityTitle": "Comunidad",
-  "guideHomeCommunityBody": "Tus amigos y las solicitudes de amistad. El número dice cuántas esperan respuesta.",
+  "guideHomeCommunityBody": "Solicitudes de amistad, amigos, muro y lo que haces con amigos, todo en Tú › Comunidad. El número dice cuántas solicitudes esperan respuesta.",
   "homeTodayOpenEventHint": "Abre el evento en el calendario",
   "homeUnfinishedOpenHint": "Ver lo que marcaste",
   "homeMoveTodayOn": "Hoy, {date}",

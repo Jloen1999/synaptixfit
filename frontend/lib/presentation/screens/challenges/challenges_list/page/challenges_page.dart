@@ -26,9 +26,9 @@ import '../../widgets/challenge_labels.dart';
 import '../../widgets/pending_milestone_tile.dart';
 import '../bloc/challenges_list_bloc.dart';
 
-/// Progreso › Retos: tus retos con el botón «Nuevo reto». Los de la comunidad
-/// se abren aparte (`/challenges/community`) en vez de con otra fila de
-/// pestañas dentro de la pestaña.
+/// Tú › Retos: arriba cuatro accesos (Nuevo, Plantillas, Con amigos y De
+/// otros, ADR 0061) y debajo tus retos. Plantillas, «Con amigos» y los de la
+/// comunidad son pantallas aparte (`push`); «Nuevo» abre la hoja rápida.
 class ChallengesPage extends StatelessWidget {
   const ChallengesPage({super.key});
 
@@ -45,27 +45,8 @@ class ChallengesPage extends StatelessWidget {
 class _ChallengesView extends StatelessWidget {
   const _ChallengesView();
 
-  Future<void> _create(BuildContext context) async {
-    final bloc = context.read<ChallengesListBloc>();
-    final result = await showQuickChallengeSheet(context);
-    if (!context.mounted || result == null) return;
-    context.showSnack(context.localizations.challengesCreated);
-    bloc.add(const ChallengesListEvent.refreshed());
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'challenges-new',
-        onPressed: () => _create(context),
-        icon: const Icon(AppIcons.add),
-        label: Text(l10n.challengesNew),
-      ),
-      body: const _MineTab(),
-    );
-  }
+  Widget build(BuildContext context) => const Scaffold(body: _MineTab());
 }
 
 class _MineTab extends StatefulWidget {
@@ -181,13 +162,17 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                 TokensSpacing.m,
                 TokensSpacing.m,
                 TokensSpacing.m,
-                TokensSpacing.xxl * 2,
+                TokensSpacing.xxl,
               ),
               children: [
                 ChallengeContentWidth(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Los cuatro accesos, arriba y a la vista (sustituyen al
+                      // botón flotante y a las dos filas grandes).
+                      const ChallengeShortcuts(),
+                      const SizedBox(height: TokensSpacing.l),
                       if (state.pending.isNotEmpty) ...[
                         AppSectionHeader(
                           title: context.localizations.challengesPendingTitle,
@@ -223,12 +208,6 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                           ),
                         const SizedBox(height: TokensSpacing.l),
                       ],
-                      // Retos listos que se cuentan solos (ADR 0043): una fila,
-                      // secundaria frente a «Nuevo reto».
-                      const _TemplatesEntry(),
-                      const SizedBox(height: TokensSpacing.s),
-                      const _FriendsEntry(),
-                      const SizedBox(height: TokensSpacing.m),
                       if (!firstTime) ...[
                         AppSectionHeader(
                           title: context.localizations.challengesListTitle,
@@ -280,7 +259,7 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
               for (var i = 0; i < 3; i++)
                 const Padding(
                   padding: EdgeInsets.only(bottom: TokensSpacing.s),
-                  child: AppSkeleton(height: 132),
+                  child: AppSkeleton(height: TokensSize.skeletonCardTall),
                 ),
             ],
           ),
@@ -315,15 +294,15 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
       }
       return [
         AppEmptyState(
-          icon: Icons.flag_outlined,
+          icon: AppIcons.challenge,
           title: filtered
               ? l10n.challengesEmptyFilteredTitle
               : l10n.challengesEmptyTitle,
           message: filtered
               ? l10n.challengesEmptyFilteredMessage
               : l10n.challengesEmptyMessage,
-          // Sin filtros no se repite «Nuevo reto» (ya es el botón flotante):
-          // se ofrece la otra vía para empezar, inspirarse en la comunidad.
+          // Sin filtros no se repite nada: «Nuevo», «Plantillas» y «De otros»
+          // ya están en los accesos de arriba.
           action: filtered
               ? AppSecondaryButton(
                   label: l10n.challengesFilterClear,
@@ -332,11 +311,7 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                     _setQuery(const ChallengeQuery());
                   },
                 )
-              : AppSecondaryButton(
-                  label: l10n.challengesEmptyCommunityAction,
-                  icon: const Icon(Icons.groups_outlined),
-                  onPressed: () => context.push(ChallengesPaths.community),
-                ),
+              : null,
         ),
       ];
     }
@@ -368,64 +343,61 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
           padding: EdgeInsets.all(TokensSpacing.m),
           child: AppLoadingView(),
         ),
-      // Inspirarse en otros: un solo enlace, al final de lo propio.
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: TextButton.icon(
-          onPressed: () => context.push(ChallengesPaths.community),
-          icon: const Icon(Icons.groups_outlined),
-          label: Text(l10n.challengesEmptyCommunityAction),
-        ),
-      ),
     ];
   }
 }
 
-/// Fila que abre las plantillas de retos (ADR 0043). Al volver se refresca la
-/// lista: puede haber un reto nuevo.
-class _TemplatesEntry extends StatelessWidget {
-  const _TemplatesEntry();
+/// Los cuatro accesos de Tú › Retos (ADR 0061): «Nuevo» (la hoja rápida),
+/// «Plantillas», «Con amigos» y «De otros» (los de la comunidad). Al volver se
+/// refresca la lista: puede haber un reto nuevo.
+class ChallengeShortcuts extends StatelessWidget {
+  const ChallengeShortcuts({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: AppFocusOutline(
-        child: ListTile(
-          leading: Icon(Icons.flag_outlined, color: context.colors.primary),
-          title: Text(l10n.challengesTemplatesTitle),
-          subtitle: Text(l10n.challengesTemplatesEntry),
-          trailing: const Icon(AppIcons.next),
-          onTap: () async {
-            final bloc = context.read<ChallengesListBloc>();
-            await context.push(ChallengesPaths.templates);
-            bloc.add(const ChallengesListEvent.refreshed());
-          },
-        ),
-      ),
-    );
+  Future<void> _create(BuildContext context) async {
+    final bloc = context.read<ChallengesListBloc>();
+    final result = await showQuickChallengeSheet(context);
+    if (!context.mounted || result == null) return;
+    context.showSnack(context.localizations.challengesCreated);
+    bloc.add(const ChallengesListEvent.refreshed());
   }
-}
 
-/// Fila que abre «Con amigos» (ADR 0044): retos, rachas y entrenos con amigos.
-class _FriendsEntry extends StatelessWidget {
-  const _FriendsEntry();
+  Future<void> _open(BuildContext context, String path) async {
+    final bloc = context.read<ChallengesListBloc>();
+    await context.push<Object?>(path);
+    if (!bloc.isClosed) bloc.add(const ChallengesListEvent.refreshed());
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: AppFocusOutline(
-        child: ListTile(
-          leading: Icon(AppIcons.friends, color: context.colors.primary),
-          title: Text(l10n.togetherTitle),
-          subtitle: Text(l10n.togetherEntry),
-          trailing: const Icon(AppIcons.next),
-          onTap: () => context.push(ChallengesExternalPaths.together),
+    return AppShortcutGrid(
+      tiles: [
+        AppShortcutTile(
+          icon: AppIcons.add,
+          label: l10n.challengesShortcutNew,
+          semanticsLabel: l10n.challengesNew,
+          emphasized: true,
+          onTap: () => _create(context),
         ),
-      ),
+        AppShortcutTile(
+          icon: AppIcons.challenge,
+          label: l10n.challengesShortcutTemplates,
+          semanticsLabel: l10n.challengesTemplatesTitle,
+          onTap: () => _open(context, ChallengesPaths.templates),
+        ),
+        AppShortcutTile(
+          icon: AppIcons.friends,
+          label: l10n.togetherTitle,
+          semanticsLabel: l10n.challengesShortcutFriendsSemantics,
+          onTap: () => _open(context, ChallengesExternalPaths.together),
+        ),
+        AppShortcutTile(
+          icon: AppIcons.communityChallenges,
+          label: l10n.challengesShortcutOthers,
+          semanticsLabel: l10n.challengesShortcutOthersSemantics,
+          onTap: () => _open(context, ChallengesPaths.community),
+        ),
+      ],
     );
   }
 }
@@ -674,15 +646,15 @@ class _LoadingList extends StatelessWidget {
           ChallengeContentWidth(
             child: Column(
               children: [
-                AppSkeleton(height: 104),
+                AppSkeleton(height: TokensSize.skeletonRow),
                 SizedBox(height: TokensSpacing.l),
-                AppSkeleton(height: 64),
+                AppSkeleton(height: TokensSize.listTileMin),
                 SizedBox(height: TokensSpacing.s),
-                AppSkeleton(height: 64),
+                AppSkeleton(height: TokensSize.listTileMin),
                 SizedBox(height: TokensSpacing.l),
-                AppSkeleton(height: 132),
+                AppSkeleton(height: TokensSize.skeletonCardTall),
                 SizedBox(height: TokensSpacing.s),
-                AppSkeleton(height: 132),
+                AppSkeleton(height: TokensSize.skeletonCardTall),
               ],
             ),
           ),

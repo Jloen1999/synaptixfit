@@ -14,12 +14,12 @@ import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../../challenges/challenges_list/page/challenges_page.dart';
 import '../../badges/page/badges_page.dart';
+import '../../community/page/community_tab.dart';
 import '../../progress_routes.dart';
 import '../../widgets/study_by_subject_card.dart';
 import '../../widgets/study_week_card.dart';
 import '../../widgets/analytics_summary.dart';
 import '../../widgets/balance_card.dart';
-import '../../widgets/community_preview_card.dart';
 import '../../widgets/next_badge_card.dart';
 import '../../widgets/physical_load_card.dart';
 import '../../widgets/progress_labels.dart';
@@ -27,9 +27,10 @@ import '../../widgets/streak_card.dart';
 import '../../widgets/week_headline_card.dart';
 import '../bloc/progress_overview_bloc.dart';
 
-/// Pestaña Progreso: «Resumen» (titular de la semana, nivel, racha y, plegadas,
-/// las cifras), «Retos» e
-/// «Insignias». Aquí viven el XP, las rachas, las insignias y los retos
+/// Pestaña «Tú» (antes «Progreso», ADR 0061): arriba tu foto y tu nombre, que
+/// abren el Perfil; debajo «Resumen» (titular de la semana, nivel, racha y,
+/// plegadas, las cifras), «Retos», «Insignias» y «Comunidad», cada uno con su
+/// icono. Aquí viven el XP, las rachas, las insignias y los retos
 /// (vocabulario.md §4); el resto de la app no enseña cifras de XP. El apartado
 /// llega con `?tab=` (avisos, Inicio, celebraciones).
 class ProgressOverviewPage extends StatefulWidget {
@@ -61,11 +62,7 @@ class _ProgressOverviewPageState extends State<ProgressOverviewPage>
     if (_tabs.indexIsChanging || !mounted) return;
     final tab = ProgressTab.values[_tabs.index];
     if (tab == widget.tab) return;
-    context.go(switch (tab) {
-      ProgressTab.summary => ProgressPaths.root,
-      ProgressTab.challenges => ProgressPaths.challenges,
-      ProgressTab.badges => ProgressPaths.badgesTab,
-    });
+    context.go(tab.path);
   }
 
   @override
@@ -88,39 +85,203 @@ class _ProgressOverviewPageState extends State<ProgressOverviewPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.localizations;
+    final background =
+        Theme.of(context).appBarTheme.backgroundColor ??
+        Theme.of(context).scaffoldBackgroundColor;
+    final large = context.largeText;
     return Scaffold(
-      appBar: AppPageBar(
-        title: Text(l10n.progressTitle),
-        bottom: TabBar(
-          controller: _tabs,
-          // Con el texto grande, los apartados se desplazan en vez de cortarse
-          // («Résum…»).
-          isScrollable: context.largeText,
-          tabAlignment: context.largeText ? TabAlignment.start : null,
-          tabs: [
-            Tab(text: l10n.progressTabSummary),
-            Tab(text: l10n.challengesTitle),
-            Tab(text: l10n.progressBadgesPageTitle),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabs,
+      body: Column(
         children: [
-          AppKeepAlive(
-            child: BlocProvider(
-              create: (_) =>
-                  getIt<ProgressOverviewBloc>()
-                    ..add(const ProgressOverviewEvent.started()),
-              child: _ProgressOverviewView(
-                onOpenBadges: () => _show(ProgressTab.badges),
+          // Sin barra de título: la cabecera es la persona (abre el Perfil) y
+          // las pestañas, alineadas con el contenido en pantallas anchas.
+          ColoredBox(
+            color: background,
+            child: SafeArea(
+              bottom: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: TokensLayout.contentMaxWidth,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const _YouHeader(),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          // Se desplazan solo si algún apartado no cabe en su
+                          // hueco (320 px, «Communauté», texto al 120 %...):
+                          // se mide el ancho real, no solo el tamaño de letra.
+                          final scroll = _tabsOverflow(
+                            context,
+                            constraints.maxWidth,
+                          );
+                          return TabBar(
+                            controller: _tabs,
+                            isScrollable: scroll,
+                            tabAlignment: scroll ? TabAlignment.start : null,
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: _tabPadding,
+                            ),
+                            tabs: [
+                              for (final tab in ProgressTab.values)
+                                Tab(
+                                  icon: Icon(_tabIcon(tab)),
+                                  text: _tabLabel(context, tab),
+                                  iconMargin: const EdgeInsets.only(
+                                    bottom: TokensSpacing.xxs,
+                                  ),
+                                  // Más baja que la de Material (72): deja
+                                  // sitio al contenido. Con el texto grande,
+                                  // la de siempre, para que no se corte.
+                                  height: large
+                                      ? null
+                                      : TokensLayout.minTouchTarget +
+                                            TokensSpacing.s,
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-          const AppKeepAlive(child: ChallengesPage()),
-          const AppKeepAlive(child: BadgesPage()),
+          Expanded(
+            child: TabBarView(
+              controller: _tabs,
+              children: [
+                AppKeepAlive(
+                  child: BlocProvider(
+                    create: (_) =>
+                        getIt<ProgressOverviewBloc>()
+                          ..add(const ProgressOverviewEvent.started()),
+                    child: _ProgressOverviewView(
+                      onOpenBadges: () => _show(ProgressTab.badges),
+                    ),
+                  ),
+                ),
+                const AppKeepAlive(child: ChallengesPage()),
+                const AppKeepAlive(child: BadgesPage()),
+                const AppKeepAlive(child: CommunityTab()),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  /// Margen a cada lado del texto de un apartado.
+  static const _tabPadding = TokensSpacing.xs;
+
+  /// `true` si el apartado más ancho no cabe en su parte de [width] (las
+  /// pestañas fijas reparten el ancho a partes iguales).
+  bool _tabsOverflow(BuildContext context, double width) {
+    final theme = TabBarTheme.of(context);
+    final styles = [
+      theme.labelStyle ?? context.textStyles.titleSmall,
+      theme.unselectedLabelStyle ?? context.textStyles.titleSmall,
+    ];
+    var widest = 0.0;
+    for (final tab in ProgressTab.values) {
+      for (final style in styles) {
+        final w = context.textWidth(_tabLabel(context, tab), style);
+        if (w > widest) widest = w;
+      }
+    }
+    final slot = width / ProgressTab.values.length;
+    return widest + _tabPadding * 2 > slot;
+  }
+
+  static IconData _tabIcon(ProgressTab tab) => switch (tab) {
+    ProgressTab.summary => AppIcons.progressSummary,
+    ProgressTab.challenges => AppIcons.challenge,
+    ProgressTab.badges => AppIcons.badge,
+    ProgressTab.community => AppIcons.communityTab,
+  };
+
+  static String _tabLabel(BuildContext context, ProgressTab tab) {
+    final l10n = context.localizations;
+    return switch (tab) {
+      ProgressTab.summary => l10n.progressTabSummary,
+      ProgressTab.challenges => l10n.challengesTitle,
+      ProgressTab.badges => l10n.progressBadgesPageTitle,
+      ProgressTab.community => l10n.progressTabCommunity,
+    };
+  }
+}
+
+/// Cabecera de «Tú»: tu foto y tu nombre, con «Ver perfil». Toda la fila es un
+/// botón que abre el Perfil (pantalla completa, con `push`).
+class _YouHeader extends StatelessWidget {
+  const _YouHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final account = context.select((SessionBloc bloc) => bloc.account);
+    final name = account?.fullName.trim() ?? '';
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        child: AppFocusOutline(
+          child: InkWell(
+            onTap: () => context.push(ProgressExternalPaths.profile),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: TokensSize.listTileMin,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TokensSpacing.m,
+                  vertical: TokensSpacing.xs,
+                ),
+                child: Row(
+                  children: [
+                    ExcludeSemantics(
+                      child: AppAvatar(
+                        name: name,
+                        imageUrl: account?.avatarUrl,
+                        radius: TokensSize.thumbnailXs / 2,
+                      ),
+                    ),
+                    const SizedBox(width: TokensSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // El encabezado de «Tú» para el lector: la
+                          // pestaña no tiene barra de título.
+                          if (name.isNotEmpty)
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.textStyles.titleMedium,
+                              ),
+                            ),
+                          Text(
+                            l10n.progressSeeProfile,
+                            style: context.textStyles.bodySmall?.copyWith(
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(AppIcons.next, color: context.colors.onSurfaceVariant),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -294,7 +455,7 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                         label: l10n.progressStudyReviewNow(
                           overview.studyWeek!.reviewsDue,
                         ),
-                        icon: Icons.replay_rounded,
+                        icon: AppIcons.review,
                         loading: openingReview,
                         // Un toque: abre la cola de repaso, no Académico.
                         onPressed: () => context
@@ -347,14 +508,6 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                         ),
                         PhysicalLoadCard(load: overview.physicalLoad),
                       ],
-                      CommunityPreviewCard(
-                        posts: overview.communityPosts,
-                        onOpenWall: () =>
-                            context.push(ProgressExternalPaths.socialWall),
-                        onOpenPost: (post) => context.push(
-                          ProgressExternalPaths.socialPost(post.id),
-                        ),
-                      ),
                     ],
                   ],
                 ),
@@ -460,11 +613,10 @@ class _MoreToggle extends StatelessWidget {
       expanded: open,
       child: Align(
         alignment: AlignmentDirectional.centerStart,
-        child: TextButton.icon(
+        // Con borde: parece un botón (no un texto de color).
+        child: OutlinedButton.icon(
           onPressed: onToggle,
-          icon: Icon(
-            open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-          ),
+          icon: Icon(open ? AppIcons.collapse : AppIcons.expand),
           label: Text(open ? l10n.commonShowLess : l10n.progressShowMore),
         ),
       ),

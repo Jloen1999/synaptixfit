@@ -100,7 +100,7 @@ void main() {
     expect(find.text('Siguiente paso'), findsOneWidget);
     // La tarea siguiente se marca en la lista con «Siguiente».
     expect(find.text('Siguiente'), findsOneWidget);
-    expect(find.text('1/2 tareas'), findsOneWidget);
+    expect(find.text('1 de 2 tareas'), findsOneWidget);
 
     await tester.tap(find.text('Marcar como hecha la siguiente tarea'));
     verify(

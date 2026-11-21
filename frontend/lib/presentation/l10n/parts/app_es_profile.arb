@@ -573,7 +573,6 @@
   "profileWeeklyEmailHintPending": "Abre el correo que te enviamos y pulsa «Confirmar».",
   "profileWeeklyEmailHintActive": "Cada domingo desde las 19:00. Puedes darte de baja en el propio correo.",
   "profileWeeklyEmailPendingPill": "Pendiente de confirmar",
-  "profileSocialSection": "Amigos y comunidad",
   "profileFriends": "Amigos",
   "profileFriendsPending": "{count, plural, =1{1 solicitud pendiente} other{{count} solicitudes pendientes}}",
   "@profileFriendsPending": {
@@ -583,9 +582,6 @@
       }
     }
   },
-  "profilePublicProfile": "Ver mi perfil público",
-  "profileCommunity": "Comunidad",
-  "profilePublicProfilePrivateHint": "Tu perfil es privado: solo lo ves tú",
   "profileReminderOptionsTitle": "Más avisos",
   "profileReminderStreak": "Racha en riesgo",
   "profileReminderStreakHint": "Por la tarde, si aún no has entrenado ni estudiado hoy.",
@@ -724,5 +720,14 @@
   "profileSettingsHelpGroup": "Ayuda",
   "profileGuidesReset": "Ver las guías otra vez",
   "profileGuidesResetHint": "Vuelven a salir al entrar en cada pantalla.",
-  "profileGuidesResetDone": "Listo: las guías saldrán otra vez."
+  "profileGuidesResetDone": "Listo: las guías saldrán otra vez.",
+  "profileSectionsLabel": "Secciones del perfil",
+  "profileWall": "Muro",
+  "profileWallDetail": "Publicaciones",
+  "profilePublicProfileTile": "Cómo me ven",
+  "profilePhysicalTile": "Físico",
+  "profileAcademicTile": "Académico",
+  "profileTileMissing": "Sin completar",
+  "profileSettingsDetail": "Avisos, idioma…",
+  "profileStreakOpenHint": "Ver tu racha y tu nivel en Tú"
 }

@@ -20,7 +20,6 @@
   "tabHome": "Home",
   "tabAcademic": "Academic",
   "tabTraining": "Training",
-  "tabProgress": "Progress",
   "fieldEmail": "Email",
   "fieldPassword": "Password",
   "fieldPasswordHint": "At least 8 characters, with letters and numbers",
@@ -128,7 +127,7 @@
   "xpGuideDeadlinesDetail": "Marking a deadline as done gives XP; at most 5 every 24 hours.",
   "xpGuideChallenges": "Challenges",
   "xpGuideChallengesDetail": "Each task gives XP according to its difficulty; at most 140 XP per challenge.",
-  "xpGuideFooter": "What you earn adds up to your level here, in Progress.",
+  "xpGuideFooter": "What you earn adds up to your level, in the You tab.",
   "commonArrowSpoken": " to ",
   "registerLegalRequired": "Tick the box to create your account.",
   "commonListAnd": "{items} and {last}",
@@ -148,5 +147,6 @@
   "guideNext": "Next ({current} of {total})",
   "guideSkip": "Skip tour",
   "guideDone": "Got it",
-  "guideStepLabel": "Guide, step {current} of {total}: {title}"
+  "guideStepLabel": "Guide, step {current} of {total}: {title}",
+  "tabYou": "You"
 }

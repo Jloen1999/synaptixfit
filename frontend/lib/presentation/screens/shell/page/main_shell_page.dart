@@ -15,7 +15,7 @@ import '../widgets/shell_navigation_bar.dart';
 import '../widgets/achievements_host.dart';
 
 /// Estructura principal con las pestañas de [StatefulNavigationShell]:
-/// Inicio · Calendario · Académico · Entreno · Progreso (ADR 0038), en barra
+/// Inicio · Calendario · Académico · Entreno · Tú (ADR 0038 y 0061), en barra
 /// inferior en móvil y riel lateral en pantallas anchas. Según el enfoque de
 /// uso se ocultan Académico (solo deporte) o Entreno (solo estudios); las
 /// ramas del router no cambian, así que se traduce entre la posición visible
@@ -30,8 +30,8 @@ class MainShellPage extends StatelessWidget {
   /// para la de una rutina, porque la tarjeta del día ya dice «Continuar».
   final bool onGym;
 
-  /// Índices de rama, en orden: inicio, calendario, académico, entreno,
-  /// progreso.
+  /// Índices de rama, en orden: inicio, calendario, académico, entreno y
+  /// «Tú» (la rama de `/progress`).
   static const _calendarBranch = 1;
   static const _academicBranch = 2;
   static const _trainingBranch = 3;
@@ -72,9 +72,9 @@ class MainShellPage extends StatelessWidget {
         label: l10n.tabTraining,
       ),
       (
-        icon: AppIcons.tabProgress,
-        selected: AppIcons.tabProgressSelected,
-        label: l10n.tabProgress,
+        icon: AppIcons.tabYou,
+        selected: AppIcons.tabYouSelected,
+        label: l10n.tabYou,
       ),
     ];
   }

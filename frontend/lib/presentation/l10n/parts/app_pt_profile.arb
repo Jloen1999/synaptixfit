@@ -320,12 +320,8 @@
   "profileWeeklyEmailHintPending": "Abre o email que te enviámos e carrega em «Confirmar».",
   "profileWeeklyEmailHintActive": "Todos os domingos a partir das 19:00. Podes cancelar no próprio email.",
   "profileWeeklyEmailPendingPill": "Por confirmar",
-  "profileSocialSection": "Amigos e comunidade",
   "profileFriends": "Amigos",
   "profileFriendsPending": "{count, plural, =0{{count} pedidos pendentes} =1{1 pedido pendente} other{{count} pedidos pendentes}}",
-  "profilePublicProfile": "Ver o meu perfil público",
-  "profileCommunity": "Comunidade",
-  "profilePublicProfilePrivateHint": "O teu perfil é privado: só tu o vês",
   "profileReminderOptionsTitle": "Mais lembretes",
   "profileReminderStreak": "Sequência em risco",
   "profileReminderStreakHint": "À tarde, se ainda não treinaste nem estudaste hoje.",
@@ -428,5 +424,14 @@
   "profileSettingsHelpGroup": "Ajuda",
   "profileGuidesReset": "Ver os guias outra vez",
   "profileGuidesResetHint": "Voltam a aparecer ao entrar em cada ecrã.",
-  "profileGuidesResetDone": "Feito: os guias vão aparecer outra vez."
+  "profileGuidesResetDone": "Feito: os guias vão aparecer outra vez.",
+  "profileSectionsLabel": "Secções do perfil",
+  "profileWall": "Mural",
+  "profileWallDetail": "Publicações",
+  "profilePublicProfileTile": "Como me veem",
+  "profilePhysicalTile": "Físico",
+  "profileAcademicTile": "Académico",
+  "profileTileMissing": "Por completar",
+  "profileSettingsDetail": "Avisos, idioma…",
+  "profileStreakOpenHint": "Ver a tua sequência e o teu nível em Tu"
 }

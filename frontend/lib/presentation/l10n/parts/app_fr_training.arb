@@ -337,7 +337,7 @@
   "trainingShared": "Partagé",
   "trainingShareText": "Séance de {minutes} min : {kg} kg soulevés.",
   "trainingShareRecord": "Nouveau record en {exercise} : {value}",
-  "trainingMsgSessionShared": "Publié. Retrouve-le dans Communauté (Accueil › Mur de la communauté).",
+  "trainingMsgSessionShared": "Publié. Retrouve-le sur le Mur (Moi › Communauté).",
   "trainingMsgPendingSetDiscarded": "Une série hors connexion n’a pas pu être envoyée. Note-la à nouveau.",
   "trainingShareTextNoVolume": "Séance de {minutes} min terminée.",
   "trainingShareRecordUnnamed": "Nouveau record : {value}",

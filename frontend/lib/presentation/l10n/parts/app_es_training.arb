@@ -795,7 +795,7 @@
       }
     }
   },
-  "trainingMsgSessionShared": "Publicado. Lo tienes en Comunidad (Inicio › Muro de la comunidad).",
+  "trainingMsgSessionShared": "Publicado. Lo tienes en el Muro (Tú › Comunidad).",
   "trainingMsgPendingSetDiscarded": "Una serie sin conexión no se pudo subir. Apúntala de nuevo.",
   "@trainingMsgPendingSetDiscarded": {
     "description": "Aviso: una serie de la cola sin conexión fue rechazada por el servidor."

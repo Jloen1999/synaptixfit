@@ -337,7 +337,7 @@
   "trainingShared": "Partilhado",
   "trainingShareText": "Sessão de {minutes} min: {kg} kg levantados.",
   "trainingShareRecord": "Novo recorde em {exercise}: {value}",
-  "trainingMsgSessionShared": "Publicado. Encontras em Comunidade (Início › Mural da comunidade).",
+  "trainingMsgSessionShared": "Publicado. Encontras no Mural (Tu › Comunidade).",
   "trainingMsgPendingSetDiscarded": "Uma série sem ligação não pôde ser enviada. Regista-a de novo.",
   "trainingShareTextNoVolume": "Sessão de {minutes} min concluída.",
   "trainingShareRecordUnnamed": "Novo recorde: {value}",

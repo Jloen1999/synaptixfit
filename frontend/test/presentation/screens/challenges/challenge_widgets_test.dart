@@ -52,7 +52,7 @@ void main() {
       ),
     );
     expect(find.text('Reto c1'), findsOneWidget);
-    expect(find.text('1/2 tareas'), findsOneWidget);
+    expect(find.text('1 de 2 tareas'), findsOneWidget);
     // El tipo, en una pastilla con su acento.
     expect(find.text('Estudio'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -77,7 +77,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('4 / 12 sesiones'), findsOneWidget);
+    expect(find.text('4 de 12 sesiones'), findsOneWidget);
     // Siguiente paso: lo que falta, en palabras.
     expect(find.text('Te faltan 8 sesiones'), findsOneWidget);
     expect(tester.takeException(), isNull);

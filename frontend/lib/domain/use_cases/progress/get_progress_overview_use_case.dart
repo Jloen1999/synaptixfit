@@ -12,12 +12,15 @@ import '../../repositories/progress_repository_contract.dart';
 
 /// Reúne los datos de la pestaña Progreso en paralelo (solo lectura: las
 /// insignias ya las otorga el servidor). Cuenta, racha e insignias son
-/// obligatorias; el resumen semanal, la carga física, la comunidad, «Tu
-/// estudio» y la próxima insignia (del catálogo con su progreso), opcionales.
+/// obligatorias; el resumen semanal, la carga física, «Tu estudio» y la
+/// próxima insignia (del catálogo con su progreso), opcionales. El muro ya no
+/// va aquí: lo lee Tú › Comunidad (ADR 0061).
 abstract interface class GetProgressOverviewUseCaseContract {
   Future<AppResult<ProgressOverview>> call();
 }
 
+/// Implementa [GetProgressOverviewUseCaseContract] con los repositorios de
+/// cuenta, insignias, analítica y progreso (Tú › Resumen).
 class GetProgressOverviewUseCase implements GetProgressOverviewUseCaseContract {
   const GetProgressOverviewUseCase({
     required this._account,
@@ -39,7 +42,6 @@ class GetProgressOverviewUseCase implements GetProgressOverviewUseCaseContract {
       earned,
       weekly,
       load,
-      posts,
       study,
       subjects,
       catalog,
@@ -49,7 +51,6 @@ class GetProgressOverviewUseCase implements GetProgressOverviewUseCaseContract {
       _badges.getMine(includeHidden: true),
       _analytics.getWeekly(AnalyticsPeriod.weekly),
       _progress.getPhysicalLoad(),
-      _progress.getCommunityPreview(),
       _analytics.getStudyWeek(),
       _analytics.getStudyBySubject(),
       _badges.getCatalog(),
@@ -69,7 +70,6 @@ class GetProgressOverviewUseCase implements GetProgressOverviewUseCaseContract {
               ..sort((x, y) => _byRecent(x.earnedAt, y.earnedAt)),
             weekly: weekly.valueOrNull,
             physicalLoad: load.valueOrNull,
-            communityPosts: posts.valueOrNull,
             studyWeek: study.valueOrNull,
             studyBySubject: subjects.valueOrNull,
             nextBadge: nextBadge(catalog.valueOrNull ?? const []),

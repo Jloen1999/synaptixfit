@@ -209,8 +209,48 @@ abstract final class AppIcons {
   static const IconData tabAcademicSelected = Icons.school_rounded;
   static const IconData tabTraining = Icons.fitness_center_outlined;
   static const IconData tabTrainingSelected = Icons.fitness_center_rounded;
-  static const IconData tabProgress = Icons.insights_outlined;
-  static const IconData tabProgressSelected = Icons.insights_rounded;
+
+  /// Pestaña «Tú» (antes «Progreso», ADR 0061): tu progreso, retos,
+  /// insignias y comunidad.
+  static const IconData tabYou = Icons.person_outline_rounded;
+  static const IconData tabYouSelected = Icons.person_rounded;
+
+  /// Tú › Resumen (la semana, el nivel y la racha).
+  static const IconData progressSummary = Icons.insights_rounded;
+
+  /// Tú › Comunidad (el grupo: distinto de [friends], que es tu lista).
+  static const IconData communityTab = Icons.diversity_3_outlined;
+
+  /// Retos que publica la comunidad («De otros», «Retos de otros»).
+  static const IconData communityChallenges = Icons.public_rounded;
+
+  /// Invitaciones de amigos por contestar.
+  static const IconData invitation = Icons.mail_outline_rounded;
+
+  /// Una sección que no se pudo cargar (sin conexión o error).
+  static const IconData unavailable = Icons.cloud_off_rounded;
+
+  /// Desplegar y plegar un bloque («Ver más cifras» / «Ver menos»).
+  static const IconData expand = Icons.expand_more_rounded;
+  static const IconData collapse = Icons.expand_less_rounded;
+
+  /// Una lista de ejercicios (rutina compartida en el muro).
+  static const IconData routineList = Icons.list_alt_rounded;
+
+  // Perfil (tarjetitas y fichas «Físico» y «Académico», ADR 0061).
+  static const IconData onboarding = Icons.flag_circle_rounded;
+  static const IconData birthday = Icons.cake_outlined;
+  static const IconData admin = Icons.admin_panel_settings_outlined;
+  static const IconData bodyHeight = Icons.height_rounded;
+  static const IconData activityLevel = Icons.directions_run_rounded;
+  static const IconData goal = Icons.flag_outlined;
+  static const IconData weightHistory = Icons.show_chart_rounded;
+  static const IconData university = Icons.account_balance_outlined;
+  static const IconData semester = Icons.timeline_rounded;
+  static const IconData modality = Icons.location_city_outlined;
+  static const IconData degrees = Icons.workspace_premium_outlined;
+  static const IconData pickSubjects = Icons.playlist_add_check_rounded;
+  static const IconData enrollment = Icons.upload_file_rounded;
 
   // Fotos (apuntes y foto de perfil, ADR 0051 y 0052).
   static const IconData camera = Icons.photo_camera_rounded;

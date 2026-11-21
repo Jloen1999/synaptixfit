@@ -444,11 +444,8 @@ class _HomeContentState extends State<_HomeContent> {
       communityKey: widget.guide.community,
       onProfile: () => onNavigate(HomeExternalPaths.profile),
       onNotifications: () => onNavigate(HomeExternalPaths.notifications),
-      // Por ahora Amigos (en las solicitudes si hay); la tanda 3 lo llevará a
-      // «Tú › Comunidad».
-      onCommunity: () => onNavigate(
-        HomeExternalPaths.communityFor(dashboard.pendingFriendRequests),
-      ),
+      // Tú › Comunidad, con las solicitudes recibidas arriba (ADR 0061).
+      onCommunity: () => onNavigate(HomeExternalPaths.community),
       onAdmin: () => onNavigate(HomeExternalPaths.admin),
       onProgress: () => onNavigate(HomeExternalPaths.progress),
     );

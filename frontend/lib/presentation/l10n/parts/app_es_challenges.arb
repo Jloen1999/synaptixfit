@@ -48,7 +48,7 @@
   "challengesEmptyFilteredMessage": "Ningún reto coincide con los filtros.",
   "challengesCommunityEmptyTitle": "No hay retos de la comunidad",
   "challengesCommunityEmptyMessage": "Cuando otros compartan retos aparecerán aquí.",
-  "challengesMilestonesProgress": "{done}/{total} tareas",
+  "challengesMilestonesProgress": "{done} de {total} tareas",
   "@challengesMilestonesProgress": {
     "placeholders": {
       "done": {
@@ -102,7 +102,7 @@
   },
   "challengesClone": "Añadir a mis retos",
   "challengesCloneTooltip": "Añadir a mis retos",
-  "challengesCloned": "Reto añadido. Lo tienes en Progreso › Retos.",
+  "challengesCloned": "Reto añadido. Lo tienes en Tú › Retos.",
   "challengesViewCloned": "Ver",
   "challengesMilestoneDone": "Tarea hecha",
   "challengesMilestoneUndone": "Tarea desmarcada",
@@ -310,7 +310,7 @@
   "challengesFieldSessionTarget": "Objetivo de sesiones de entrenamiento",
   "challengesFieldSessionTargetHint": "Opcional, p. ej. 12",
   "challengesFieldSessionTargetHelper": "Cuentan solas las sesiones de Gimnasio.",
-  "challengesSessionsProgress": "{target, plural, =1{{done} / 1 sesión} other{{done} / {target} sesiones}}",
+  "challengesSessionsProgress": "{target, plural, =1{{done} de 1 sesión} other{{done} de {target} sesiones}}",
   "@challengesSessionsProgress": {
     "placeholders": {
       "done": {
@@ -419,7 +419,6 @@
     }
   },
   "challengesPendingShowLess": "Ver menos",
-  "challengesEmptyCommunityAction": "Ver retos de la comunidad",
   "challengesCommunityIntro": "Retos que comparten otros estudiantes; añádelos a los tuyos.",
   "challengesQuickSubtitle": "Un objetivo y una fecha bastan.",
   "challengesFieldTitleHintFitness": "Ej.: Correr 3 veces por semana",
@@ -584,7 +583,6 @@
     "description": "Error CHALLENGE_ROUTINE_DAY_NOT_LINKABLE: el día de rutina elegido para la tarea ya no se puede vincular."
   },
   "challengesTemplatesTitle": "Plantillas de retos",
-  "challengesTemplatesEntry": "Retos listos que se cuentan solos",
   "challengesTemplatesIntro": "Elige uno y empieza hoy: no tienes que marcar nada.",
   "challengesTemplatesHelp": "Avanzan con lo que ya haces en la app (repasos, Pomodoros, entrenos, carreras…). El reto es tuyo: puedes cambiarlo o eliminarlo cuando quieras.",
   "challengesTemplatesStart": "Empezar este reto",
@@ -711,5 +709,13 @@
       }
     }
   },
-  "challengesTemplatesEmptyHint": "Cambia tu modo de uso en el perfil o crea tu propio reto."
+  "challengesTemplatesEmptyHint": "Cambia tu modo de uso en el perfil o crea tu propio reto.",
+  "challengesShortcutNew": "Nuevo",
+  "@challengesShortcutNew": {
+    "description": "Tarjetita de Tú › Retos; el lector oye «Nuevo reto» (challengesNew)."
+  },
+  "challengesShortcutTemplates": "Plantillas",
+  "challengesShortcutOthers": "De otros",
+  "challengesShortcutFriendsSemantics": "Retos con amigos",
+  "challengesShortcutOthersSemantics": "Retos de otros"
 }
