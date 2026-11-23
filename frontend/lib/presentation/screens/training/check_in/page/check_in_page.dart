@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,7 @@ import '../../../../../domain/models/training/check_in_answers.dart';
 import '../../../../../domain/models/training/wellbeing.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../health_consent/page/health_consent_sheet.dart';
@@ -83,6 +85,24 @@ class _CheckInView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    // «Guardado hoy a las 9:41» se dice una sola vez al guardar, con lo que
+    // pasa después; en pantalla se queda (ADR 0062). No hay además un aviso.
+    return BlocListener<CheckInBloc, CheckInState>(
+      listenWhen: (p, c) => c.savedAt != null && c.savedAt != p.savedAt,
+      listener: (context, state) => SemanticsService.sendAnnouncement(
+        View.of(context),
+        CheckInSavedNote.spoken(
+          context.localizations,
+          state.savedAt!,
+          summary: context.localizations.trainingMsgCheckInSaved,
+        ),
+        Directionality.of(context),
+      ),
+      child: _scaffold(context, l10n),
+    );
+  }
+
+  Widget _scaffold(BuildContext context, AppLocalizations l10n) {
     return BlocConsumer<CheckInBloc, CheckInState>(
       listenWhen: (p, c) => c.effect != null && p.effect != c.effect,
       listener: (context, state) =>
@@ -119,7 +139,7 @@ class _Form extends StatefulWidget {
   State<_Form> createState() => _FormState();
 }
 
-class _FormState extends State<_Form> {
+class _FormState extends State<_Form> with ErrorsMessageMixin {
   late final _notes = TextEditingController(
     text: widget.state.input.notes ?? '',
   );
@@ -143,7 +163,12 @@ class _FormState extends State<_Form> {
   void _update(CheckInInput input) =>
       context.read<CheckInBloc>().add(CheckInEvent.inputChanged(input));
 
-  Future<void> _save() async {
+  /// El último guardado lo hizo la tercera respuesta (no el botón): su
+  /// confirmación o su fallo van justo debajo de las preguntas.
+  bool _byAnswer = false;
+
+  Future<void> _save({bool byAnswer = false}) async {
+    setState(() => _byAnswer = byAnswer);
     // Datos de salud: antes, el permiso expreso (ADR 0034).
     final bloc = context.read<CheckInBloc>();
     if (await ensureHealthConsent(context)) {
@@ -210,7 +235,7 @@ class _FormState extends State<_Form> {
               ],
               BlocListener<CheckInBloc, CheckInState>(
                 listenWhen: (a, b) => a.saveRequest != b.saveRequest,
-                listener: (_, _) => _save(),
+                listener: (_, _) => _save(byAnswer: true),
                 child: CheckInQuestions(
                   answers: state.answers,
                   onAnswer: (q, v) => context.read<CheckInBloc>().add(
@@ -220,6 +245,9 @@ class _FormState extends State<_Form> {
               ),
               if (state.submitting && _autoSave)
                 const LinearProgressIndicator(),
+              // Guardado con la tercera respuesta: la confirmación o el fallo
+              // (con «Reintentar» si no hay botón de guardar) aquí mismo.
+              if (_byAnswer) ..._saveFeedback(context, state, retry: _autoSave),
               MergeSemantics(
                 child: Semantics(
                   expanded: _details,
@@ -244,6 +272,8 @@ class _FormState extends State<_Form> {
               ),
               if (_details) ..._detailFields(context, input),
               if (!_autoSave) ...[
+                // Guardado con el botón: la confirmación o el fallo, junto a él.
+                if (!_byAnswer) ..._saveFeedback(context, state, retry: false),
                 if (!state.answers.complete) ...[
                   Text(
                     l10n.trainingCheckInAnswerFirst,
@@ -253,12 +283,16 @@ class _FormState extends State<_Form> {
                   ),
                   const SizedBox(height: TokensSpacing.s),
                 ],
+                // Si falló, el mismo botón dice «Reintentar».
                 AppPrimaryButton(
-                  label: state.today == null
+                  label: state.saveError != null
+                      ? l10n.commonRetry
+                      : state.today == null
                       ? l10n.trainingCheckInSave
                       : l10n.trainingCheckInUpdateAction,
+                  icon: state.saveError != null ? AppIcons.refresh : null,
                   loading: state.submitting,
-                  onPressed: state.answers.complete ? _save : null,
+                  onPressed: state.answers.complete ? () => _save() : null,
                 ),
               ],
               const SizedBox(height: TokensSpacing.m),
@@ -306,6 +340,41 @@ class _FormState extends State<_Form> {
         ),
       ],
     );
+  }
+
+  /// Lo último que pasó al guardar: «Guardado hoy a las…» (se va si luego se
+  /// cambia algo) o el motivo del fallo (región viva) y, si no hay botón de
+  /// guardar a la vista ([retry]), «Reintentar».
+  List<Widget> _saveFeedback(
+    BuildContext context,
+    CheckInState state, {
+    required bool retry,
+  }) {
+    final error = state.saveError;
+    final savedAt = state.savedAt;
+    if (error == null) {
+      return [
+        if (savedAt != null) ...[
+          CheckInSavedNote(savedAt: savedAt),
+          const SizedBox(height: TokensSpacing.s),
+        ],
+      ];
+    }
+    return [
+      AppInlineMessage(message: errorMessage(context, error)),
+      const SizedBox(height: TokensSpacing.s),
+      if (retry) ...[
+        AppSecondaryButton(
+          label: context.localizations.commonRetry,
+          icon: const Icon(AppIcons.refresh),
+          loading: state.submitting,
+          onPressed: state.answers.complete
+              ? () => _save(byAnswer: true)
+              : null,
+        ),
+        const SizedBox(height: TokensSpacing.s),
+      ],
+    ];
   }
 
   /// Los detalles opcionales (se guardan con «Guardar», junto a las tres

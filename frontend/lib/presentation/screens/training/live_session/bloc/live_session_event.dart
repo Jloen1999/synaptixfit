@@ -19,6 +19,12 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
   const factory LiveSessionEvent.exerciseSelected(String? plannedExerciseId) =
       LiveSessionExerciseSelected;
 
+  /// «Ir al siguiente»: acabado el ejercicio que se miraba, pasa a
+  /// [plannedExerciseId] y la pantalla lo resalta y lo anuncia (ADR 0062).
+  const factory LiveSessionEvent.nextExerciseRequested(
+    String plannedExerciseId,
+  ) = LiveSessionNextExerciseRequested;
+
   /// Apunta (o corrige) una serie. Con [startRest] falso no arranca su
   /// descanso: al corregirla o al deshacer un «Desmarcar».
   const factory LiveSessionEvent.setRecorded(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -83,6 +84,11 @@ class _LiveViewState extends State<_LiveView> {
 
   /// Partes que señala la guía la primera vez (ADR 0049).
   final _guide = LiveGuideKeys();
+
+  /// El ejercicio que se mira, en la tira de la cabecera y su título: al
+  /// pasar al siguiente se desplazan a la vista (ADR 0062).
+  final _viewedStripKey = GlobalKey(debugLabel: 'live-viewed-strip');
+  final _viewedTitleKey = GlobalKey(debugLabel: 'live-viewed-title');
 
   List<AppGuideStep> _guideSteps(BuildContext context) {
     final l10n = context.localizations;
@@ -238,7 +244,7 @@ class _LiveViewState extends State<_LiveView> {
         _bloc.add(
           LiveSessionEvent.setRecorded(record, startRest: existing == null),
         );
-        if (existing == null) _announceLogged(setNumber);
+        if (existing == null) _announceLogged(plannedExerciseId, setNumber);
       case SetSheetUnmark():
         if (existing != null) _unmarkWithUndo(existing);
     }
@@ -333,12 +339,108 @@ class _LiveViewState extends State<_LiveView> {
   }
 
   /// «Serie N registrada» también para el lector (el botón cambia de serie o
-  /// desaparece, WCAG 4.1.3).
-  void _announceLogged(int set) => SemanticsService.sendAnnouncement(
-    View.of(context),
-    context.localizations.trainingSetLogged(set),
-    Directionality.of(context),
-  );
+  /// desaparece, WCAG 4.1.3). No se dice al tocar sino cuando la sesión ya la
+  /// tiene, en el mismo anuncio que el descanso y el ejercicio siguiente
+  /// (ADR 0062): varios anuncios seguidos se cortan entre sí.
+  void _announceLogged(String? plannedExerciseId, int set) =>
+      _loggedToAnnounce = (exercise: plannedExerciseId, set: set);
+
+  /// Serie marcada cuyo «registrada» aún no se ha dicho (si no llega a
+  /// guardarse, no se dice).
+  ({String? exercise, int set})? _loggedToAnnounce;
+
+  /// Lo dice tras pintar el cuadro siguiente: si la barra mueve el foco a la
+  /// acción nueva («Ir al siguiente» → «Empezar serie»), el lector lee antes
+  /// ese botón y el anuncio no se corta.
+  void _announce(String message) {
+    unawaited(
+      SchedulerBinding.instance.endOfFrame.then((_) {
+        if (!mounted) return;
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          message,
+          Directionality.of(context),
+        );
+      }),
+    );
+  }
+
+  /// Al pasar al ejercicio siguiente (ADR 0062): la tira y la lista se
+  /// desplazan hasta él, con animación salvo si el sistema pide reducir el
+  /// movimiento. El foco no se toca: si estaba en la barra, ella lo lleva a
+  /// la acción nueva.
+  void _revealViewed() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final duration = context.motion(TokensDuration.slow);
+      for (final key in [_viewedStripKey, _viewedTitleKey]) {
+        final target = key.currentContext;
+        if (target != null) revealContext(target, duration: duration);
+      }
+    });
+  }
+
+  /// Lo que se dice al lector con un cambio de la sesión: el descanso al
+  /// empezar y cuando quedan 10 s (la cuenta atrás no es región viva:
+  /// hablaría cada segundo) y el ejercicio siguiente al pasar a él. Si el
+  /// descanso empieza a la vez que se pasa al siguiente (la última serie de un
+  /// ejercicio), van en un solo anuncio. Nulo: nada que decir.
+  String? _transitionAnnouncement(LiveSessionState p, LiveSessionState c) {
+    final l10n = context.localizations;
+    // La serie recién marcada ya está en la sesión: «Serie N registrada» va
+    // delante de lo demás, en el mismo anuncio.
+    final logged = _loggedToAnnounce;
+    final loggedNow =
+        logged != null &&
+        (c.session
+                ?.setsFor(logged.exercise)
+                .any((x) => x.setNumber == logged.set) ??
+            false);
+    if (loggedNow) _loggedToAnnounce = null;
+    final then = _restOrNextAnnouncement(p, c);
+    if (!loggedNow) return then;
+    return then == null
+        ? l10n.trainingSetLogged(logged.set)
+        : l10n.trainingSetLoggedAnnounce(logged.set, then);
+  }
+
+  /// El descanso (al empezar o con 10 s) y el ejercicio siguiente.
+  String? _restOrNextAnnouncement(LiveSessionState p, LiveSessionState c) {
+    final l10n = context.localizations;
+    final rest = c.restRemaining;
+    final restStarted = rest != null && p.restRemaining == null;
+    final tenLeft =
+        rest != null &&
+        p.restRemaining != null &&
+        p.restRemaining! > 10 &&
+        rest <= 10;
+    // Solo se pasa al siguiente con ejercicios de rutina (la libre no tiene).
+    final advanced =
+        c.advancedCount != p.advancedCount && c.exercises.isNotEmpty;
+    if (!advanced && !restStarted && !tenLeft) return null;
+    // El ejercicio al que se ha pasado y su serie que toca.
+    final next = advanced ? c.viewed : null;
+    final name = next?.exerciseName ?? '';
+    final set = next == null ? 1 : c.nextSetOf(next) ?? 1;
+    final total = next?.parameters.sets ?? 1;
+    if (rest != null && (restStarted || tenLeft)) {
+      // Tras la primera serie de un ejercicio nuevo, también la pregunta de
+      // calibración (ADR 0054): el foco va a «+15 s», debajo de ella.
+      final calibrating = c.asksCalibrationNow && rest > 10;
+      if (advanced && restStarted) {
+        return calibrating
+            ? l10n.trainingRestCalibrationNextAnnounce(rest, name, set, total)
+            : l10n.trainingRestNextAnnounce(rest, name, set, total);
+      }
+      return calibrating
+          ? l10n.trainingRestWithCalibrationAnnounce(rest)
+          : l10n.trainingRestSemantics(rest);
+    }
+    return l10n.trainingNextExerciseAnnounce(name, set, total);
+  }
+
+  /// Anuncio que ha calculado `listenWhen` para el cambio en curso.
+  String? _pendingAnnouncement;
 
   /// Tras marcar la serie [set] de [e]: si arranca su descanso, no hay
   /// «Deshacer» (ADR 0053: el panel del descanso va al grano; si se marcó sin
@@ -347,8 +449,8 @@ class _LiveViewState extends State<_LiveView> {
   void _offerUndo(PlannedExercise e, int set) {
     if (e.parameters.restSeconds > 0) {
       // Sin aviso flotante: el panel ya dice «Serie N hecha»; se dice al
-      // lector una sola vez.
-      _announceLogged(set);
+      // lector una sola vez, con el descanso.
+      _announceLogged(e.id, set);
       return;
     }
     final bloc = _bloc;
@@ -537,27 +639,24 @@ class _LiveViewState extends State<_LiveView> {
             Directionality.of(context),
           ),
         ),
-        // La cuenta atrás no es región viva (hablaría cada segundo): se
-        // anuncia al empezar el descanso y cuando quedan 10 s.
+        // Descanso y ejercicio siguiente, una vez cada cosa (el texto lo
+        // decide `_transitionAnnouncement`, que necesita el estado anterior).
         BlocListener<LiveSessionBloc, LiveSessionState>(
-          listenWhen: (p, c) =>
-              c.restRemaining != null &&
-              (p.restRemaining == null ||
-                  (p.restRemaining! > 10 && c.restRemaining! <= 10)),
-          listener: (context, state) => SemanticsService.sendAnnouncement(
-            View.of(context),
-            // Al empezar el descanso tras la primera serie de un ejercicio
-            // nuevo, también la pregunta de calibración (ADR 0054): el foco
-            // va a «+15 s», debajo de ella.
-            state.asksCalibrationNow && state.restRemaining! > 10
-                ? context.localizations.trainingRestWithCalibrationAnnounce(
-                    state.restRemaining!,
-                  )
-                : context.localizations.trainingRestSemantics(
-                    state.restRemaining!,
-                  ),
-            Directionality.of(context),
-          ),
+          listenWhen: (p, c) {
+            _pendingAnnouncement = _transitionAnnouncement(p, c);
+            return _pendingAnnouncement != null;
+          },
+          listener: (context, state) {
+            final message = _pendingAnnouncement;
+            _pendingAnnouncement = null;
+            if (message != null) _announce(message);
+          },
+        ),
+        // Al pasar al ejercicio siguiente, se ve: resaltado (lo pinta la
+        // vista) y desplazado hasta él (ADR 0062).
+        BlocListener<LiveSessionBloc, LiveSessionState>(
+          listenWhen: (p, c) => c.advancedCount != p.advancedCount,
+          listener: (_, _) => _revealViewed(),
         ),
         // El resultado de la calibración se anuncia una vez, cuando llega.
         BlocListener<LiveSessionBloc, LiveSessionState>(
@@ -715,12 +814,17 @@ class _LiveViewState extends State<_LiveView> {
                     ),
                   LiveStatus.ready => Column(
                     children: [
-                      LiveSessionHeader(state: state, guideKeys: _guide),
+                      LiveSessionHeader(
+                        state: state,
+                        guideKeys: _guide,
+                        viewedKey: _viewedStripKey,
+                      ),
                       if (state.saving) const LinearProgressIndicator(),
                       Expanded(
                         child: LiveExerciseView(
                           state: state,
                           guideKeys: _guide,
+                          titleKey: _viewedTitleKey,
                           drafts: _drafts,
                           invalid: _invalid,
                           onDraft: _onDraft,

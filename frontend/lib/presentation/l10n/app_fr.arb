@@ -4390,5 +4390,7 @@
   "trainingRestNextAnnounce": "Repos : il reste {seconds} secondes. Suivant : {name}, série {set} sur {total}",
   "trainingRestCalibrationNextAnnounce": "Repos : il reste {seconds} secondes. Suivant : {name}, série {set} sur {total}. Avant, dis-nous combien de répétitions de plus tu aurais pu faire.",
   "trainingCheckInSavedAt": "Enregistré aujourd'hui à {time}",
-  "trainingCheckInSavedSpoken": "{saved}. {summary}"
+  "trainingCheckInSavedSpoken": "{saved}. {summary}",
+  "trainingSetLoggedAnnounce": "Série {n} enregistrée. {then}",
+  "trainingLiveStripItemNow": "{item}. À toi"
 }

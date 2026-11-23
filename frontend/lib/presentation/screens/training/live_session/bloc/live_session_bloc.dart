@@ -104,6 +104,14 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     on<LiveSessionExerciseSelected>(
       (e, emit) => emit(state.copyWith(activeExerciseId: e.plannedExerciseId)),
     );
+    on<LiveSessionNextExerciseRequested>(
+      (e, emit) => emit(
+        state.copyWith(
+          activeExerciseId: e.plannedExerciseId,
+          advancedCount: state.advancedCount + 1,
+        ),
+      ),
+    );
     on<LiveSessionSetRecorded>(_onSetRecorded);
     on<LiveSessionSetDeleted>(_onSetDeleted);
     on<LiveSessionRestStarted>(
@@ -523,12 +531,21 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
           );
     final session = next.session;
     if (session == null) return next;
+    final active = _activeAfter(
+      session,
+      planned,
+      fallback: record.plannedExerciseId ?? s.activeExerciseId,
+    );
+    // Se miraba este ejercicio y, con esta serie, la vista pasa a otro: se ha
+    // acabado y toca el siguiente (la pantalla lo resalta y lo anuncia).
+    final advanced =
+        planned != null &&
+        active != null &&
+        active != planned.id &&
+        s.viewed.id == planned.id;
     return next.copyWith(
-      activeExerciseId: _activeAfter(
-        session,
-        planned,
-        fallback: record.plannedExerciseId ?? s.activeExerciseId,
-      ),
+      activeExerciseId: active,
+      advancedCount: advanced ? s.advancedCount + 1 : s.advancedCount,
     );
   }
 

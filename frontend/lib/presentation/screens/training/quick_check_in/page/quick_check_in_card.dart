@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/training/check_in_answers.dart';
 import '../../../../../domain/models/training/session_adaptation.dart';
 import '../../../../../domain/models/training/today_adaptation.dart';
@@ -40,7 +42,8 @@ class _QuickCheckInView extends StatefulWidget {
   State<_QuickCheckInView> createState() => _QuickCheckInViewState();
 }
 
-class _QuickCheckInViewState extends State<_QuickCheckInView> {
+class _QuickCheckInViewState extends State<_QuickCheckInView>
+    with ErrorsMessageMixin {
   final _headerFocus = FocusNode(debugLabel: 'check-in-header');
 
   @override
@@ -52,75 +55,115 @@ class _QuickCheckInViewState extends State<_QuickCheckInView> {
   /// Preguntas desplegadas (de entrada, plegadas en una línea).
   bool _open = false;
 
+  /// «Guardado hoy a las 9:41» y cómo queda el entreno, dicho una vez al
+  /// guardar (la confirmación de la tarjeta no es región viva, ADR 0062).
+  void _announceSaved(QuickCheckInState state) {
+    final l10n = context.localizations;
+    final adaptation = state.adaptation;
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      CheckInSavedNote.spoken(
+        l10n,
+        state.savedAt!,
+        // Sin la adaptación nueva no se dice cómo queda el entreno.
+        summary: adaptation == null || state.loadError != null
+            ? null
+            : adaptation.adapted
+            ? l10n.trainingQuickAdapted
+            : l10n.trainingQuickAllGood,
+      ),
+      Directionality.of(context),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<QuickCheckInBloc, QuickCheckInState>(
-        builder: (context, state) {
-          if (state.loading) {
-            return const AppSkeletonGroup(
-              child: AppSkeleton(height: TokensSize.skeletonRow),
-            );
-          }
-          final open = _open || state.editing;
-          return AppCard(
-            padding: EdgeInsets.zero,
-            child: AnimatedSize(
-              duration: context.motion(TokensDuration.normal),
-              alignment: Alignment.topCenter,
-              child: !state.asking
-                  ? Padding(
-                      padding: const EdgeInsets.all(TokensSpacing.m),
-                      child: _Explanation(
-                        adaptation: state.adaptation!,
-                        announce: state.justSent,
-                      ),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // La fila sigue ahí al abrir: pliega y despliega, y
-                        // el foco no se pierde.
-                        _Header(
-                          focusNode: _headerFocus,
-                          open: open,
-                          onToggle: state.editing
-                              ? null
-                              : () => setState(() => _open = !_open),
-                          // Plegada y sin contestar: las caras responden ya
-                          // la energía y abren las otras dos (ADR 0055).
-                          onFace: open || state.answers.values.isNotEmpty
-                              ? null
-                              : (value) {
-                                  context.read<QuickCheckInBloc>().add(
-                                    QuickCheckInEvent.answered(
-                                      CheckInQuestion.energy,
-                                      value,
-                                    ),
-                                  );
-                                  setState(() => _open = true);
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    if (mounted) _headerFocus.requestFocus();
-                                  });
-                                },
-                        ),
-                        if (open)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              TokensSpacing.m,
-                              0,
-                              TokensSpacing.m,
-                              TokensSpacing.m,
-                            ),
-                            child: _Questions(state: state),
-                          ),
-                      ],
+  Widget build(
+    BuildContext context,
+  ) => BlocConsumer<QuickCheckInBloc, QuickCheckInState>(
+    listenWhen: (p, c) => c.savedAt != null && c.savedAt != p.savedAt,
+    listener: (_, state) => _announceSaved(state),
+    builder: (context, state) {
+      if (state.loading) {
+        return const AppSkeletonGroup(
+          child: AppSkeleton(height: TokensSize.skeletonRow),
+        );
+      }
+      final open = _open || state.editing;
+      return AppCard(
+        padding: EdgeInsets.zero,
+        child: AnimatedSize(
+          duration: context.motion(TokensDuration.normal),
+          alignment: Alignment.topCenter,
+          child: !state.asking
+              ? Padding(
+                  padding: const EdgeInsets.all(TokensSpacing.m),
+                  child: _Explanation(
+                    adaptation: state.adaptation,
+                    justSent: state.justSent,
+                    savedAt: state.savedAt,
+                    loadError: state.loadError,
+                    reloading: state.reloading,
+                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // La fila sigue ahí al abrir: pliega y despliega, y
+                    // el foco no se pierde.
+                    _Header(
+                      focusNode: _headerFocus,
+                      open: open,
+                      onToggle: state.editing
+                          ? null
+                          : () => setState(() => _open = !_open),
+                      // Plegada y sin contestar: las caras responden ya
+                      // la energía y abren las otras dos (ADR 0055).
+                      onFace: open || state.answers.values.isNotEmpty
+                          ? null
+                          : (value) {
+                              context.read<QuickCheckInBloc>().add(
+                                QuickCheckInEvent.answered(
+                                  CheckInQuestion.energy,
+                                  value,
+                                ),
+                              );
+                              setState(() => _open = true);
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted) _headerFocus.requestFocus();
+                              });
+                            },
                     ),
-            ),
-          );
-        },
+                    // No se pudo leer si hoy ya está hecho: se dice, con
+                    // «Reintentar», aunque la tarjeta esté plegada.
+                    if (state.loadError case final error? when !state.editing)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          TokensSpacing.m,
+                          0,
+                          TokensSpacing.m,
+                          TokensSpacing.m,
+                        ),
+                        child: _LoadFailed(
+                          message: errorMessage(context, error),
+                          reloading: state.reloading,
+                        ),
+                      ),
+                    if (open)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          TokensSpacing.m,
+                          0,
+                          TokensSpacing.m,
+                          TokensSpacing.m,
+                        ),
+                        child: _Questions(state: state),
+                      ),
+                  ],
+                ),
+        ),
       );
+    },
+  );
 }
 
 /// Fila «¿Qué tal estás hoy?» que pliega y despliega las preguntas.
@@ -244,10 +287,11 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
   CheckInAnswers get _answers => widget.state.answers;
 
   Future<void> _save() async {
-    final answers = _answers;
-    if (!answers.complete) return;
+    // Del bloc, no de `widget.state`: el aviso de guardar llega antes de que
+    // esta parte se repinte con la tercera respuesta.
     final bloc = context.read<QuickCheckInBloc>();
-    if (bloc.state.sending) return;
+    final answers = bloc.state.answers;
+    if (!answers.complete || bloc.state.sending) return;
     final input = QuickCheckIn(
       sleepQuality: answers[CheckInQuestion.sleep]!,
       energy: answers[CheckInQuestion.energy]!,
@@ -263,6 +307,7 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final editing = widget.state.editing;
+    final saveError = widget.state.saveError;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -277,21 +322,29 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
             ),
           ),
         ),
-        if (widget.state.sending && !editing) const LinearProgressIndicator(),
-        if (widget.state.error case final error?) ...[
-          AppInlineMessage(message: errorMessage(context, error)),
+        if (widget.state.sending && !editing && saveError == null)
+          const LinearProgressIndicator(),
+        // No se pudo guardar: el motivo y «Reintentar», que vuelve a guardar.
+        if (saveError != null) ...[
+          AppInlineMessage(message: errorMessage(context, saveError)),
           const SizedBox(height: TokensSpacing.s),
           if (!editing)
             AppSecondaryButton(
               label: l10n.commonRetry,
               icon: const Icon(AppIcons.refresh),
+              loading: widget.state.sending,
               onPressed: _answers.complete ? _save : null,
             ),
         ],
         // Secundario: en Gimnasio la acción principal es empezar el entreno.
+        // Si falló, el mismo botón dice «Reintentar» (no hay dos que hagan lo
+        // mismo).
         if (editing)
           AppSecondaryButton(
-            label: l10n.trainingCheckInUpdateAction,
+            label: saveError == null
+                ? l10n.trainingCheckInUpdateAction
+                : l10n.commonRetry,
+            icon: saveError == null ? null : const Icon(AppIcons.refresh),
             loading: widget.state.sending,
             onPressed: _answers.complete ? _save : null,
           ),
@@ -320,20 +373,61 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
   }
 }
 
-/// Después de registrar: entreno normal o cuánto se recorta y por qué.
+/// No se pudo leer la adaptación de hoy: el motivo (región viva) y
+/// «Reintentar», que la vuelve a leer.
+class _LoadFailed extends StatelessWidget {
+  const _LoadFailed({required this.message, required this.reloading});
+
+  final String message;
+  final bool reloading;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      AppInlineMessage(message: message),
+      const SizedBox(height: TokensSpacing.s),
+      AppSecondaryButton(
+        label: context.localizations.commonRetry,
+        icon: const Icon(AppIcons.refresh),
+        loading: reloading,
+        onPressed: () => context.read<QuickCheckInBloc>().add(
+          const QuickCheckInEvent.refreshed(),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Después de registrar: «Guardado hoy a las 9:41» si se guardó aquí, y
+/// entreno normal o cuánto se recorta y por qué. Si lo guardado no pudo
+/// releerse ([loadError]), lo dice con «Reintentar» en vez de explicar.
 class _Explanation extends StatefulWidget {
-  const _Explanation({required this.adaptation, required this.announce});
+  const _Explanation({
+    required this.adaptation,
+    required this.justSent,
+    this.savedAt,
+    this.loadError,
+    this.reloading = false,
+  });
 
-  final TodayAdaptation adaptation;
+  /// Nula si aún no se ha podido leer (se acaba de guardar sin conexión).
+  final TodayAdaptation? adaptation;
+  final AppError? loadError;
+  final bool reloading;
 
-  /// Anunciar al lector (solo justo después de enviar).
-  final bool announce;
+  /// Se acaba de guardar: el foco pasa a «Cambiar» (el anuncio lo hace la
+  /// tarjeta).
+  final bool justSent;
+
+  /// Cuándo se guardó desde esta tarjeta (nulo: registro de antes).
+  final DateTime? savedAt;
 
   @override
   State<_Explanation> createState() => _ExplanationState();
 }
 
-class _ExplanationState extends State<_Explanation> {
+class _ExplanationState extends State<_Explanation> with ErrorsMessageMixin {
   /// Al guardar, las preguntas desaparecen: el foco pasa a «Cambiar» para no
   /// perderse (WCAG 2.4.3).
   final _changeFocus = FocusNode(debugLabel: 'check-in-change');
@@ -341,7 +435,7 @@ class _ExplanationState extends State<_Explanation> {
   @override
   void initState() {
     super.initState();
-    if (widget.announce) {
+    if (widget.justSent) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _changeFocus.requestFocus();
       });
@@ -372,50 +466,70 @@ class _ExplanationState extends State<_Explanation> {
         ),
       };
 
+  /// Entreno normal o cuánto se recorta y por qué (lo decide el servidor).
+  List<Widget> _explanation(BuildContext context, TodayAdaptation adaptation) {
+    final l10n = context.localizations;
+    final adapted = adaptation.adapted;
+    final color = adapted ? context.palette.warning : context.palette.success;
+    return [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            adapted ? AppIcons.filters : Icons.check_circle_rounded,
+            color: color,
+          ),
+          const SizedBox(width: TokensSpacing.s),
+          Expanded(
+            child: Text(
+              adapted ? l10n.trainingQuickAdapted : l10n.trainingQuickAllGood,
+              style: context.textStyles.titleSmall,
+            ),
+          ),
+        ],
+      ),
+      for (final reason in adaptation.reasons) ...[
+        const SizedBox(height: TokensSpacing.xs),
+        Text(switch (reason) {
+          SessionAdaptationReason.highFatigue => _fatigueReason(
+            l10n,
+            adaptation.fatigueCause,
+          ),
+          SessionAdaptationReason.examSoon => l10n.trainingQuickReasonExam,
+          SessionAdaptationReason.overtraining =>
+            l10n.trainingQuickReasonOvertraining,
+          SessionAdaptationReason.cycleDiscomfort =>
+            l10n.trainingQuickReasonCycle,
+        }, style: context.textStyles.bodyMedium),
+      ],
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final adaptation = widget.adaptation;
-    final adapted = adaptation.adapted;
-    final color = adapted ? context.palette.warning : context.palette.success;
+    final savedAt = widget.savedAt;
+    final loadError = widget.loadError;
     return Semantics(
-      liveRegion: widget.announce,
       container: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                adapted ? AppIcons.filters : Icons.check_circle_rounded,
-                color: color,
-              ),
-              const SizedBox(width: TokensSpacing.s),
-              Expanded(
-                child: Text(
-                  adapted
-                      ? l10n.trainingQuickAdapted
-                      : l10n.trainingQuickAllGood,
-                  style: context.textStyles.titleSmall,
-                ),
-              ),
-            ],
-          ),
-          for (final reason in adaptation.reasons) ...[
-            const SizedBox(height: TokensSpacing.xs),
-            Text(switch (reason) {
-              SessionAdaptationReason.highFatigue => _fatigueReason(
-                l10n,
-                adaptation.fatigueCause,
-              ),
-              SessionAdaptationReason.examSoon => l10n.trainingQuickReasonExam,
-              SessionAdaptationReason.overtraining =>
-                l10n.trainingQuickReasonOvertraining,
-              SessionAdaptationReason.cycleDiscomfort =>
-                l10n.trainingQuickReasonCycle,
-            }, style: context.textStyles.bodyMedium),
+          if (savedAt != null) ...[
+            CheckInSavedNote(savedAt: savedAt),
+            const SizedBox(height: TokensSpacing.s),
           ],
+          if (adaptation == null || loadError != null)
+            _LoadFailed(
+              message: errorMessage(
+                context,
+                loadError ?? const AppError.unknown(),
+              ),
+              reloading: widget.reloading,
+            )
+          else
+            ..._explanation(context, adaptation),
           Wrap(
             alignment: WrapAlignment.end,
             spacing: TokensSpacing.s,

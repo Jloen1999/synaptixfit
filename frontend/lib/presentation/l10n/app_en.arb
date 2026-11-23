@@ -4390,5 +4390,7 @@
   "trainingRestNextAnnounce": "Rest: {seconds} seconds left. Next: {name}, set {set} of {total}",
   "trainingRestCalibrationNextAnnounce": "Rest: {seconds} seconds left. Next: {name}, set {set} of {total}. First, tell us how many more reps you could have done.",
   "trainingCheckInSavedAt": "Saved today at {time}",
-  "trainingCheckInSavedSpoken": "{saved}. {summary}"
+  "trainingCheckInSavedSpoken": "{saved}. {summary}",
+  "trainingSetLoggedAnnounce": "Set {n} logged. {then}",
+  "trainingLiveStripItemNow": "{item}. Your turn"
 }

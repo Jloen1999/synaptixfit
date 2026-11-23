@@ -1096,5 +1096,13 @@
   "trainingMediaCreditSeeLicense": "Ver licença",
   "trainingMediaCreditSeeWork": "Ver original",
   "trainingMediaCreditsOpensBrowser": "Abre-se no navegador",
-  "trainingMediaCreditOpenFailed": "Não foi possível abrir a ligação."
+  "trainingMediaCreditOpenFailed": "Não foi possível abrir a ligação.",
+  "trainingLiveNowExercise": "É a tua vez",
+  "trainingNextExerciseAnnounce": "A seguir: {name}, série {set} de {total}",
+  "trainingRestNextAnnounce": "Descanso: faltam {seconds} segundos. A seguir: {name}, série {set} de {total}",
+  "trainingRestCalibrationNextAnnounce": "Descanso: faltam {seconds} segundos. A seguir: {name}, série {set} de {total}. Antes, diz-nos quantas repetições mais conseguirias ter feito.",
+  "trainingCheckInSavedAt": "Guardado hoje às {time}",
+  "trainingCheckInSavedSpoken": "{saved}. {summary}",
+  "trainingSetLoggedAnnounce": "Série {n} registada. {then}",
+  "trainingLiveStripItemNow": "{item}. É a tua vez"
 }

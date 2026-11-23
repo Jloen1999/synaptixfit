@@ -523,7 +523,7 @@ void main() {
       await tester.tap(find.text('Ir al siguiente'));
       await tester.pump();
       verify(
-        () => bloc.add(const LiveSessionEvent.exerciseSelected('p2')),
+        () => bloc.add(const LiveSessionEvent.nextExerciseRequested('p2')),
       ).called(1);
       semantics.dispose();
       await tester.pumpWidget(const SizedBox());

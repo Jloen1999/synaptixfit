@@ -103,7 +103,6 @@ class TrainingEffectHandler with ErrorsMessageMixin {
     TrainingMessage.routineUpdated => l10n.commonSaved,
     TrainingMessage.routineDuplicated => l10n.trainingMsgRoutineDuplicated,
     TrainingMessage.routineCloned => l10n.trainingMsgRoutineCloned,
-    TrainingMessage.checkInSaved => l10n.trainingMsgCheckInSaved,
     TrainingMessage.planSaved => l10n.trainingMsgPlanSaved,
     TrainingMessage.planDeleted => l10n.trainingMsgPlanDeleted,
     TrainingMessage.sessionAbandoned => l10n.trainingMsgSessionAbandoned,

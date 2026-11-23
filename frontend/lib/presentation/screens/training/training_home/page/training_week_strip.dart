@@ -148,8 +148,11 @@ class _DayDot extends StatelessWidget {
       ),
     };
     // La acción va también en el nodo del lector (con `excludeSemantics`, el
-    // toque del InkWell no le llegaría) y dice qué abre.
+    // toque del InkWell no le llegaría) y dice qué abre. Cada día es su propio
+    // nodo: sin `container`, un día sin choque de acciones (p. ej. el lunes,
+    // con un solo día tocable) se fundía con la semana entera.
     return Semantics(
+      container: true,
       button: onTap != null,
       onTap: onTap,
       onTapHint: onTap == null

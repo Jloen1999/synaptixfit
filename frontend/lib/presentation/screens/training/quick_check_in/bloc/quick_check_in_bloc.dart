@@ -24,7 +24,9 @@ class QuickCheckInBloc extends Bloc<QuickCheckInEvent, QuickCheckInState>
     required this._getAdaptation,
     required this._submit,
     required this._watchDataChanges,
-  }) : super(const QuickCheckInState()) {
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now,
+       super(const QuickCheckInState()) {
     on<QuickCheckInStarted>((_, emit) async {
       watchDataChanges(
         _watchDataChanges,
@@ -36,16 +38,17 @@ class QuickCheckInBloc extends Bloc<QuickCheckInEvent, QuickCheckInState>
     });
     on<QuickCheckInRefreshed>((_, emit) async {
       if (state.sending || state.editing) return;
+      if (state.loadError != null) emit(state.copyWith(reloading: true));
       await _load(emit);
     });
     on<QuickCheckInEditRequested>((_, emit) {
       // Al cambiar, se parte de lo que ya se contestó hoy.
-      final today = state.adaptation?.todayAnswers;
+      final today = state.adaptation?.todayAnswers ?? state.saved;
       emit(
         state.copyWith(
           editing: true,
           justSent: false,
-          error: null,
+          saveError: null,
           answers: today == null
               ? const CheckInAnswers()
               : CheckInAnswers.all(
@@ -75,34 +78,44 @@ class QuickCheckInBloc extends Bloc<QuickCheckInEvent, QuickCheckInState>
       (_, emit) => emit(
         state.copyWith(
           editing: false,
-          error: null,
+          saveError: null,
           answers: const CheckInAnswers(),
         ),
       ),
     );
     on<QuickCheckInSubmitted>((event, emit) async {
       if (state.sending) return;
-      emit(state.copyWith(sending: true, error: null));
+      emit(state.copyWith(sending: true, saveError: null));
       final result = await _submit(event.input);
       if (result.errorOrNull case final error?) {
-        emit(state.copyWith(sending: false, error: error));
+        emit(state.copyWith(sending: false, saveError: error));
         return;
       }
+      final savedAt = _clock();
+      // La adaptación nueva llega en el mismo estado que «Guardado»: la
+      // tarjeta lo anuncia una vez con la explicación ya al día (ADR 0062).
+      // Si no llega, lo guardado cuenta igual y se dice que falta la lectura.
+      final adaptation = await _getAdaptation();
       emit(
         state.copyWith(
+          loading: false,
           sending: false,
           editing: false,
           justSent: true,
+          savedAt: savedAt,
+          saved: event.input,
           answers: const CheckInAnswers(),
+          adaptation: adaptation.valueOrNull ?? state.adaptation,
+          loadError: adaptation.errorOrNull,
         ),
       );
-      await _load(emit);
     });
   }
 
   final GetTodayAdaptationUseCaseContract _getAdaptation;
   final SubmitQuickCheckInUseCaseContract _submit;
   final WatchDataChangesUseCaseContract _watchDataChanges;
+  final DateTime Function() _clock;
 
   Future<void> _load(Emitter<QuickCheckInState> emit) async {
     final result = await _getAdaptation();
@@ -110,7 +123,8 @@ class QuickCheckInBloc extends Bloc<QuickCheckInEvent, QuickCheckInState>
       state.copyWith(
         loading: false,
         adaptation: result.valueOrNull ?? state.adaptation,
-        error: result.errorOrNull,
+        loadError: result.errorOrNull,
+        reloading: false,
       ),
     );
   }

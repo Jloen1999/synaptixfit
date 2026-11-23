@@ -36,6 +36,14 @@ void revealFocusedNode(
   node.requestFocus();
   final context = node.context;
   if (context == null) return;
+  revealContext(context, duration: duration, curve: curve);
+}
+
+/// Desplaza lo justo para que [context] se vea entero, quede por encima o por
+/// debajo de lo visible, sin mover el foco. Sirve para enseñar una parte que
+/// cambia sola (el ejercicio siguiente de la sesión en vivo, ADR 0062); con
+/// [duration] cero, sin animación (reducir movimiento).
+void revealContext(BuildContext context, {Duration? duration, Curve? curve}) {
   // Cada política solo actúa en su sentido: juntas, el desplazamiento mínimo.
   for (final policy in const [
     ScrollPositionAlignmentPolicy.keepVisibleAtStart,

@@ -4390,5 +4390,7 @@
   "trainingRestNextAnnounce": "Descanso: faltam {seconds} segundos. A seguir: {name}, série {set} de {total}",
   "trainingRestCalibrationNextAnnounce": "Descanso: faltam {seconds} segundos. A seguir: {name}, série {set} de {total}. Antes, diz-nos quantas repetições mais conseguirias ter feito.",
   "trainingCheckInSavedAt": "Guardado hoje às {time}",
-  "trainingCheckInSavedSpoken": "{saved}. {summary}"
+  "trainingCheckInSavedSpoken": "{saved}. {summary}",
+  "trainingSetLoggedAnnounce": "Série {n} registada. {then}",
+  "trainingLiveStripItemNow": "{item}. É a tua vez"
 }

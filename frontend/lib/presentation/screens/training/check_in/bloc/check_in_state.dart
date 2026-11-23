@@ -26,6 +26,14 @@ abstract class CheckInState with _$CheckInState {
     /// Último guardado: indica si era el primero del día y la experiencia.
     CheckInResult? lastResult,
     @Default(false) bool submitting,
+
+    /// Cuándo se guardó en esta visita: «Guardado hoy a las 9:41» se queda a
+    /// la vista (ADR 0062).
+    DateTime? savedAt,
+
+    /// No se pudo guardar: se dice junto a «Reintentar» (no en un aviso que
+    /// se va).
+    AppError? saveError,
     AppError? error,
     TrainingEffect? effect,
   }) = _CheckInState;

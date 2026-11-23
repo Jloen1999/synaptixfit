@@ -924,8 +924,80 @@ void main() {
         SetRecord(plannedExerciseId: 'p1', setNumber: 3, repsDone: 10),
       ),
     ),
-    verify: (bloc) => expect(bloc.state.activeExerciseId, 'p2'),
+    verify: (bloc) {
+      expect(bloc.state.activeExerciseId, 'p2');
+      // Se ha pasado al siguiente: la pantalla lo resalta y lo anuncia.
+      expect(bloc.state.advancedCount, 1);
+    },
   );
+
+  group('pasar al ejercicio siguiente (ADR 0062)', () {
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'una serie que no es la última no cuenta como pasar al siguiente',
+      setUp: () => when(() => recordSet('s1', any())).thenAnswer(
+        (_) async => Success(
+          TrainingFixtures.session(startedAt: startedAt, sets: [done('p1', 1)]),
+        ),
+      ),
+      build: build,
+      seed: ready,
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+        ),
+      ),
+      verify: (bloc) {
+        expect(bloc.state.activeExerciseId, 'p1');
+        expect(bloc.state.advancedCount, 0);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'con todo hecho no hay siguiente al que pasar',
+      setUp: () => when(() => recordSet('s1', any())).thenAnswer(
+        (_) async => Success(
+          TrainingFixtures.session(
+            startedAt: startedAt,
+            sets: [
+              for (final e in ['p1', 'p2'])
+                for (var n = 1; n <= 3; n++) done(e, n),
+            ],
+          ),
+        ),
+      ),
+      build: build,
+      seed: () => ready(active: 'p2'),
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(plannedExerciseId: 'p2', setNumber: 3, repsDone: 10),
+        ),
+      ),
+      verify: (bloc) => expect(bloc.state.advancedCount, 0),
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      '«Ir al siguiente» cambia de ejercicio y lo cuenta; tocar la tira, no',
+      build: build,
+      seed: ready,
+      act: (bloc) => bloc
+        ..add(const LiveSessionEvent.exerciseSelected('p2'))
+        ..add(const LiveSessionEvent.exerciseSelected('p1'))
+        ..add(const LiveSessionEvent.nextExerciseRequested('p2')),
+      expect: () => [
+        isA<LiveSessionState>()
+            .having((s) => s.activeExerciseId, 'activo', 'p2')
+            .having((s) => s.advancedCount, 'pasos', 0),
+        isA<LiveSessionState>().having(
+          (s) => s.activeExerciseId,
+          'activo',
+          'p1',
+        ),
+        isA<LiveSessionState>()
+            .having((s) => s.activeExerciseId, 'activo', 'p2')
+            .having((s) => s.advancedCount, 'pasos', 1),
+      ],
+    );
+  });
 
   blocTest<LiveSessionBloc, LiveSessionState>(
     'con todo hecho ya no cuenta ningún ejercicio',

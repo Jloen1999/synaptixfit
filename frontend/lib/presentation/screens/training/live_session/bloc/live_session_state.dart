@@ -115,6 +115,11 @@ abstract class LiveSessionState with _$LiveSessionState {
     /// ejercicio de la rutina, para enseñarlo y poder volver a él.
     @Default(<String, PlannedExercise>{})
     Map<String, PlannedExercise> originals,
+
+    /// Sube cada vez que se pasa al ejercicio siguiente al acabar el que se
+    /// miraba (al marcar su última serie o con «Ir al siguiente»): la pantalla
+    /// lo resalta, lo desplaza a la vista y lo anuncia una vez (ADR 0062).
+    @Default(0) int advancedCount,
   }) = _LiveSessionState;
 
   const LiveSessionState._();

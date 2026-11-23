@@ -1096,5 +1096,13 @@
   "trainingMediaCreditSeeLicense": "See licence",
   "trainingMediaCreditSeeWork": "See original",
   "trainingMediaCreditsOpensBrowser": "Opens in the browser",
-  "trainingMediaCreditOpenFailed": "The link couldn't be opened."
+  "trainingMediaCreditOpenFailed": "The link couldn't be opened.",
+  "trainingLiveNowExercise": "Your turn",
+  "trainingNextExerciseAnnounce": "Next: {name}, set {set} of {total}",
+  "trainingRestNextAnnounce": "Rest: {seconds} seconds left. Next: {name}, set {set} of {total}",
+  "trainingRestCalibrationNextAnnounce": "Rest: {seconds} seconds left. Next: {name}, set {set} of {total}. First, tell us how many more reps you could have done.",
+  "trainingCheckInSavedAt": "Saved today at {time}",
+  "trainingCheckInSavedSpoken": "{saved}. {summary}",
+  "trainingSetLoggedAnnounce": "Set {n} logged. {then}",
+  "trainingLiveStripItemNow": "{item}. Your turn"
 }

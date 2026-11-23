@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../domain/models/training/check_in_answers.dart';
 import '../../../extensions/context_extensions.dart';
@@ -113,5 +114,36 @@ class _Question extends StatelessWidget {
         if (score != null) onChanged(score);
       },
     ),
+  );
+}
+
+/// Confirmación que se queda a la vista tras guardar el registro: icono ✓ y
+/// «Guardado hoy a las 9:41», en la tarjeta de Gimnasio y en la pantalla del
+/// registro (ADR 0062). No es región viva: quien la muestra lo anuncia una
+/// sola vez al guardar ([spoken]), así no se repite al desplazarse.
+class CheckInSavedNote extends StatelessWidget {
+  const CheckInSavedNote({super.key, required this.savedAt});
+
+  final DateTime savedAt;
+
+  /// «Guardado hoy a las 9:41» (la hora sigue el idioma de la app).
+  static String text(AppLocalizations l10n, DateTime savedAt) =>
+      l10n.trainingCheckInSavedAt(DateFormat.Hm().format(savedAt));
+
+  /// Lo que se anuncia al guardar: la confirmación y, si la hay, la frase que
+  /// la acompaña en pantalla ([summary]).
+  static String spoken(
+    AppLocalizations l10n,
+    DateTime savedAt, {
+    String? summary,
+  }) => summary == null
+      ? text(l10n, savedAt)
+      : l10n.trainingCheckInSavedSpoken(text(l10n, savedAt), summary);
+
+  @override
+  Widget build(BuildContext context) => AppInlineMessage(
+    message: text(context.localizations, savedAt),
+    tone: AppMessageTone.success,
+    live: false,
   );
 }

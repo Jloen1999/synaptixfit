@@ -117,10 +117,19 @@ class LiveGuideKeys {
 /// tira con los ejercicios para saltar entre ellos. Con letra grande la tira
 /// se cambia por «Ejercicio 2 de 6» con anterior y siguiente.
 class LiveSessionHeader extends StatelessWidget {
-  const LiveSessionHeader({super.key, required this.state, this.guideKeys});
+  const LiveSessionHeader({
+    super.key,
+    required this.state,
+    this.guideKeys,
+    this.viewedKey,
+  });
 
   final LiveSessionState state;
   final LiveGuideKeys? guideKeys;
+
+  /// Clave del ejercicio que se mira en la tira: al pasar al siguiente, la
+  /// página lo desplaza a la vista (ADR 0062).
+  final GlobalKey? viewedKey;
 
   @override
   Widget build(BuildContext context) {
@@ -191,19 +200,29 @@ class LiveSessionHeader extends StatelessWidget {
                   ],
                 )
               else
+                // Todos montados (no perezosa): una rutina tiene pocos
+                // ejercicios y así el que toca se puede desplazar a la vista
+                // aunque esté fuera de la pantalla.
                 SizedBox(
                   height: TokensSize.listTileMin,
-                  child: ListView.separated(
+                  child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    itemCount: s.exercises.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(width: TokensSpacing.xs),
-                    itemBuilder: (context, i) => _StripItem(
-                      exercise: s.exercises[i],
-                      index: i,
-                      total: s.exercises.length,
-                      done: s.loggedSetsOf(s.exercises[i]),
-                      selected: s.exercises[i].id == viewed.id,
+                    child: Row(
+                      spacing: TokensSpacing.xs,
+                      children: [
+                        for (final (i, e) in s.exercises.indexed)
+                          KeyedSubtree(
+                            key: e.id == viewed.id ? viewedKey : null,
+                            child: _StripItem(
+                              exercise: e,
+                              index: i,
+                              total: s.exercises.length,
+                              done: s.loggedSetsOf(e),
+                              selected: e.id == viewed.id,
+                              now: e.id == viewed.id && s.nextSetOf(e) != null,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -222,6 +241,7 @@ class _StripItem extends StatelessWidget {
     required this.total,
     required this.done,
     required this.selected,
+    this.now = false,
   });
 
   final PlannedExercise exercise;
@@ -230,21 +250,26 @@ class _StripItem extends StatelessWidget {
   final int done;
   final bool selected;
 
+  /// Es el que toca hacer ahora: además del borde, fondo del color de acento
+  /// y un ▶ pequeño (no solo color); el lector oye «Ahora toca».
+  final bool now;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final sets = exercise.parameters.sets;
     final finished = done >= sets;
+    final item = l10n.trainingLiveStripItem(
+      index + 1,
+      total,
+      exercise.exerciseName,
+      done,
+      sets,
+    );
     return Semantics(
       button: true,
       selected: selected,
-      label: l10n.trainingLiveStripItem(
-        index + 1,
-        total,
-        exercise.exerciseName,
-        done,
-        sets,
-      ),
+      label: now ? l10n.trainingLiveStripItemNow(item) : item,
       excludeSemantics: true,
       child: AppFocusOutline(
         borderRadius: BorderRadius.circular(TokensRadius.m),
@@ -259,6 +284,7 @@ class _StripItem extends StatelessWidget {
             ),
             padding: const EdgeInsets.all(TokensSpacing.xxs),
             decoration: BoxDecoration(
+              color: now ? _nowTint(context) : null,
               borderRadius: BorderRadius.circular(TokensRadius.m),
               border: Border.all(
                 color: selected
@@ -285,6 +311,24 @@ class _StripItem extends StatelessWidget {
                       Icons.check_circle_rounded,
                       color: context.palette.success,
                       size: TokensSize.iconS,
+                    ),
+                  ),
+                // ▶ del que toca, sobre un círculo de la superficie para que
+                // se vea encima de cualquier foto.
+                if (now)
+                  PositionedDirectional(
+                    start: 0,
+                    top: 0,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: context.colors.surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.play_arrow_rounded,
+                        color: context.colors.primary,
+                        size: TokensSize.iconXs,
+                      ),
                     ),
                   ),
               ],
@@ -316,10 +360,15 @@ class LiveExerciseView extends StatelessWidget {
     this.onWarmup,
     this.header = const [],
     this.guideKeys,
+    this.titleKey,
   });
 
   final LiveSessionState state;
   final SetDrafts drafts;
+
+  /// Clave del título del ejercicio: al pasar al siguiente, la página lo
+  /// desplaza a la vista (ADR 0062).
+  final GlobalKey? titleKey;
 
   /// La fila de la serie que toca lleva la clave de las cifras de la guía.
   final LiveGuideKeys? guideKeys;
@@ -400,18 +449,14 @@ class LiveExerciseView extends StatelessWidget {
                 ),
                 const SizedBox(height: TokensSpacing.m),
               ],
-              Text(
-                l10n.trainingLiveExerciseOf(index + 1, s.exercises.length),
-                style: context.textStyles.labelLarge?.copyWith(
-                  color: context.colors.primary,
+              _ExerciseTitle(
+                key: titleKey,
+                position: l10n.trainingLiveExerciseOf(
+                  index + 1,
+                  s.exercises.length,
                 ),
-              ),
-              Semantics(
-                header: true,
-                child: Text(
-                  e.exerciseName,
-                  style: context.textStyles.headlineSmall,
-                ),
+                name: e.exerciseName,
+                now: current != null,
               ),
               const SizedBox(height: TokensSpacing.xxs),
               // Sin kilos: la cifra de partida va en la fila (y la propuesta,
@@ -556,6 +601,83 @@ class LiveExerciseView extends StatelessWidget {
 /// La fila con [key] (la que señala la guía) o tal cual.
 Widget _guideRow(GlobalKey? key, Widget row) =>
     key == null ? row : KeyedSubtree(key: key, child: row);
+
+/// Fondo del ejercicio que toca (título y tira): el mismo que la fila de la
+/// serie que toca y que la maqueta de la sesión en vivo, `primaryContainer`
+/// (primary y onSurface encima, validados en `contrast_test`).
+Color _nowTint(BuildContext context) => context.colors.primaryContainer;
+
+/// «Ejercicio 2 de 6» y el nombre. Si es el que toca hacer ahora ([now]),
+/// va resaltado con borde y fondo de acento y la etiqueta «Ahora toca» con
+/// icono: el color no es la única señal (ADR 0062). Mirando uno ya hecho, sin
+/// resaltar.
+class _ExerciseTitle extends StatelessWidget {
+  const _ExerciseTitle({
+    super.key,
+    required this.position,
+    required this.name,
+    required this.now,
+  });
+
+  final String position;
+  final String name;
+  final bool now;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final primary = context.colors.primary;
+    final column = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: TokensSpacing.s,
+          runSpacing: TokensSpacing.xxs,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (now)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.play_arrow_rounded,
+                    size: TokensSize.iconXs,
+                    color: primary,
+                  ),
+                  const SizedBox(width: TokensSpacing.xxs),
+                  Text(
+                    l10n.trainingLiveNowExercise,
+                    style: context.textStyles.labelLarge?.copyWith(
+                      color: primary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            Text(
+              position,
+              style: context.textStyles.labelLarge?.copyWith(color: primary),
+            ),
+          ],
+        ),
+        Semantics(
+          header: true,
+          child: Text(name, style: context.textStyles.headlineSmall),
+        ),
+      ],
+    );
+    if (!now) return column;
+    return Container(
+      padding: const EdgeInsets.all(TokensSpacing.sm),
+      decoration: BoxDecoration(
+        color: _nowTint(context),
+        borderRadius: BorderRadius.circular(TokensRadius.m),
+        border: Border.all(color: primary, width: TokensSize.focusRing),
+      ),
+      child: column,
+    );
+  }
+}
 
 /// «Solo hoy haces X en lugar de Y»: el ejercicio se cambió solo para esta
 /// sesión (la rutina no cambia) y se puede volver al de la rutina.
@@ -1930,7 +2052,7 @@ class _NextPanel extends StatelessWidget {
           icon: Icons.arrow_forward_rounded,
           focusNode: focus,
           onPressed: () =>
-              bloc.add(LiveSessionEvent.exerciseSelected(following.id)),
+              bloc.add(LiveSessionEvent.nextExerciseRequested(following.id)),
         ),
       ]);
     } else {

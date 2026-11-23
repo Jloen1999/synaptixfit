@@ -3423,5 +3423,102 @@
   "trainingMediaCreditSeeLicense": "Ver licencia",
   "trainingMediaCreditSeeWork": "Ver original",
   "trainingMediaCreditsOpensBrowser": "Se abre en el navegador",
-  "trainingMediaCreditOpenFailed": "No se ha podido abrir el enlace."
+  "trainingMediaCreditOpenFailed": "No se ha podido abrir el enlace.",
+  "trainingLiveNowExercise": "Ahora toca",
+  "@trainingLiveNowExercise": {
+    "description": "Etiqueta del ejercicio que toca hacer ahora en la sesión en vivo (junto a su título resaltado)."
+  },
+  "trainingNextExerciseAnnounce": "Siguiente: {name}, serie {set} de {total}",
+  "@trainingNextExerciseAnnounce": {
+    "description": "Anuncio del lector al pasar al ejercicio siguiente en la sesión en vivo.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "set": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRestNextAnnounce": "Descanso: quedan {seconds} segundos. Siguiente: {name}, serie {set} de {total}",
+  "@trainingRestNextAnnounce": {
+    "description": "Anuncio del lector al acabar un ejercicio: empieza el descanso y se pasa al siguiente.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      },
+      "set": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRestCalibrationNextAnnounce": "Descanso: quedan {seconds} segundos. Siguiente: {name}, serie {set} de {total}. Antes, dinos cuántas repeticiones más podrías haber hecho.",
+  "@trainingRestCalibrationNextAnnounce": {
+    "description": "Como trainingRestNextAnnounce, con la pregunta de calibración en el descanso.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      },
+      "set": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingCheckInSavedAt": "Guardado hoy a las {time}",
+  "@trainingCheckInSavedAt": {
+    "description": "Confirmación que se queda en la tarjeta del registro diario tras guardarlo; time es la hora (9:41).",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCheckInSavedSpoken": "{saved}. {summary}",
+  "@trainingCheckInSavedSpoken": {
+    "description": "Anuncio del lector al guardar el registro diario: la confirmación y la frase de cómo queda el entreno.",
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      },
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSetLoggedAnnounce": "Serie {n} registrada. {then}",
+  "@trainingSetLoggedAnnounce": {
+    "description": "Anuncio del lector al marcar una serie, junto con lo que pasa después (descanso, ejercicio siguiente).",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "then": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLiveStripItemNow": "{item}. Ahora toca",
+  "@trainingLiveStripItemNow": {
+    "description": "Etiqueta para el lector del ejercicio que toca en la tira de la sesión en vivo; item es la etiqueta normal.",
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  }
 }

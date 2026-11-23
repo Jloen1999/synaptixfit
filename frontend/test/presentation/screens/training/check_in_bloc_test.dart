@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/check_in_answers.dart';
 import 'package:synaptixfit/domain/models/training/training_page.dart';
@@ -59,6 +60,41 @@ void main() {
     getHistory: history,
     submit: submit,
     getAccount: account,
+    clock: () => DateTime(2026, 10, 18, 9, 41),
+  );
+
+  blocTest<CheckInBloc, CheckInState>(
+    'guardar apunta la hora; si falla, el error se queda en el estado y se '
+    'limpia al reintentar (ADR 0062)',
+    setUp: () {
+      var calls = 0;
+      when(() => submit(any())).thenAnswer((_) async {
+        calls++;
+        return calls == 1
+            ? const Failure(AppError.network())
+            : Success(
+                CheckInResult(
+                  checkIn: checkIn,
+                  firstOfDay: false,
+                  xpAwarded: 0,
+                ),
+              );
+      });
+    },
+    build: build,
+    seed: () => const CheckInState(status: CheckInStatus.ready),
+    act: (bloc) async {
+      bloc.add(const CheckInEvent.submitted());
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.saveError, const AppError.network());
+      expect(bloc.state.effect, isNull);
+      expect(bloc.state.savedAt, isNull);
+      bloc.add(const CheckInEvent.submitted());
+    },
+    verify: (bloc) {
+      expect(bloc.state.saveError, isNull);
+      expect(bloc.state.savedAt, DateTime(2026, 10, 18, 9, 41));
+    },
   );
 
   blocTest<CheckInBloc, CheckInState>(
@@ -113,13 +149,10 @@ void main() {
     expect: () => [
       isA<CheckInState>(),
       isA<CheckInState>().having((s) => s.submitting, 'submitting', true),
-      isA<CheckInState>().having((s) => s.today, 'today', checkIn),
-      isA<CheckInState>().having(
-        (s) => s.effect,
-        'effect',
-        const TrainingEffect.message(TrainingMessage.checkInSaved),
-      ),
-      isA<CheckInState>().having((s) => s.effect, 'effect', isNull),
+      // Sin aviso de «Guardado»: lo dice la pantalla una vez (ADR 0062).
+      isA<CheckInState>()
+          .having((s) => s.today, 'today', checkIn)
+          .having((s) => s.savedAt, 'savedAt', isNotNull),
       isA<CheckInState>().having(
         (s) => s.effect,
         'effect',
@@ -127,6 +160,17 @@ void main() {
       ),
       isA<CheckInState>().having((s) => s.effect, 'effect', isNull),
     ],
+  );
+
+  blocTest<CheckInBloc, CheckInState>(
+    'cambiar algo tras guardar quita «Guardado» (ADR 0062)',
+    build: build,
+    seed: () => CheckInState(
+      status: CheckInStatus.ready,
+      savedAt: DateTime(2026, 10, 18, 9, 41),
+    ),
+    act: (bloc) => bloc.add(const CheckInEvent.stressChanged(2)),
+    verify: (bloc) => expect(bloc.state.savedAt, isNull),
   );
 
   blocTest<CheckInBloc, CheckInState>(

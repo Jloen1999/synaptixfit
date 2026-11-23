@@ -63,7 +63,6 @@ enum TrainingMessage {
   routineUpdated,
   routineDuplicated,
   routineCloned,
-  checkInSaved,
   planSaved,
   planDeleted,
   sessionAbandoned,

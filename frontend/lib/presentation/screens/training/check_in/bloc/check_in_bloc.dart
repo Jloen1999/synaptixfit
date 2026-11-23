@@ -22,9 +22,14 @@ class CheckInBloc extends Bloc<CheckInEvent, CheckInState> {
     required this._getHistory,
     required this._submit,
     required this._getAccount,
-  }) : super(const CheckInState()) {
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now,
+       super(const CheckInState()) {
     on<CheckInStarted>(_onStarted);
-    on<CheckInInputChanged>((e, emit) => emit(state.copyWith(input: e.input)));
+    // Cambiar algo tras guardar deja de estar guardado: «Guardado…» se va.
+    on<CheckInInputChanged>(
+      (e, emit) => emit(state.copyWith(input: e.input, savedAt: null)),
+    );
     on<CheckInSubmitted>(_onSubmitted);
     on<CheckInAnswered>(_onAnswered);
     on<CheckInStressChanged>(
@@ -32,6 +37,7 @@ class CheckInBloc extends Bloc<CheckInEvent, CheckInState> {
         state.copyWith(
           input: state.input.copyWith(stress: e.value),
           stressAnswered: true,
+          savedAt: null,
         ),
       ),
     );
@@ -50,6 +56,7 @@ class CheckInBloc extends Bloc<CheckInEvent, CheckInState> {
         answers: answers,
         input: _withAnswer(state.input, e.question, e.value),
         saveRequest: saves ? state.saveRequest + 1 : state.saveRequest,
+        savedAt: null,
       ),
     );
   }
@@ -68,6 +75,7 @@ class CheckInBloc extends Bloc<CheckInEvent, CheckInState> {
   final GetCheckInsUseCaseContract _getHistory;
   final SubmitCheckInUseCaseContract _submit;
   final GetAccountUseCaseContract _getAccount;
+  final DateTime Function() _clock;
 
   Future<void> _onStarted(
     CheckInStarted event,
@@ -114,7 +122,7 @@ class CheckInBloc extends Bloc<CheckInEvent, CheckInState> {
     Emitter<CheckInState> emit,
   ) async {
     if (state.submitting) return;
-    emit(state.copyWith(submitting: true));
+    emit(state.copyWith(submitting: true, saveError: null));
     final result = await _submit(state.input);
     switch (result) {
       case Success(value: final saved):
@@ -128,21 +136,20 @@ class CheckInBloc extends Bloc<CheckInEvent, CheckInState> {
             today: saved.checkIn,
             lastResult: saved,
             history: history,
+            savedAt: _clock(),
           ),
         );
-        _effect(
-          emit,
-          const TrainingEffect.message(TrainingMessage.checkInSaved),
-        );
+        // Sin aviso: la pantalla deja «Guardado hoy a las…» y lo anuncia una
+        // vez (ADR 0062); dos confirmaciones del mismo guardado se pisaban.
         if (saved.xpAwarded > 0) {
           final account = await _getAccount();
           if (account case Success(:final value)) {
             _effect(emit, TrainingEffect.accountChanged(value));
           }
         }
+      // El fallo se queda en la pantalla, junto a «Reintentar» (ADR 0062).
       case Failure(:final error):
-        emit(state.copyWith(submitting: false));
-        _effect(emit, TrainingEffect.error(error));
+        emit(state.copyWith(submitting: false, saveError: error));
     }
   }
 
