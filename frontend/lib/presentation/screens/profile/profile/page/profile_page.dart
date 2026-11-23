@@ -125,40 +125,17 @@ class _ProfileContent extends StatelessWidget {
           summary: summary,
           pendingRequests: pendingRequests,
         ),
+        // Lo que falta, como en la maqueta: título, una frase y un botón
+        // tonal debajo (no una tarjeta entera que se toca).
         if (!summary.onboarding.completed) ...[
           const SizedBox(height: TokensSpacing.m),
-          AppCard(
-            color: context.colors.primaryContainer,
-            onTap: () => openProfileScreen(context, ProfilePaths.onboarding),
-            child: Row(
-              children: [
-                Icon(
-                  AppIcons.onboarding,
-                  color: context.colors.onPrimaryContainer,
-                ),
-                const SizedBox(width: TokensSpacing.m),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.profileOnboardingBannerTitle,
-                        style: context.textStyles.titleSmall?.copyWith(
-                          color: context.colors.onPrimaryContainer,
-                        ),
-                      ),
-                      Text(
-                        l10n.profileOnboardingBannerMessage,
-                        style: context.textStyles.bodySmall?.copyWith(
-                          color: context.colors.onPrimaryContainer,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(AppIcons.next, color: context.colors.onPrimaryContainer),
-              ],
-            ),
+          ProfileMissingCard(
+            icon: AppIcons.onboarding,
+            color: context.colors.primary,
+            title: l10n.profileOnboardingBannerTitle,
+            message: l10n.profileOnboardingBannerMessage,
+            actionLabel: l10n.profileOnboardingBannerAction,
+            onAction: () => openProfileScreen(context, ProfilePaths.onboarding),
           ),
         ],
         // Fecha de nacimiento (ADR 0036): se sugiere sin bloquear; quien ya
@@ -168,8 +145,9 @@ class _ProfileContent extends StatelessWidget {
           ProfileMissingCard(
             icon: AppIcons.birthday,
             color: context.palette.accent,
-            message: l10n.profileBirthDateSuggestion,
-            actionLabel: l10n.profileBirthDateAdd,
+            title: l10n.profileOnboardingBannerTitle,
+            message: l10n.profileBirthDateMissing,
+            actionLabel: l10n.profileBirthDateAddIt,
             onAction: () =>
                 openProfileScreen(context, ProfilePaths.editAccount),
           ),

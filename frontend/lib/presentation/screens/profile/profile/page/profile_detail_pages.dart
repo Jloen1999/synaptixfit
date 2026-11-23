@@ -340,8 +340,8 @@ class ProfileAcademicSummary extends StatelessWidget {
   }
 }
 
-/// Lo que falta por rellenar: qué es y el botón para hacerlo (tonal: parece
-/// un botón, no un texto de color).
+/// Lo que falta por rellenar: título opcional, una frase y debajo el botón
+/// para hacerlo (tonal: parece un botón, no un texto de color).
 class ProfileMissingCard extends StatelessWidget {
   const ProfileMissingCard({
     super.key,
@@ -350,10 +350,14 @@ class ProfileMissingCard extends StatelessWidget {
     required this.message,
     required this.actionLabel,
     required this.onAction,
+    this.title,
   });
 
   final IconData icon;
   final Color color;
+
+  /// Encabezado de la tarjeta («Completa tu perfil»).
+  final String? title;
   final String message;
   final String actionLabel;
   final VoidCallback onAction;
@@ -365,11 +369,25 @@ class ProfileMissingCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, color: color),
               const SizedBox(width: TokensSpacing.m),
               Expanded(
-                child: Text(message, style: context.textStyles.bodyMedium),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (title case final title?)
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          title,
+                          style: context.textStyles.titleMedium,
+                        ),
+                      ),
+                    Text(message, style: context.textStyles.bodyMedium),
+                  ],
+                ),
               ),
             ],
           ),

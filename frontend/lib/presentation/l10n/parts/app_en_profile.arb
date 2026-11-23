@@ -321,7 +321,7 @@
   "profileWeeklyEmailHintActive": "Every Sunday from 7 pm. You can unsubscribe from the email itself.",
   "profileWeeklyEmailPendingPill": "Waiting for confirmation",
   "profileFriends": "Friends",
-  "profileFriendsPending": "{count, plural, =1{1 pending request} other{{count} pending requests}}",
+  "profileFriendsPending": "{count, plural, =1{1 request} other{{count} requests}}",
   "profileReminderOptionsTitle": "More reminders",
   "profileReminderStreak": "Streak at risk",
   "profileReminderStreakHint": "In the evening, if you haven’t trained or studied yet today.",
@@ -433,5 +433,8 @@
   "profileAcademicTile": "Academic",
   "profileTileMissing": "Not filled in",
   "profileSettingsDetail": "Reminders, language…",
-  "profileStreakOpenHint": "See your streak and level in You"
+  "profileStreakOpenHint": "See your streak and level in You",
+  "profileOnboardingBannerAction": "Finish",
+  "profileBirthDateMissing": "Your date of birth is missing.",
+  "profileBirthDateAddIt": "Add it"
 }

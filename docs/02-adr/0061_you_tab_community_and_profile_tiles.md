@@ -33,13 +33,15 @@ tarjetas grandes antes de los retos.
 
 ### Tú › Comunidad (`CommunityTab`, `CommunityBloc`)
 
-- Arriba, si hay, **la solicitud de amistad** más reciente con «Aceptar» (el único botón relleno de la pantalla; el
+- Arriba, si hay, en una tarjeta destacada (`tertiaryContainer`, con el texto en `onTertiaryContainer` para el
+  contraste AA), **la solicitud de amistad** más reciente con «Aceptar» (el único botón relleno de la pantalla; el
   lector oye «Aceptar a Luis») y «Rechazar» (icono con borde, aparte; «Rechazar a Luis»); «Ver las N» lleva a Amigos › Recibidas. Se contesta con los mismos casos de uso
   que Amigos (`AcceptFriendRequestUseCase`, `RejectFriendRequestUseCase`).
 - Cuatro tarjetitas: **Mis amigos** (con cuántos), **Buscar** (abre Amigos con el buscador enfocado,
   `/social/friends/search`), **Muro** y **Retos de otros** (`/challenges/community`).
 - **«Con amigos ahora»:** hasta tres filas con lo que está en marcha (invitaciones por contestar, salas de estudio,
-  entrenos juntos, retos con amigos y rachas activas), cada una abre lo suyo; «Ver todo» abre «Con amigos». Qué filas
+  entrenos juntos, retos con amigos y rachas activas), con su icono en un cuadradito de color (`AppTintedIcon`, el
+  mismo de las tarjetitas); cada una abre lo suyo; «Ver todo» abre «Con amigos». Qué filas
   salen y en qué orden lo decide el estado (`CommunityState.togetherNow`, con su test); la página solo pone textos,
   iconos y destinos.
 - **«Lo último del muro»:** la tarjeta que antes estaba plegada en el Resumen (`CommunityPreviewCard`) se muda aquí; el
@@ -59,20 +61,23 @@ tarjetas grandes antes de los retos.
   y el enlace del final. El lector oye «Nuevo reto», «Plantillas de retos», «Retos con amigos» y «Retos de otros» (el
   nombre contiene siempre el texto visible, WCAG 2.5.3).
 - Cada cifra lleva su palabra: «3 de 8 tareas», «2 de 4 sesiones» (antes «3/8»).
+- «Tus retos» va justo debajo de los accesos y «Tareas por hacer» después de la lista: tus retos se ven desde arriba.
 
 ### Perfil en tarjetitas
 
 - La cuenta en una tarjeta compacta: foto, nombre, correo y visibilidad (cada uno en su línea, sin cortarse), la racha
   (chip que abre Tú › Resumen con `go`) y «Editar» (botón con borde). «Editar» baja de línea si no cabe al lado: con el
   texto grande o si la tarjeta mide menos de `TokensLayout.cardActionsInlineMin` (escalado), como `UserTile`.
-- **Seis tarjetitas:** Amigos (con el número de solicitudes, en globo y en texto), Muro, Cómo me ven (perfil público, con
+- **Seis tarjetitas:** Amigos (con solicitudes, «2 solicitudes», en globo y en texto; sin ellas, sin detalle: el
+  número de amigos no llega con el perfil y no se pide nada más al servidor), Muro, Cómo me ven (perfil público, con
   su visibilidad), **Físico** («58 kg · 165 cm»; «Sin completar» si faltan peso y altura), **Académico** (el grado o «Sin completar») y Ajustes.
   Físico solo si la persona hace deporte; Académico, solo si estudia. Ajustes ya no está en la barra (un solo camino).
 - Físico y Académico abren su **ficha completa** (`/profile/physical`, `/profile/studies`, `ProfilePhysicalPage` y
   `ProfileStudiesPage`): los datos de antes, con «Editar», «Ver la evolución» o grados, asignaturas y matrícula. Cada una
   lee el perfil con su `ProfileBloc`, así también se abren en frío.
-- La sugerencia de la fecha de nacimiento y el aviso de terminar el onboarding van debajo de las tarjetitas, con botón
-  tonal en vez de texto de color.
+- Lo que falta va debajo de las tarjetitas con el patrón de `ProfileMissingCard`: título «Completa tu perfil», una frase
+  y un botón tonal debajo. Con el onboarding sin terminar, «Te quedan pasos…» y «Terminar»; si solo falta la fecha de
+  nacimiento, «Te falta la fecha de nacimiento.» y «Añadirla». Ninguna es una tarjeta entera que se toca.
 - La flecha «Volver» sin pila del Perfil lleva a «Tú» (`ProfilePaths.you`).
 
 ### Inicio
@@ -115,3 +120,9 @@ tarjetas grandes antes de los retos.
   resto.
 - Comunidad termina con «Lo último del muro» (no estaba en la maqueta): es la tarjeta que salía en el Resumen y se muda
   aquí en vez de perderse.
+- Tú › Retos conserva los chips de estado («Activos (3)»…), «Filtros» y el buscador (con más de cinco retos): ya
+  existían y la maqueta solo enseñaba un chip.
+- El Perfil conserva la fila «Panel de administración», que solo ven los administradores.
+- En la solicitud de amistad va primero ✕ («Rechazar», con borde) y después «Aceptar» (relleno): la acción principal
+  queda al final, donde se lee y se toca la última, igual que en Amigos › Recibidas. La maqueta las ponía al revés.
+- «Ver todas» de «Tareas por hacer» sigue siendo de texto (`AppSectionHeader`): pasa a botón con borde en la tanda 6.

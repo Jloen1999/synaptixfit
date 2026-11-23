@@ -159,36 +159,50 @@ class _RequestsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final hidden = state.requestsTotal > state.requests.length;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            l10n.progressCommunityRequestsTitle(state.requestsTotal),
-            style: context.textStyles.titleMedium,
-          ),
-        ),
-        const SizedBox(height: TokensSpacing.s),
-        for (final request in state.requests)
-          Padding(
-            padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-            child: _RequestTile(
-              request: request,
-              busy: state.busyIds.contains(request.id),
+    final colors = context.colors;
+    // Destacada sobre el color terciario (la maqueta): el texto va en su
+    // pareja «on» para el contraste AA; la fila de la persona, en su tarjeta.
+    return AppCard(
+      color: colors.tertiaryContainer,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.progressCommunityRequestsTitle(state.requestsTotal),
+              style: context.textStyles.titleMedium?.copyWith(
+                color: colors.onTertiaryContainer,
+              ),
             ),
           ),
-        if (hidden)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: AppSecondaryButton(
-              label: l10n.progressCommunitySeeAllRequests(state.requestsTotal),
-              icon: const Icon(AppIcons.next),
-              onPressed: () =>
-                  _open(context, ProgressExternalPaths.friendRequests),
+          const SizedBox(height: TokensSpacing.s),
+          for (final request in state.requests)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+              child: _RequestTile(
+                request: request,
+                busy: state.busyIds.contains(request.id),
+              ),
             ),
-          ),
-      ],
+          if (hidden)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.onTertiaryContainer,
+                  side: BorderSide(color: colors.onTertiaryContainer),
+                ),
+                icon: const Icon(AppIcons.next),
+                label: Text(
+                  l10n.progressCommunitySeeAllRequests(state.requestsTotal),
+                ),
+                onPressed: () =>
+                    _open(context, ProgressExternalPaths.friendRequests),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -208,8 +222,6 @@ class _RequestTile extends StatelessWidget {
       name: user.fullName,
       avatarUrl: user.avatarUrl,
       level: user.level,
-      // Pide respuesta: la misma franja que en Amigos › Recibidas.
-      highlight: context.colors.primary,
       subtitle: l10n.socialRequestReceivedHint,
       onTap: () => _open(context, ProgressExternalPaths.user(user.id)),
       trailing: busy
@@ -308,7 +320,7 @@ class _TogetherSection extends StatelessWidget {
                   if (i > 0) const Divider(height: 1),
                   AppFocusOutline(
                     child: ListTile(
-                      leading: Icon(row.icon, color: context.colors.primary),
+                      leading: AppTintedIcon(icon: row.icon),
                       title: Text(row.title),
                       subtitle: row.detail == null ? null : Text(row.detail!),
                       trailing: const Icon(AppIcons.next),

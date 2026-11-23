@@ -2486,7 +2486,7 @@
   "profileWeeklyEmailHintActive": "Every Sunday from 7 pm. You can unsubscribe from the email itself.",
   "profileWeeklyEmailPendingPill": "Waiting for confirmation",
   "profileFriends": "Friends",
-  "profileFriendsPending": "{count, plural, =1{1 pending request} other{{count} pending requests}}",
+  "profileFriendsPending": "{count, plural, =1{1 request} other{{count} requests}}",
   "profileReminderOptionsTitle": "More reminders",
   "profileReminderStreak": "Streak at risk",
   "profileReminderStreakHint": "In the evening, if you haven’t trained or studied yet today.",
@@ -2599,6 +2599,9 @@
   "profileTileMissing": "Not filled in",
   "profileSettingsDetail": "Reminders, language…",
   "profileStreakOpenHint": "See your streak and level in You",
+  "profileOnboardingBannerAction": "Finish",
+  "profileBirthDateMissing": "Your date of birth is missing.",
+  "profileBirthDateAddIt": "Add it",
   "progressSectionUnavailable": "We couldn't load this section.",
   "progressNoValue": "–",
   "progressStreakTitle": "Streak",
@@ -4381,5 +4384,11 @@
   "trainingMediaCreditSeeLicense": "See licence",
   "trainingMediaCreditSeeWork": "See original",
   "trainingMediaCreditsOpensBrowser": "Opens in the browser",
-  "trainingMediaCreditOpenFailed": "The link couldn't be opened."
+  "trainingMediaCreditOpenFailed": "The link couldn't be opened.",
+  "trainingLiveNowExercise": "Your turn",
+  "trainingNextExerciseAnnounce": "Next: {name}, set {set} of {total}",
+  "trainingRestNextAnnounce": "Rest: {seconds} seconds left. Next: {name}, set {set} of {total}",
+  "trainingRestCalibrationNextAnnounce": "Rest: {seconds} seconds left. Next: {name}, set {set} of {total}. First, tell us how many more reps you could have done.",
+  "trainingCheckInSavedAt": "Saved today at {time}",
+  "trainingCheckInSavedSpoken": "{saved}. {summary}"
 }

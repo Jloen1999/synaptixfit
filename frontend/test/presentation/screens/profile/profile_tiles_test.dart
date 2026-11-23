@@ -122,11 +122,34 @@ void main() {
     ]) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
-    expect(find.text('2 solicitudes pendientes'), findsOneWidget);
+    expect(find.text('2 solicitudes'), findsOneWidget);
     expect(find.text('60 kg · 165 cm'), findsOneWidget);
     expect(find.text('Grado en Informática'), findsOneWidget);
     // Ajustes es una tarjetita: ya no hay engranaje en la barra.
     expect(find.byTooltip('Ajustes'), findsNothing);
+  });
+
+  testWidgets('lo que falta: título, una frase y un botón tonal debajo', (
+    tester,
+  ) async {
+    // Solo falta la fecha de nacimiento (onboarding terminado).
+    await pump(tester);
+    expect(find.text('Completa tu perfil'), findsOneWidget);
+    expect(find.text('Te falta la fecha de nacimiento.'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Añadirla'), findsOneWidget);
+
+    // Con el onboarding a medias, «Terminar» (y no la fecha todavía).
+    when(() => profile.state).thenReturn(
+      const ProfileState(
+        status: ProfileStatus.ready,
+        account: testAccount,
+        summary: emptySummary,
+      ),
+    );
+    await pump(tester);
+    expect(find.text('Completa tu perfil'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Terminar'), findsOneWidget);
+    expect(find.text('Añadirla'), findsNothing);
   });
 
   testWidgets('la racha abre Tú › Resumen', (tester) async {
@@ -237,10 +260,7 @@ void main() {
         await expectLater(tester, meetsGuideline(textContrastGuideline));
       }
       // El número de solicitudes se lee, no solo se ve en el globo.
-      expect(
-        find.bySemanticsLabel('Amigos, 2 solicitudes pendientes'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('Amigos, 2 solicitudes'), findsOneWidget);
       semantics.dispose();
     });
 

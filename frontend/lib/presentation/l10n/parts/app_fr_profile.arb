@@ -321,7 +321,7 @@
   "profileWeeklyEmailHintActive": "Chaque dimanche dès 19 h. Tu peux te désabonner depuis l’e-mail.",
   "profileWeeklyEmailPendingPill": "En attente de confirmation",
   "profileFriends": "Amis",
-  "profileFriendsPending": "{count, plural, =0{{count} demandes en attente} =1{1 demande en attente} other{{count} demandes en attente}}",
+  "profileFriendsPending": "{count, plural, =0{{count} demande} =1{1 demande} other{{count} demandes}}",
   "profileReminderOptionsTitle": "Autres rappels",
   "profileReminderStreak": "Série en danger",
   "profileReminderStreakHint": "En soirée, si tu n’as encore ni fait d’entraînement ni étudié aujourd’hui.",
@@ -433,5 +433,8 @@
   "profileAcademicTile": "Études",
   "profileTileMissing": "À compléter",
   "profileSettingsDetail": "Rappels, langue…",
-  "profileStreakOpenHint": "Voir ta série et ton niveau dans Moi"
+  "profileStreakOpenHint": "Voir ta série et ton niveau dans Moi",
+  "profileOnboardingBannerAction": "Terminer",
+  "profileBirthDateMissing": "Il te manque ta date de naissance.",
+  "profileBirthDateAddIt": "L’ajouter"
 }

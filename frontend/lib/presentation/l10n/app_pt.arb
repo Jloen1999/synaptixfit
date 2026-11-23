@@ -2486,7 +2486,7 @@
   "profileWeeklyEmailHintActive": "Todos os domingos a partir das 19:00. Podes cancelar no próprio email.",
   "profileWeeklyEmailPendingPill": "Por confirmar",
   "profileFriends": "Amigos",
-  "profileFriendsPending": "{count, plural, =0{{count} pedidos pendentes} =1{1 pedido pendente} other{{count} pedidos pendentes}}",
+  "profileFriendsPending": "{count, plural, =0{{count} pedidos} =1{1 pedido} other{{count} pedidos}}",
   "profileReminderOptionsTitle": "Mais lembretes",
   "profileReminderStreak": "Sequência em risco",
   "profileReminderStreakHint": "À tarde, se ainda não treinaste nem estudaste hoje.",
@@ -2599,6 +2599,9 @@
   "profileTileMissing": "Por completar",
   "profileSettingsDetail": "Avisos, idioma…",
   "profileStreakOpenHint": "Ver a tua sequência e o teu nível em Tu",
+  "profileOnboardingBannerAction": "Terminar",
+  "profileBirthDateMissing": "Falta a tua data de nascimento.",
+  "profileBirthDateAddIt": "Adicioná-la",
   "progressSectionUnavailable": "Não foi possível carregar esta secção.",
   "progressNoValue": "–",
   "progressStreakTitle": "Sequência",
@@ -4381,5 +4384,11 @@
   "trainingMediaCreditSeeLicense": "Ver licença",
   "trainingMediaCreditSeeWork": "Ver original",
   "trainingMediaCreditsOpensBrowser": "Abre-se no navegador",
-  "trainingMediaCreditOpenFailed": "Não foi possível abrir a ligação."
+  "trainingMediaCreditOpenFailed": "Não foi possível abrir a ligação.",
+  "trainingLiveNowExercise": "É a tua vez",
+  "trainingNextExerciseAnnounce": "A seguir: {name}, série {set} de {total}",
+  "trainingRestNextAnnounce": "Descanso: faltam {seconds} segundos. A seguir: {name}, série {set} de {total}",
+  "trainingRestCalibrationNextAnnounce": "Descanso: faltam {seconds} segundos. A seguir: {name}, série {set} de {total}. Antes, diz-nos quantas repetições mais conseguirias ter feito.",
+  "trainingCheckInSavedAt": "Guardado hoje às {time}",
+  "trainingCheckInSavedSpoken": "{saved}. {summary}"
 }

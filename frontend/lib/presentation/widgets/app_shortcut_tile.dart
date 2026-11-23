@@ -44,24 +44,7 @@ class AppShortcutTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final detail = this.detail;
-    final iconBox = Container(
-      width: TokensSize.thumbnailXs,
-      height: TokensSize.thumbnailXs,
-      decoration: BoxDecoration(
-        color: emphasized
-            ? colors.primary
-            : Color.alphaBlend(
-                colors.primary.withValues(alpha: AppPill.tintAlpha),
-                colors.surface,
-              ),
-        borderRadius: BorderRadius.circular(TokensRadius.m),
-      ),
-      child: Icon(
-        icon,
-        size: TokensSize.iconS,
-        color: emphasized ? colors.onPrimary : colors.primary,
-      ),
-    );
+    final iconBox = AppTintedIcon(icon: icon, emphasized: emphasized);
     final name = semanticsLabel ?? label;
     // La acción va también en el nodo del lector: con `excludeSemantics`, el
     // toque del InkWell no le llegaría (TalkBack y VoiceOver).
@@ -163,5 +146,39 @@ class AppShortcutGrid extends StatelessWidget {
       }
     }
     return AppTileGrid(minTileWidth: widest, children: tiles);
+  }
+}
+
+/// Icono en un cuadradito de color (el de [AppShortcutTile]): también va a
+/// la izquierda de las filas que abren algo, como «Con amigos ahora».
+class AppTintedIcon extends StatelessWidget {
+  const AppTintedIcon({super.key, required this.icon, this.emphasized = false});
+
+  final IconData icon;
+
+  /// Sobre el color principal (la acción de crear); si no, un tinte suave.
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      width: TokensSize.thumbnailXs,
+      height: TokensSize.thumbnailXs,
+      decoration: BoxDecoration(
+        color: emphasized
+            ? colors.primary
+            : Color.alphaBlend(
+                colors.primary.withValues(alpha: AppPill.tintAlpha),
+                colors.surface,
+              ),
+        borderRadius: BorderRadius.circular(TokensRadius.m),
+      ),
+      child: Icon(
+        icon,
+        size: TokensSize.iconS,
+        color: emphasized ? colors.onPrimary : colors.primary,
+      ),
+    );
   }
 }

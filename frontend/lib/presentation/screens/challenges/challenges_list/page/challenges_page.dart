@@ -173,7 +173,40 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                       // botón flotante y a las dos filas grandes).
                       const ChallengeShortcuts(),
                       const SizedBox(height: TokensSpacing.l),
+                      if (!firstTime) ...[
+                        AppSectionHeader(
+                          title: context.localizations.challengesListTitle,
+                          actionLabel: state.query.isFiltered
+                              ? context.localizations.challengesFilterClear
+                              : null,
+                          onAction: () {
+                            _search.clear();
+                            _setQuery(const ChallengeQuery());
+                          },
+                        ),
+                        // El buscador solo aparece cuando hay bastantes retos
+                        // (o ya hay una búsqueda escrita): con pocos, estorba.
+                        if (state.summary.total > _searchThreshold ||
+                            _search.text.isNotEmpty) ...[
+                          AppSearchField(
+                            label: context.localizations.challengesSearchHint,
+                            controller: _search,
+                            onChanged: _onSearch,
+                          ),
+                          const SizedBox(height: TokensSpacing.s),
+                        ],
+                        _Filters(
+                          query: state.query,
+                          summary: state.summary,
+                          onChanged: _setQuery,
+                        ),
+                        const SizedBox(height: TokensSpacing.m),
+                      ],
+                      ..._listContent(context, state),
+                      // Las tareas por hacer, después de tus retos: «Tus
+                      // retos» se ve desde arriba (maqueta, pantalla 7).
                       if (state.pending.isNotEmpty) ...[
+                        const SizedBox(height: TokensSpacing.l),
                         AppSectionHeader(
                           title: context.localizations.challengesPendingTitle,
                           actionLabel: !hiddenPending
@@ -206,38 +239,7 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                               onOpen: () => _open(p.challengeId),
                             ),
                           ),
-                        const SizedBox(height: TokensSpacing.l),
                       ],
-                      if (!firstTime) ...[
-                        AppSectionHeader(
-                          title: context.localizations.challengesListTitle,
-                          actionLabel: state.query.isFiltered
-                              ? context.localizations.challengesFilterClear
-                              : null,
-                          onAction: () {
-                            _search.clear();
-                            _setQuery(const ChallengeQuery());
-                          },
-                        ),
-                        // El buscador solo aparece cuando hay bastantes retos
-                        // (o ya hay una búsqueda escrita): con pocos, estorba.
-                        if (state.summary.total > _searchThreshold ||
-                            _search.text.isNotEmpty) ...[
-                          AppSearchField(
-                            label: context.localizations.challengesSearchHint,
-                            controller: _search,
-                            onChanged: _onSearch,
-                          ),
-                          const SizedBox(height: TokensSpacing.s),
-                        ],
-                        _Filters(
-                          query: state.query,
-                          summary: state.summary,
-                          onChanged: _setQuery,
-                        ),
-                        const SizedBox(height: TokensSpacing.m),
-                      ],
-                      ..._listContent(context, state),
                     ],
                   ),
                 ),

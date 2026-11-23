@@ -218,6 +218,12 @@ void main() {
     await pump(tester);
 
     expect(find.byType(PendingMilestoneTile), findsNWidgets(3));
+    // «Tus retos» se ve desde arriba; las tareas van después de la lista.
+    expect(
+      tester.getTopLeft(find.text('Tus retos')).dy,
+      lessThan(tester.getTopLeft(find.text('Tareas por hacer')).dy),
+    );
+    await tester.ensureVisible(find.text('Ver todas (5)'));
     await tester.tap(find.text('Ver todas (5)'));
     await tester.pump();
     expect(find.byType(PendingMilestoneTile), findsNWidgets(5));

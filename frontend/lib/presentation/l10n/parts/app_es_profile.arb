@@ -574,7 +574,7 @@
   "profileWeeklyEmailHintActive": "Cada domingo desde las 19:00. Puedes darte de baja en el propio correo.",
   "profileWeeklyEmailPendingPill": "Pendiente de confirmar",
   "profileFriends": "Amigos",
-  "profileFriendsPending": "{count, plural, =1{1 solicitud pendiente} other{{count} solicitudes pendientes}}",
+  "profileFriendsPending": "{count, plural, =1{1 solicitud} other{{count} solicitudes}}",
   "@profileFriendsPending": {
     "placeholders": {
       "count": {
@@ -729,5 +729,8 @@
   "profileAcademicTile": "Académico",
   "profileTileMissing": "Sin completar",
   "profileSettingsDetail": "Avisos, idioma…",
-  "profileStreakOpenHint": "Ver tu racha y tu nivel en Tú"
+  "profileStreakOpenHint": "Ver tu racha y tu nivel en Tú",
+  "profileOnboardingBannerAction": "Terminar",
+  "profileBirthDateMissing": "Te falta la fecha de nacimiento.",
+  "profileBirthDateAddIt": "Añadirla"
 }
