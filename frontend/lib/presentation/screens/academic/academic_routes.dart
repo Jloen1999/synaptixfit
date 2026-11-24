@@ -21,6 +21,7 @@ import 'shared_note_detail/page/shared_note_detail_page.dart';
 import 'shared_notes/page/shared_notes_page.dart';
 import 'subject_detail/page/subject_detail_page.dart';
 import 'subject_form/page/subject_form_page.dart';
+import 'subject_practice/page/subject_practice_page.dart';
 import 'teaching_guide_import/page/teaching_guide_import_page.dart';
 import 'test_results/page/test_results_page.dart';
 
@@ -119,6 +120,11 @@ abstract final class AcademicPaths {
   /// Preparar un simulacro con varios temas de la asignatura.
   static String subjectMockExam(String subjectId) =>
       '/academic/subjects/$subjectId/mock-exam';
+
+  /// «Practicar» de la asignatura: todas sus preguntas y las formas de
+  /// practicar (ADR 0063).
+  static String subjectPractice(String subjectId) =>
+      '/academic/subjects/$subjectId/practice';
 
   static String note(String noteId) => '/academic/notes/$noteId';
 
@@ -233,6 +239,11 @@ List<RouteBase> academicRoutes() => [
     path: '/academic/subjects/:subjectId/mock-exam',
     builder: (context, state) =>
         MockExamSetupPage(subjectId: state.pathParameters['subjectId']!),
+  ),
+  GoRoute(
+    path: '/academic/subjects/:subjectId/practice',
+    builder: (context, state) =>
+        SubjectPracticePage(subjectId: state.pathParameters['subjectId']!),
   ),
   GoRoute(
     path: '/academic/subjects/:subjectId',

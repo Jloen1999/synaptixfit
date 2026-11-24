@@ -1,6 +1,7 @@
 import '../models/academic/mock_exam_options.dart';
 import '../models/academic/question_creation.dart';
 import '../models/academic/quiz.dart';
+import '../models/academic/subject_questions.dart';
 import '../models/result/app_result.dart';
 
 /// Bancos de preguntas, práctica libre, flashcards y sesiones de test.
@@ -23,10 +24,18 @@ abstract interface class QuizRepositoryContract {
     String answer,
   );
 
+  /// «No lo sé» fuera de una sesión (ADR 0063): trae la solución.
+  Future<AppResult<AnswerResult>> dontKnowQuestion(String questionId);
+
+  /// [dontKnow]: preguntas contestadas con «No lo sé».
   Future<AppResult<PracticeResult>> completePractice(
     String bankId,
-    Map<String, String> answers,
-  );
+    Map<String, String> answers, {
+    Set<String> dontKnow = const {},
+  });
+
+  /// Todas las preguntas de la asignatura con cómo va cada una (ADR 0063).
+  Future<AppResult<SubjectQuestions>> getSubjectQuestions(String subjectId);
 
   Future<AppResult<FlashcardReviewResult>> reviewFlashcards(
     String materialId, {
@@ -52,11 +61,13 @@ abstract interface class QuizRepositoryContract {
     String materialId,
   );
 
+  /// Con [dontKnow] la respuesta es «No lo sé» y [answer] se ignora.
   Future<AppResult<SessionAnswer>> answerInSession(
     String sessionId, {
     required String questionId,
     required String answer,
     int? nextIndex,
+    bool dontKnow = false,
   });
 
   Future<AppResult<TestSession>> completeTestSession(String sessionId);

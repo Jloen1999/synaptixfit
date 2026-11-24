@@ -3,12 +3,18 @@ import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/enums/ai_document_type.dart';
 import 'package:synaptixfit/domain/enums/study_source_type.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
+import 'package:synaptixfit/domain/models/academic/quiz.dart';
 import 'package:synaptixfit/domain/models/academic/subject.dart';
+import 'package:synaptixfit/domain/models/academic/subject_questions.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/repositories/quiz_repository_contract.dart';
 import 'package:synaptixfit/domain/repositories/study_assistant_repository_contract.dart';
 import 'package:synaptixfit/domain/repositories/subject_repository_contract.dart';
+import 'package:synaptixfit/domain/use_cases/academic/answer_in_test_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/complete_practice_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/dont_know_question_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_question_bank_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/get_subject_questions_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_subject_semester_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_teaching_guide_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/load_or_generate_study_document_use_case.dart';
@@ -146,4 +152,64 @@ void main() {
       );
     },
   );
+
+  group('«No lo sé» y «Practicar» (ADR 0063)', () {
+    late _Quiz repo;
+    const unknown = AnswerResult(
+      questionId: 'q1',
+      correct: false,
+      dontKnow: true,
+    );
+
+    setUp(() => repo = _Quiz());
+
+    test('DontKnowQuestionUseCase pide la solución al repositorio', () async {
+      when(
+        () => repo.dontKnowQuestion('q1'),
+      ).thenAnswer((_) async => const Success(unknown));
+
+      final result = await DontKnowQuestionUseCase(repo)('q1');
+
+      expect(result.valueOrNull, unknown);
+    });
+
+    test('GetSubjectQuestionsUseCase lee las preguntas de la asignatura', () async {
+      when(
+        () => repo.getSubjectQuestions('s1'),
+      ).thenAnswer((_) async => const Success(SubjectQuestions(total: 2)));
+
+      final result = await GetSubjectQuestionsUseCase(repo)('s1');
+
+      expect(result.valueOrNull?.total, 2);
+    });
+
+    test('el simulacro y la práctica libre mandan el «No lo sé»', () async {
+      when(
+        () => repo.answerInSession(
+          't1',
+          questionId: 'q1',
+          answer: '',
+          dontKnow: true,
+        ),
+      ).thenAnswer(
+        (_) async => Success(SessionAnswer(result: unknown, session: session)),
+      );
+      when(
+        () => repo.completePractice('b1', const {}, dontKnow: const {'q1'}),
+      ).thenAnswer(
+        (_) async =>
+            const Success(PracticeResult(correct: 0, total: 1, xpAwarded: 0)),
+      );
+
+      final answered = await AnswerInTestSessionUseCase(
+        repo,
+      )('t1', questionId: 'q1', answer: '', dontKnow: true);
+      final practice = await CompletePracticeUseCase(
+        repo,
+      )('b1', const {}, dontKnow: const {'q1'});
+
+      expect(answered.valueOrNull?.result.dontKnow, isTrue);
+      expect(practice.valueOrNull?.total, 1);
+    });
+  });
 }

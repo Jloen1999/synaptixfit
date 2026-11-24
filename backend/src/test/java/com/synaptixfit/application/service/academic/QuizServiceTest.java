@@ -8,11 +8,13 @@ import static org.mockito.Mockito.when;
 import com.synaptixfit.application.port.input.academic.AnswerTestQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.GenerateQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.StartTestSessionUseCase;
+import com.synaptixfit.domain.exception.academic.QuestionAlreadyAnsweredException;
 import com.synaptixfit.domain.exception.academic.QuestionBankNotFoundException;
 import com.synaptixfit.domain.exception.academic.QuestionNotFoundException;
 import com.synaptixfit.domain.exception.academic.TestSessionNotFoundException;
 import com.synaptixfit.domain.exception.academic.TestSessionNotInProgressException;
 import com.synaptixfit.domain.model.academic.AiDocumentType;
+import com.synaptixfit.domain.model.academic.AnswerResult;
 import com.synaptixfit.domain.model.academic.PracticeResult;
 import com.synaptixfit.domain.model.academic.Question;
 import com.synaptixfit.domain.model.academic.QuestionBank;
@@ -68,9 +70,11 @@ class QuizServiceTest {
         assertThatThrownBy(() -> service.answerQuestion(stranger, q.id(), "x"))
                 .isInstanceOf(QuestionNotFoundException.class);
 
+        // «Acertada» es la del último intento (ADR 0063); con el reloj fijo los dos intentos tienen la misma hora
+        // y gana el de nota más baja: la mala.
         QuestionBankView view = service.getBank(user, material.id());
         assertThat(view.attemptedQuestions()).isEqualTo(1);
-        assertThat(view.correctQuestions()).isEqualTo(1);
+        assertThat(view.correctQuestions()).isZero();
     }
 
     @Test
@@ -183,5 +187,140 @@ class QuizServiceTest {
         assertThatThrownBy(() -> creation.generateBank(GenerateQuestionBankUseCase.Command.legacy(stranger,
                 material.id())))
                 .hasFieldOrPropertyWithValue("code", "STUDY_MATERIAL_NOT_FOUND");
+    }
+
+    @Test
+    void dontKnowShowsTheAnswerAndTheQuestionComesBackFirst() {
+        Question unknown = questions.get(2);
+        Question wrong = questions.get(4);
+        service.answerQuestion(user, wrong.id(), "mal");
+        AnswerResult result = service.dontKnow(user, unknown.id());
+        assertThat(result.dontKnow()).isTrue();
+        assertThat(result.correct()).isFalse();
+        assertThat(result.correctAnswers()).containsExactly("Respuesta 2");
+        assertThat(f.attemptStore).anySatisfy(a -> {
+            assertThat(a.questionId()).isEqualTo(unknown.id());
+            assertThat(a.dontKnow()).isTrue();
+        });
+        assertThatThrownBy(() -> service.dontKnow(stranger, unknown.id()))
+                .isInstanceOf(QuestionNotFoundException.class);
+
+        // En el banco (práctica libre y tarjetas) también salen primero: «No lo sé», fallada y luego las nuevas.
+        assertThat(service.getBank(user, material.id()).questions()).extracting(Question::id)
+                .startsWith(unknown.id(), wrong.id(), questions.get(0).id());
+
+        // «No lo sé» vuelve antes que la fallada, y esta antes que las nuevas.
+        TestSessionView two = service.startSession(new StartTestSessionUseCase.Command(user,
+                List.of(material.id()), 2));
+        assertThat(two.session().questionIds()).containsExactlyInAnyOrder(unknown.id(), wrong.id());
+        TestSessionView one = service.startSession(new StartTestSessionUseCase.Command(user,
+                List.of(material.id()), 1));
+        assertThat(one.session().questionIds()).containsExactly(unknown.id());
+    }
+
+    @Test
+    void dontKnowInASessionCountsAsAnsweredAndFailed() {
+        TestSessionView started = service.startSession(new StartTestSessionUseCase.Command(user,
+                List.of(material.id()), null));
+        UUID id = started.session().id();
+        List<Question> qs = started.questions();
+        var answer = service.answer(new AnswerTestQuestionUseCase.Command(user, id, qs.getFirst().id(), null, null,
+                true));
+        assertThat(answer.result().dontKnow()).isTrue();
+        assertThat(answer.result().correctAnswers()).isNotEmpty();
+        for (Question q : qs.subList(1, qs.size())) {
+            service.answer(new AnswerTestQuestionUseCase.Command(user, id, q.id(), q.correctAnswer(), null));
+        }
+        TestSessionView done = service.completeSession(user, id);
+        assertThat(done.session().counted()).isTrue();
+        assertThat(done.session().score()).isEqualTo(4);
+        // Todas respondidas por la persona (un «No lo sé» suyo cuenta) y 4/5 = 80 %: 20 + 10 de bonus.
+        assertThat(done.xpAwarded()).isEqualTo(30);
+    }
+
+    @Test
+    void mockExamSubmittedWithNoAnswersDoesNotCount() {
+        TestSessionView started = service.startSession(new StartTestSessionUseCase.Command(user,
+                List.of(material.id()), null));
+        UUID id = started.session().id();
+        assertThat(started.session().countsIfSubmitted()).isFalse();
+
+        TestSessionView done = service.completeSession(user, id);
+
+        assertThat(done.session().counted()).isFalse();
+        assertThat(done.session().status()).isEqualTo(TestSessionStatus.ABANDONED);
+        assertThat(done.xpAwarded()).isZero();
+        assertThat(f.xp).isEmpty();
+        assertThat(f.events).isEmpty();
+        assertThat(f.attemptStore).isEmpty();
+        // No sale en el historial, pero sigue existiendo (una app anterior puede abrir sus resultados).
+        assertThat(service.listSessions(user, null, null)).isEmpty();
+        assertThat(service.getSession(user, id).session().status()).isEqualTo(TestSessionStatus.ABANDONED);
+        // Entregarla otra vez: 409, como cualquier sesión cerrada.
+        assertThatThrownBy(() -> service.completeSession(user, id))
+                .isInstanceOf(TestSessionNotInProgressException.class);
+    }
+
+    @Test
+    void aCorrectedQuestionCannotBeAnsweredAgain() {
+        TestSessionView started = service.startSession(new StartTestSessionUseCase.Command(user,
+                List.of(material.id()), null));
+        UUID id = started.session().id();
+        Question first = started.questions().getFirst();
+        Question second = started.questions().get(1);
+        service.answer(new AnswerTestQuestionUseCase.Command(user, id, first.id(), null, null, true));
+        service.answer(new AnswerTestQuestionUseCase.Command(user, id, second.id(), "mal", null));
+        int attemptsBefore = f.attemptStore.size();
+
+        // Con la solución a la vista, mandar la buena no cambia nada.
+        assertThatThrownBy(() -> service.answer(new AnswerTestQuestionUseCase.Command(user, id, first.id(),
+                first.correctAnswer(), null))).isInstanceOf(QuestionAlreadyAnsweredException.class)
+                .hasFieldOrPropertyWithValue("code", "QUIZ_QUESTION_ALREADY_ANSWERED");
+        assertThatThrownBy(() -> service.answer(new AnswerTestQuestionUseCase.Command(user, id, second.id(),
+                second.correctAnswer(), null))).isInstanceOf(QuestionAlreadyAnsweredException.class);
+        assertThatThrownBy(() -> service.answer(new AnswerTestQuestionUseCase.Command(user, id, second.id(),
+                null, null, true))).isInstanceOf(QuestionAlreadyAnsweredException.class);
+        assertThat(f.attemptStore).hasSize(attemptsBefore);
+        assertThat(service.getSession(user, id).session().score()).isZero();
+    }
+
+    @Test
+    void closingFreePracticeUsesTheCheckedAttemptNotTheFinalAnswer() {
+        Map<UUID, String> answers = new java.util.HashMap<>();
+        questions.forEach(q -> answers.put(q.id(), q.correctAnswer()));
+        // La primera se comprobó mal; al cerrar llega la buena (ya vista en la corrección): no cuenta.
+        service.answerQuestion(user, questions.getFirst().id(), "mal");
+        PracticeResult result = service.completePractice(user, bank.id(), answers);
+        assertThat(result.correct()).isEqualTo(4);
+    }
+
+    @Test
+    void unansweredQuestionsOfASubmittedMockExamCountAsDontKnow() {
+        TestSessionView started = service.startSession(new StartTestSessionUseCase.Command(user,
+                List.of(material.id()), null));
+        UUID id = started.session().id();
+        Question first = started.questions().getFirst();
+        service.answer(new AnswerTestQuestionUseCase.Command(user, id, first.id(), first.correctAnswer(), null));
+
+        TestSessionView done = service.completeSession(user, id);
+
+        assertThat(done.session().counted()).isTrue();
+        assertThat(done.session().unansweredAtSubmit()).hasSize(4);
+        assertThat(done.session().answeredCount()).isEqualTo(1);
+        assertThat(done.xpAwarded()).isZero();
+        assertThat(f.attemptStore.stream().filter(a -> a.dontKnow()).count()).isEqualTo(4);
+        assertThat(f.events).hasSize(1);
+    }
+
+    @Test
+    void bankPracticeCountsDontKnowAsAnsweredButNeverCorrect() {
+        Map<UUID, String> answers = new java.util.HashMap<>();
+        questions.subList(1, questions.size()).forEach(q -> answers.put(q.id(), q.correctAnswer()));
+        // Aunque llegue también una respuesta, la del «No lo sé» no cuenta como acierto.
+        answers.put(questions.getFirst().id(), questions.getFirst().correctAnswer());
+        PracticeResult result = service.completePractice(user, bank.id(), answers,
+                java.util.Set.of(questions.getFirst().id()), QuestionType.ALL);
+        assertThat(result.correct()).isEqualTo(4);
+        assertThat(result.xpAwarded()).isEqualTo(30);
     }
 }

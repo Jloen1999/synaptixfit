@@ -12,7 +12,8 @@ import '../../widgets/question_view.dart';
 import '../../widgets/result_summary.dart';
 import '../bloc/free_practice_bloc.dart';
 
-/// Práctica libre con corrección inmediata y explicación.
+/// Práctica libre con corrección inmediata y explicación; «No lo sé» enseña
+/// la respuesta (ADR 0063).
 class FreePracticePage extends StatelessWidget {
   const FreePracticePage({super.key, required this.materialId});
 
@@ -22,12 +23,17 @@ class FreePracticePage extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider(
     create: (_) =>
         getIt<FreePracticeBloc>()..add(FreePracticeEvent.started(materialId)),
-    child: _FreePracticeView(back: AcademicPaths.practice(materialId)),
+    child: _FreePracticeView(
+      materialId: materialId,
+      back: AcademicPaths.practice(materialId),
+    ),
   );
 }
 
 class _FreePracticeView extends StatelessWidget with ErrorsMessageMixin {
-  const _FreePracticeView({required this.back});
+  const _FreePracticeView({required this.materialId, required this.back});
+
+  final String materialId;
 
   /// De dónde cuelga la pantalla: a dónde lleva la flecha sin pila.
   final String back;
@@ -58,8 +64,9 @@ class _FreePracticeView extends StatelessWidget with ErrorsMessageMixin {
             bottom: state.total == 0 || state.result != null
                 ? null
                 : PreferredSize(
-                    preferredSize: const Size.fromHeight(4),
+                    preferredSize: const Size.fromHeight(TokensSize.progressBar),
                     child: LinearProgressIndicator(
+                      minHeight: TokensSize.progressBar,
                       value: (state.index + 1) / state.total,
                     ),
                   ),
@@ -69,36 +76,40 @@ class _FreePracticeView extends StatelessWidget with ErrorsMessageMixin {
               : SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(TokensSpacing.m),
-                    child: checked == null
-                        ? AppPrimaryButton(
-                            label: l10n.academicCheck,
-                            loading: state.checking,
-                            onPressed: state.draft.trim().isEmpty
+                    // Un solo hueco: al corregir, «Siguiente» o «Terminar» se
+                    // pinta en el sitio de «Comprobar» y se queda con el foco.
+                    child: QuestionAnswerBar(
+                      questionId: question.id,
+                      answered: checked != null,
+                      primaryLabel: checked == null
+                          ? l10n.academicCheck
+                          : state.isLast
+                          ? l10n.academicFinish
+                          : l10n.academicNext,
+                      busy: checked == null ? state.checking : state.finishing,
+                      onPrimary: checked == null
+                          ? (state.draft.trim().isEmpty
                                 ? null
                                 : () => bloc.add(
                                     const FreePracticeEvent.checked(),
-                                  ),
-                          )
-                        : state.isLast
-                        ? AppPrimaryButton(
-                            label: l10n.academicFinish,
-                            loading: state.finishing,
-                            onPressed: () =>
-                                bloc.add(const FreePracticeEvent.finished()),
-                          )
-                        : AppPrimaryButton(
-                            label: l10n.academicNext,
-                            onPressed: () => bloc.add(
+                                  ))
+                          : state.isLast
+                          ? () => bloc.add(const FreePracticeEvent.finished())
+                          : () => bloc.add(
                               const FreePracticeEvent.nextRequested(),
                             ),
-                          ),
+                      onDontKnow: () => bloc.add(
+                        const FreePracticeEvent.dontKnowRequested(),
+                      ),
+                    ),
                   ),
                 ),
           body: switch (state) {
             FreePracticeState(loading: true) => const AppLoadingView(),
+            // «Reintentar» vuelve a leer el banco (la flecha ya lleva atrás).
             FreePracticeState(:final error?) => AppErrorView(
               error: error,
-              onRetry: () => context.popOrGo(back),
+              onRetry: () => bloc.add(FreePracticeEvent.started(materialId)),
             ),
             FreePracticeState(:final result?) => AcademicBody(
               child: ListView(
@@ -148,6 +159,7 @@ class _FreePracticeView extends StatelessWidget with ErrorsMessageMixin {
                                 : question.correctAnswers,
                             explanation:
                                 checked.explanation ?? question.explanation,
+                            dontKnow: checked.dontKnow,
                           ),
                   ),
                 ],

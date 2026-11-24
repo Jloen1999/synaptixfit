@@ -353,7 +353,7 @@
   },
   "academicExamAnswer": "Responder",
   "academicExamAnswered": "Respuesta enviada",
-  "academicExamFinishTitle": "¿Terminar el simulacro?",
+  "academicExamFinishTitle": "¿Entregar el simulacro?",
   "academicExamFinishPending": "{count, plural, =1{Te queda 1 pregunta sin responder.} other{Te quedan {count} preguntas sin responder.}}",
   "@academicExamFinishPending": {
     "placeholders": {
@@ -1631,5 +1631,84 @@
         "type": "String"
       }
     }
-  }
+  },
+  "academicDontKnow": "No lo sé",
+  "academicDontKnowTitle": "No lo sabías",
+  "academicDontKnowComesBack": "Volverá antes para que la repases.",
+  "academicExamFinishPendingDontKnow": "{count, plural, =1{Contará como «No lo sé»: verás la respuesta y volverá antes.} other{Contarán como «No lo sé»: verás las respuestas y volverán antes.}}",
+  "@academicExamFinishPendingDontKnow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicExamFinishEmptyTitle": "No has contestado ninguna",
+  "academicExamFinishEmptyMessage": "Si lo entregas así, no cuenta: no tendrá nota, no quedará en tu historial ni cambiará tus repasos.",
+  "academicExamKeepAnswering": "Seguir contestando",
+  "academicExamSubmitAnyway": "Entregar igualmente",
+  "academicExamSubmit": "Entregar",
+  "academicExamNotCountedTitle": "Este simulacro no cuenta",
+  "academicExamNotCountedMessage": "No contestaste ninguna pregunta, así que no tiene nota, no queda en tu historial ni cambia tus repasos. Puedes empezar otro cuando quieras.",
+  "academicResultDontKnow": "Respondiste «No lo sé»",
+  "academicResultUnanswered": "Sin contestar: cuenta como «No lo sé»",
+  "academicPracticeOpen": "Ver todas tus preguntas",
+  "academicQuestionsCount": "{count, plural, =1{1 pregunta} other{{count} preguntas}}",
+  "@academicQuestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicToReviewCount": "{count} por repasar",
+  "@academicToReviewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicPracticeReviewTitle": "Repaso de hoy",
+  "academicPracticeReviewHint": "{count, plural, =1{Hoy toca repasar 1 apunte.} other{Hoy toca repasar {count} apuntes.}}",
+  "@academicPracticeReviewHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicPracticeNoReviewToday": "Hoy no te toca ningún repaso en esta asignatura.",
+  "academicPracticeFreeHint": "Contesta a tu ritmo y ve la respuesta al momento. Empiezan las que te toca repasar.",
+  "academicPracticeExamHint": "Como un examen: ves las respuestas al entregarlo.",
+  "academicPracticeEmptyTitle": "Aún no tienes preguntas de esta asignatura",
+  "academicPracticeEmptyMessage": "Crea preguntas de tus apuntes para practicar y preparar el examen.",
+  "academicPracticeYourQuestions": "Tus preguntas",
+  "academicPracticeSearch": "Buscar en tus preguntas",
+  "academicPracticeFilterStanding": "Cómo van",
+  "academicPracticeFilterAll": "Todas",
+  "academicPracticeFilterToReview": "Por repasar",
+  "academicPracticeFilterNew": "Nuevas",
+  "academicPracticeFilterCorrect": "Acertadas",
+  "academicPracticeFilterType": "Tipo",
+  "academicPracticeFilterAllTypes": "Todos los tipos",
+  "academicPracticeFilterTopic": "Apunte",
+  "academicPracticeFilterAllTopics": "Todos los apuntes",
+  "academicPracticeNoMatches": "Ninguna pregunta con estos filtros",
+  "academicPracticeClearFilters": "Quitar filtros",
+  "academicStandingDontKnow": "No la sabías",
+  "academicStandingWrong": "Fallada",
+  "academicStandingNew": "Nueva",
+  "academicStandingCorrect": "Acertada",
+  "academicPracticeChooseTopic": "¿De qué apunte?",
+  "academicPracticeFrom": "De: {title}",
+  "@academicPracticeFrom": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicErrorQuizQuestionAlreadyAnswered": "Esta pregunta ya está contestada.",
+  "academicPracticeBackToList": "Volver a la lista"
 }

@@ -5,6 +5,7 @@ import com.synaptixfit.application.port.input.academic.AnswerQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.AnswerTestQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteBankPracticeUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteTestSessionUseCase;
+import com.synaptixfit.application.port.input.academic.DontKnowQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.GetActiveTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.GetQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetTestSessionUseCase;
@@ -26,6 +27,7 @@ import com.synaptixfit.domain.model.academic.PracticeResult;
 import com.synaptixfit.domain.model.academic.Question;
 import com.synaptixfit.domain.model.academic.QuestionAttempt;
 import com.synaptixfit.domain.model.academic.QuestionBank;
+import com.synaptixfit.domain.model.academic.QuestionStanding;
 import com.synaptixfit.domain.model.academic.QuestionType;
 import com.synaptixfit.domain.model.academic.QuestionBankView;
 import com.synaptixfit.domain.model.academic.SessionAnswer;
@@ -50,7 +52,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,10 +70,11 @@ import java.util.stream.Collectors;
  * práctica libre y una vez por sesión completada con todas las preguntas respondidas. Al terminar
  * una sesión publica {@link TestSessionCompleted} (carga cognitiva e insignias). Guarda lo que crea
  * «Crear preguntas» ({@link QuestionCreationService}, ADR 0058); cada app solo recibe los tipos de pregunta
- * que sabe pintar.
+ * que sabe pintar. «No lo sé» y la entrega de un simulacro (sin respuestas no cuenta; lo sin contestar pasa a
+ * «No lo sé») siguen ADR 0063.
  */
 public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestionsUseCase, AnswerQuestionUseCase,
-        CompleteBankPracticeUseCase, StartTestSessionUseCase, GetTestSessionUseCase, GetActiveTestSessionUseCase,
+        DontKnowQuestionUseCase, CompleteBankPracticeUseCase, StartTestSessionUseCase, GetTestSessionUseCase, GetActiveTestSessionUseCase,
         ListTestSessionsUseCase, AnswerTestQuestionUseCase, CompleteTestSessionUseCase, AbandonTestSessionUseCase {
 
     static final int DEFAULT_QUESTION_COUNT = MockExamOptions.DEFAULT_QUESTIONS;
@@ -130,8 +134,16 @@ public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestions
     }
 
     @Override
+    public AnswerResult dontKnow(UUID userId, UUID questionId) {
+        Question q = banks.findQuestionOfUser(questionId, userId)
+                .orElseThrow(() -> new QuestionNotFoundException(questionId));
+        attempts.save(QuestionAttempt.dontKnow(userId, q.id(), clock.instant()));
+        return AnswerResult.dontKnow(q);
+    }
+
+    @Override
     public PracticeResult completePractice(UUID userId, UUID bankId, Map<UUID, String> answers,
-                                           Set<QuestionType> visibleTypes) {
+                                           Set<UUID> dontKnow, Set<QuestionType> visibleTypes) {
         QuestionBank bank = banks.findByIdAndUser(bankId, userId)
                 .orElseThrow(() -> new QuestionBankNotFoundException(bankId));
         List<Question> questions = visible(banks.findQuestions(bank.id()), visibleTypes);
@@ -139,8 +151,21 @@ public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestions
             throw new QuestionBankEmptyException(bankId);
         }
         Map<UUID, String> given = answers == null ? Map.of() : answers;
-        int correct = (int) questions.stream().filter(q -> q.isCorrect(given.get(q.id()))).count();
-        boolean allAnswered = questions.stream().allMatch(q -> given.get(q.id()) != null);
+        Set<UUID> unknown = dontKnow == null ? Set.of() : dontKnow;
+        // Cada «Comprobar» ya dejó su intento corregido: manda ese, no lo que llegue al cerrar (con la solución a
+        // la vista se podría mandar la buena y subir la nota). «No lo sé» es una respuesta fallada: cuenta para
+        // «todas respondidas», nunca como acierto.
+        Map<UUID, QuestionAttempt> latest = QuestionStanding.latest(attempts.findByUserAndQuestions(userId,
+                questions.stream().map(Question::id).toList()));
+        int correct = (int) questions.stream().filter(q -> {
+            if (unknown.contains(q.id()) || given.get(q.id()) == null) {
+                return false;
+            }
+            QuestionAttempt last = latest.get(q.id());
+            return last != null ? last.correct() : q.isCorrect(given.get(q.id()));
+        }).count();
+        boolean allAnswered = questions.stream()
+                .allMatch(q -> given.get(q.id()) != null || unknown.contains(q.id()));
         int xp = 0;
         if (allAnswered && !bank.xpAwarded()) {
             banks.save(bank.withXpAwarded());
@@ -210,7 +235,8 @@ public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestions
         if (materialId != null) {
             lookups.material(userId, materialId);
         }
-        return sessions.findByUser(userId, materialId, status);
+        // Un simulacro entregado sin respuestas no cuenta ni sale en el historial (ADR 0063).
+        return sessions.findByUser(userId, materialId, status).stream().filter(TestSession::inHistory).toList();
     }
 
     @Override
@@ -224,17 +250,35 @@ public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestions
         }
         Question q = banks.findQuestionsByIds(List.of(c.questionId())).stream().findFirst()
                 .orElseThrow(() -> new QuestionNotFoundException(c.questionId()));
-        AnswerResult result = new AnswerResult(q.id(), q.isCorrect(c.answer()), q.correctAnswer(), q.explanation(),
-                q.type());
-        session.answer(q.id(), c.answer(), result.correct(), c.nextIndex());
-        attempts.save(QuestionAttempt.of(c.userId(), q.id(), result.correct(), clock.instant()));
+        AnswerResult result;
+        if (c.dontKnow()) {
+            result = AnswerResult.dontKnow(q);
+            session.dontKnow(q.id(), c.nextIndex());
+            attempts.save(QuestionAttempt.dontKnow(c.userId(), q.id(), clock.instant()));
+        } else {
+            result = AnswerResult.graded(q, q.isCorrect(c.answer()));
+            session.answer(q.id(), c.answer(), result.correct(), c.nextIndex());
+            attempts.save(QuestionAttempt.of(c.userId(), q.id(), result.correct(), clock.instant()));
+        }
         return new SessionAnswer(result, view(sessions.save(session), 0));
     }
 
+    /**
+     * Entrega la sesión (ADR 0063). Sin ninguna respuesta no cuenta: se abandona y no da nota, ni XP, ni historial,
+     * ni toca el repaso ni la carga (no se publica {@link TestSessionCompleted}). Si no, lo sin contestar pasa a
+     * «No lo sé» (y vuelve antes). Entregar otra vez una sesión ya cerrada da 409.
+     */
     @Override
     public TestSessionView completeSession(UUID userId, UUID sessionId) {
         TestSession session = session(userId, sessionId);
-        session.complete(clock.instant());
+        Instant now = clock.instant();
+        if (!session.countsIfSubmitted()) {
+            session.abandon(now);
+            return view(sessions.save(session), 0);
+        }
+        for (UUID unanswered : session.complete(now)) {
+            attempts.save(QuestionAttempt.dontKnow(userId, unanswered, now));
+        }
         int xp = 0;
         if (session.canClaimXp()) {
             xp = PracticeRewards.practiceXp(session.score(), session.totalQuestions(), rewardedLastDay(userId));
@@ -276,7 +320,7 @@ public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestions
     private AnswerResult grade(UUID userId, Question q, String answer) {
         boolean correct = q.isCorrect(answer);
         attempts.save(QuestionAttempt.of(userId, q.id(), correct, clock.instant()));
-        return new AnswerResult(q.id(), correct, q.correctAnswer(), q.explanation(), q.type());
+        return AnswerResult.graded(q, correct);
     }
 
     /** Solo las preguntas de los tipos que la app sabe pintar (las antiguas no conocen «Varias correctas»). */
@@ -284,19 +328,23 @@ public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestions
         return questions.stream().filter(q -> types.contains(q.type())).toList();
     }
 
+    /**
+     * Banco con sus preguntas en el orden en que vuelven (ADR 0063): «No lo sé», falladas, nuevas y acertadas; dentro
+     * de cada grupo, el orden del banco. Así la práctica libre y las tarjetas empiezan por lo que toca repasar.
+     */
     private QuestionBankView view(UUID userId, QuestionBank bank, Set<QuestionType> visibleTypes) {
         List<Question> questions = visible(banks.findQuestions(bank.id()), visibleTypes);
         List<QuestionAttempt> history = questions.isEmpty() ? List.of()
                 : attempts.findByUserAndQuestions(userId, questions.stream().map(Question::id).toList());
-        Set<UUID> attempted = new HashSet<>();
-        Set<UUID> correct = new HashSet<>();
-        for (QuestionAttempt a : history) {
-            attempted.add(a.questionId());
-            if (a.correct()) {
-                correct.add(a.questionId());
-            }
-        }
-        return new QuestionBankView(bank, questions, attempted.size(), correct.size());
+        // «Acertadas» como en el resto (ADR 0063): las que se acertaron en su último intento.
+        Map<UUID, QuestionAttempt> latest = QuestionStanding.latest(history);
+        int attempted = latest.size();
+        int correct = (int) latest.values().stream().filter(QuestionAttempt::correct).count();
+        List<Question> ordered = questions.stream()
+                .sorted(Comparator.comparing((Question q) -> QuestionStanding.of(latest.get(q.id())),
+                        QuestionStanding.COMES_BACK_FIRST).thenComparingInt(Question::order))
+                .toList();
+        return new QuestionBankView(bank, ordered, attempted, correct);
     }
 
     /** Preguntas en el orden de la sesión; las borradas al regenerar el banco se omiten. */
@@ -308,36 +356,25 @@ public class QuizService implements GetQuestionBankUseCase, SaveCreatedQuestions
     }
 
     /**
-     * Prioriza las preguntas nunca acertadas (falladas), después las no intentadas y por último
-     * las ya acertadas; cada grupo se baraja.
+     * Elige las preguntas que vuelven antes según su último intento ({@link QuestionStanding}): «No lo sé»,
+     * falladas, nuevas y, por último, acertadas; cada grupo se baraja.
      */
     private List<Question> prioritize(UUID userId, List<Question> questions, int limit) {
         if (questions.isEmpty()) {
             return List.of();
         }
-        List<QuestionAttempt> history = attempts.findByUserAndQuestions(userId,
-                questions.stream().map(Question::id).toList());
-        Set<UUID> attempted = history.stream().map(QuestionAttempt::questionId).collect(Collectors.toSet());
-        Set<UUID> correct = history.stream().filter(QuestionAttempt::correct).map(QuestionAttempt::questionId)
-                .collect(Collectors.toSet());
-        List<Question> failed = new ArrayList<>();
-        List<Question> fresh = new ArrayList<>();
-        List<Question> known = new ArrayList<>();
+        Map<UUID, QuestionAttempt> latest = QuestionStanding.latest(attempts.findByUserAndQuestions(userId,
+                questions.stream().map(Question::id).toList()));
+        Map<QuestionStanding, List<Question>> groups = new EnumMap<>(QuestionStanding.class);
         for (Question q : questions) {
-            if (!attempted.contains(q.id())) {
-                fresh.add(q);
-            } else if (correct.contains(q.id())) {
-                known.add(q);
-            } else {
-                failed.add(q);
-            }
+            groups.computeIfAbsent(QuestionStanding.of(latest.get(q.id())), k -> new ArrayList<>()).add(q);
         }
-        Collections.shuffle(failed, random);
-        Collections.shuffle(fresh, random);
-        Collections.shuffle(known, random);
-        List<Question> ordered = new ArrayList<>(failed);
-        ordered.addAll(fresh);
-        ordered.addAll(known);
+        List<Question> ordered = new ArrayList<>();
+        groups.keySet().stream().sorted(QuestionStanding.COMES_BACK_FIRST).forEach(standing -> {
+            List<Question> group = groups.get(standing);
+            Collections.shuffle(group, random);
+            ordered.addAll(group);
+        });
         return ordered.subList(0, Math.min(limit, ordered.size()));
     }
 }

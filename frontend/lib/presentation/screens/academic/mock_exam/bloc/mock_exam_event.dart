@@ -20,5 +20,8 @@ sealed class MockExamEvent with _$MockExamEvent {
 
   const factory MockExamEvent.answerSubmitted() = MockExamAnswerSubmitted;
 
+  /// «No lo sé» a la pregunta actual (ADR 0063).
+  const factory MockExamEvent.dontKnowSubmitted() = MockExamDontKnowSubmitted;
+
   const factory MockExamEvent.completed() = MockExamCompleted;
 }

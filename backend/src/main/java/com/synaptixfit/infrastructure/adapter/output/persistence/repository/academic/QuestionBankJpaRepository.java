@@ -1,6 +1,8 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.repository.academic;
 
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.academic.QuestionBankEntity;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +13,6 @@ public interface QuestionBankJpaRepository extends JpaRepository<QuestionBankEnt
     Optional<QuestionBankEntity> findByIdAndUserId(UUID id, UUID userId);
 
     Optional<QuestionBankEntity> findFirstByMaterialIdOrderByGeneratedAtDesc(UUID materialId);
+
+    List<QuestionBankEntity> findByMaterialIdIn(Collection<UUID> materialIds);
 }

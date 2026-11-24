@@ -97,6 +97,30 @@ Al fijar la fecha del siguiente repaso, SM-2 propone `hoy + intervalo`. Antes de
 - Las opciones se comparan como las demás respuestas (sin mayúsculas, tildes, espacios repetidos ni puntuación final) y el orden en que se marcan no importa.
 - Por qué: con puntos parciales marcarlo todo saldría a cuenta, y el SM-2 y el simulacro esperan un acierto o un fallo por pregunta (decisión del propietario, maqueta de la fase 4B).
 
+## «No lo sé» y en qué orden vuelven las preguntas (ADR 0063, `QuestionStanding`)
+
+Cada pregunta tiene un estado según su **último** intento, con su nota en la escala SM-2 (0-5):
+
+| Último intento | Estado | Nota SM-2 | Vuelve |
+|---|---|---|---|
+| «No lo sé» | `DONT_KNOW` | 0 (no se recuerda nada) | 1.º |
+| Respuesta fallada | `WRONG` | 2 (se intentó, pero mal) | 2.º |
+| Sin contestar nunca | `NEW` | — | 3.º |
+| Respuesta acertada | `CORRECT` | 4 | 4.º |
+
+- **Orden de vuelta:** es el orden de la tabla (el de declaración de `QuestionStanding`), no la nota: las nuevas no tienen nota y van **terceras**, entre las falladas y las acertadas. Se usa al elegir preguntas para un simulacro (`QuizService.prioritize`, cada grupo barajado), al dar el banco de un material (práctica libre y tarjetas: dentro de cada grupo, el orden del banco) y en la lista de «Practicar» de la asignatura. Una pregunta que no sabías vuelve antes que una que fallaste, y esta antes que una nueva.
+- **Una sola definición de «acertada»:** la del último intento, en todas partes (orden de vuelta, lista de la asignatura y las cifras «Intentadas / Acertadas» del banco, `QuestionBankView`). Antes las cifras del banco contaban «acertada alguna vez».
+- **Lo corregido no se cambia:** en el simulacro, una pregunta con resultado (respuesta o «No lo sé») no admite otra respuesta (409 `QUIZ_QUESTION_ALREADY_ANSWERED`); al cerrar la práctica libre manda el intento que dejó cada «Comprobar», no la respuesta que llegue al final.
+- **Último intento:** acertar después de un «No lo sé» la saca del repaso; fallar una que estaba acertada la vuelve a meter (antes contaba «acertada alguna vez»).
+- **Nota propuesta al repasar el material (`PracticeScore`):** un «No lo sé» es un fallo (nunca acierto), así que baja la proporción de aciertos y la nota propuesta igual que una respuesta fallada.
+- **XP:** un «No lo sé» dicho por la persona cuenta como respondida para «todas respondidas» (práctica libre y simulacro), pero nunca como acierto. Responder al azar ya daba lo mismo, así que no abre una forma nueva de sumar XP.
+- Por qué 0 y 2: SM-2 da 0 a «no se recuerda nada» y 1-2 a «se recordó mal»; ambos son fallo (nota < 3), y la diferencia solo decide el orden entre ellos.
+
+### Entregar un simulacro (ADR 0063, `TestSession.complete`)
+
+- **Sin ninguna respuesta** (ni un «No lo sé») **no cuenta:** el servidor la deja abandonada (`ABANDONED`) y responde con `counted: false`; no hay nota, ni XP, ni evento `TestSessionCompleted` (carga cognitiva, insignias, retos), ni intentos que cambien el repaso, y no sale en el historial (`TestSession.inHistory`). Volver a entregarla da 409 como cualquier sesión cerrada. Cada sesión dice si contaría al entregarla ahora (`countsIfSubmitted`).
+- **Con al menos una respuesta**, las que siguen sin contestar pasan a «No lo sé» (intento de nota 0: vuelven antes) y se marcan como `unanswered`. Para la XP no cuentan como respondidas: la regla de siempre («solo da XP si se contestaron todas») se mantiene.
+
 ## Progreso justo (ADR 0019)
 
 | Qué | Regla |

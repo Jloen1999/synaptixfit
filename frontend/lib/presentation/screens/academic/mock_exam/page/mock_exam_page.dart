@@ -57,28 +57,65 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
   /// Cómo se abrió: «Reintentar» lo repite.
   final MockExamEvent start;
 
+  /// Siguiente pregunta sin contestar tras la actual (da la vuelta).
+  static int _nextPending(MockExamState state) {
+    final qs = state.session?.questions ?? const [];
+    for (var i = 1; i <= qs.length; i++) {
+      final candidate = (state.index + i) % qs.length;
+      if (!qs[candidate].answered) return candidate;
+    }
+    return state.index;
+  }
+
+  /// Antes de entregar con preguntas sin contestar, se explica qué pasará
+  /// con ellas (regla del servidor, ADR 0063): sin ninguna respuesta no
+  /// cuenta; si no, las que faltan cuentan como «No lo sé».
   Future<void> _confirmFinish(BuildContext context, MockExamState state) async {
     final l10n = context.localizations;
     final bloc = context.read<MockExamBloc>();
     if (!state.allAnswered) {
+      // Si contaría lo dice el servidor (`countsIfSubmitted`), no el cliente.
+      final none = !(state.session?.countsIfSubmitted ?? true);
+      final pending = state.total - state.answered;
       final ok = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text(l10n.academicExamFinishTitle),
-          content: Text(
-            l10n.academicExamFinishPending(state.total - state.answered),
+          title: Text(
+            none
+                ? l10n.academicExamFinishEmptyTitle
+                : l10n.academicExamFinishTitle,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(l10n.commonCancel),
-            ),
-            FilledButton(
-              autofocus: true,
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(l10n.academicFinish),
-            ),
-          ],
+          content: Text(
+            none
+                ? l10n.academicExamFinishEmptyMessage
+                : '${l10n.academicExamFinishPending(pending)} '
+                      '${l10n.academicExamFinishPendingDontKnow(pending)}',
+          ),
+          // Sin respuestas, lo destacado (y con el foco) es seguir contestando;
+          // entregar queda como texto.
+          actions: none
+              ? [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text(l10n.academicExamSubmitAnyway),
+                  ),
+                  FilledButton(
+                    autofocus: true,
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(l10n.academicExamKeepAnswering),
+                  ),
+                ]
+              : [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(l10n.commonCancel),
+                  ),
+                  FilledButton(
+                    autofocus: true,
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text(l10n.academicExamSubmit),
+                  ),
+                ],
         ),
       );
       if (!(ok ?? false)) return;
@@ -113,7 +150,10 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
         // se dice que sigue y que se retoma al volver a abrirlo.
         return PopScope(
           onPopInvokedWithResult: (didPop, _) {
-            if (didPop && session != null && state.closedSessionId == null) {
+            if (didPop &&
+                session != null &&
+                state.closedSessionId == null &&
+                !state.notCounted) {
               context.showSnack(l10n.academicExamResumeLater);
             }
           },
@@ -122,59 +162,61 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
               leading: AppBackButton(fallback: back),
               title: Text(l10n.academicExamTitle),
               actions: [
-                if (session != null)
+                if (session != null && !state.notCounted)
                   _ElapsedClock(startedAt: session.startedAt),
               ],
-              bottom: session == null
+              bottom: session == null || state.notCounted
                   ? null
                   : PreferredSize(
-                      preferredSize: const Size.fromHeight(4),
+                      preferredSize: const Size.fromHeight(
+                        TokensSize.progressBar,
+                      ),
                       child: LinearProgressIndicator(
+                        minHeight: TokensSize.progressBar,
                         value: state.total == 0
                             ? 0
                             : state.answered / state.total,
                       ),
                     ),
             ),
-            bottomNavigationBar: question == null
+            bottomNavigationBar: question == null || state.notCounted
                 ? null
                 : SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.all(TokensSpacing.m),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: AppSecondaryButton(
-                              label: l10n.academicFinish,
-                              onPressed: state.finishing
+                      // Un solo hueco: tras «No lo sé», «Siguiente» (o
+                      // «Entregar» si ya están todas) ocupa el sitio de
+                      // «Responder» y se queda con el foco.
+                      child: QuestionAnswerBar(
+                        questionId: question.id,
+                        answered: question.answered,
+                        primaryLabel: !question.answered
+                            ? l10n.academicExamAnswer
+                            : state.allAnswered
+                            ? l10n.academicExamSubmit
+                            : l10n.academicNext,
+                        primaryIcon: question.answered && state.allAnswered
+                            ? AppIcons.send
+                            : null,
+                        busy: question.answered
+                            ? state.finishing
+                            : state.submitting,
+                        onPrimary: !question.answered
+                            ? (state.draft.trim().isEmpty
                                   ? null
-                                  : () => _confirmFinish(context, state),
-                            ),
-                          ),
-                          const SizedBox(width: TokensSpacing.s),
-                          Expanded(
-                            child: question.answered
-                                ? AppPrimaryButton(
-                                    label: l10n.academicNext,
-                                    onPressed: state.allAnswered
-                                        ? null
-                                        : () => bloc.add(
-                                            MockExamEvent.questionSelected(
-                                              (state.index + 1) % state.total,
-                                            ),
-                                          ),
-                                  )
-                                : AppPrimaryButton(
-                                    label: l10n.academicExamAnswer,
-                                    loading: state.submitting,
-                                    onPressed: state.draft.trim().isEmpty
-                                        ? null
-                                        : () => bloc.add(
-                                            const MockExamEvent.answerSubmitted(),
-                                          ),
-                                  ),
-                          ),
-                        ],
+                                  : () => bloc.add(
+                                      const MockExamEvent.answerSubmitted(),
+                                    ))
+                            : state.allAnswered
+                            ? () => _confirmFinish(context, state)
+                            : () => bloc.add(
+                                MockExamEvent.questionSelected(
+                                  _MockExamView._nextPending(state),
+                                ),
+                              ),
+                        onDontKnow: () => bloc.add(
+                          const MockExamEvent.dontKnowSubmitted(),
+                        ),
                       ),
                     ),
                   ),
@@ -184,6 +226,7 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
                 error: error,
                 onRetry: () => bloc.add(start),
               ),
+              MockExamState(notCounted: true) => _NotCountedView(back: back),
               _ when question == null => AppEmptyState(
                 icon: Icons.quiz_outlined,
                 title: l10n.academicPracticeNoBankTitle,
@@ -209,8 +252,19 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
                       onAnswerChanged: question.answered
                           ? (_) {}
                           : (v) => bloc.add(MockExamEvent.answerChanged(v)),
+                      // Con «No lo sé» se ve la respuesta al momento; el resto
+                      // se corrige al entregar, como en un examen.
+                      feedback: question.dontKnow
+                          ? QuestionFeedback(
+                              correct: false,
+                              dontKnow: true,
+                              correctAnswer: question.correctAnswer,
+                              correctAnswers: question.correctAnswers,
+                              explanation: question.explanation,
+                            )
+                          : null,
                     ),
-                    if (question.answered)
+                    if (question.answered && !question.dontKnow)
                       Padding(
                         padding: const EdgeInsets.only(top: TokensSpacing.m),
                         child: AppPill(
@@ -219,6 +273,17 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
                           icon: Icons.lock_outline_rounded,
                         ),
                       ),
+                    // Entregar sin contestarlas todas: aparte, con borde (la
+                    // acción principal de abajo es contestar).
+                    if (!state.allAnswered) ...[
+                      const SizedBox(height: TokensSpacing.xl),
+                      AppSecondaryButton(
+                        label: l10n.academicExamSubmit,
+                        icon: const Icon(AppIcons.send),
+                        loading: state.finishing,
+                        onPressed: () => _confirmFinish(context, state),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -226,6 +291,31 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
           ),
         );
       },
+    );
+  }
+}
+
+/// Entregado sin ninguna respuesta: se dice claramente que no cuenta.
+class _NotCountedView extends StatelessWidget {
+  const _NotCountedView({required this.back});
+
+  final String back;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: AppEmptyState(
+        icon: AppIcons.info,
+        title: l10n.academicExamNotCountedTitle,
+        message: l10n.academicExamNotCountedMessage,
+        action: AppPrimaryButton(
+          label: l10n.commonBack,
+          onPressed: () => context.popOrGo(back, true),
+        ),
+      ),
     );
   }
 }
@@ -246,14 +336,18 @@ class _QuestionNavigator extends StatelessWidget {
         itemCount: questions.length,
         separatorBuilder: (_, _) => const SizedBox(width: TokensSpacing.xs),
         itemBuilder: (context, i) {
-          final answered = questions[i].answered;
+          final question = questions[i];
+          final answered = question.answered;
           final current = i == state.index;
           final color = answered
               ? context.colors.tertiary
               : context.colors.outline;
           return Semantics(
             label: l10n.academicQuestionOf(i + 1, questions.length),
-            value: answered
+            // «No lo sé» tiene su propio estado (icono y texto), no «Respondida».
+            value: question.dontKnow
+                ? l10n.academicStandingDontKnow
+                : answered
                 ? l10n.academicQuestionAnswered
                 : l10n.academicQuestionPending,
             selected: current,
@@ -269,14 +363,44 @@ class _QuestionNavigator extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: answered ? color.withValues(alpha: 0.16) : null,
-                    border: Border.all(color: color, width: current ? 2.5 : 1),
-                  ),
-                  child: Text(
-                    '${i + 1}',
-                    style: context.textStyles.labelLarge?.copyWith(
-                      fontWeight: current ? FontWeight.w800 : FontWeight.w500,
+                    color: answered
+                        ? color.withValues(alpha: AppPill.tintAlpha)
+                        : null,
+                    border: Border.all(
+                      color: color,
+                      width: current
+                          ? TokensSize.focusRing
+                          : TokensSize.focusRing / 2,
                     ),
+                  ),
+                  child: ExcludeSemantics(
+                    child: question.dontKnow
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${i + 1}',
+                                style: context.textStyles.labelSmall?.copyWith(
+                                  fontWeight: current
+                                      ? FontWeight.w800
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                              Icon(
+                                AppIcons.dontKnow,
+                                size: TokensSize.iconXs,
+                                color: color,
+                              ),
+                            ],
+                          )
+                        : Text(
+                            '${i + 1}',
+                            style: context.textStyles.labelLarge?.copyWith(
+                              fontWeight: current
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -328,7 +452,7 @@ class _ElapsedClockState extends State<_ElapsedClock> {
           children: [
             Icon(
               Icons.timer_outlined,
-              size: 18,
+              size: TokensSize.iconXs,
               color: context.colors.onSurfaceVariant,
             ),
             const SizedBox(width: TokensSpacing.xs),

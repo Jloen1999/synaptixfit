@@ -7,6 +7,7 @@ import 'package:synaptixfit/data/remote_data_source/academic/dto/subject_dtos.da
 import 'package:synaptixfit/domain/enums/ai_document_type.dart';
 import 'package:synaptixfit/domain/enums/mastery_state.dart';
 import 'package:synaptixfit/domain/enums/pass_outlook.dart';
+import 'package:synaptixfit/domain/enums/question_standing.dart';
 import 'package:synaptixfit/domain/enums/question_type.dart';
 import 'package:synaptixfit/domain/enums/study_source_type.dart';
 import 'package:synaptixfit/domain/enums/subject_priority.dart';
@@ -227,7 +228,8 @@ void main() {
     expect(ReviewResponseDto.fromJson(body()).toDomain().xpAwarded, 0);
   });
 
-  test('QuestionBankDto ordena las preguntas por su orden', () {
+  test('QuestionBankDto conserva el orden del servidor (las que vuelven antes '
+      'primero, ADR 0063)', () {
     final bank = QuestionBankDto.fromJson({
       'id': 'b1',
       'materialId': 'm1',
@@ -244,8 +246,8 @@ void main() {
       ],
     }).toDomain();
 
-    expect(bank.questions.map((q) => q.id), ['q1', 'q2']);
-    expect(bank.questions.first.type, QuestionType.multipleChoice);
+    expect(bank.questions.map((q) => q.id), ['q2', 'q1']);
+    expect(bank.questions.last.type, QuestionType.multipleChoice);
   });
 
   test('TestSessionDto mapea estado y preguntas sin solución', () {
@@ -299,5 +301,71 @@ void main() {
     expect(note.excerpt, 'Primera forma normal');
     expect(note.visibility, Visibility.friends);
     expect(page.hasMore, isTrue);
+  });
+
+  test('«No lo sé», entrega que no cuenta y preguntas de la asignatura '
+      '(ADR 0063)', () {
+    final answer = AnswerResultDto.fromJson({
+      'questionId': 'q1',
+      'correct': false,
+      'correctAnswers': ['x'],
+      'dontKnow': true,
+    }).toDomain();
+    expect(answer.dontKnow, isTrue);
+
+    final session = TestSessionDto.fromJson({
+      'id': 't1',
+      'materialId': 'm1',
+      'status': 'IN_PROGRESS',
+      'startedAt': '2026-11-23T10:00:00Z',
+      'counted': false,
+      'questions': [
+        {
+          'id': 'q1',
+          'type': 'MULTIPLE_ANSWER',
+          'answered': true,
+          'dontKnow': true,
+          'unanswered': true,
+        },
+      ],
+    }).toDomain();
+    expect(session.counted, isFalse);
+    expect(session.questions.single.dontKnow, isTrue);
+    expect(session.questions.single.unanswered, isTrue);
+    // Sin el campo (servidor anterior), cuenta.
+    expect(
+      TestSessionDto.fromJson({
+        'id': 't2',
+        'materialId': 'm1',
+        'startedAt': '2026-11-23T10:00:00Z',
+      }).toDomain().counted,
+      isTrue,
+    );
+
+    final list = SubjectQuestionsDto.fromJson({
+      'total': 2,
+      'toReview': 1,
+      'questions': [
+        {
+          'question': {'id': 'q2', 'type': 'FILL_IN_BLANK', 'order': 3},
+          'materialId': 'm2',
+          'materialTitle': 'SQL',
+          'standing': 'DONT_KNOW',
+          'lastAnsweredAt': '2026-11-23T10:00:00Z',
+        },
+        {
+          'question': {'id': 'q1', 'type': 'MULTIPLE_ANSWER', 'order': 0},
+          'materialId': 'm1',
+          'standing': 'NEW',
+        },
+      ],
+    }).toDomain();
+    expect(list.toReview, 1);
+    // El orden del servidor se conserva (las que vuelven antes primero).
+    expect(list.questions.map((q) => q.question.id), ['q2', 'q1']);
+    expect(list.questions.first.standing, QuestionStanding.dontKnow);
+    expect(list.questions.first.standing.toReview, isTrue);
+    expect(list.questions.last.standing, QuestionStanding.fresh);
+    expect(list.questions.last.lastAnsweredAt, isNull);
   });
 }

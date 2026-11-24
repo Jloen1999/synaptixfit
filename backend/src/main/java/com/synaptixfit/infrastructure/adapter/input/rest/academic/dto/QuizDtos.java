@@ -11,9 +11,11 @@ import com.synaptixfit.domain.model.academic.Question;
 import com.synaptixfit.domain.model.academic.QuestionBankGeneration;
 import com.synaptixfit.domain.model.academic.QuestionBankView;
 import com.synaptixfit.domain.model.academic.QuestionFormat;
+import com.synaptixfit.domain.model.academic.QuestionStanding;
 import com.synaptixfit.domain.model.academic.QuestionType;
 import com.synaptixfit.domain.model.academic.SessionAnswer;
 import com.synaptixfit.domain.model.academic.StudySourceType;
+import com.synaptixfit.domain.model.academic.SubjectQuestions;
 import com.synaptixfit.domain.model.academic.TestSession;
 import com.synaptixfit.domain.model.academic.TestSessionStatus;
 import com.synaptixfit.domain.model.academic.TestSessionView;
@@ -113,23 +115,41 @@ public final class QuizDtos {
         }
     }
 
-    /** Respuesta a una pregunta: {@code answer} o, en «Varias correctas», {@code answers}. */
+    /**
+     * Respuesta a una pregunta: {@code answer} o, en «Varias correctas», {@code answers}. Con {@code dontKnow}
+     * verdadero es «No lo sé» (ADR 0063) y no hace falta respuesta.
+     */
     public record AnswerRequest(@Size(max = 1000) String answer,
-                                @Size(max = 10) List<@NotNull @Size(max = 500) String> answers) {
-    }
+                                @Size(max = 10) List<@NotNull @Size(max = 500) String> answers,
+                                Boolean dontKnow) {
 
-    public record AnswerResultResponse(UUID questionId, boolean correct, String correctAnswer, String explanation,
-                                       List<String> correctAnswers) {
-
-        public static AnswerResultResponse from(AnswerResult r) {
-            return new AnswerResultResponse(r.questionId(), r.correct(), String.join(" · ", r.correctAnswers()),
-                    r.explanation(), r.correctAnswers());
+        public boolean saysDontKnow() {
+            return Boolean.TRUE.equals(dontKnow);
         }
     }
 
-    /** Respuestas de la práctica libre por id de pregunta; las de «Varias correctas» van en {@code selections}. */
+    /** Corrección; {@code dontKnow} si fue «No lo sé» (entonces {@code correct} es falso). */
+    public record AnswerResultResponse(UUID questionId, boolean correct, String correctAnswer, String explanation,
+                                       List<String> correctAnswers, boolean dontKnow) {
+
+        public static AnswerResultResponse from(AnswerResult r) {
+            return new AnswerResultResponse(r.questionId(), r.correct(), String.join(" · ", r.correctAnswers()),
+                    r.explanation(), r.correctAnswers(), r.dontKnow());
+        }
+    }
+
+    /**
+     * Respuestas de la práctica libre por id de pregunta; las de «Varias correctas» van en {@code selections} y
+     * las contestadas con «No lo sé», en {@code dontKnow} (ADR 0063).
+     */
     public record PracticeCompletionRequest(@NotNull Map<UUID, @Size(max = 1000) String> answers,
-                                            Map<UUID, @Size(max = 10) List<@NotNull @Size(max = 500) String>> selections) {
+                                            Map<UUID, @Size(max = 10) List<@NotNull @Size(max = 500) String>> selections,
+                                            @Size(max = 200) Set<@NotNull UUID> dontKnow) {
+
+        /** Preguntas con «No lo sé» (vacío si no llega). */
+        public Set<UUID> dontKnowIds() {
+            return dontKnow == null ? Set.of() : Set.copyOf(dontKnow);
+        }
 
         /** Todas las respuestas como las corrige el dominio. */
         public Map<UUID, String> merged() {
@@ -171,15 +191,24 @@ public final class QuizDtos {
     /**
      * Pregunta de una sesión. La solución y la explicación solo se incluyen si ya se respondió o
      * si la sesión ha terminado. En «Varias correctas», {@code answers} y {@code correctAnswers} son listas.
+     * {@code dontKnow}: se contestó con «No lo sé»; {@code unanswered}: seguía sin contestar al entregar y pasó a
+     * «No lo sé» (ADR 0063).
      */
     public record SessionQuestionResponse(UUID id, QuestionType type, String statement, List<String> options,
                                           boolean answered, String answer, Boolean correct, String correctAnswer,
-                                          String explanation, List<String> answers, List<String> correctAnswers) {
+                                          String explanation, List<String> answers, List<String> correctAnswers,
+                                          boolean dontKnow, boolean unanswered) {
     }
 
+    /**
+     * Sesión de test (ADR 0063). {@code counted} falso: está abandonada (p. ej. se entregó sin ninguna respuesta) y
+     * no da nota ni XP. {@code countsIfSubmitted}: si entregarla ahora contaría (tiene alguna respuesta).
+     * {@code answeredCount} son las que contestó la persona (sin las que pasaron a «No lo sé» al entregar).
+     */
     public record TestSessionResponse(UUID id, UUID materialId, TestSessionStatus status, int currentIndex, int score,
                                       int totalQuestions, int answeredCount, Instant startedAt, Instant completedAt,
-                                      boolean xpAwarded, int xpGranted, List<SessionQuestionResponse> questions) {
+                                      boolean xpAwarded, int xpGranted, List<SessionQuestionResponse> questions,
+                                      boolean counted, boolean countsIfSubmitted) {
 
         public static TestSessionResponse from(TestSessionView v) {
             return from(v, QuestionType.ALL);
@@ -191,19 +220,22 @@ public final class QuizDtos {
             boolean finished = s.status() != TestSessionStatus.IN_PROGRESS;
             Map<UUID, String> answers = s.answers();
             Map<UUID, Boolean> results = s.results();
+            Set<UUID> dontKnow = s.dontKnowIds();
+            Set<UUID> unanswered = s.unansweredAtSubmit();
             List<SessionQuestionResponse> questions = v.questions().stream().filter(q -> visible.contains(q.type()))
                     .map(q -> {
                         boolean answered = results.containsKey(q.id());
                         boolean reveal = answered || finished;
-                        String given = answers.get(q.id());
+                        boolean unknown = dontKnow.contains(q.id());
+                        String given = unknown ? null : answers.get(q.id());
                         return new SessionQuestionResponse(q.id(), q.type(), q.statement(), q.options(), answered,
                                 given, results.get(q.id()), reveal ? String.join(" · ", q.correctAnswers()) : null,
                                 reveal ? q.explanation() : null, given == null ? null : Question.splitAnswers(given),
-                                reveal ? q.correctAnswers() : null);
+                                reveal ? q.correctAnswers() : null, unknown, unanswered.contains(q.id()));
                     }).toList();
             return new TestSessionResponse(s.id(), s.materialId(), s.status(), s.currentIndex(), s.score(),
-                    s.totalQuestions(), results.size(), s.startedAt(), s.completedAt(), s.xpAwarded(), v.xpAwarded(),
-                    questions);
+                    s.totalQuestions(), s.answeredCount(), s.startedAt(), s.completedAt(), s.xpAwarded(),
+                    v.xpAwarded(), questions, s.counted(), s.countsIfSubmitted());
         }
     }
 
@@ -213,15 +245,47 @@ public final class QuizDtos {
 
         public static TestSessionSummaryResponse from(TestSession s) {
             return new TestSessionSummaryResponse(s.id(), s.materialId(), s.status(), s.score(), s.totalQuestions(),
-                    s.results().size(), s.startedAt(), s.completedAt(), s.xpAwarded());
+                    s.answeredCount(), s.startedAt(), s.completedAt(), s.xpAwarded());
         }
     }
 
-    /** Respuesta en una sesión: {@code answer} o, en «Varias correctas», {@code answers}. */
+    /**
+     * Respuesta en una sesión: {@code answer} o, en «Varias correctas», {@code answers}; con {@code dontKnow}
+     * verdadero, «No lo sé» (ADR 0063).
+     */
     public record SessionAnswerRequest(@NotNull UUID questionId,
                                        @Size(max = 1000) String answer,
                                        @Min(0) Integer nextIndex,
-                                       @Size(max = 10) List<@NotNull @Size(max = 500) String> answers) {
+                                       @Size(max = 10) List<@NotNull @Size(max = 500) String> answers,
+                                       Boolean dontKnow) {
+
+        public boolean saysDontKnow() {
+            return Boolean.TRUE.equals(dontKnow);
+        }
+    }
+
+    /**
+     * Preguntas de una asignatura para «Practicar» (ADR 0063), en el orden en que vuelven: primero las de «No lo
+     * sé», luego falladas, nuevas y acertadas. {@code toReview}: cuántas tocan repasar; {@code subjectName}, para el
+     * título.
+     */
+    public record SubjectQuestionsResponse(String subjectName, int total, int toReview,
+                                           List<SubjectQuestionResponse> questions) {
+
+        public static SubjectQuestionsResponse from(SubjectQuestions s) {
+            return new SubjectQuestionsResponse(s.subjectName(), s.questions().size(), s.toReview(),
+                    s.questions().stream().map(SubjectQuestionResponse::from).toList());
+        }
+    }
+
+    /** Pregunta con su solución, el material del que sale y cómo va ({@code standing}). */
+    public record SubjectQuestionResponse(QuestionResponse question, UUID materialId, String materialTitle,
+                                          QuestionStanding standing, Instant lastAnsweredAt) {
+
+        public static SubjectQuestionResponse from(SubjectQuestions.Item i) {
+            return new SubjectQuestionResponse(QuestionResponse.from(i.question()), i.materialId(), i.materialTitle(),
+                    i.standing(), i.lastAnsweredAt());
+        }
     }
 
     public record SessionAnswerResponse(AnswerResultResponse result, TestSessionResponse session) {

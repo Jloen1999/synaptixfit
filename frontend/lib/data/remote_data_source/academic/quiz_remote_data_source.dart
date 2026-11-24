@@ -74,9 +74,28 @@ class QuizRemoteDataSource {
     return AnswerResultDto.fromJson(response.data!);
   }
 
+  /// «No lo sé» (ADR 0063): sin respuesta, el servidor devuelve la solución.
+  Future<AnswerResultDto> dontKnow(String questionId) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/questions/$questionId/attempts',
+      data: {'dontKnow': true},
+      options: _types,
+    );
+    return AnswerResultDto.fromJson(response.data!);
+  }
+
+  Future<SubjectQuestionsDto> getSubjectQuestions(String subjectId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/subjects/$subjectId/questions',
+      options: _types,
+    );
+    return SubjectQuestionsDto.fromJson(response.data!);
+  }
+
   Future<PracticeResultDto> completePractice(
     String bankId,
     Map<String, String> answers,
+    Set<String> dontKnow,
   ) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/question-banks/$bankId/practice-completions',
@@ -90,6 +109,7 @@ class QuizRemoteDataSource {
             if (QuestionAnswers.split(e.value).length > 1)
               e.key: QuestionAnswers.split(e.value),
         },
+        if (dontKnow.isNotEmpty) 'dontKnow': dontKnow.toList(),
       },
       options: _types,
     );
@@ -164,13 +184,14 @@ class QuizRemoteDataSource {
     String sessionId,
     String questionId,
     String answer,
-    int? nextIndex,
-  ) async {
+    int? nextIndex, {
+    bool dontKnow = false,
+  }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '$_sessions/$sessionId/answers',
       data: {
         'questionId': questionId,
-        ..._answerBody(answer),
+        if (dontKnow) 'dontKnow': true else ..._answerBody(answer),
         'nextIndex': ?nextIndex,
       },
       options: _types,

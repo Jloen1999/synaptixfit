@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../../../../domain/enums/question_standing.dart';
 import '../../../../domain/models/account/account.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
@@ -123,4 +124,40 @@ class AcademicProgressBar extends StatelessWidget {
       backgroundColor: color.withValues(alpha: 0.16),
     ),
   );
+}
+
+/// Cómo va una pregunta según su último intento (ADR 0063): «No la sabías»,
+/// «Fallada», «Nueva» o «Acertada», con icono y texto (nunca solo color).
+class StandingPill extends StatelessWidget {
+  const StandingPill({super.key, required this.standing});
+
+  final QuestionStanding standing;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final (label, color, icon) = switch (standing) {
+      QuestionStanding.dontKnow => (
+        l10n.academicStandingDontKnow,
+        context.colors.tertiary,
+        AppIcons.dontKnow,
+      ),
+      QuestionStanding.wrong => (
+        l10n.academicStandingWrong,
+        context.colors.error,
+        Icons.cancel_rounded,
+      ),
+      QuestionStanding.fresh => (
+        l10n.academicStandingNew,
+        context.colors.onSurfaceVariant,
+        AppIcons.todo,
+      ),
+      QuestionStanding.correct => (
+        l10n.academicStandingCorrect,
+        context.palette.success,
+        AppIcons.done,
+      ),
+    };
+    return AppPill(label: label, color: color, icon: icon);
+  }
 }

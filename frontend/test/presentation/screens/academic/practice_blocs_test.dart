@@ -9,6 +9,7 @@ import 'package:synaptixfit/domain/use_cases/academic/answer_in_test_session_use
 import 'package:synaptixfit/domain/use_cases/academic/answer_question_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/complete_practice_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/complete_test_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/dont_know_question_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/export_flashcards_to_anki_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_active_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_question_bank_use_case.dart';
@@ -33,6 +34,8 @@ class _GetActive extends Mock implements GetActiveTestSessionUseCaseContract {}
 class _GetSessions extends Mock implements GetTestSessionsUseCaseContract {}
 
 class _Answer extends Mock implements AnswerQuestionUseCaseContract {}
+
+class _DontKnow extends Mock implements DontKnowQuestionUseCaseContract {}
 
 class _CompletePractice extends Mock
     implements CompletePracticeUseCaseContract {}
@@ -136,18 +139,21 @@ void main() {
   group('FreePracticeBloc', () {
     late _GetBank getBank;
     late _Answer answer;
+    late _DontKnow dontKnow;
     late _CompletePractice complete;
     const correct = AnswerResult(questionId: 'q1', correct: true);
 
     setUp(() {
       getBank = _GetBank();
       answer = _Answer();
+      dontKnow = _DontKnow();
       complete = _CompletePractice();
     });
 
     FreePracticeBloc build() => FreePracticeBloc(
       getBank: getBank,
       answer: answer,
+      dontKnow: dontKnow,
       complete: complete,
       getAccount: getAccount,
     );
@@ -174,7 +180,9 @@ void main() {
         when(
           () => answer('q1', '4'),
         ).thenAnswer((_) async => const Success(correct));
-        when(() => complete('b1', {'q1': '4'})).thenAnswer(
+        when(
+          () => complete('b1', {'q1': '4'}, dontKnow: const <String>{}),
+        ).thenAnswer(
           (_) async => const Success(
             PracticeResult(correct: 1, total: 2, xpAwarded: 10),
           ),
@@ -193,6 +201,47 @@ void main() {
         expect(bloc.state.results['q1'], correct);
         expect(bloc.state.result?.xpAwarded, 10);
         expect(bloc.state.updatedAccount, account);
+      },
+    );
+
+    blocTest<FreePracticeBloc, FreePracticeState>(
+      '«No lo sé» enseña la solución y al terminar va aparte de las '
+      'respuestas (ADR 0063)',
+      setUp: () {
+        when(() => dontKnow('q1')).thenAnswer(
+          (_) async => const Success(
+            AnswerResult(
+              questionId: 'q1',
+              correct: false,
+              correctAnswers: ['4'],
+              dontKnow: true,
+            ),
+          ),
+        );
+        when(
+          () => complete('b1', const {}, dontKnow: const {'q1'}),
+        ).thenAnswer(
+          (_) async => const Success(
+            PracticeResult(correct: 0, total: 2, xpAwarded: 0),
+          ),
+        );
+      },
+      build: build,
+      seed: () => const FreePracticeState(loading: false, bank: bank),
+      act: (bloc) async {
+        bloc.add(const FreePracticeEvent.dontKnowRequested());
+        await Future<void>.delayed(Duration.zero);
+        // Ya contestada: un segundo «No lo sé» no vuelve a llamar.
+        bloc
+          ..add(const FreePracticeEvent.dontKnowRequested())
+          ..add(const FreePracticeEvent.finished());
+      },
+      verify: (bloc) {
+        expect(bloc.state.currentResult?.dontKnow, isTrue);
+        expect(bloc.state.dontKnow, {'q1'});
+        expect(bloc.state.answers, isEmpty);
+        expect(bloc.state.result?.total, 2);
+        verify(() => dontKnow('q1')).called(1);
       },
     );
 
@@ -363,6 +412,7 @@ void main() {
             questionId: 'q1',
             answer: '4',
             nextIndex: 1,
+            dontKnow: false,
           ),
         ).thenAnswer(
           (_) async => Success(
@@ -396,6 +446,69 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.closedSessionId, 't1');
         expect(bloc.state.updatedAccount, account);
+      },
+    );
+
+    blocTest<MockExamBloc, MockExamState>(
+      '«No lo sé» se manda sin respuesta y se queda en la pregunta para '
+      'leer la solución (ADR 0063)',
+      setUp: () {
+        final answered = session.copyWith(
+          answeredCount: 1,
+          questions: [
+            session.questions.first.copyWith(
+              answered: true,
+              correct: false,
+              dontKnow: true,
+              correctAnswers: ['4'],
+            ),
+            session.questions.last,
+          ],
+        );
+        when(
+          () => answerInSession(
+            't1',
+            questionId: 'q1',
+            answer: '',
+            nextIndex: 1,
+            dontKnow: true,
+          ),
+        ).thenAnswer(
+          (_) async => Success(
+            SessionAnswer(
+              result: const AnswerResult(
+                questionId: 'q1',
+                correct: false,
+                dontKnow: true,
+              ),
+              session: answered,
+            ),
+          ),
+        );
+      },
+      build: build,
+      seed: () => MockExamState(loading: false, session: session),
+      act: (bloc) => bloc.add(const MockExamEvent.dontKnowSubmitted()),
+      verify: (bloc) {
+        expect(bloc.state.index, 0);
+        expect(bloc.state.current?.dontKnow, isTrue);
+        expect(bloc.state.answered, 1);
+      },
+    );
+
+    blocTest<MockExamBloc, MockExamState>(
+      'entregado sin respuestas no cuenta: no abre resultados (ADR 0063)',
+      setUp: () => when(() => complete('t1')).thenAnswer(
+        (_) async => Success(session.copyWith(counted: false)),
+      ),
+      build: build,
+      seed: () => MockExamState(loading: false, session: session),
+      act: (bloc) => bloc.add(const MockExamEvent.completed()),
+      verify: (bloc) {
+        expect(bloc.state.notCounted, isTrue);
+        expect(bloc.state.closedSessionId, isNull);
+        expect(bloc.state.finishing, isFalse);
+        verifyNever(() => getAccount());
       },
     );
   });

@@ -11,6 +11,10 @@ sealed class FreePracticeEvent with _$FreePracticeEvent {
   /// Corrige la respuesta de la pregunta actual.
   const factory FreePracticeEvent.checked() = FreePracticeChecked;
 
+  /// «No lo sé» a la pregunta actual: enseña la respuesta (ADR 0063).
+  const factory FreePracticeEvent.dontKnowRequested() =
+      FreePracticeDontKnowRequested;
+
   const factory FreePracticeEvent.nextRequested() = FreePracticeNextRequested;
 
   /// Cierra la práctica con las respuestas dadas y otorga la XP.

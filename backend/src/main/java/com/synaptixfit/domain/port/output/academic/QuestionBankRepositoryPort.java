@@ -4,6 +4,7 @@ import com.synaptixfit.domain.model.academic.Question;
 import com.synaptixfit.domain.model.academic.QuestionBank;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +30,12 @@ public interface QuestionBankRepositoryPort {
 
     /** Cuántas preguntas tiene el banco, sin cargarlas. */
     int countQuestions(UUID bankId);
+
+    /**
+     * Preguntas de varios materiales de una vez (del banco más reciente de cada uno, como {@link #findByMaterial}),
+     * por id de material y en el orden del banco. Los materiales sin banco o sin preguntas no aparecen.
+     */
+    Map<UUID, List<Question>> findQuestionsByMaterials(Collection<UUID> materialIds);
 
     /** Pregunta cuyo banco pertenece al usuario. */
     Optional<Question> findQuestionOfUser(UUID questionId, UUID userId);

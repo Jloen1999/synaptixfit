@@ -1,6 +1,7 @@
 import '../../domain/models/academic/mock_exam_options.dart';
 import '../../domain/models/academic/question_creation.dart';
 import '../../domain/models/academic/quiz.dart';
+import '../../domain/models/academic/subject_questions.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/repositories/quiz_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
@@ -45,12 +46,26 @@ class QuizRepository implements QuizRepositoryContract {
   );
 
   @override
+  Future<AppResult<AnswerResult>> dontKnowQuestion(String questionId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.dontKnow(questionId)).toDomain(),
+      );
+
+  @override
   Future<AppResult<PracticeResult>> completePractice(
     String bankId,
-    Map<String, String> answers,
-  ) => RepositoryErrorHandler.guard(
-    () async => (await _remote.completePractice(bankId, answers)).toDomain(),
+    Map<String, String> answers, {
+    Set<String> dontKnow = const {},
+  }) => RepositoryErrorHandler.guard(
+    () async =>
+        (await _remote.completePractice(bankId, answers, dontKnow)).toDomain(),
   );
+
+  @override
+  Future<AppResult<SubjectQuestions>> getSubjectQuestions(String subjectId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.getSubjectQuestions(subjectId)).toDomain(),
+      );
 
   @override
   Future<AppResult<FlashcardReviewResult>> reviewFlashcards(
@@ -108,12 +123,14 @@ class QuizRepository implements QuizRepositoryContract {
     required String questionId,
     required String answer,
     int? nextIndex,
+    bool dontKnow = false,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.answerInSession(
       sessionId,
       questionId,
       answer,
       nextIndex,
+      dontKnow: dontKnow,
     )).toDomain(),
   );
 

@@ -303,6 +303,14 @@ final class AcademicFakes {
         public List<Question> findQuestionsByIds(Collection<UUID> ids) {
             return questionStore.values().stream().filter(q -> ids.contains(q.id())).toList();
         }
+        public Map<UUID, List<Question>> findQuestionsByMaterials(Collection<UUID> materialIds) {
+            Map<UUID, List<Question>> out = new LinkedHashMap<>();
+            for (UUID m : materialIds) {
+                findByMaterial(m).map(b -> findQuestions(b.id())).filter(l -> !l.isEmpty())
+                        .ifPresent(l -> out.put(m, l));
+            }
+            return out;
+        }
         public Optional<Question> findQuestionOfUser(UUID questionId, UUID userId) {
             return Optional.ofNullable(questionStore.get(questionId))
                     .filter(q -> bankStore.get(q.bankId()).userId().equals(userId));

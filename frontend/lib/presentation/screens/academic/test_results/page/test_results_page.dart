@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/question_type.dart';
 import '../../../../../domain/models/academic/quiz.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
@@ -81,8 +82,13 @@ class _TestResultsView extends StatelessWidget {
                       child: AppSecondaryButton(
                         label: l10n.academicExamRetry,
                         icon: const Icon(Icons.replay_rounded),
+                        // Otro de la asignatura (el de antes pudo mezclar
+                        // apuntes); sin asignatura, otro del mismo apunte.
                         onPressed: () => context.pushReplacement(
-                          AcademicPaths.exam(session.materialId),
+                          switch (state.subjectId) {
+                            final id? => AcademicPaths.subjectMockExam(id),
+                            null => AcademicPaths.exam(session.materialId),
+                          },
                         ),
                       ),
                     ),
@@ -122,6 +128,8 @@ class _ReviewItem extends StatelessWidget {
     final correct = question.correct ?? false;
     final color = !question.answered
         ? context.colors.outline
+        : question.dontKnow
+        ? context.colors.tertiary
         : correct
         ? context.palette.success
         : context.colors.error;
@@ -137,6 +145,8 @@ class _ReviewItem extends StatelessWidget {
                 Icon(
                   !question.answered
                       ? AppIcons.remove
+                      : question.dontKnow
+                      ? AppIcons.dontKnow
                       : correct
                       ? Icons.check_circle_rounded
                       : Icons.cancel_rounded,
@@ -152,13 +162,29 @@ class _ReviewItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: TokensSpacing.xs),
+            // Lo sin contestar al entregar cuenta como «No lo sé» (ADR 0063).
             Text(
-              question.answered
-                  ? l10n.academicYourAnswer(question.answer ?? '')
+              question.unanswered
+                  ? l10n.academicResultUnanswered
+                  : question.dontKnow
+                  ? l10n.academicResultDontKnow
+                  : question.answered
+                  ? l10n.academicYourAnswer(
+                      QuestionAnswers.split(question.answer).join(' · '),
+                    )
                   : l10n.academicNotAnswered,
             ),
-            if (!correct && question.correctAnswer != null)
-              Text(l10n.academicCorrectAnswer(question.correctAnswer!)),
+            // En «Varias correctas», todas las correctas (como la corrección).
+            if (!correct &&
+                (question.correctAnswers.isNotEmpty ||
+                    question.correctAnswer != null))
+              Text(
+                l10n.academicCorrectAnswer(
+                  question.correctAnswers.isNotEmpty
+                      ? question.correctAnswers.join(' · ')
+                      : question.correctAnswer!,
+                ),
+              ),
             if (question.explanation != null &&
                 question.explanation!.isNotEmpty)
               Padding(

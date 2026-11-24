@@ -15,6 +15,7 @@ import '../screens/academic/note_scan/bloc/note_scan_bloc.dart';
 import '../screens/academic/note_editor/bloc/note_editor_bloc.dart';
 import '../screens/academic/note_viewer/bloc/note_viewer_bloc.dart';
 import '../screens/academic/practice_hub/bloc/practice_hub_bloc.dart';
+import '../screens/academic/subject_practice/bloc/subject_practice_bloc.dart';
 import '../screens/academic/shared_note_detail/bloc/shared_note_detail_bloc.dart';
 import '../screens/academic/shared_notes/bloc/shared_notes_bloc.dart';
 import '../screens/academic/subject_detail/bloc/subject_detail_bloc.dart';
@@ -168,6 +169,7 @@ void registerAcademicPresentation(GetIt getIt) {
       () => FreePracticeBloc(
         getBank: getIt(),
         answer: getIt(),
+        dontKnow: getIt(),
         complete: getIt(),
         getAccount: getIt(),
       ),
@@ -190,7 +192,17 @@ void registerAcademicPresentation(GetIt getIt) {
         getAccount: getIt(),
       ),
     )
-    ..registerFactory(() => TestResultsBloc(getSession: getIt()))
+    ..registerFactory(
+      () => SubjectPracticeBloc(
+        getQuestions: getIt(),
+        getDue: getIt(),
+        answer: getIt(),
+        dontKnow: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => TestResultsBloc(getSession: getIt(), getMaterial: getIt()),
+    )
     ..registerFactory(() => MockExamSetupBloc(getOptions: getIt()))
     ..registerFactory(
       () => NoteScanBloc(

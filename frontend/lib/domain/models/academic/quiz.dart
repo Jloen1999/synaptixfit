@@ -40,7 +40,8 @@ abstract class Question with _$Question {
   }) = _Question;
 }
 
-/// Corrección de una respuesta.
+/// Corrección de una respuesta. [dontKnow]: se contestó «No lo sé» (ADR
+/// 0063): cuenta como fallo, trae la solución y la pregunta vuelve antes.
 @freezed
 abstract class AnswerResult with _$AnswerResult {
   const factory AnswerResult({
@@ -49,6 +50,7 @@ abstract class AnswerResult with _$AnswerResult {
     String? correctAnswer,
     String? explanation,
     @Default(<String>[]) List<String> correctAnswers,
+    @Default(false) bool dontKnow,
   }) = _AnswerResult;
 }
 
@@ -87,6 +89,14 @@ abstract class TestSession with _$TestSession {
     required bool xpAwarded,
     required int xpGranted,
     @Default(<SessionQuestion>[]) List<SessionQuestion> questions,
+
+    /// Falso si está abandonada (p. ej. se entregó sin ninguna respuesta): no
+    /// cuenta (ni nota, ni XP, ni historial, ni repaso; ADR 0063).
+    @Default(true) bool counted,
+
+    /// Si entregarla ahora contaría (tiene alguna respuesta): lo decide el
+    /// servidor y el diálogo de entregar lo explica.
+    @Default(true) bool countsIfSubmitted,
   }) = _TestSession;
 
   const TestSession._();
@@ -95,6 +105,8 @@ abstract class TestSession with _$TestSession {
 }
 
 /// Pregunta dentro de una sesión: la solución solo llega si ya se respondió.
+/// [dontKnow]: contestada con «No lo sé»; [unanswered]: seguía sin contestar
+/// al entregar y pasó a «No lo sé» (ADR 0063).
 @freezed
 abstract class SessionQuestion with _$SessionQuestion {
   const factory SessionQuestion({
@@ -108,6 +120,8 @@ abstract class SessionQuestion with _$SessionQuestion {
     String? correctAnswer,
     String? explanation,
     @Default(<String>[]) List<String> correctAnswers,
+    @Default(false) bool dontKnow,
+    @Default(false) bool unanswered,
   }) = _SessionQuestion;
 }
 

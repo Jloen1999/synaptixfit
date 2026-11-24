@@ -6,6 +6,7 @@ import '../../../../../domain/models/academic/quiz.dart';
 import '../../../../../domain/models/account/account.dart';
 import '../../../../../domain/use_cases/academic/answer_question_use_case.dart';
 import '../../../../../domain/use_cases/academic/complete_practice_use_case.dart';
+import '../../../../../domain/use_cases/academic/dont_know_question_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_question_bank_use_case.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 
@@ -14,11 +15,13 @@ part 'free_practice_event.dart';
 part 'free_practice_state.dart';
 
 /// Práctica libre: una pregunta tras otra con corrección inmediata y, al
-/// terminar, el resultado con la XP.
+/// terminar, el resultado con la XP. «No lo sé» (ADR 0063) enseña la
+/// respuesta; el servidor la cuenta como fallo y la pregunta vuelve antes.
 class FreePracticeBloc extends Bloc<FreePracticeEvent, FreePracticeState> {
   FreePracticeBloc({
     required this._getBank,
     required this._answer,
+    required this._dontKnow,
     required this._complete,
     required this._getAccount,
   }) : super(const FreePracticeState()) {
@@ -27,12 +30,14 @@ class FreePracticeBloc extends Bloc<FreePracticeEvent, FreePracticeState> {
       (event, emit) => emit(state.copyWith(draft: event.answer)),
     );
     on<FreePracticeChecked>(_onChecked);
+    on<FreePracticeDontKnowRequested>(_onDontKnow);
     on<FreePracticeNextRequested>(_onNext);
     on<FreePracticeFinished>(_onFinished);
   }
 
   final GetQuestionBankUseCaseContract _getBank;
   final AnswerQuestionUseCaseContract _answer;
+  final DontKnowQuestionUseCaseContract _dontKnow;
   final CompletePracticeUseCaseContract _complete;
   final GetAccountUseCaseContract _getAccount;
 
@@ -76,6 +81,26 @@ class FreePracticeBloc extends Bloc<FreePracticeEvent, FreePracticeState> {
     );
   }
 
+  Future<void> _onDontKnow(
+    FreePracticeDontKnowRequested event,
+    Emitter<FreePracticeState> emit,
+  ) async {
+    final question = state.current;
+    if (question == null || state.currentResult != null) return;
+    emit(state.copyWith(checking: true, actionError: null));
+    final result = await _dontKnow(question.id);
+    emit(
+      result.fold(
+        (r) => state.copyWith(
+          checking: false,
+          dontKnow: {...state.dontKnow, question.id},
+          results: {...state.results, question.id: r},
+        ),
+        (error) => state.copyWith(checking: false, actionError: error),
+      ),
+    );
+  }
+
   void _onNext(
     FreePracticeNextRequested event,
     Emitter<FreePracticeState> emit,
@@ -89,9 +114,15 @@ class FreePracticeBloc extends Bloc<FreePracticeEvent, FreePracticeState> {
     Emitter<FreePracticeState> emit,
   ) async {
     final bank = state.bank;
-    if (bank == null || state.answers.isEmpty) return;
+    if (bank == null || (state.answers.isEmpty && state.dontKnow.isEmpty)) {
+      return;
+    }
     emit(state.copyWith(finishing: true, actionError: null));
-    final result = await _complete(bank.id, state.answers);
+    final result = await _complete(
+      bank.id,
+      state.answers,
+      dontKnow: state.dontKnow,
+    );
     switch (result.errorOrNull) {
       case final AppError error:
         emit(state.copyWith(finishing: false, actionError: error));

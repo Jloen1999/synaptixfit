@@ -6,6 +6,7 @@ import com.synaptixfit.application.port.input.academic.AnswerTestQuestionUseCase
 import com.synaptixfit.application.port.input.academic.AssignSubjectSemesterUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteBankPracticeUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteTestSessionUseCase;
+import com.synaptixfit.application.port.input.academic.DontKnowQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.ConfirmFileUploadUseCase;
 import com.synaptixfit.application.port.input.academic.CopySharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.CreateNoteUseCase;
@@ -488,6 +489,11 @@ public class AcademicBeanConfiguration {
     @Bean
     AnswerQuestionUseCase answerQuestionUseCase() {
         return tx.wrap(AnswerQuestionUseCase.class, quizService());
+    }
+
+    @Bean
+    DontKnowQuestionUseCase dontKnowQuestionUseCase() {
+        return tx.wrap(DontKnowQuestionUseCase.class, quizService());
     }
 
     @Bean

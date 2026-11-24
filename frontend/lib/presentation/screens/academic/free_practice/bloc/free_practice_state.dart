@@ -14,6 +14,9 @@ abstract class FreePracticeState with _$FreePracticeState {
     /// Respuestas enviadas y su corrección, por id de pregunta.
     @Default(<String, String>{}) Map<String, String> answers,
     @Default(<String, AnswerResult>{}) Map<String, AnswerResult> results,
+
+    /// Preguntas contestadas con «No lo sé» (no van en [answers]).
+    @Default(<String>{}) Set<String> dontKnow,
     @Default(false) bool checking,
     @Default(false) bool finishing,
     AppError? actionError,

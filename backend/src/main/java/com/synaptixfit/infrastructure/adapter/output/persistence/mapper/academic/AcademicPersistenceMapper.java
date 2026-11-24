@@ -29,7 +29,9 @@ import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /** Modelos del dominio académico ↔ entidades JPA. Sin lógica de negocio. */
 public final class AcademicPersistenceMapper {
@@ -223,7 +225,8 @@ public final class AcademicPersistenceMapper {
     }
 
     public static QuestionAttempt toDomain(QuestionAttemptEntity e) {
-        return new QuestionAttempt(e.getId(), e.getUserId(), e.getQuestionId(), e.isCorrect(), e.getAnsweredAt());
+        return new QuestionAttempt(e.getId(), e.getUserId(), e.getQuestionId(), e.isCorrect(), e.isDontKnow(),
+                e.getAnsweredAt());
     }
 
     public static QuestionAttemptEntity toEntity(QuestionAttempt a) {
@@ -232,6 +235,7 @@ public final class AcademicPersistenceMapper {
         e.setUserId(a.userId());
         e.setQuestionId(a.questionId());
         e.setCorrect(a.correct());
+        e.setDontKnow(a.dontKnow());
         e.setAnsweredAt(a.answeredAt());
         return e;
     }
@@ -247,8 +251,13 @@ public final class AcademicPersistenceMapper {
         }
         List<UUID> ids = e.getQuestionIds() == null ? List.of()
                 : e.getQuestionIds().stream().map(UUID::fromString).toList();
-        return new TestSession(e.getId(), e.getUserId(), e.getMaterialId(), ids, answers, results, e.getCurrentIndex(),
+        return new TestSession(e.getId(), e.getUserId(), e.getMaterialId(), ids, answers, results,
+                uuids(e.getDontKnow()), uuids(e.getUnansweredAtSubmit()), e.getCurrentIndex(),
                 AcademicDbCodes.sessionStatus(e.getStatus()), e.getStartedAt(), e.getCompletedAt(), e.isXpAwarded());
+    }
+
+    private static Set<UUID> uuids(List<String> ids) {
+        return ids == null ? Set.of() : ids.stream().map(UUID::fromString).collect(Collectors.toSet());
     }
 
     public static void copy(TestSession s, TestSessionEntity e) {
@@ -269,5 +278,7 @@ public final class AcademicPersistenceMapper {
         e.setStartedAt(s.startedAt());
         e.setCompletedAt(s.completedAt());
         e.setXpAwarded(s.xpAwarded());
+        e.setDontKnow(s.dontKnowIds().stream().map(UUID::toString).sorted().toList());
+        e.setUnansweredAtSubmit(s.unansweredAtSubmit().stream().map(UUID::toString).sorted().toList());
     }
 }

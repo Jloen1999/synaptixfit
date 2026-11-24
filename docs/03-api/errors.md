@@ -247,6 +247,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `QUIZ_QUESTION_NOT_FOUND` | 404 | Pregunta inexistente, ajena o fuera de la sesión | No encontramos esa pregunta. | Activo |
 | `QUIZ_SESSION_NOT_FOUND` | 404 | La sesión no existe o no es tuya | No encontramos esa sesión de test. | Activo |
 | `QUIZ_SESSION_NOT_IN_PROGRESS` | 409 | La sesión ya terminó | Esta sesión ya ha terminado. | Activo |
+| `QUIZ_QUESTION_ALREADY_ANSWERED` | 409 | La pregunta de la sesión ya tiene resultado (respuesta o «No lo sé») y no se puede cambiar (ADR 0063) | Esta pregunta ya está contestada. | Activo |
 
 ## Entrenamiento
 

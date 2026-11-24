@@ -15,8 +15,11 @@ part 'mock_exam_event.dart';
 part 'mock_exam_state.dart';
 
 /// Simulacro con sesión persistente en el servidor: se puede reanudar,
-/// responder pregunta a pregunta y terminar. Salir con la flecha lo deja en
-/// curso para seguir luego (no hay «Abandonar»: lo respondido ya cuenta).
+/// responder pregunta a pregunta (o «No lo sé», que enseña la respuesta) y
+/// entregar. Salir con la flecha lo deja en curso para seguir luego (no hay
+/// «Abandonar»: lo respondido ya cuenta). Qué cuenta al entregar lo decide el
+/// servidor (ADR 0063): sin respuestas no cuenta ([MockExamState.notCounted]);
+/// lo sin contestar pasa a «No lo sé».
 class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
   MockExamBloc({
     required this._getActive,
@@ -32,7 +35,8 @@ class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
     on<MockExamQuestionSelected>(
       (event, emit) => emit(state.copyWith(index: event.index, draft: '')),
     );
-    on<MockExamAnswerSubmitted>(_onAnswer);
+    on<MockExamAnswerSubmitted>((_, emit) => _onAnswer(emit, dontKnow: false));
+    on<MockExamDontKnowSubmitted>((_, emit) => _onAnswer(emit, dontKnow: true));
     on<MockExamCompleted>(_onComplete);
   }
 
@@ -84,32 +88,36 @@ class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
     return session.currentIndex.clamp(0, session.questions.length - 1).toInt();
   }
 
+  /// Manda la respuesta (o «No lo sé»). Tras una respuesta pasa a la
+  /// siguiente sin contestar; tras «No lo sé» se queda para leer la solución.
   Future<void> _onAnswer(
-    MockExamAnswerSubmitted event,
-    Emitter<MockExamState> emit,
-  ) async {
+    Emitter<MockExamState> emit, {
+    required bool dontKnow,
+  }) async {
     final session = state.session;
     final question = state.current;
     final answer = state.draft.trim();
-    if (session == null || question == null || answer.isEmpty) return;
+    if (session == null || question == null || question.answered) return;
+    if (!dontKnow && answer.isEmpty) return;
     emit(state.copyWith(submitting: true, actionError: null));
     final hasNext = state.index < session.questions.length - 1;
     final result = await _answer(
       session.id,
       questionId: question.id,
-      answer: answer,
+      answer: dontKnow ? '' : answer,
       nextIndex: hasNext ? state.index + 1 : null,
+      dontKnow: dontKnow,
     );
     emit(
-      result.fold((r) {
-        final next = _nextPending(r.session, state.index);
-        return state.copyWith(
+      result.fold(
+        (r) => state.copyWith(
           submitting: false,
           session: r.session,
-          index: next,
+          index: dontKnow ? state.index : _nextPending(r.session, state.index),
           draft: '',
-        );
-      }, (error) => state.copyWith(submitting: false, actionError: error)),
+        ),
+        (error) => state.copyWith(submitting: false, actionError: error),
+      ),
     );
   }
 
@@ -139,6 +147,10 @@ class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
         break;
     }
     final completed = result.valueOrNull!;
+    if (!completed.counted) {
+      emit(state.copyWith(finishing: false, notCounted: true));
+      return;
+    }
     Account? account;
     if (completed.xpGranted > 0) {
       account = (await _getAccount()).valueOrNull;

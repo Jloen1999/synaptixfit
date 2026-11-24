@@ -1,10 +1,12 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../domain/enums/question_standing.dart';
 import '../../../../domain/enums/question_type.dart';
 import '../../../../domain/enums/study_source_type.dart';
 import '../../../../domain/enums/test_session_status.dart';
 import '../../../../domain/models/academic/mock_exam_options.dart';
 import '../../../../domain/models/academic/quiz.dart';
+import '../../../../domain/models/academic/subject_questions.dart';
 
 part 'quiz_dtos.freezed.dart';
 part 'quiz_dtos.g.dart';
@@ -61,15 +63,15 @@ abstract class QuestionBankDto with _$QuestionBankDto {
   factory QuestionBankDto.fromJson(Map<String, dynamic> json) =>
       _$QuestionBankDtoFromJson(json);
 
-  /// Preguntas en el orden del banco.
+  /// Preguntas en el orden del servidor: primero las que vuelven antes («No lo
+  /// sé», falladas, nuevas y acertadas; ADR 0063).
   QuestionBank toDomain() => QuestionBank(
     id: id,
     materialId: materialId,
     xpAwarded: xpAwarded,
     attemptedQuestions: attemptedQuestions,
     correctQuestions: correctQuestions,
-    questions: (questions.map((q) => q.toDomain()).toList()
-      ..sort((a, b) => a.order.compareTo(b.order))),
+    questions: [for (final q in questions) q.toDomain()],
     requestedQuestions: requestedQuestions,
     createdQuestions: createdQuestions,
   );
@@ -83,6 +85,7 @@ abstract class AnswerResultDto with _$AnswerResultDto {
     String? correctAnswer,
     String? explanation,
     @Default(<String>[]) List<String> correctAnswers,
+    @Default(false) bool dontKnow,
   }) = _AnswerResultDto;
 
   const AnswerResultDto._();
@@ -96,6 +99,7 @@ abstract class AnswerResultDto with _$AnswerResultDto {
     correctAnswer: correctAnswer,
     explanation: explanation,
     correctAnswers: _answersOr(correctAnswers, correctAnswer),
+    dontKnow: dontKnow,
   );
 }
 
@@ -189,6 +193,8 @@ abstract class SessionQuestionDto with _$SessionQuestionDto {
     String? correctAnswer,
     String? explanation,
     @Default(<String>[]) List<String> correctAnswers,
+    @Default(false) bool dontKnow,
+    @Default(false) bool unanswered,
   }) = _SessionQuestionDto;
 
   const SessionQuestionDto._();
@@ -207,6 +213,8 @@ abstract class SessionQuestionDto with _$SessionQuestionDto {
     correctAnswer: correctAnswer,
     explanation: explanation,
     correctAnswers: _answersOr(correctAnswers, correctAnswer),
+    dontKnow: dontKnow,
+    unanswered: unanswered,
   );
 }
 
@@ -225,6 +233,8 @@ abstract class TestSessionDto with _$TestSessionDto {
     @Default(false) bool xpAwarded,
     @Default(0) int xpGranted,
     @Default(<SessionQuestionDto>[]) List<SessionQuestionDto> questions,
+    @Default(true) bool counted,
+    @Default(true) bool countsIfSubmitted,
   }) = _TestSessionDto;
 
   const TestSessionDto._();
@@ -245,6 +255,8 @@ abstract class TestSessionDto with _$TestSessionDto {
     xpAwarded: xpAwarded,
     xpGranted: xpGranted,
     questions: questions.map((q) => q.toDomain()).toList(),
+    counted: counted,
+    countsIfSubmitted: countsIfSubmitted,
   );
 }
 
@@ -292,4 +304,52 @@ abstract class SessionAnswerDto with _$SessionAnswerDto {
 
   SessionAnswer toDomain() =>
       SessionAnswer(result: result.toDomain(), session: session.toDomain());
+}
+
+/// Preguntas de una asignatura para «Practicar» (ADR 0063).
+@freezed
+abstract class SubjectQuestionsDto with _$SubjectQuestionsDto {
+  const factory SubjectQuestionsDto({
+    @Default('') String subjectName,
+    @Default(0) int total,
+    @Default(0) int toReview,
+    @Default(<SubjectQuestionDto>[]) List<SubjectQuestionDto> questions,
+  }) = _SubjectQuestionsDto;
+
+  const SubjectQuestionsDto._();
+
+  factory SubjectQuestionsDto.fromJson(Map<String, dynamic> json) =>
+      _$SubjectQuestionsDtoFromJson(json);
+
+  /// En el orden del servidor: primero las que vuelven antes.
+  SubjectQuestions toDomain() => SubjectQuestions(
+    subjectName: subjectName,
+    total: total,
+    toReview: toReview,
+    questions: [for (final q in questions) q.toDomain()],
+  );
+}
+
+@freezed
+abstract class SubjectQuestionDto with _$SubjectQuestionDto {
+  const factory SubjectQuestionDto({
+    required QuestionDto question,
+    required String materialId,
+    @Default('') String materialTitle,
+    String? standing,
+    DateTime? lastAnsweredAt,
+  }) = _SubjectQuestionDto;
+
+  const SubjectQuestionDto._();
+
+  factory SubjectQuestionDto.fromJson(Map<String, dynamic> json) =>
+      _$SubjectQuestionDtoFromJson(json);
+
+  SubjectQuestion toDomain() => SubjectQuestion(
+    question: question.toDomain(),
+    materialId: materialId,
+    materialTitle: materialTitle,
+    standing: QuestionStanding.fromApi(standing),
+    lastAnsweredAt: lastAnsweredAt?.toLocal(),
+  );
 }

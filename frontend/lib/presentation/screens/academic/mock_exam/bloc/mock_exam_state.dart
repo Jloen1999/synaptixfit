@@ -15,6 +15,9 @@ abstract class MockExamState with _$MockExamState {
 
     /// Sesión terminada: se abren sus resultados.
     String? closedSessionId,
+
+    /// Se entregó sin ninguna respuesta: no cuenta y no se guardó (ADR 0063).
+    @Default(false) bool notCounted,
   }) = _MockExamState;
 
   const MockExamState._();

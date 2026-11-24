@@ -16,6 +16,8 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionEntity, UUI
 
     List<QuestionEntity> findByIdIn(Collection<UUID> ids);
 
+    List<QuestionEntity> findByBankIdInOrderByPositionAsc(Collection<UUID> bankIds);
+
     long countByBankId(UUID bankId);
 
     @Query("select q from QuestionEntity q, QuestionBankEntity b where q.id = :questionId and b.id = q.bankId "

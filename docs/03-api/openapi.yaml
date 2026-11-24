@@ -6081,6 +6081,30 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/RetentionResponse"
+  /api/v1/subjects/{subjectId}/questions:
+    get:
+      tags:
+      - Academic - Quizzes
+      operationId: subjectQuestions
+      parameters:
+      - name: subjectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Question-Types
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SubjectQuestionsResponse"
   /api/v1/subjects/{subjectId}/mock-exam-options:
     get:
       tags:
@@ -11776,6 +11800,10 @@ components:
           type: array
           items:
             type: string
+        dontKnow:
+          type: boolean
+        unanswered:
+          type: boolean
     TestSessionResponse:
       type: object
       properties:
@@ -11818,6 +11846,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SessionQuestionResponse"
+        counted:
+          type: boolean
+        countsIfSubmitted:
+          type: boolean
     SessionAnswerRequest:
       type: object
       properties:
@@ -11840,6 +11872,8 @@ components:
             minLength: 0
           maxItems: 10
           minItems: 0
+        dontKnow:
+          type: boolean
       required:
       - questionId
     AnswerResultResponse:
@@ -11858,6 +11892,8 @@ components:
           type: array
           items:
             type: string
+        dontKnow:
+          type: boolean
     SessionAnswerResponse:
       type: object
       properties:
@@ -13560,6 +13596,8 @@ components:
             minLength: 0
           maxItems: 10
           minItems: 0
+        dontKnow:
+          type: boolean
     PracticeCompletionRequest:
       type: object
       properties:
@@ -13573,6 +13611,14 @@ components:
             type: array
             items:
               type: string
+        dontKnow:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 200
+          minItems: 0
+          uniqueItems: true
       required:
       - answers
     PracticeResultResponse:
@@ -15831,6 +15877,41 @@ components:
         total:
           type: integer
           format: int32
+    SubjectQuestionResponse:
+      type: object
+      properties:
+        question:
+          $ref: "#/components/schemas/QuestionResponse"
+        materialId:
+          type: string
+          format: uuid
+        materialTitle:
+          type: string
+        standing:
+          type: string
+          enum:
+          - DONT_KNOW
+          - WRONG
+          - NEW
+          - CORRECT
+        lastAnsweredAt:
+          type: string
+          format: date-time
+    SubjectQuestionsResponse:
+      type: object
+      properties:
+        subjectName:
+          type: string
+        total:
+          type: integer
+          format: int32
+        toReview:
+          type: integer
+          format: int32
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubjectQuestionResponse"
     MockExamOptionsResponse:
       type: object
       properties:

@@ -46,6 +46,12 @@ public class TestSessionEntity {
     private Instant completedAt;
     @Column(name = "xp_otorgado", nullable = false)
     private boolean xpAwarded;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "no_lo_se", nullable = false)
+    private List<String> dontKnow;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "sin_contestar", nullable = false)
+    private List<String> unansweredAtSubmit;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -73,4 +79,8 @@ public class TestSessionEntity {
     public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
     public boolean isXpAwarded() { return xpAwarded; }
     public void setXpAwarded(boolean xpAwarded) { this.xpAwarded = xpAwarded; }
+    public List<String> getDontKnow() { return dontKnow; }
+    public void setDontKnow(List<String> dontKnow) { this.dontKnow = dontKnow; }
+    public List<String> getUnansweredAtSubmit() { return unansweredAtSubmit; }
+    public void setUnansweredAtSubmit(List<String> unansweredAtSubmit) { this.unansweredAtSubmit = unansweredAtSubmit; }
 }

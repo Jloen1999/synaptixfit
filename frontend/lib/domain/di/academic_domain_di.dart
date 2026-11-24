@@ -5,6 +5,8 @@ import '../use_cases/academic/get_mock_exam_options_use_case.dart';
 import '../use_cases/academic/read_note_photos_use_case.dart';
 import '../use_cases/academic/answer_in_test_session_use_case.dart';
 import '../use_cases/academic/answer_question_use_case.dart';
+import '../use_cases/academic/dont_know_question_use_case.dart';
+import '../use_cases/academic/get_subject_questions_use_case.dart';
 import '../use_cases/academic/assign_subject_semester_use_case.dart';
 import '../use_cases/academic/clear_subject_semester_use_case.dart';
 import '../use_cases/academic/complete_practice_use_case.dart';
@@ -77,6 +79,12 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<AnswerQuestionUseCaseContract>(
       () => AnswerQuestionUseCase(getIt()),
+    )
+    ..registerLazySingleton<DontKnowQuestionUseCaseContract>(
+      () => DontKnowQuestionUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetSubjectQuestionsUseCaseContract>(
+      () => GetSubjectQuestionsUseCase(getIt()),
     )
     ..registerLazySingleton<AssignSubjectSemesterUseCaseContract>(
       () => AssignSubjectSemesterUseCase(getIt()),

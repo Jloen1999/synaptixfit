@@ -21,6 +21,8 @@ public class QuestionAttemptEntity {
     private UUID questionId;
     @Column(name = "es_correcta", nullable = false)
     private boolean correct;
+    @Column(name = "no_lo_se", nullable = false)
+    private boolean dontKnow;
     @Column(name = "respondido_en", nullable = false)
     private Instant answeredAt;
 
@@ -32,6 +34,8 @@ public class QuestionAttemptEntity {
     public void setQuestionId(UUID questionId) { this.questionId = questionId; }
     public boolean isCorrect() { return correct; }
     public void setCorrect(boolean correct) { this.correct = correct; }
+    public boolean isDontKnow() { return dontKnow; }
+    public void setDontKnow(boolean dontKnow) { this.dontKnow = dontKnow; }
     public Instant getAnsweredAt() { return answeredAt; }
     public void setAnsweredAt(Instant answeredAt) { this.answeredAt = answeredAt; }
 }

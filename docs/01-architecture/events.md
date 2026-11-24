@@ -48,7 +48,7 @@ Reglas:
 | `OvertrainingDetected` | Indicadores | Notificaciones | El ACWR acaba de entrar en sobreentrenamiento: aviso `FATIGUE_ALERT` (uno al día) |
 | `ChallengeCompleted` | Gamificación | Social, Gamificación, Notificaciones | Publicación automática «reto completado» (sin duplicar si se recompleta); evaluar insignias; aviso `MILESTONE` (uno por reto, clave `challenge:<id>`: dos retos con el mismo título avisan los dos). Con `shareable = false` (reto de bienestar, ADR 0043) no se publica en el muro |
 | `BadgeEarned` | Gamificación | Social, Notificaciones | Publicación automática «insignia desbloqueada»; aviso `MILESTONE` (uno por insignia, clave `badge:<id>`) |
-| `TestSessionCompleted` | Académico | Indicadores, Gamificación | Recalcular la carga cognitiva (el test cuenta como repaso, máx. 60 min); evaluar insignias |
+| `TestSessionCompleted` | Académico | Indicadores, Gamificación | Recalcular la carga cognitiva (el test cuenta como repaso, máx. 60 min); evaluar insignias. No se publica si el simulacro se entrega sin ninguna respuesta: no cuenta y queda abandonado (ADR 0063) |
 | `ReviewCompleted` | Académico | Planificador, Indicadores, Gamificación | Completar el bloque de repaso pendiente de hoy o atrasado del material (sin XP de bloque: la da el repaso); recalcular la carga cognitiva; evaluar insignias. Se publica antes de `ReviewScheduled` |
 | `ReviewScheduled` | Académico | Planificador | Mover el bloque de repaso pendiente del material a la siguiente fecha SM-2 o, si no hay, crearlo (no fijo) |
 | `SubjectDeleted` | Académico | Planificador | Se publica **antes** del borrado físico (los bloques caen en cascada): el planificador borra los bloques de la asignatura restando su XP y publicando `StudyBlockCompletionChanged` |

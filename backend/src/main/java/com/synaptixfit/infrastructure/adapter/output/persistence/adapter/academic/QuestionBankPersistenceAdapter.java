@@ -7,8 +7,12 @@ import com.synaptixfit.infrastructure.adapter.output.persistence.entity.academic
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.academic.AcademicPersistenceMapper;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.academic.QuestionBankJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.academic.QuestionJpaRepository;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -72,6 +76,30 @@ public class QuestionBankPersistenceAdapter implements QuestionBankRepositoryPor
             return List.of();
         }
         return questions.findByIdIn(ids).stream().map(AcademicPersistenceMapper::toDomain).toList();
+    }
+
+    /** Dos consultas: los bancos de los materiales (el más reciente de cada uno) y sus preguntas. */
+    @Override
+    public Map<UUID, List<Question>> findQuestionsByMaterials(Collection<UUID> materialIds) {
+        if (materialIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, QuestionBankEntity> latest = new HashMap<>();
+        for (QuestionBankEntity b : banks.findByMaterialIdIn(materialIds)) {
+            latest.merge(b.getMaterialId(), b,
+                    (a, c) -> c.getGeneratedAt().isAfter(a.getGeneratedAt()) ? c : a);
+        }
+        Map<UUID, UUID> materialOfBank = new HashMap<>();
+        latest.forEach((material, bank) -> materialOfBank.put(bank.getId(), material));
+        if (materialOfBank.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, List<Question>> byMaterial = new LinkedHashMap<>();
+        for (var q : questions.findByBankIdInOrderByPositionAsc(materialOfBank.keySet())) {
+            byMaterial.computeIfAbsent(materialOfBank.get(q.getBankId()), k -> new ArrayList<>())
+                    .add(AcademicPersistenceMapper.toDomain(q));
+        }
+        return byMaterial;
     }
 
     @Override

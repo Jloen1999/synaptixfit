@@ -126,6 +126,10 @@ abstract final class AppIcons {
   static const IconData howTo = Icons.ondemand_video_rounded;
   static const IconData help = Icons.help_outline_rounded;
 
+  /// «No lo sé» en una pregunta y su estado en la lista de «Practicar» (ADR
+  /// 0063); distinto de [help], que abre una ayuda.
+  static const IconData dontKnow = Icons.contact_support_outlined;
+
   /// Repasar (repaso espaciado): aviso de Académico, tarjeta y Resumen.
   static const IconData review = Icons.replay_rounded;
 

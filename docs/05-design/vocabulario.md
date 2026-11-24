@@ -102,7 +102,8 @@ Decisión del propietario: «la aplicación debe ir al grano, facilitar al usuar
   - **Palabras de todos los días:** «días libres» (no «comodines»), «Estudios del calendario: 6 de 8 hechos» (no «Sin plan»), la fatiga en palabras y la carga física sin fórmulas.
   - **Saltar un día de rutina** no pregunta: «Día saltado» + «Deshacer».
 - **Inventario a cero (ADR 0041):**
-  - **Simulacro:** «Terminar» (con nota); la flecha lo deja en curso para seguirlo. No hay «Abandonar»: lo respondido ya cuenta.
+  - **Simulacro:** «Entregar» (con nota; diálogo «¿Entregar el simulacro?»; ADR 0063); la flecha lo deja en curso para seguirlo. No hay «Abandonar»: lo respondido ya cuenta. Lo sin contestar cuenta como «No lo sé»; sin ninguna respuesta, «Este simulacro no cuenta».
+  - **Preguntas (ADR 0063):** «No lo sé» (nunca «Saltar»); estados «No la sabías», «Fallada», «Nueva», «Acertada»; el filtro por material se llama «Apunte» («¿De qué apunte?»), no «Tema» (los temas son los de la guía docente).
   - **Repasos:** «Necesita repaso» es lo mismo que «Ver N repasos pendientes»: su fecha ya pasó.
   - **Eliminar** en los botones (nunca «Borrar»); quitar un evento del calendario es «Quitado del calendario».
   - **Correr:** un solo «Empezar» destacado (el del entreno de hoy o «Empezar a correr»); los entrenos se eliminan deslizando o desde su editor, con «Deshacer».

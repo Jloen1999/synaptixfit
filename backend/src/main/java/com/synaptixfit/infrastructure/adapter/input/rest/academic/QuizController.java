@@ -5,11 +5,13 @@ import com.synaptixfit.application.port.input.academic.AnswerQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.AnswerTestQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteBankPracticeUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteTestSessionUseCase;
+import com.synaptixfit.application.port.input.academic.DontKnowQuestionUseCase;
 import com.synaptixfit.application.port.input.academic.GenerateQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetActiveTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.GetMockExamOptionsUseCase;
 import com.synaptixfit.application.port.input.academic.GetQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetTestSessionUseCase;
+import com.synaptixfit.application.port.input.academic.ListSubjectQuestionsUseCase;
 import com.synaptixfit.application.port.input.academic.ListTestSessionsUseCase;
 import com.synaptixfit.application.port.input.academic.ScanDocumentQuestionsUseCase;
 import com.synaptixfit.application.port.input.academic.StartTestSessionUseCase;
@@ -28,6 +30,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.Q
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.SessionAnswerRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.SessionAnswerResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.StartSessionRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.SubjectQuestionsResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.TestSessionResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.TestSessionSummaryResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.QuestionDraftDto;
@@ -50,9 +53,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Bancos de preguntas, «Crear preguntas», práctica libre y sesiones de test (práctica y simulacro
- * cronometrado). Cada respuesta lleva solo los tipos de pregunta que la app declara en
- * {@code X-Question-Types} (ADR 0058).
+ * Bancos de preguntas, «Crear preguntas», práctica libre, las preguntas de una asignatura («Practicar») y
+ * sesiones de test (práctica y simulacro cronometrado). Cada respuesta lleva solo los tipos de pregunta que la
+ * app declara en {@code X-Question-Types} (ADR 0058). «No lo sé» y la entrega del simulacro siguen ADR 0063.
  */
 @Tag(name = "Academic - Quizzes")
 @RestController
@@ -62,6 +65,8 @@ public class QuizController {
     private final GetQuestionBankUseCase getBank;
     private final GenerateQuestionBankUseCase generateBank;
     private final AnswerQuestionUseCase answerQuestion;
+    private final DontKnowQuestionUseCase dontKnowQuestion;
+    private final ListSubjectQuestionsUseCase subjectQuestions;
     private final CompleteBankPracticeUseCase completePractice;
     private final StartTestSessionUseCase startSession;
     private final GetTestSessionUseCase getSession;
@@ -79,8 +84,11 @@ public class QuizController {
                           GetActiveTestSessionUseCase activeSession, ListTestSessionsUseCase listSessions,
                           AnswerTestQuestionUseCase answerInSession, CompleteTestSessionUseCase completeSession,
                           AbandonTestSessionUseCase abandonSession, GetMockExamOptionsUseCase mockExamOptions,
-                          ScanDocumentQuestionsUseCase scanDocument) {
+                          ScanDocumentQuestionsUseCase scanDocument, DontKnowQuestionUseCase dontKnowQuestion,
+                          ListSubjectQuestionsUseCase subjectQuestions) {
         this.scanDocument = scanDocument;
+        this.dontKnowQuestion = dontKnowQuestion;
+        this.subjectQuestions = subjectQuestions;
         this.mockExamOptions = mockExamOptions;
         this.getBank = getBank;
         this.generateBank = generateBank;
@@ -99,6 +107,15 @@ public class QuizController {
     @GetMapping("/subjects/{subjectId}/mock-exam-options")
     public MockExamOptionsResponse mockExamOptions(@CurrentUserId UUID userId, @PathVariable UUID subjectId) {
         return MockExamOptionsResponse.from(mockExamOptions.getMockExamOptions(userId, subjectId));
+    }
+
+    /** Todas las preguntas de la asignatura con cómo va cada una, las que vuelven antes primero (ADR 0063). */
+    @GetMapping("/subjects/{subjectId}/questions")
+    public SubjectQuestionsResponse subjectQuestions(@CurrentUserId UUID userId, @PathVariable UUID subjectId,
+                                                     @RequestHeader(name = QuestionTypesHeader.NAME,
+                                                             required = false) String types) {
+        return SubjectQuestionsResponse.from(subjectQuestions.listSubjectQuestions(userId, subjectId,
+                QuestionTypesHeader.parse(types)));
     }
 
     @GetMapping("/study-materials/{materialId}/question-bank")
@@ -135,9 +152,13 @@ public class QuizController {
                 QuestionTypesHeader.parse(types));
     }
 
+    /** Corrige una respuesta; con {@code dontKnow} es «No lo sé» y devuelve la solución (ADR 0063). */
     @PostMapping("/questions/{questionId}/attempts")
     public AnswerResultResponse attempt(@CurrentUserId UUID userId, @PathVariable UUID questionId,
                                         @Valid @RequestBody AnswerRequest r) {
+        if (r.saysDontKnow()) {
+            return AnswerResultResponse.from(dontKnowQuestion.dontKnow(userId, questionId));
+        }
         return AnswerResultResponse.from(answerQuestion.answerQuestion(userId, questionId,
                 required(QuizDtos.given(r.answer(), r.answers()))));
     }
@@ -148,7 +169,7 @@ public class QuizController {
                                                            required = false) String types,
                                                    @Valid @RequestBody PracticeCompletionRequest r) {
         return PracticeResultResponse.from(completePractice.completePractice(userId, bankId, r.merged(),
-                QuestionTypesHeader.parse(types)));
+                r.dontKnowIds(), QuestionTypesHeader.parse(types)));
     }
 
     @PostMapping("/test-sessions")
@@ -189,11 +210,16 @@ public class QuizController {
     public SessionAnswerResponse answer(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
                                         @RequestHeader(name = QuestionTypesHeader.NAME, required = false) String types,
                                         @Valid @RequestBody SessionAnswerRequest r) {
+        String given = r.saysDontKnow() ? null : required(QuizDtos.given(r.answer(), r.answers()));
         return SessionAnswerResponse.from(answerInSession.answer(new AnswerTestQuestionUseCase.Command(userId,
-                sessionId, r.questionId(), required(QuizDtos.given(r.answer(), r.answers())), r.nextIndex())),
+                sessionId, r.questionId(), given, r.nextIndex(), r.saysDontKnow())),
                 QuestionTypesHeader.parse(types));
     }
 
+    /**
+     * Entrega la sesión. Sin ninguna respuesta no cuenta: se borra y vuelve con {@code counted} falso; si no, lo
+     * sin contestar pasa a «No lo sé» (ADR 0063).
+     */
     @PostMapping("/test-sessions/{sessionId}/complete")
     public TestSessionResponse complete(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
                                         @RequestHeader(name = QuestionTypesHeader.NAME, required = false) String types) {

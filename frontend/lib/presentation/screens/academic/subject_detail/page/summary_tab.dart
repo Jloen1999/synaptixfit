@@ -88,6 +88,8 @@ class SummaryTab extends StatelessWidget {
         const SizedBox(height: TokensSpacing.m),
         _PracticeCard(
           key: practiceKey,
+          onPractice: () =>
+              _open(context, AcademicPaths.subjectPractice(state.subjectId)),
           onCreateQuestions: () => _createQuestions(context, state.subjectId),
           onMockExam: () =>
               _open(context, AcademicPaths.subjectMockExam(state.subjectId)),
@@ -344,15 +346,17 @@ class _ReviewsCard extends StatelessWidget {
   }
 }
 
-/// «Practicar»: crear preguntas (hoja «Crear preguntas») y el simulacro de
-/// la asignatura.
+/// «Practicar»: el apartado con todas las preguntas y formas de practicar
+/// (ADR 0063), crear preguntas (hoja «Crear preguntas») y el simulacro.
 class _PracticeCard extends StatelessWidget {
   const _PracticeCard({
     super.key,
+    required this.onPractice,
     required this.onCreateQuestions,
     required this.onMockExam,
   });
 
+  final VoidCallback onPractice;
   final VoidCallback onCreateQuestions;
   final VoidCallback onMockExam;
 
@@ -375,6 +379,11 @@ class _PracticeCard extends StatelessWidget {
             spacing: TokensSpacing.s,
             runSpacing: TokensSpacing.xs,
             children: [
+              AppSecondaryButton(
+                label: l10n.academicPracticeOpen,
+                icon: const Icon(Icons.quiz_outlined),
+                onPressed: onPractice,
+              ),
               AppSecondaryButton(
                 label: l10n.academicCreateQuestions,
                 icon: const Icon(AppIcons.proposal),
