@@ -23,8 +23,8 @@ y elementos de una tira o lista con `Semantics(label: …)` sin `container: true
 | Papel | Forma | Widget |
 |---|---|---|
 | **Principal** (una por pantalla u hoja) | Relleno, color de marca | `AppPrimaryButton` / `FilledButton` |
-| **Secundario** | Tonal (`primaryContainer`) | `AppSecondaryButton` / `FilledButton.tonal` |
-| **Otra opción** | Fondo `surface`, borde `buttonOutline` (3:1), texto `onSurface` | `OutlinedButton` y **también `TextButton`** (tema) |
+| **Secundario** | Tonal (`secondaryContainer`, el de Material) | `FilledButton.tonal` |
+| **Otra opción** | Fondo `surface`, borde `buttonOutline` (3:1), texto `onSurface` | `OutlinedButton`, `AppSecondaryButton` (con borde y estado de carga) y **también `TextButton`** (tema) |
 | **Eliminar** (borrar, descartar, bloquear, quitar datos) | Borde y texto rojos, aparte de las demás | `AppDangerButton` |
 
 - **«Otra opción» se ve como botón en cualquier fondo.** Como `.btn-o` de la maqueta, `outlinedButtonTheme` y
@@ -146,7 +146,7 @@ de la sesión libre («Terminar»).
   (`primaryContainer`/`onPrimaryContainer`…) y el neutro, `surfaceContainerLow` con el icono `onSurface`. Tonos
   (`AppTileTone`: primario, secundario, terciario, **acento**, neutro): lima (secundario) para el cuerpo (Físico,
   Plantillas de retos), violeta (terciario) para la mente y lo social del perfil (Académico, Amigos, Muro, «Con
-  amigos»), neutro para lo que no es de un dominio (Ajustes, «Cómo me ven», «De otros» y las tarjetitas de Tú ›
+  amigos»), neutro para lo que no es de un dominio (Ajustes, «Cómo me ven», «Retos de otros» y las tarjetitas de Tú ›
   Comunidad). «Nuevo» va relleno (`emphasized`).
 - Filas de «Con amigos ahora», como la maqueta: invitaciones y sala de estudio en violeta, entrenar en lima, retos y
   rachas en naranja (`accent`). El tinte es decorativo: el nombre dice qué es.
@@ -176,3 +176,38 @@ de la sesión libre («Terminar»).
   exige).
 - La acción principal de una clase depende de lo que el estudiante escriba en «Lugar»: pegar el enlace de la
   videollamada basta para que, el día de la clase, la ficha lleve a ella.
+
+## Revisión visual del 25 nov (coherencia)
+
+Recorrido con una cuenta nueva en Chrome a 390 × 844. Sin cambios de servidor ni de API.
+
+- **«Empezar» pesa lo mismo en toda Inicio.** En «Tu día» es relleno cuando es el destacado; en «Próximo entreno»
+  salía con borde. Ahora es **relleno si «Tu día» no lleva el botón relleno** (una clase sola no tiene botón: solo hay
+  relleno si hay entreno de hoy, un evento con «Concentrarme»/«Marcar como hecho» o el vacío con «Añadir al
+  calendario») y **tonal** si lo lleva o si «Sin terminar» tiene el suyo (`TodayHeroCard.hasPrimaryAction`,
+  `NextTrainingCard.startPrimary`). Nunca con borde: el borde queda para «¿Qué tal estás hoy?». Sigue habiendo un
+  solo relleno por pantalla.
+- **`AppSecondaryButton` es «Otra opción» (con borde)**, no el tonal: así está en 137 sitios y así se documenta. El
+  secundario tonal es `FilledButton.tonal`.
+- **Cifras sin barra:** «0 de 24 días», «15 de 200 XP para el nivel 3», «Esfuerzo 7 de 10», «4 de 12»; nunca
+  «0/24». Los «N de M <palabra>» llevan plural ICU sobre el total en los cuatro idiomas («0 de 1 hecho», «2 de 5
+  hechos»; en francés «2 sur 3 séries», con el nombre tras el total). Lo vigila
+  `test/presentation/l10n/counts_and_fractions_test.dart` (ningún texto con `{a}/{b}`, `{a} / 10`…).
+- **Nivel:** una cuenta nueva empieza en el nivel 1 con 100 XP para pasarlo (`User.thresholdFor(n) = 100·n`);
+  planificar la semana da 100 XP + 5 por evento, así que con tres eventos pasa al nivel 2 con 15 de 200. La regla es
+  correcta; confundía el texto «15 / 200 XP», que parecía la XP total. Ahora dice «15 de 200 XP para el nivel 3».
+- **Fechas próximas en un solo formato** (`AppRelativeDate`): «Hoy · 17:00», «Mañana · 9:00», «jue 26 · 9:00». La
+  tarjeta de asignatura decía «mié 17:00» siendo miércoles mientras Inicio y Calendario decían «Hoy».
+- **Cabecera de Inicio:** el saludo va en una línea al lado de los iconos («Hola, Ana» si el largo no cabe; puntos
+  suspensivos en el nombre si ni así) y la fecha debajo, a todo el ancho: ya no se corta («Miércoles, 25 de no…»).
+  Con el texto grande, los iconos van en su fila, como antes.
+- **«Tu semana»:** el estado `ON_TRACK` se lee «Vas al día» (con 0 hechos y nada vencido «Vas bien» sonaba raro); la
+  regla del servidor no cambia.
+- **Guía de Inicio:** el paso «Tu día» ya no nombra entreno, clase y entrega que quizá no hay: «Lo de hoy, en filas:
+  toca una para abrirla.».
+- **Perfil:** la pastilla de la racha pasa a botón con borde y flecha (abre Tú › Resumen); la tarjetita «Amigos»
+  lleva detalle como «Mis amigos» de Tú › Comunidad («Aún ninguno», «3 amigos» o las solicitudes).
+- **Retos:** la tarjetita «De otros» se llama «Retos de otros», como en Tú › Comunidad. Tú › Retos sin retos y
+  «Retos de otros» vacío ofrecen «Ver plantillas» (con borde; el relleno es «Nuevo»).
+- **Académico:** «Sin temario: importa la guía» empieza donde el texto de la tarjeta (margen `m`), no encima de la
+  franja de color.

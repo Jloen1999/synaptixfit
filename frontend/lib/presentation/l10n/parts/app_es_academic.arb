@@ -325,7 +325,7 @@
   "academicExamTitle": "Simulacro",
   "academicExamHint": "Test cronometrado con nota al final",
   "academicExamResume": "Reanudar simulacro",
-  "academicExamProgress": "{answered} de {total} respondidas",
+  "academicExamProgress": "{total, plural, =1{{answered} de {total} respondida} other{{answered} de {total} respondidas}}",
   "@academicExamProgress": {
     "placeholders": {
       "answered": {
@@ -340,7 +340,7 @@
   "academicExamStatusInProgress": "En curso",
   "academicExamStatusCompleted": "Terminado",
   "academicExamStatusAbandoned": "Abandonado",
-  "academicExamScore": "{score} de {total} aciertos",
+  "academicExamScore": "{total, plural, =1{{score} de {total} acierto} other{{score} de {total} aciertos}}",
   "@academicExamScore": {
     "placeholders": {
       "score": {
@@ -1313,7 +1313,7 @@
   "academicTabGuide": "Guía",
   "academicTopicsEmptyTitle": "Aún no hay temario",
   "academicTopicsEmptyMessage": "Importa la guía docente y marca cada tema cuando lo estudies.",
-  "academicTopicsDoneHeader": "{done} de {total} temas hechos",
+  "academicTopicsDoneHeader": "{total, plural, =1{{done} de {total} tema hecho} other{{done} de {total} temas hechos}}",
   "@academicTopicsDoneHeader": {
     "placeholders": {
       "done": {

@@ -246,7 +246,11 @@ class _NextUpCard extends StatelessWidget {
                 subtitle: Text(
                   item.isDeadline && !item.completed
                       ? AppDueDates.text(context, item.start, now)
-                      : dateTime(item.start),
+                      : AppRelativeDate.dayTime(
+                          context.localizations,
+                          item.start,
+                          now: now,
+                        ),
                 ),
                 trailing: const Icon(AppIcons.next),
                 // Una entrega es pantalla completa (`push`); el evento vive en

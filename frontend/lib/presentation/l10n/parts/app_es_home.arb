@@ -24,6 +24,15 @@
       }
     }
   },
+  "homeGreetingShort": "Hola, {name}",
+  "@homeGreetingShort": {
+    "description": "Saludo corto de Inicio cuando el largo no cabe en una línea al lado de los iconos.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "homeOpenProfile": "Abrir perfil",
   "homeNotificationsUnread": "{count, plural, =0{Notificaciones, ninguna sin leer} =1{Notificaciones, 1 sin leer} other{Notificaciones, {count} sin leer}}",
   "@homeNotificationsUnread": {
@@ -119,15 +128,7 @@
   "homeBannerActionPomodoro": "Hacer un descanso",
   "homeBannerActionTrain": "Entrenar",
   "homeBannerActionCheckIn": "Contestar",
-  "homeWeekSessions": "{count, plural, =1{1 entreno} other{{count} entrenos}}",
-  "@homeWeekSessions": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "homeWeekSessionsOfPlanned": "{count} de {planned} entrenos",
+  "homeWeekSessionsOfPlanned": "{planned, plural, =1{{count} de {planned} entreno} other{{count} de {planned} entrenos}}",
   "@homeWeekSessionsOfPlanned": {
     "placeholders": {
       "count": {
@@ -334,9 +335,9 @@
     }
   },
   "homePlanWeekEmpty": "Aún no has planificado esta semana.",
-  "homePlanDaySemantics": "{day}: {done} de {planned} hechos",
+  "homePlanDaySemantics": "{planned, plural, =1{{day}: {done} de {planned} hecho} other{{day}: {done} de {planned} hechos}}",
   "@homePlanDaySemantics": {
-    "description": "Lectura de un día de «Tu semana», igual que el «2/3» visible; luego van por hacer y sin hacer si los hay.",
+    "description": "Lectura de un día de «Tu semana», igual que el «2 de 3» visible; luego van por hacer y sin hacer si los hay.",
     "placeholders": {
       "day": {
         "type": "String"
@@ -365,7 +366,7 @@
       }
     }
   },
-  "homePlanDayCount": "{done}/{total}",
+  "homePlanDayCount": "{done} de {total}",
   "@homePlanDayCount": {
     "description": "Bajo cada día de «Tu semana»: hechos de los planificados ese día.",
     "placeholders": {
@@ -390,7 +391,7 @@
       }
     }
   },
-  "homeBalanceEnergy": "Energía: {value}/100",
+  "homeBalanceEnergy": "Energía: {value} de 100",
   "@homeBalanceEnergy": {
     "placeholders": {
       "value": {
@@ -458,7 +459,7 @@
     }
   },
   "homeSetupTitle": "Termina de preparar tu app",
-  "homeSetupProgress": "{done} de {total} listos",
+  "homeSetupProgress": "{total, plural, =1{{done} de {total} listo} other{{done} de {total} listos}}",
   "@homeSetupProgress": {
     "placeholders": {
       "done": {
@@ -641,10 +642,10 @@
   },
   "homeTodayMoreHint": "Ver en la agenda",
   "guideHomeDayTitle": "Tu día",
-  "guideHomeDayBody": "Lo de hoy en filas: tu entreno con «Empezar», la clase de ahora y la entrega más cercana. Toca una fila para abrirla.",
+  "guideHomeDayBody": "Lo de hoy, en filas: toca una para abrirla.",
   "guideHomeWeekTitle": "Tu semana",
   "guideHomeWeekBody": "Cómo vas esta semana. Cada círculo es un día: ✓ todo hecho, «!» algo sin hacer. Tócalo para verlo en el calendario.",
-  "homeTodayDoneCount": "{done} de {total} hechos",
+  "homeTodayDoneCount": "{total, plural, =1{{done} de {total} hecho} other{{done} de {total} hechos}}",
   "@homeTodayDoneCount": {
     "placeholders": {
       "done": {
@@ -747,7 +748,7 @@
       }
     }
   },
-  "homeUnfinishedExercisesOf": "{done} de {total} ejercicios",
+  "homeUnfinishedExercisesOf": "{total, plural, =1{{done} de {total} ejercicio} other{{done} de {total} ejercicios}}",
   "@homeUnfinishedExercisesOf": {
     "placeholders": {
       "done": {
@@ -861,10 +862,10 @@
       }
     }
   },
-  "homeWeekOnTrack": "Vas bien",
+  "homeWeekOnTrack": "Vas al día",
   "homeWeekBehind": "Vas por detrás",
   "homeWeekNoPlan": "Semana sin plan",
-  "homeWeekDoneOf": "{done} de {planned} cosas hechas",
+  "homeWeekDoneOf": "{planned, plural, =1{{done} de {planned} cosa hecha} other{{done} de {planned} cosas hechas}}",
   "@homeWeekDoneOf": {
     "placeholders": {
       "done": {

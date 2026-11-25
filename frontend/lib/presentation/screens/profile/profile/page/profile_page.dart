@@ -74,6 +74,7 @@ class _ProfileView extends StatelessWidget with ErrorsMessageMixin {
                 account: state.account!,
                 summary: state.summary!,
                 pendingRequests: state.pendingRequests,
+                friendsTotal: state.friendsTotal,
               ),
             ),
           };
@@ -106,11 +107,13 @@ class _ProfileContent extends StatelessWidget {
     required this.account,
     required this.summary,
     required this.pendingRequests,
+    this.friendsTotal,
   });
 
   final Account account;
   final ProfileSummary summary;
   final int pendingRequests;
+  final int? friendsTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +127,7 @@ class _ProfileContent extends StatelessWidget {
           account: account,
           summary: summary,
           pendingRequests: pendingRequests,
+          friendsTotal: friendsTotal,
         ),
         // Lo que falta, como en la maqueta: título, una frase y un botón
         // tonal debajo (no una tarjeta entera que se toca).
@@ -209,12 +213,24 @@ class _AccountCard extends StatelessWidget {
               Text(account.privacy.label(l10n), style: muted),
               const SizedBox(height: TokensSpacing.xs),
               // Nivel y XP se ven en «Tú» (ADR 0038); aquí, solo la racha,
-              // que lleva a ellos (pestaña: con `go`).
-              ActionChip(
-                avatar: Icon(AppIcons.streak, color: context.palette.streak),
-                label: Text(l10n.profileStreakDays(account.streak)),
-                tooltip: l10n.profileStreakOpenHint,
-                onPressed: () => context.go(ProfilePaths.you),
+              // que lleva a ellos (pestaña: con `go`). Botón con borde y
+              // flecha: tiene forma de botón, así que hace algo al tocarlo.
+              Tooltip(
+                message: l10n.profileStreakOpenHint,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.go(ProfilePaths.you),
+                  icon: Icon(AppIcons.streak, color: context.palette.streak),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(l10n.profileStreakDays(account.streak)),
+                      ),
+                      const SizedBox(width: TokensSpacing.xs),
+                      const Icon(AppIcons.next, size: TokensSize.iconXs),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -259,11 +275,16 @@ class _ProfileTiles extends StatelessWidget {
     required this.account,
     required this.summary,
     required this.pendingRequests,
+    this.friendsTotal,
   });
 
   final Account account;
   final ProfileSummary summary;
   final int pendingRequests;
+
+  /// Amigos que tienes; nulo si no se pudo contar (la tarjetita va sin
+  /// detalle).
+  final int? friendsTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -286,9 +307,13 @@ class _ProfileTiles extends StatelessWidget {
           AppShortcutTile(
             icon: AppIcons.friends,
             label: l10n.profileFriends,
+            // El mismo detalle que «Mis amigos» de Tú › Comunidad («Aún
+            // ninguno», «3 amigos»); con solicitudes, cuántas esperan.
             detail: pendingRequests > 0
                 ? l10n.profileFriendsPending(pendingRequests)
-                : null,
+                : friendsTotal == null
+                ? null
+                : l10n.progressCommunityFriendsCount(friendsTotal!),
             badgeCount: pendingRequests,
             // Tonos como la maqueta: lo social y la mente en violeta, el
             // cuerpo en lima y lo que no es de un dominio, neutro.

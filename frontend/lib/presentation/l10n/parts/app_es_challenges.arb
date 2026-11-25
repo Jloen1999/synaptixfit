@@ -44,11 +44,15 @@
   "challengesEffortHigh": "Intenso",
   "challengesEmptyTitle": "Tu primer reto empieza aquí",
   "challengesEmptyMessage": "Ponte una meta de estudio o deporte con fecha.",
+  "challengesEmptySeeTemplates": "Ver plantillas",
+  "@challengesEmptySeeTemplates": {
+    "description": "Acción del estado vacío de Tú › Retos: abre las plantillas de retos."
+  },
   "challengesEmptyFilteredTitle": "Sin resultados",
   "challengesEmptyFilteredMessage": "Ningún reto coincide con los filtros.",
   "challengesCommunityEmptyTitle": "No hay retos de la comunidad",
   "challengesCommunityEmptyMessage": "Cuando otros compartan retos aparecerán aquí.",
-  "challengesMilestonesProgress": "{done} de {total} tareas",
+  "challengesMilestonesProgress": "{total, plural, =1{{done} de {total} tarea} other{{done} de {total} tareas}}",
   "@challengesMilestonesProgress": {
     "placeholders": {
       "done": {
@@ -282,7 +286,7 @@
   "challengesFormSectionTasks": "Tareas",
   "challengesFormSectionLink": "Vínculo",
   "challengesFormTasksHint": "Opcional. Divide el reto en hasta 12 tareas.",
-  "challengesFormTasksCount": "{count}/12",
+  "challengesFormTasksCount": "{count} de 12",
   "@challengesFormTasksCount": {
     "placeholders": {
       "count": {
@@ -492,7 +496,7 @@
     }
   },
   "challengesCompletedByDeadlineGeneric": "Se completa al hacer su entrega o examen",
-  "challengesMilestoneBlocks": "{done}/{total} eventos del calendario hechos",
+  "challengesMilestoneBlocks": "{total, plural, =1{{done} de {total} evento del calendario hecho} other{{done} de {total} eventos del calendario hechos}}",
   "@challengesMilestoneBlocks": {
     "placeholders": {
       "done": {
@@ -715,7 +719,6 @@
     "description": "Tarjetita de Tú › Retos; el lector oye «Nuevo reto» (challengesNew)."
   },
   "challengesShortcutTemplates": "Plantillas",
-  "challengesShortcutOthers": "De otros",
-  "challengesShortcutFriendsSemantics": "Retos con amigos",
-  "challengesShortcutOthersSemantics": "Retos de otros"
+  "challengesShortcutOthers": "Retos de otros",
+  "challengesShortcutFriendsSemantics": "Retos con amigos"
 }

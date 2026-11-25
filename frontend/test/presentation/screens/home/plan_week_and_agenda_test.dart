@@ -125,7 +125,7 @@ void main() {
     ) async {
       await pump(tester, bar());
 
-      expect(find.text('Vas bien'), findsOneWidget);
+      expect(find.text('Vas al día'), findsOneWidget);
       expect(
         find.text('6 de 13 cosas hechas · 1 se quedó sin hacer'),
         findsOneWidget,

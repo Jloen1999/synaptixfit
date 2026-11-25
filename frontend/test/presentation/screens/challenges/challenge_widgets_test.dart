@@ -319,7 +319,7 @@ void main() {
         ),
       );
       expect(find.text('Siguiente'), findsNothing);
-      expect(find.text('2/3 eventos del calendario hechos'), findsOneWidget);
+      expect(find.text('2 de 3 eventos del calendario hechos'), findsOneWidget);
     },
   );
 

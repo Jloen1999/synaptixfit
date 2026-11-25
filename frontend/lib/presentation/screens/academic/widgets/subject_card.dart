@@ -131,12 +131,14 @@ class SubjectCard extends StatelessWidget {
                     ),
                   ),
                   if (importGuide != null)
+                    // Con el mismo margen que el texto de la tarjeta: el
+                    // botón empieza donde el nombre, no encima de la franja.
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                        TokensSpacing.xs,
+                        TokensSpacing.m,
                         0,
-                        TokensSpacing.xs,
-                        TokensSpacing.xs,
+                        TokensSpacing.m,
+                        TokensSpacing.m,
                       ),
                       child: Align(
                         alignment: AlignmentDirectional.centerStart,

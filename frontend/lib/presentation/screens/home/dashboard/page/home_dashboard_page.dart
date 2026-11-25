@@ -586,6 +586,14 @@ class _HomeContentState extends State<_HomeContent> {
           starting: state.startingTraining,
           // Igual que en Rutinas: empieza (o reanuda) la sesión directamente.
           onStart: startTraining,
+          // Relleno solo si ni «Sin terminar» ni «Tu día» llevan ya el
+          // destacado (un solo relleno por pantalla, ADR 0059 y 0065).
+          startPrimary:
+              !unfinishedShown &&
+              !TodayHeroCard.hasPrimaryAction(
+                dashboard: dashboard,
+                focus: focus,
+              ),
           onOpenRoutine: next == null
               ? null
               : () => onNavigate(HomeExternalPaths.routine(next.routineId)),

@@ -33,6 +33,7 @@ export 'app_page_bar.dart';
 export 'app_pill.dart';
 export 'app_timer_strip.dart';
 export 'app_primary_button.dart';
+export 'app_relative_date.dart';
 export 'app_scroll_behavior.dart';
 export 'app_search_field.dart';
 export 'app_segmented_choice.dart';

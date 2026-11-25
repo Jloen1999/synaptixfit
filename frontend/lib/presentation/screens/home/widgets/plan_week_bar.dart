@@ -91,7 +91,9 @@ class PlanWeekBar extends StatelessWidget {
           label: l10n.homeWeekTrainings,
           value: plannedSessions != null && plannedSessions > 0
               ? l10n.homeWeekOfTotal('${week.sessions}', '$plannedSessions')
-              : l10n.homeWeekSessions(week.sessions),
+              // La etiqueta ya dice «Entrenos»: sin plan, solo el número
+              // (como Estudio, que solo pone las horas).
+              : '${week.sessions}',
           progress: plannedSessions != null && plannedSessions > 0
               ? week.sessions / plannedSessions
               : null,

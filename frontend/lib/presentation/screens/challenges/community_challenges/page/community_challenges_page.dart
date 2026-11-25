@@ -210,6 +210,14 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
                           icon: Icons.groups_outlined,
                           title: l10n.challengesCommunityEmptyTitle,
                           message: l10n.challengesCommunityEmptyMessage,
+                          // Sin retos de otros, un camino que sí lleva a
+                          // empezar uno: las plantillas (sin callejones).
+                          action: AppSecondaryButton(
+                            label: l10n.challengesEmptySeeTemplates,
+                            icon: const Icon(AppIcons.challenge),
+                            onPressed: () =>
+                                context.push(ChallengesPaths.templates),
+                          ),
                         )
                       else ...[
                         for (final c in state.challenges)

@@ -269,7 +269,7 @@ La usan: el gasto del estudio (fórmula 1, `PlannerDirectoryJdbcAdapter.findMeta
 ## «Tu semana» y lo que quedó a medias en Inicio (ADR 0059)
 - **Cómo va la semana (`WeekSummary`):** con lo planificado de lunes a domingo (sin descanso, comida ni sueño). Sin nada
   → «Semana sin plan». «Vas por detrás» si lo que se quedó sin hacer supera la cuarta parte de lo que ya tocaba
-  (sin hacer > 0,25 · (hecho + sin hacer)); si no, «Vas bien». Lo que aún no toca no cuenta.
+  (sin hacer > 0,25 · (hecho + sin hacer)); si no, «Vas al día» (vale también con 0 hechos y nada vencido). Lo que aún no toca no cuenta.
 - **Marca de un día (`PlanDay.mark`):** nada planificado → «–»; todo hecho → ✓; algo sin hacer → «!» (manda sobre lo
   demás); algo hecho y algo por hacer → medio lleno; solo por hacer → el número de lo que queda.
 - **Sesión a medias (`TrainingSession.isLeftover`):** sin terminar y abierta más de 6 h (el cambio de día no cuenta: se

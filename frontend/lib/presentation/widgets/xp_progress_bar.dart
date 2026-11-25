@@ -18,6 +18,10 @@ class XpProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    // «15 de 200 XP para el nivel 3»: la XP es la del nivel actual (se
+    // reinicia al subir), y sin decir para qué nivel parecía la XP total.
+    final xp = l10n.commonXpProgress(levelXp, levelThreshold, level + 1);
     final progress = levelThreshold == 0
         ? 0.0
         : (levelXp / levelThreshold).clamp(0.0, 1.0);
@@ -30,12 +34,9 @@ class XpProgressBar extends StatelessWidget {
           alignment: WrapAlignment.spaceBetween,
           spacing: TokensSpacing.s,
           children: [
+            Text(l10n.commonLevel(level), style: context.textStyles.labelLarge),
             Text(
-              context.localizations.commonLevel(level),
-              style: context.textStyles.labelLarge,
-            ),
-            Text(
-              context.localizations.commonXpProgress(levelXp, levelThreshold),
+              xp,
               style: context.textStyles.labelMedium?.copyWith(
                 color: context.colors.onSurfaceVariant,
               ),
@@ -47,9 +48,7 @@ class XpProgressBar extends StatelessWidget {
         LinearProgressIndicator(
           // El valor del lector es numérico (porcentaje); la cifra de XP va
           // en la etiqueta.
-          semanticsLabel:
-              '${context.localizations.commonLevel(level)}, '
-              '${context.localizations.commonXpProgress(levelXp, levelThreshold)}',
+          semanticsLabel: '${l10n.commonLevel(level)}, $xp',
           value: progress,
           color: context.palette.accent,
           backgroundColor: context.palette.accentContainer,

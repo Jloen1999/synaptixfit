@@ -7,7 +7,10 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
 /// Cabecera del inicio: saludo, avatar, fecha, racha, comunidad, campana y
-/// admin. La racha lleva a la pestaña «Tú», donde está la barra de XP.
+/// admin. La racha lleva a la pestaña «Tú», donde está la barra de XP. El
+/// saludo va en una línea junto a los iconos (si el largo no cabe, «Hola,
+/// Ana»; si ni ese cabe, los iconos suben a su fila) y la fecha debajo, a
+/// todo el ancho: nunca se corta.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
@@ -46,9 +49,11 @@ class HomeHeader extends StatelessWidget {
   /// Momento de referencia (inyectable en tests).
   final DateTime? now;
 
+  String get _firstName => greeting.fullName.trim().split(RegExp(r'\s+')).first;
+
   String _salutation(BuildContext context, DateTime now) {
     final l10n = context.localizations;
-    final name = greeting.fullName.trim().split(RegExp(r'\s+')).first;
+    final name = _firstName;
     if (now.hour >= 6 && now.hour < 13) return l10n.homeGreetingMorning(name);
     if (now.hour >= 13 && now.hour < 21) {
       return l10n.homeGreetingAfternoon(name);
@@ -65,19 +70,23 @@ class HomeHeader extends StatelessWidget {
     // todo el ancho: al lado del avatar y los botones se cortaban («Buenas
     // noch…») o partían la palabra («Bonsoir / , Lucía») (WCAG 1.4.4).
     final large = context.largeText;
-    final greetingText = Semantics(
+    final salutation = _salutation(context, current);
+    final greetingStyle = context.textStyles.titleLarge;
+    Widget greetingText(String text, {int maxLines = 1}) => Semantics(
       header: true,
       child: Text(
-        _salutation(context, current),
-        style: context.textStyles.titleLarge,
-        maxLines: large ? 3 : 2,
+        text,
+        style: greetingStyle,
+        maxLines: maxLines,
         overflow: TextOverflow.ellipsis,
       ),
     );
-    // El nivel y su XP están en Progreso (ADR 0038): aquí solo la fecha.
+    // El nivel y su XP están en Progreso (ADR 0038): aquí solo la fecha, a
+    // todo el ancho (al lado de los iconos se cortaba: «Miércoles, 25 de no…»).
     final dateText = Text(
       toBeginningOfSentenceCase(date),
-      maxLines: large ? 2 : 1,
+      key: const ValueKey('home-header-date'),
+      maxLines: 2,
       overflow: TextOverflow.ellipsis,
       style: context.textStyles.bodyMedium?.copyWith(
         color: context.colors.onSurfaceVariant,
@@ -143,41 +152,72 @@ class HomeHeader extends StatelessWidget {
           icon: const Icon(AppIcons.admin),
         ),
     ];
-    if (large) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Los botones bajan de línea si no caben (320 dp, racha larga).
-          Row(
-            children: [
-              avatar,
-              Expanded(
-                child: Wrap(
-                  alignment: WrapAlignment.end,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: actions,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          greetingText,
-          dateText,
-        ],
-      );
-    }
-    return Row(
+    // Con los iconos en su propia fila: el saludo y la fecha a todo el ancho.
+    Widget stacked() => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        avatar,
-        const SizedBox(width: TokensSpacing.m),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [greetingText, dateText],
-          ),
+        // Los botones bajan de línea si no caben (320 dp, racha larga).
+        Row(
+          children: [
+            avatar,
+            Expanded(
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: actions,
+              ),
+            ),
+          ],
         ),
-        ...actions,
+        const SizedBox(height: TokensSpacing.s),
+        greetingText(salutation, maxLines: 3),
+        dateText,
       ],
+    );
+    if (large) return stacked();
+    final short = l10n.homeGreetingShort(_firstName);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Lo que queda para el saludo al lado del avatar y los iconos (la
+        // racha mide su cifra; cada icono, un toque de 48).
+        final streakWidth =
+            TokensSpacing.s * 2 +
+            TokensSize.iconS +
+            TokensSpacing.xs +
+            context.textWidth(
+              '${greeting.streak}',
+              context.textStyles.labelLarge,
+            );
+        final room =
+            constraints.maxWidth -
+            (TokensSize.thumbnailS + TokensSpacing.xxs * 2) -
+            TokensSpacing.m -
+            streakWidth -
+            TokensLayout.minTouchTarget * (actions.length - 1);
+        String? inline;
+        if (context.textWidth(salutation, greetingStyle) <= room) {
+          inline = salutation;
+        } else if (context.textWidth(short, greetingStyle) <= room) {
+          inline = short;
+        }
+        // Ni el corto cabe (320 dp, nombre largo, panel de admin): los
+        // iconos suben a su fila en vez de recortar el saludo.
+        if (inline == null) return stacked();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                avatar,
+                const SizedBox(width: TokensSpacing.m),
+                Expanded(child: greetingText(inline)),
+                ...actions,
+              ],
+            ),
+            dateText,
+          ],
+        );
+      },
     );
   }
 }

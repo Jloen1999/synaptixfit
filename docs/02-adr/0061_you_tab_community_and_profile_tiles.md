@@ -56,7 +56,7 @@ tarjetas grandes antes de los retos.
 ### Tú › Retos
 
 - Fila de **cuatro tarjetitas** (`ChallengeShortcuts`, con `AppTileGrid`): **Nuevo** (la hoja rápida de siempre, sobre el
-  color principal), **Plantillas**, **Con amigos** y **De otros** (`AppIcons.communityChallenges`, el mismo que
+  color principal), **Plantillas**, **Con amigos** y **Retos de otros** (antes «De otros»; ADR 0065, revisión del 25 nov) (`AppIcons.communityChallenges`, el mismo que
   «Retos de otros» en Comunidad). Desaparecen el botón flotante, las dos tarjetas grandes
   y el enlace del final. El lector oye «Nuevo reto», «Plantillas de retos», «Retos con amigos» y «Retos de otros» (el
   nombre contiene siempre el texto visible, WCAG 2.5.3).

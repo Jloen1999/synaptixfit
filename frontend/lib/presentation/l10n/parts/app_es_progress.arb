@@ -159,7 +159,7 @@
   },
   "progressBadgeEarned": "Obtenida",
   "progressBadgeLocked": "Bloqueada",
-  "progressBadgeProgressValue": "{current} / {target}",
+  "progressBadgeProgressValue": "{current} de {target}",
   "@progressBadgeProgressValue": {
     "placeholders": {
       "current": {
@@ -172,7 +172,7 @@
   },
   "progressBadgeCategoryEmpty": "No hay insignias en esta categoría.",
   "progressBadgeCatalogEmpty": "El catálogo de insignias está vacío.",
-  "progressBadgeSummary": "{earned} de {total} obtenidas",
+  "progressBadgeSummary": "{total, plural, =1{{earned} de {total} obtenida} other{{earned} de {total} obtenidas}}",
   "@progressBadgeSummary": {
     "placeholders": {
       "earned": {
@@ -551,7 +551,7 @@
     }
   },
   "progressStudyNoPlan": "Ninguno planificado",
-  "progressStudyBlocksDone": "{done} de {planned} hechos",
+  "progressStudyBlocksDone": "{planned, plural, =1{{done} de {planned} hecho} other{{done} de {planned} hechos}}",
   "@progressStudyBlocksDone": {
     "placeholders": {
       "done": {

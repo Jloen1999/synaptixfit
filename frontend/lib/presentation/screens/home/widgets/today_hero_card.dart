@@ -87,6 +87,26 @@ class TodayHeroCard extends StatefulWidget {
 
   final DateTime? now;
 
+  /// ¿Lleva «Tu día» el botón relleno de la pantalla? Lo mismo que decide
+  /// `build`: «Empezar» del entreno de hoy, el botón del evento de la fila
+  /// (Concentrarme o Marcar como hecho) o, sin nada que nombrar, «Añadir al
+  /// calendario». Una clase sola no tiene botón: entonces el «Empezar» de
+  /// «Próximo entreno» puede ser el relleno (ADR 0059, revisión 25 nov).
+  static bool hasPrimaryAction({
+    required HomeDashboard dashboard,
+    required UsageFocus focus,
+    bool primaryElsewhere = false,
+  }) {
+    if (primaryElsewhere) return false;
+    final training = focus.includesFitness ? dashboard.trainingToday : null;
+    final deadline = focus.includesAcademic ? dashboard.nextDeadline : null;
+    final spotlight = dashboard.spotlight;
+    if (training != null) return true;
+    if (spotlight != null) return TodayAction.forEvent(spotlight) != null;
+    // Sin filas, el estado vacío lleva «Añadir al calendario» relleno.
+    return deadline == null;
+  }
+
   @override
   State<TodayHeroCard> createState() => _TodayHeroCardState();
 }

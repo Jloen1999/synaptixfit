@@ -4,7 +4,7 @@ import '../extensions/context_extensions.dart';
 import '../theme/tokens.g.dart';
 
 /// Barra de avance (p. ej. del ciclo de una rutina o de un reto) con su texto
-/// al lado («6/12 días»); el lector oye ese mismo texto. La comparten Rutinas,
+/// al lado («6 de 12 días»); el lector oye ese mismo texto. La comparten Rutinas,
 /// Inicio y Retos; [color] (por defecto `primary`) permite el acento del tipo.
 class AppCycleProgress extends StatelessWidget {
   const AppCycleProgress({

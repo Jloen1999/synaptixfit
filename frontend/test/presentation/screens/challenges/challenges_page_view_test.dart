@@ -92,6 +92,10 @@ void main() {
                 path: ChallengesPaths.community,
                 builder: (_, _) => const Scaffold(body: Text('comunidad')),
               ),
+              GoRoute(
+                path: ChallengesPaths.templates,
+                builder: (_, _) => const Scaffold(body: Text('plantillas')),
+              ),
             ],
           ),
           theme: theme ?? AppTheme.light,
@@ -186,7 +190,24 @@ void main() {
     // Sin botón flotante (ADR 0061): las cuatro tarjetitas están arriba.
     expect(find.byType(FloatingActionButton), findsNothing);
 
-    await tester.tap(find.text('De otros'));
+    // El vacío no es un callejón: «Ver plantillas» empieza uno en un toque
+    // (con borde: el relleno es «Nuevo»).
+    final templates = find.widgetWithText(OutlinedButton, 'Ver plantillas');
+    expect(templates, findsOneWidget);
+    await tester.tap(templates);
+    await tester.pumpAndSettle();
+    expect(find.text('plantillas'), findsOneWidget);
+  });
+
+  testWidgets('«Retos de otros» se llama igual que en Tú › Comunidad', (
+    tester,
+  ) async {
+    when(
+      () => list.state,
+    ).thenReturn(const ChallengesListState(status: ChallengesListStatus.ready));
+    await pump(tester);
+    expect(find.text('De otros'), findsNothing);
+    await tester.tap(find.text('Retos de otros'));
     await tester.pumpAndSettle();
     expect(find.text('comunidad'), findsOneWidget);
   });
@@ -236,7 +257,12 @@ void main() {
     final semantics = tester.ensureSemantics();
     await pump(tester);
 
-    for (final label in ['Nuevo', 'Plantillas', 'Con amigos', 'De otros']) {
+    for (final label in [
+      'Nuevo',
+      'Plantillas',
+      'Con amigos',
+      'Retos de otros',
+    ]) {
       expect(find.text(label), findsOneWidget);
     }
     // El lector oye el nombre entero, que contiene el texto visible.
@@ -278,7 +304,7 @@ void main() {
       expect(find.text('Filtros (1)'), findsOneWidget);
       // Con el texto al 200 % los accesos pasan a filas de la mitad.
       expect(
-        tester.getTopLeft(find.text('De otros')).dy,
+        tester.getTopLeft(find.text('Retos de otros')).dy,
         greaterThan(tester.getTopLeft(find.text('Nuevo')).dy),
       );
 

@@ -147,7 +147,16 @@ void main() {
     expect(find.text('Estudiar 10 horas'), findsOneWidget);
     // «Tu día» manda con un solo botón destacado: concentrarse en lo que toca.
     expect(find.text('Concentrarme'), findsOneWidget);
-    expect(find.byWidgetPredicate((w) => w is FilledButton), findsOneWidget);
+    expect(find.byType(AppPrimaryButton), findsOneWidget);
+    // «Empezar» del próximo entreno pesa igual pero sin competir: tonal.
+    expect(
+      find.ancestor(
+        of: find.text('Empezar'),
+        matching: find.byWidgetPredicate((w) => w is FilledButton),
+      ),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(OutlinedButton, 'Empezar'), findsNothing);
     // Un solo camino al calendario: su pestaña (sin enlaces ni «Planificar»).
     expect(find.text('Calendario'), findsNothing);
     expect(find.text('Planificar la semana'), findsNothing);

@@ -195,6 +195,87 @@ void main() {
     },
   );
 
+  testWidgets(
+    'la próxima clase de hoy dice «Hoy · 17:00» y la de mañana «Mañana» '
+    '(como Inicio y Calendario), no el día de la semana',
+    (tester) async {
+      final now = DateTime.now();
+      Subject withClass(DateTime at, int days) => Subject(
+        id: 's4',
+        name: 'Bases de datos',
+        credits: 6,
+        perceivedDifficulty: 3,
+        priority: SubjectPriority.medium,
+        archived: false,
+        noteCount: 0,
+        fileCount: 0,
+        nextUp: SubjectNextUp(
+          kind: SubjectNextUpKind.classSession,
+          at: at,
+          place: 'Aula 2.4',
+          daysLeft: days,
+          urgent: false,
+        ),
+      );
+      final today = DateTime(now.year, now.month, now.day, 17);
+      await _pump(
+        tester,
+        SubjectCard(subject: withClass(today, 0), onTap: () {}),
+      );
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Próxima clase: Hoy · 17:00 · Aula 2.4'),
+        findsOneWidget,
+      );
+
+      final tomorrow = DateTime(now.year, now.month, now.day + 1, 9);
+      await _pump(
+        tester,
+        SubjectCard(subject: withClass(tomorrow, 1), onTap: () {}),
+      );
+      expect(
+        find.text('Próxima clase: Mañana · 9:00 · Aula 2.4'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  for (final (width, scale) in [(390.0, 1.0), (320.0, 2.0)]) {
+    testWidgets(
+      '«Sin temario: importa la guía» empieza donde el texto de la tarjeta, '
+      'no encima de la franja (${width.toInt()} dp, ${(scale * 100).toInt()} %)',
+      (tester) async {
+        await _pump(
+          tester,
+          SubjectCard(
+            subject: const Subject(
+              id: 's5',
+              name: 'Cálculo',
+              credits: 6,
+              perceivedDifficulty: 3,
+              priority: SubjectPriority.medium,
+              archived: false,
+              noteCount: 0,
+              fileCount: 0,
+            ),
+            onTap: () {},
+            onImportGuide: () {},
+          ),
+          width: width,
+          scale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        final button = tester.getRect(find.byType(FilledButton));
+        final name = tester.getRect(find.text('Cálculo'));
+        final card = tester.getRect(find.byType(Card));
+        // Mismo margen izquierdo que el nombre y dentro de la tarjeta.
+        expect(button.left, moreOrLessEquals(name.left, epsilon: 0.5));
+        expect(button.right, lessThanOrEqualTo(card.right));
+        expect(button.bottom, lessThanOrEqualTo(card.bottom));
+      },
+    );
+  }
+
   testWidgets('el apunte compartido separa autor y lectura (200 %, 320 dp)', (
     tester,
   ) async {

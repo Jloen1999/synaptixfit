@@ -15,7 +15,7 @@
   "commonSeeAll": "Tout voir",
   "commonSaved": "Modifications enregistrées",
   "commonLevel": "Niveau {level}",
-  "commonXpProgress": "{current} / {total} XP",
+  "commonXpProgress": "{current} sur {total} XP pour le niveau {next}",
   "commonWeekdayInitial": "{weekday, select, mon{L} tue{M} wed{M} thu{J} fri{V} sat{S} other{D}}",
   "tabHome": "Accueil",
   "tabAcademic": "Études",

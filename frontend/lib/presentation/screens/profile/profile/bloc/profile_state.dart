@@ -15,6 +15,10 @@ abstract class ProfileState with _$ProfileState {
     /// Solicitudes de amistad recibidas sin responder.
     @Default(0) int pendingRequests,
 
+    /// Amigos que tienes (para «Aún ninguno» / «3 amigos» de la tarjetita);
+    /// nulo si no se ha podido contar.
+    int? friendsTotal,
+
     /// Si esta pantalla pide el recuento de solicitudes: el Perfil sí; las
     /// fichas Físico y Académico no (lo fija `started`, lo sigue `refreshed`).
     @Default(true) bool countsFriendRequests,

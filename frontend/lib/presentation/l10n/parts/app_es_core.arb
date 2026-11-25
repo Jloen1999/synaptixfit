@@ -22,13 +22,16 @@
       }
     }
   },
-  "commonXpProgress": "{current} / {total} XP",
+  "commonXpProgress": "{current} de {total} XP para el nivel {next}",
   "@commonXpProgress": {
     "placeholders": {
       "current": {
         "type": "int"
       },
       "total": {
+        "type": "int"
+      },
+      "next": {
         "type": "int"
       }
     }

@@ -46,6 +46,8 @@ class _MockUniversities extends Mock
 class _MockSearchDegrees extends Mock implements SearchDegreesUseCaseContract {}
 
 void main() {
+  setUpAll(() => registerFallbackValue(FriendshipListKind.received));
+
   group('ProfileBloc', () {
     late _MockAccount account;
     late _MockSummary summary;
@@ -55,13 +57,19 @@ void main() {
       account = _MockAccount();
       summary = _MockSummary();
       friendships = _MockFriendships();
-      // El recuento de solicitudes es opcional: si falla, el perfil carga igual.
-      when(
-        () => friendships(
-          kind: FriendshipListKind.received,
-          size: any(named: 'size'),
-        ),
-      ).thenAnswer((_) async => const Failure(AppError.network()));
+      // Los recuentos de solicitudes y de amigos son opcionales: si fallan,
+      // el perfil carga igual.
+      for (final kind in [
+        FriendshipListKind.received,
+        FriendshipListKind.friends,
+      ]) {
+        when(
+          () => friendships(
+            kind: kind,
+            size: any(named: 'size'),
+          ),
+        ).thenAnswer((_) async => const Failure(AppError.network()));
+      }
     });
 
     ProfileBloc build() => ProfileBloc(
@@ -89,16 +97,29 @@ void main() {
             SocialPage(items: [], page: 0, totalPages: 2, totalItems: 2),
           ),
         );
+        when(
+          () => friendships(
+            kind: FriendshipListKind.friends,
+            size: any(named: 'size'),
+          ),
+        ).thenAnswer(
+          (_) async => const Success(
+            SocialPage(items: [], page: 0, totalPages: 3, totalItems: 3),
+          ),
+        );
       },
       build: build,
       act: (bloc) => bloc.add(const ProfileEvent.started()),
       skip: 1,
+      // También cuántos amigos hay: «3 amigos» en la tarjetita, como en
+      // Tú › Comunidad.
       expect: () => const [
         ProfileState(
           status: ProfileStatus.ready,
           account: testAccount,
           summary: testSummary,
           pendingRequests: 2,
+          friendsTotal: 3,
         ),
       ],
     );
@@ -144,7 +165,7 @@ void main() {
       ],
       verify: (_) => verifyNever(
         () => friendships(
-          kind: FriendshipListKind.received,
+          kind: any(named: 'kind'),
           size: any(named: 'size'),
         ),
       ),

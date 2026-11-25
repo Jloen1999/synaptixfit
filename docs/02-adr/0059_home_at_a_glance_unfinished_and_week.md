@@ -86,7 +86,7 @@ No hay errores nuevos: `SESSION_STALE_OPEN` ya estaba en el catálogo.
   el evento de ahora o siguiente (hora, «Clase de …», aula y profesor; «Concentrarme» o «Marcar como hecho» según
   `TodayAction.forEvent`) y la entrega o el examen más cercano («Examen · en 4 días»; abre esa entrega). Un solo botón
   relleno; los demás, tonales. «y N más» es un botón con borde. Con el texto grande, el botón de cada fila baja de línea.
-- **«Tu semana»**: pastilla «Vas bien / Vas por detrás / Semana sin plan», «8 de 12 cosas hechas · 2 se quedaron sin
+- **«Tu semana»**: pastilla «Vas al día / Vas por detrás / Semana sin plan» (antes «Vas bien»; ver ADR 0065, revisión del 25 nov), «8 de 12 cosas hechas · 2 se quedaron sin
   hacer», un círculo por día con una marca que no depende del color (✓, medio lleno, «!», el número, «–»), leyenda corta
   y «Entrenos 2 de 3» / «Estudio 5 h de 8 h» con su barra. Cada día sigue abriendo ese día en el Calendario. La fila de
   días va sin relleno lateral para que cada día mida 48 px en 390.

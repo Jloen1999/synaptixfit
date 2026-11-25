@@ -126,7 +126,7 @@
   "plannerBalanceSportHeavy": "Mucho deporte",
   "plannerStudyHours": "Estudio",
   "plannerSportHours": "Deporte",
-  "plannerHoursProgress": "{actual} / {planned} h",
+  "plannerHoursProgress": "{actual} de {planned} h",
   "@plannerHoursProgress": {
     "placeholders": {
       "actual": {
@@ -143,7 +143,7 @@
   "plannerExamsCount": "Exámenes",
   "plannerDeliveriesCount": "Entregas",
   "plannerStressLevel": "Nivel de estrés",
-  "plannerStressValue": "{value}/10",
+  "plannerStressValue": "{value} de 10",
   "@plannerStressValue": {
     "placeholders": {
       "value": {

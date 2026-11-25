@@ -154,9 +154,33 @@ void main() {
 
   testWidgets('la racha abre Tú › Resumen', (tester) async {
     await pump(tester);
+    // Con forma de botón (borde y flecha), porque hace algo al tocarlo.
+    expect(
+      find.ancestor(
+        of: find.text('Racha de 5 días'),
+        matching: find.byWidgetPredicate((w) => w is OutlinedButton),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Racha de 5 días'));
     await tester.pumpAndSettle();
     expect(find.text('Pantalla ${ProfilePaths.you}'), findsOneWidget);
+  });
+
+  testWidgets('«Amigos» lleva detalle como «Mis amigos» de Tú › Comunidad', (
+    tester,
+  ) async {
+    when(
+      () => profile.state,
+    ).thenReturn(ready(pending: 0).copyWith(friendsTotal: 0));
+    await pump(tester);
+    expect(find.text('Aún ninguno'), findsOneWidget);
+
+    when(
+      () => profile.state,
+    ).thenReturn(ready(pending: 0).copyWith(friendsTotal: 3));
+    await pump(tester);
+    expect(find.text('3 amigos'), findsOneWidget);
   });
 
   testWidgets('a «Físico» sin peso ni altura le falta lo principal', (

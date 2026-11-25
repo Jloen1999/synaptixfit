@@ -13,8 +13,9 @@ part 'profile_bloc.freezed.dart';
 part 'profile_event.dart';
 part 'profile_state.dart';
 
-/// Pantalla de perfil: cuenta (nivel, racha), resumen del perfil y número de
-/// solicitudes de amistad pendientes (con [GetFriendshipsUseCaseContract]).
+/// Pantalla de perfil: cuenta (nivel, racha), resumen del perfil y cuántas
+/// solicitudes de amistad esperan y cuántos amigos hay (con
+/// [GetFriendshipsUseCaseContract], como Tú › Comunidad).
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ProfileBloc({
     required this._getAccount,
@@ -57,16 +58,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     } else {
       emit(state.copyWith(refreshing: true, error: null));
     }
-    // Solo hace falta el total de solicitudes recibidas: una página de uno.
-    // Se lanza a la vez que lo demás.
+    // Solo hacen falta los totales de solicitudes recibidas y de amigos: una
+    // página de uno de cada. Se lanzan a la vez que lo demás.
     final requests = countsFriendRequests
         ? _getFriendships(kind: FriendshipListKind.received, size: 1)
+        : null;
+    final friends = countsFriendRequests
+        ? _getFriendships(kind: FriendshipListKind.friends, size: 1)
         : null;
     final (accountResult, summaryResult) = await (
       _getAccount(),
       _getSummary(),
     ).wait;
     final requestsResult = await requests;
+    final friendsResult = await friends;
     final error = accountResult.errorOrNull ?? summaryResult.errorOrNull;
     if (error != null) {
       emit(
@@ -88,6 +93,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         // Si el recuento falla no se avisa: es un extra, no impide usar el perfil.
         pendingRequests:
             requestsResult?.valueOrNull?.totalItems ?? state.pendingRequests,
+        friendsTotal:
+            friendsResult?.valueOrNull?.totalItems ?? state.friendsTotal,
         error: null,
         refreshing: false,
       ),

@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import '../l10n/gen_l10n/app_localizations.dart';
+import 'app_relative_date.dart';
 
 /// Textos de un día de rutina que comparten Rutinas e Inicio: el número del
 /// día es el día de la semana preferido y la fecha prevista la da el servidor.
@@ -16,11 +17,10 @@ String weekdayName(AppLocalizations l10n, int dayNumber) => switch (dayNumber) {
   _ => l10n.trainingWeekday7,
 };
 
-/// Fecha prevista de un día de rutina: «Miércoles 5 nov» (en el idioma de la app).
+/// Fecha prevista de un día de rutina: «Hoy», «Mañana» o «Miércoles 5 nov»
+/// (en el idioma de la app; el mismo formato de fecha próxima que el resto).
 String scheduledDayLabel(AppLocalizations l10n, DateTime date) =>
-    toBeginningOfSentenceCase(
-      DateFormat('EEEE d MMM', l10n.localeName).format(date),
-    );
+    AppRelativeDate.longDay(l10n, date);
 
 /// Línea del próximo día: «Miércoles 5 nov · Semana 2 de 4 · Tirón». Sin
 /// nombre propio, el día de la semana ya va en la fecha y no se repite.

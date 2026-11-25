@@ -93,6 +93,12 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
     if (mounted) _bloc.add(const ChallengesListEvent.refreshed());
   }
 
+  /// Plantillas de reto (como su tarjetita); al volver puede haber uno nuevo.
+  Future<void> _openTemplates() async {
+    await context.push(ChallengesPaths.templates);
+    if (mounted) _bloc.add(const ChallengesListEvent.refreshed());
+  }
+
   void _onEffect(BuildContext context, ChallengesListEffect effect) {
     final l10n = context.localizations;
     switch (effect) {
@@ -303,8 +309,8 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
           message: filtered
               ? l10n.challengesEmptyFilteredMessage
               : l10n.challengesEmptyMessage,
-          // Sin filtros no se repite nada: «Nuevo», «Plantillas» y «De otros»
-          // ya están en los accesos de arriba.
+          // Sin filtros, un primer paso concreto: empezar con una plantilla
+          // (un toque). Con borde: «Nuevo» de arriba ya es el relleno.
           action: filtered
               ? AppSecondaryButton(
                   label: l10n.challengesFilterClear,
@@ -313,7 +319,11 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                     _setQuery(const ChallengeQuery());
                   },
                 )
-              : null,
+              : AppSecondaryButton(
+                  label: l10n.challengesEmptySeeTemplates,
+                  icon: const Icon(AppIcons.challenge),
+                  onPressed: _openTemplates,
+                ),
         ),
       ];
     }
@@ -350,7 +360,8 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
 }
 
 /// Los cuatro accesos de Tú › Retos (ADR 0061): «Nuevo» (la hoja rápida),
-/// «Plantillas», «Con amigos» y «De otros» (los de la comunidad). Al volver se
+/// «Plantillas», «Con amigos» y «Retos de otros» (los de la comunidad, con el
+/// mismo nombre que su tarjetita de Tú › Comunidad). Al volver se
 /// refresca la lista: puede haber un reto nuevo.
 class ChallengeShortcuts extends StatelessWidget {
   const ChallengeShortcuts({super.key});
@@ -398,7 +409,6 @@ class ChallengeShortcuts extends StatelessWidget {
         AppShortcutTile(
           icon: AppIcons.communityChallenges,
           label: l10n.challengesShortcutOthers,
-          semanticsLabel: l10n.challengesShortcutOthersSemantics,
           tone: AppTileTone.neutral,
           onTap: () => _open(context, ChallengesPaths.community),
         ),

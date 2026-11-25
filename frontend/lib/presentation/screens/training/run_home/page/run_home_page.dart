@@ -552,9 +552,8 @@ class _PlannedTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final when = toBeginningOfSentenceCase(
-      DateFormat.MMMEd(l10n.localeName).add_Hm().format(planned.start),
-    );
+    // «Hoy · 18:00», «Mañana · 7:30», «jue 26 · 18:00» (formato común).
+    final when = AppRelativeDate.dayTime(l10n, planned.start);
     return AppCard(
       child: Row(
         children: [

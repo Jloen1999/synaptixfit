@@ -219,7 +219,7 @@ void main() {
       height: 1400,
     );
     expect(tester.takeException(), isNull);
-    expect(find.text('5/12 días'), findsOneWidget);
+    expect(find.text('5 de 12 días'), findsOneWidget);
     expect(find.textContaining('Tirón'), findsOneWidget);
   });
 

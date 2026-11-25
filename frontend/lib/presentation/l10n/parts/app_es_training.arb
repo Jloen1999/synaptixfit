@@ -174,7 +174,7 @@
       }
     }
   },
-  "trainingDaysProgress": "{done}/{total} días",
+  "trainingDaysProgress": "{total, plural, =1{{done} de {total} día} other{{done} de {total} días}}",
   "@trainingDaysProgress": {
     "placeholders": {
       "done": {
@@ -373,7 +373,7 @@
   },
   "trainingRestLess": "Quitar 15 segundos",
   "trainingRestMore": "Añadir 15 segundos",
-  "trainingSetsDone": "{done} de {total} series",
+  "trainingSetsDone": "{total, plural, =1{{done} de {total} serie} other{{done} de {total} series}}",
   "@trainingSetsDone": {
     "placeholders": {
       "done": {
@@ -434,7 +434,7 @@
   "trainingSessionAlreadyCompleted": "Esta sesión ya está terminada.",
   "trainingFinishAction": "Terminar",
   "trainingRpeLabel": "Esfuerzo percibido (1-10)",
-  "trainingRpeValue": "Esfuerzo {value}/10",
+  "trainingRpeValue": "Esfuerzo {value} de 10",
   "@trainingRpeValue": {
     "placeholders": {
       "value": {
@@ -510,7 +510,7 @@
       }
     }
   },
-  "trainingSessionsDone": "{done} de {total} sesiones",
+  "trainingSessionsDone": "{total, plural, =1{{done} de {total} sesión} other{{done} de {total} sesiones}}",
   "@trainingSessionsDone": {
     "placeholders": {
       "done": {
@@ -1220,7 +1220,7 @@
   },
   "trainingMsgExerciseReplaced": "Ejercicio cambiado",
   "trainingMsgExerciseRemoved": "Ejercicio quitado",
-  "trainingLiveStripItem": "Ejercicio {index} de {total}: {name}, {done} de {sets} series",
+  "trainingLiveStripItem": "{sets, plural, =1{Ejercicio {index} de {total}: {name}, {done} de {sets} serie} other{Ejercicio {index} de {total}: {name}, {done} de {sets} series}}",
   "@trainingLiveStripItem": {
     "placeholders": {
       "index": {
@@ -1725,7 +1725,7 @@
       }
     }
   },
-  "trainingLeaveFinishHintCount": "Se guarda con lo que has hecho ({done} de {total} series)",
+  "trainingLeaveFinishHintCount": "{total, plural, =1{Se guarda con lo que has hecho ({done} de {total} serie)} other{Se guarda con lo que has hecho ({done} de {total} series)}}",
   "@trainingLeaveFinishHintCount": {
     "placeholders": {
       "done": {
@@ -2023,7 +2023,7 @@
     }
   },
   "trainingDoneStreakToday": "Hoy ya cuenta para tu racha.",
-  "trainingDoneChallengeSessions": "{done} de {target} sesiones",
+  "trainingDoneChallengeSessions": "{target, plural, =1{{done} de {target} sesión} other{{done} de {target} sesiones}}",
   "@trainingDoneChallengeSessions": {
     "placeholders": {
       "done": {
@@ -2307,7 +2307,7 @@
     }
   },
   "trainingQuickReasonFatigueGeneric": "Porque hoy notas bastante cansancio.",
-  "trainingDaysDone": "{done} de {total} días hechos",
+  "trainingDaysDone": "{total, plural, =1{{done} de {total} día hecho} other{{done} de {total} días hechos}}",
   "@trainingDaysDone": {
     "placeholders": {
       "done": {
@@ -3051,7 +3051,7 @@
       }
     }
   },
-  "trainingLiveSetsCount": "{done} de {total} series",
+  "trainingLiveSetsCount": "{total, plural, =1{{done} de {total} serie} other{{done} de {total} series}}",
   "@trainingLiveSetsCount": {
     "placeholders": {
       "done": {

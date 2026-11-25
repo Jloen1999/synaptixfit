@@ -9,8 +9,9 @@ import '../../../widgets/widgets.dart';
 /// Próximo día de entrenamiento con «Empezar» (1 toque) y el registro diario.
 /// Misma información que la tarjeta de Entreno › Gimnasio: foto del ejercicio
 /// principal de fondo con el texto abajo (ADR 0042), cuándo toca, retraso y
-/// avance del ciclo. Sus botones son
-/// secundarios: el destacado de Inicio es el de «Tu día». Grabar una carrera
+/// avance del ciclo. «Empezar» tiene el mismo peso que el de «Tu día»: relleno
+/// si «Tu día» no lleva el botón relleno de la pantalla ([startPrimary]) y
+/// tonal si lo lleva; «¿Qué tal estás hoy?» va con borde. Grabar una carrera
 /// vive en Entreno › Correr (ADR 0038).
 class NextTrainingCard extends StatelessWidget {
   const NextTrainingCard({
@@ -22,6 +23,7 @@ class NextTrainingCard extends StatelessWidget {
     this.onOpenRoutine,
     this.starting = false,
     this.showStart = true,
+    this.startPrimary = false,
   });
 
   final HomeNextTrainingDay? day;
@@ -36,6 +38,10 @@ class NextTrainingCard extends StatelessWidget {
 
   /// `false` si «Tu día» ya ofrece «Empezar» (un camino por destino).
   final bool showStart;
+
+  /// «Empezar» es el botón relleno de Inicio (ninguna otra tarjeta lo lleva:
+  /// un solo relleno por pantalla); si no, tonal.
+  final bool startPrimary;
 
   /// Creando la sesión: el botón muestra que está trabajando.
   final bool starting;
@@ -102,11 +108,11 @@ class NextTrainingCard extends StatelessWidget {
                   runSpacing: TokensSpacing.s,
                   children: [
                     if (showStart)
-                      AppSecondaryButton(
+                      _StartButton(
                         label: next.inProgress
                             ? l10n.homeTrainingContinue
                             : l10n.homeTrainingStart,
-                        icon: const Icon(AppIcons.start),
+                        primary: startPrimary,
                         loading: starting,
                         onPressed: onStart,
                       ),
@@ -201,6 +207,56 @@ class NextTrainingCard extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// «Empezar» del próximo entreno: relleno (el destacado de Inicio) o tonal,
+/// nunca con borde, para pesar lo mismo que «Empezar» de «Tu día».
+class _StartButton extends StatelessWidget {
+  const _StartButton({
+    required this.label,
+    required this.primary,
+    required this.loading,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool primary;
+  final bool loading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (primary) {
+      return AppPrimaryButton(
+        label: label,
+        icon: AppIcons.start,
+        loading: loading,
+        onPressed: onPressed,
+      );
+    }
+    if (loading) {
+      // Como los demás botones: la carga se anuncia aunque el botón,
+      // deshabilitado, pierda el foco.
+      return FilledButton.tonal(
+        onPressed: null,
+        child: Semantics(
+          liveRegion: true,
+          label: '$label, ${context.localizations.commonLoading}',
+          child: const ExcludeSemantics(
+            child: SizedBox.square(
+              dimension: TokensSize.iconS,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+      );
+    }
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
+      icon: const Icon(AppIcons.start),
+      label: Text(label),
     );
   }
 }

@@ -15,7 +15,7 @@
   "commonSeeAll": "See all",
   "commonSaved": "Changes saved",
   "commonLevel": "Level {level}",
-  "commonXpProgress": "{current} / {total} XP",
+  "commonXpProgress": "{current} of {total} XP to level {next}",
   "commonWeekdayInitial": "{weekday, select, mon{M} tue{T} wed{W} thu{T} fri{F} sat{S} other{S}}",
   "tabHome": "Home",
   "tabAcademic": "Academic",

@@ -12,6 +12,7 @@ import '../../../../domain/models/academic/subject.dart';
 import '../../../../domain/models/academic/subject_file.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/app_icons.dart';
+import '../../../widgets/app_relative_date.dart';
 
 /// Color de una asignatura derivado de su id (estable entre sesiones) a partir
 /// de los colores del tema.
@@ -249,7 +250,8 @@ String sentenceCase(String text) {
   return lower[0].toUpperCase() + lower.substring(1);
 }
 
-/// «Próxima clase: lun 10:00 · Aula 2.3» (sin aula, sin la parte final).
+/// «Próxima clase: Hoy · 10:00 · Aula 2.3» (sin aula, sin la parte final). El
+/// día sale de [AppRelativeDate]: «Hoy», «Mañana» o «jue 26», como en Inicio.
 /// [short] quita «Próxima clase:» para la tarjeta, donde lo dice el icono.
 String nextClassText(
   BuildContext context,
@@ -258,8 +260,7 @@ String nextClassText(
   bool short = false,
 }) {
   final l10n = context.localizations;
-  // Hora en el formato del idioma (24 h en es/fr/pt, 12 h en inglés).
-  final when = DateFormat.E(l10n.localeName).add_jm().format(at);
+  final when = AppRelativeDate.dayTime(l10n, at);
   final room = place?.trim();
   if (short) {
     return room == null || room.isEmpty
