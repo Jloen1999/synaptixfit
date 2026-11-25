@@ -199,7 +199,11 @@ class AdminFlowIT {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("ADMIN_USER_NOT_FOUND"));
 
-        // Baja voluntaria.
+        // Baja voluntaria. La BD embebida se comparte entre tests y otro puede haber dado de baja su cuenta
+        // antes (el orden cambia de una máquina a otra): se cuenta la que añade esta, no el total.
+        int selfDeletesBefore = JsonPath.read(mvc.perform(as(adminToken, get("/api/v1/admin/audit")
+                        .param("action", "SELF_DELETE_ACCOUNT")))
+                .andReturn().getResponse().getContentAsString(), "$.totalItems");
         mvc.perform(as(userToken, delete("/api/v1/me"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"password\":\"wrong1234\"}"))
                 .andExpect(status().isForbidden())
@@ -214,7 +218,7 @@ class AdminFlowIT {
                         .content("{\"email\":\"member-it@example.com\",\"password\":\"secret123\"}"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(as(adminToken, get("/api/v1/admin/audit").param("action", "SELF_DELETE_ACCOUNT")))
-                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.totalItems").value(selfDeletesBefore + 1))
                 .andExpect(jsonPath("$.items[0].adminId").isEmpty());
         // El último administrador no puede darse de baja. La BD embebida se comparte entre tests y el orden
         // cambia de una máquina a otra: se deja a este como único administrador para no depender de él.
