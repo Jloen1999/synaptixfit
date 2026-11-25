@@ -9,6 +9,7 @@ import '../screens/academic/flashcards/bloc/flashcards_bloc.dart';
 import '../screens/academic/free_practice/bloc/free_practice_bloc.dart';
 import '../screens/academic/generation_center/bloc/generation_center_bloc.dart';
 import '../screens/academic/material_review/bloc/material_review_bloc.dart';
+import '../screens/academic/material_share/bloc/material_share_bloc.dart';
 import '../screens/academic/mock_exam/bloc/mock_exam_bloc.dart';
 import '../screens/academic/mock_exam_setup/bloc/mock_exam_setup_bloc.dart';
 import '../screens/academic/note_scan/bloc/note_scan_bloc.dart';
@@ -81,7 +82,7 @@ void registerAcademicPresentation(GetIt getIt) {
         watchChanges: getIt(),
         getNotes: getIt(),
         getFiles: getIt(),
-        getAvailability: getIt(),
+        getSubjectAvailability: getIt(),
         uploadFile: getIt(),
         deleteFile: getIt(),
         deleteNote: getIt(),
@@ -105,6 +106,16 @@ void registerAcademicPresentation(GetIt getIt) {
         getAvailability: getIt(),
         deleteNote: getIt(),
         registerMaterial: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => MaterialShareBloc(
+        sendToFriend: getIt(),
+        shareWithEveryone: getIt(),
+        shareOnWall: getIt(),
+        getFile: getIt(),
+        shareOutside: getIt(),
+        saveFile: getIt(),
       ),
     )
     ..registerFactory(() => SharedNotesBloc(getShared: getIt()))

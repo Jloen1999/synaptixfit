@@ -6,6 +6,7 @@ import com.synaptixfit.application.port.input.social.AddCommentUseCase;
 import com.synaptixfit.application.port.input.social.BlockUserUseCase;
 import com.synaptixfit.application.port.input.social.CreatePostUseCase;
 import com.synaptixfit.application.port.input.social.PublishAchievementPostUseCase;
+import com.synaptixfit.application.port.input.social.RetractNotePostUseCase;
 import com.synaptixfit.application.port.input.social.DeleteCommentUseCase;
 import com.synaptixfit.application.port.input.social.DeletePostUseCase;
 import com.synaptixfit.application.port.input.social.DismissReportUseCase;
@@ -114,6 +115,11 @@ public class SocialBeanConfiguration {
     @Bean
     CreatePostUseCase createPostUseCase() {
         return tx.wrap(CreatePostUseCase.class, postService());
+    }
+
+    @Bean
+    RetractNotePostUseCase retractNotePostUseCase() {
+        return tx.wrap(RetractNotePostUseCase.class, postService());
     }
 
     @Bean

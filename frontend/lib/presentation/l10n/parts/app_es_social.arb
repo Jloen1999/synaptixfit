@@ -1049,5 +1049,19 @@
         "type": "int"
       }
     }
-  }
+  },
+  "socialPostTypeNote": "Apunte",
+  "socialNotifNoteReceivedTitle": "Te han pasado un apunte",
+  "socialNotifNoteReceivedBody": "{name} te ha pasado «{title}»",
+  "@socialNotifNoteReceivedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifActionNote": "Ver apunte"
 }

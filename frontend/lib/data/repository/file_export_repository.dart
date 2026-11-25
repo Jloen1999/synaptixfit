@@ -1,3 +1,4 @@
+import '../../domain/models/academic/material_sharing.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/repositories/file_export_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
@@ -24,4 +25,10 @@ class FileExportRepository implements FileExportRepositoryContract {
       extension: extension,
     ),
   );
+
+  @override
+  Future<AppResult<bool>> saveFile(MaterialFile file) =>
+      RepositoryErrorHandler.guard(
+        () => _saver.saveBytes(fileName: file.fileName, bytes: file.bytes),
+      );
 }

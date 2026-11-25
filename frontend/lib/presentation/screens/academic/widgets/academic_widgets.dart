@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../domain/enums/question_standing.dart';
 import '../../../../domain/models/account/account.dart';
@@ -66,7 +67,9 @@ Future<bool> confirmDestructive(
 void syncSessionAccount(BuildContext context, Account account) =>
     context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
 
-/// Markdown con la tipografía del tema.
+/// Markdown con la tipografía del tema. Los títulos (`#`, `##`, `###`) se
+/// anuncian como encabezados y los enlaces `https` se abren fuera de la app
+/// (otro esquema o un fallo: un aviso). ADR 0064.
 class AcademicMarkdown extends StatelessWidget {
   const AcademicMarkdown({
     super.key,
@@ -80,9 +83,16 @@ class AcademicMarkdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return MarkdownBody(
+    final body = MarkdownBody(
       data: data,
-      selectable: selectable,
+      // Seleccionable entero con un solo SelectionArea (ADR 0064): con
+      // `selectable: true` cada bloque es un SelectableText con su propio
+      // foco y su propio gesto, y abrir un apunte largo tarda más.
+      selectable: false,
+      onTapLink: (_, href, _) => _openLink(context, href),
+      builders: {
+        for (final tag in const ['h1', 'h2', 'h3']) tag: _HeadingBuilder(),
+      },
       styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
         p: context.textStyles.bodyLarge,
         h1: context.textStyles.headlineSmall,
@@ -92,7 +102,10 @@ class AcademicMarkdown extends StatelessWidget {
           color: context.colors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(TokensRadius.s),
           border: Border(
-            left: BorderSide(color: context.colors.tertiary, width: 3),
+            left: BorderSide(
+              color: context.colors.tertiary,
+              width: TokensSize.blockStripe,
+            ),
           ),
         ),
         codeblockDecoration: BoxDecoration(
@@ -101,7 +114,37 @@ class AcademicMarkdown extends StatelessWidget {
         ),
       ),
     );
+    return selectable ? SelectionArea(child: body) : body;
   }
+
+  static Future<void> _openLink(BuildContext context, String? href) async {
+    final uri = Uri.tryParse(href ?? '');
+    final ok =
+        uri != null &&
+        uri.scheme == 'https' &&
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      context.showSnack(context.localizations.academicLinkOpenFailed);
+    }
+  }
+}
+
+/// Un título del Markdown como encabezado para el lector de pantalla, con el
+/// estilo de su nivel (el texto, sin marcas en línea).
+class _HeadingBuilder extends MarkdownElementBuilder {
+  @override
+  bool isBlockElement() => true;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) => Semantics(
+    header: true,
+    child: Text(element.textContent, style: preferredStyle),
+  );
 }
 
 /// Barra de progreso fina con el color indicado.

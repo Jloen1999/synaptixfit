@@ -55,6 +55,20 @@ public class AiDocumentPersistenceAdapter implements AiDocumentRepositoryPort {
     }
 
     @Override
+    public Map<String, Set<AiDocumentType>> typesForAll(UUID userId, AiDocumentSource source,
+                                                        Collection<String> sourceIds) {
+        Map<String, Set<AiDocumentType>> found = new HashMap<>();
+        if (sourceIds.isEmpty()) {
+            return found;
+        }
+        // Solo la fuente y el tipo: el contenido (resúmenes, mapas) no hace falta para pintar iconos.
+        repository.findTypesBySources(userId, AcademicDbCodes.documentSource(source), sourceIds)
+                .forEach(row -> found.computeIfAbsent((String) row[0], k -> EnumSet.noneOf(AiDocumentType.class))
+                        .add(AcademicDbCodes.documentType((String) row[1])));
+        return found;
+    }
+
+    @Override
     public AiDocument save(AiDocument document) {
         AiDocumentEntity entity = repository.findById(document.id()).orElseGet(AiDocumentEntity::new);
         AcademicPersistenceMapper.copy(document, entity);

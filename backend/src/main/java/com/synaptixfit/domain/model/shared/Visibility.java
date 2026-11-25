@@ -9,5 +9,10 @@ package com.synaptixfit.domain.model.shared;
 public enum Visibility {
     PRIVATE,
     FRIENDS,
-    PUBLIC
+    PUBLIC;
+
+    /** ¿Deja ver a menos gente que {@code other}? (privado < amigos < público). */
+    public boolean isLessOpenThan(Visibility other) {
+        return ordinal() < other.ordinal();
+    }
 }

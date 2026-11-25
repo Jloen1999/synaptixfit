@@ -38,6 +38,12 @@ class ArchitectureTest {
                     "java.sql..", "javax.sql..", "org.hibernate..", "org.postgresql..", "com.mysql..",
                     "org.flywaydb..");
 
+    /** Generar o leer PDF es cosa de un adaptador (PDFBox, ADR 0064): el núcleo solo ve {@code NotePdfRendererPort}. */
+    @ArchTest
+    static final ArchRule coreDoesNotUsePdfBox = noClasses()
+            .that().resideInAnyPackage("..domain..", "..application..")
+            .should().dependOnClassesThat().resideInAnyPackage("org.apache.pdfbox..");
+
     @ArchTest
     static final ArchRule jpaEntitiesStayInPersistence = noClasses()
             .that().resideOutsideOfPackage("..adapter.output.persistence..")

@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.academic;
 
+import com.synaptixfit.domain.event.academic.NoteDeleted;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -33,7 +34,7 @@ class NoteAndFileServiceTest {
 
     private final AcademicFakes f = new AcademicFakes();
     private final NoteService notes = new NoteService(f.notes, f.subjects, f.materials, f.aiDocuments, f.users,
-            AcademicFakes.CLOCK);
+            f.events::add, AcademicFakes.CLOCK);
     private final SubjectFileService files = new SubjectFileService(f.files, f.subjects, f.materials, f.aiDocuments,
             f.storage, AcademicFakes.CLOCK);
     private final UUID user = UUID.randomUUID();
@@ -89,6 +90,8 @@ class NoteAndFileServiceTest {
 
         notes.deleteNote(user, n.id());
 
+        // Social retira su publicación del muro con el evento (ADR 0064).
+        assertThat(f.events).singleElement().isEqualTo(new NoteDeleted(user, n.id(), AcademicFakes.NOW));
         assertThat(f.noteStore).isEmpty();
         assertThat(f.materialStore).isEmpty();
         assertThat(f.docStore).isEmpty();

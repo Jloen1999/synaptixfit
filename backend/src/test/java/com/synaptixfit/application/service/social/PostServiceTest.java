@@ -19,6 +19,7 @@ import com.synaptixfit.domain.model.social.PostType;
 import com.synaptixfit.domain.model.social.PostView;
 import com.synaptixfit.domain.model.user.User;
 import java.time.ZoneOffset;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -180,5 +181,25 @@ class PostServiceTest {
         assertThat(service.publishAchievement(new PublishAchievementPostUseCase.Command(author.id(),
                 PostType.CHALLENGE_COMPLETED, "Otro", "{\"challengeId\":\"2\"}"))).isTrue();
         assertThat(fakes.posts).hasSize(2);
+    }
+
+    @Test
+    void deletingANoteRetractsItsWallPostOnlyThatOne() {
+        UUID noteId = UUID.randomUUID();
+        UUID otherNote = UUID.randomUUID();
+        assertThat(service.publishAchievement(new PublishAchievementPostUseCase.Command(author.id(), PostType.NOTE,
+                "Tema 1", Post.noteMetadata(noteId)))).isTrue();
+        assertThat(service.publishAchievement(new PublishAchievementPostUseCase.Command(author.id(), PostType.NOTE,
+                "Tema 1 otra vez", Post.noteMetadata(noteId)))).isFalse();
+        service.publishAchievement(new PublishAchievementPostUseCase.Command(author.id(), PostType.NOTE, "Tema 2",
+                Post.noteMetadata(otherNote)));
+
+        service.retractNotePost(reader.id(), noteId);
+        assertThat(fakes.posts).hasSize(2);
+        service.retractNotePost(author.id(), noteId);
+        service.retractNotePost(author.id(), noteId);
+
+        assertThat(fakes.posts.values()).singleElement()
+                .satisfies(p -> assertThat(p.metadata()).isEqualTo(Post.noteMetadata(otherNote)));
     }
 }

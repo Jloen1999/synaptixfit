@@ -4,6 +4,7 @@ import com.synaptixfit.application.port.input.academic.GenerateStudyArtifactUseC
 import com.synaptixfit.application.port.input.academic.GenerateStudyDocumentUseCase;
 import com.synaptixfit.application.port.input.academic.GetStudyDocumentAvailabilityUseCase;
 import com.synaptixfit.application.port.input.academic.GetStudyDocumentUseCase;
+import com.synaptixfit.application.port.input.academic.GetSubjectDocumentAvailabilityUseCase;
 import com.synaptixfit.application.port.input.academic.SaveArtifactAsNoteUseCase;
 import com.synaptixfit.application.port.input.academic.SaveArtifactAsQuizUseCase;
 import com.synaptixfit.domain.model.academic.AiDocumentType;
@@ -16,11 +17,13 @@ import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.SaveArtifactNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.SaveQuizRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.SavedQuizResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.SourceDocumentsResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.SourceRefDto;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.StudyDtos.StudyDocumentResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,17 +46,20 @@ public class StudyAssistantController {
     private final GetStudyDocumentUseCase getDocument;
     private final GenerateStudyDocumentUseCase generateDocument;
     private final GetStudyDocumentAvailabilityUseCase availability;
+    private final GetSubjectDocumentAvailabilityUseCase subjectAvailability;
     private final GenerateStudyArtifactUseCase generateArtifact;
     private final SaveArtifactAsNoteUseCase saveAsNote;
     private final SaveArtifactAsQuizUseCase saveAsQuiz;
 
     public StudyAssistantController(GetStudyDocumentUseCase getDocument, GenerateStudyDocumentUseCase generateDocument,
                                     GetStudyDocumentAvailabilityUseCase availability,
+                                    GetSubjectDocumentAvailabilityUseCase subjectAvailability,
                                     GenerateStudyArtifactUseCase generateArtifact, SaveArtifactAsNoteUseCase saveAsNote,
                                     SaveArtifactAsQuizUseCase saveAsQuiz) {
         this.getDocument = getDocument;
         this.generateDocument = generateDocument;
         this.availability = availability;
+        this.subjectAvailability = subjectAvailability;
         this.generateArtifact = generateArtifact;
         this.saveAsNote = saveAsNote;
         this.saveAsQuiz = saveAsQuiz;
@@ -64,6 +70,14 @@ public class StudyAssistantController {
                                                      @PathVariable StudySourceType sourceType,
                                                      @PathVariable UUID sourceId) {
         return DocumentAvailabilityResponse.from(availability.availableDocuments(userId, sourceType, sourceId));
+    }
+
+    /** Los documentos guardados de todos los apuntes y archivos de una asignatura, en una petición (ADR 0064). */
+    @GetMapping("/subjects/{subjectId}/documents")
+    public List<SourceDocumentsResponse> subjectAvailability(@CurrentUserId UUID userId,
+                                                             @PathVariable UUID subjectId) {
+        return subjectAvailability.availableDocuments(userId, subjectId).stream()
+                .map(SourceDocumentsResponse::from).toList();
     }
 
     @GetMapping("/sources/{sourceType}/{sourceId}/documents/{type}")

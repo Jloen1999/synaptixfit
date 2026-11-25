@@ -1,5 +1,7 @@
 package com.synaptixfit.application.service.academic;
 
+import com.synaptixfit.domain.event.academic.NoteDeleted;
+import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.application.port.input.academic.CreateNoteUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteNoteUseCase;
 import com.synaptixfit.application.port.input.academic.GetNoteUseCase;
@@ -34,13 +36,15 @@ public class NoteService implements ListNotesUseCase, GetNoteUseCase, CreateNote
     private final StudyMaterialRepositoryPort materials;
     private final AiDocumentRepositoryPort aiDocuments;
     private final UserRepositoryPort users;
+    private final DomainEventPublisherPort events;
     private final Clock clock;
     private final AcademicLookups lookups;
 
     public NoteService(NoteRepositoryPort notes, SubjectRepositoryPort subjects,
                        StudyMaterialRepositoryPort materials, AiDocumentRepositoryPort aiDocuments,
-                       UserRepositoryPort users, Clock clock) {
+                       UserRepositoryPort users, DomainEventPublisherPort events, Clock clock) {
         this.notes = notes;
+        this.events = events;
         this.users = users;
         this.materials = materials;
         this.aiDocuments = aiDocuments;
@@ -123,6 +127,8 @@ public class NoteService implements ListNotesUseCase, GetNoteUseCase, CreateNote
         materials.findByOrigin(userId, StudySourceType.NOTE, note.id()).ifPresent(m -> materials.delete(m.id()));
         aiDocuments.deleteBySource(userId, AiDocumentSource.NOTE, note.id().toString());
         notes.delete(note.id());
+        // Lo que lo enlaza en otros módulos (su publicación en el muro) se retira con el evento (ADR 0064).
+        events.publish(new NoteDeleted(userId, note.id(), clock.instant()));
     }
 
     /** Visibilidad pedida rebajada a la privacidad del perfil (un perfil privado no comparte nada). */

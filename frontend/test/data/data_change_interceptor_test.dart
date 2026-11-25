@@ -198,6 +198,21 @@ void main() {
     });
   });
 
+  test('publicar un apunte en el muro también cambia lo social (ADR 0064)', () {
+    expect(
+      DataChangeInterceptor.topicsFor('POST', '/api/v1/notes/n1/wall'),
+      {DataTopic.academic, DataTopic.social},
+    );
+    expect(
+      DataChangeInterceptor.topicsFor('POST', '/api/v1/notes/n1/recipients'),
+      {DataTopic.academic},
+    );
+    expect(
+      DataChangeInterceptor.topicsFor('GET', '/api/v1/notes/n1/pdf'),
+      isEmpty,
+    );
+  });
+
   test('agrupa una ráfaga de cambios en un solo aviso', () async {
     final interceptor = DataChangeInterceptor(debounce: Duration.zero);
     final emitted = <Set<DataTopic>>[];

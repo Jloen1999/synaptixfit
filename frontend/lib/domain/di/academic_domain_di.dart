@@ -67,6 +67,13 @@ import '../use_cases/academic/set_assessment_grade_use_case.dart';
 import '../use_cases/academic/set_subject_archived_use_case.dart';
 import '../use_cases/academic/set_syllabus_topic_completed_use_case.dart';
 import '../use_cases/academic/start_test_session_use_case.dart';
+import '../use_cases/academic/get_material_file_use_case.dart';
+import '../use_cases/academic/get_subject_document_availability_use_case.dart';
+import '../use_cases/academic/save_file_to_device_use_case.dart';
+import '../use_cases/academic/send_note_to_friend_use_case.dart';
+import '../use_cases/academic/share_file_outside_use_case.dart';
+import '../use_cases/academic/share_note_on_wall_use_case.dart';
+import '../use_cases/academic/share_note_with_everyone_use_case.dart';
 import '../use_cases/academic/update_note_use_case.dart';
 import '../use_cases/academic/update_subject_use_case.dart';
 import '../use_cases/academic/upload_subject_file_use_case.dart';
@@ -154,6 +161,28 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetDocumentAvailabilityUseCaseContract>(
       () => GetDocumentAvailabilityUseCase(getIt()),
+    )
+    // Lista «Material» y «Compartir» (ADR 0064).
+    ..registerLazySingleton<GetSubjectDocumentAvailabilityUseCaseContract>(
+      () => GetSubjectDocumentAvailabilityUseCase(getIt()),
+    )
+    ..registerLazySingleton<SendNoteToFriendUseCaseContract>(
+      () => SendNoteToFriendUseCase(getIt()),
+    )
+    ..registerLazySingleton<ShareNoteOnWallUseCaseContract>(
+      () => ShareNoteOnWallUseCase(getIt()),
+    )
+    ..registerLazySingleton<ShareNoteWithEveryoneUseCaseContract>(
+      () => ShareNoteWithEveryoneUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetMaterialFileUseCaseContract>(
+      () => GetMaterialFileUseCase(getIt(), getIt()),
+    )
+    ..registerLazySingleton<ShareFileOutsideUseCaseContract>(
+      () => ShareFileOutsideUseCase(getIt()),
+    )
+    ..registerLazySingleton<SaveFileToDeviceUseCaseContract>(
+      () => SaveFileToDeviceUseCase(getIt()),
     )
     ..registerLazySingleton<GetDueStudyMaterialsUseCaseContract>(
       () => GetDueStudyMaterialsUseCase(getIt()),

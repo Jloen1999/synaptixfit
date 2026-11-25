@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:synaptixfit/domain/enums/training_enums.dart';
 import 'package:synaptixfit/domain/enums/visibility.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
+import 'package:synaptixfit/domain/models/academic/material_sharing.dart';
 import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/routine.dart';
@@ -118,6 +119,10 @@ class _ShareRepo implements ShareRepositoryContract {
     required String fileName,
     required String text,
   }) async => const Success(true);
+
+  @override
+  Future<AppResult<bool>> shareFile(MaterialFile file) async =>
+      const Success(true);
 }
 
 void main() {

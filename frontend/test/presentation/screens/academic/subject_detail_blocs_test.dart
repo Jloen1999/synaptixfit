@@ -14,10 +14,10 @@ import 'package:synaptixfit/domain/models/academic/subject_file.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/academic/delete_note_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/delete_subject_file_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/academic/get_document_availability_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_due_study_materials_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_notes_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_study_materials_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/get_subject_document_availability_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_subject_files_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_subject_retention_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_subject_timeline_use_case.dart';
@@ -64,8 +64,8 @@ class _GetFiles extends Mock implements GetSubjectFilesUseCaseContract {}
 
 class _GetNotes extends Mock implements GetNotesUseCaseContract {}
 
-class _GetAvailability extends Mock
-    implements GetDocumentAvailabilityUseCaseContract {}
+class _GetSubjectAvailability extends Mock
+    implements GetSubjectDocumentAvailabilityUseCaseContract {}
 
 class _Upload extends Mock implements UploadSubjectFileUseCaseContract {}
 
@@ -245,7 +245,7 @@ void main() {
   group('SubjectSyllabusBloc', () {
     late _GetNotes getNotes;
     late _GetFiles getFiles;
-    late _GetAvailability getAvailability;
+    late _GetSubjectAvailability getAvailability;
     late _Upload upload;
     late _DeleteFile deleteFile;
     late _DeleteNote deleteNote;
@@ -260,7 +260,7 @@ void main() {
     setUp(() {
       getNotes = _GetNotes();
       getFiles = _GetFiles();
-      getAvailability = _GetAvailability();
+      getAvailability = _GetSubjectAvailability();
       upload = _Upload();
       deleteFile = _DeleteFile();
       deleteNote = _DeleteNote();
@@ -270,19 +270,21 @@ void main() {
         () => getNotes(subjectId: 's1'),
       ).thenAnswer((_) async => const Success([note]));
       when(() => getFiles('s1')).thenAnswer((_) async => const Success([file]));
-      when(
-        () => getAvailability(StudySourceType.note, 'n1'),
-      ).thenAnswer((_) async => const Success(available));
-      when(
-        () => getAvailability(StudySourceType.file, 'f1'),
-      ).thenAnswer((_) async => const Success(DocumentAvailability.none));
+      // Una sola petición para toda la asignatura (ADR 0064); lo que no tiene
+      // documentos no se guarda.
+      when(() => getAvailability('s1')).thenAnswer(
+        (_) async => const Success({
+          'n1': available,
+          'f1': DocumentAvailability.none,
+        }),
+      );
     });
 
     SubjectSyllabusBloc build() => SubjectSyllabusBloc(
       watchChanges: changes.useCase,
       getNotes: getNotes,
       getFiles: getFiles,
-      getAvailability: getAvailability,
+      getSubjectAvailability: getAvailability,
       uploadFile: upload,
       deleteFile: deleteFile,
       deleteNote: deleteNote,
@@ -290,7 +292,8 @@ void main() {
     );
 
     blocTest<SubjectSyllabusBloc, SubjectSyllabusState>(
-      'carga apuntes y archivos y luego los documentos de IA guardados',
+      'carga apuntes, archivos y sus documentos de IA a la vez, en tres '
+      'peticiones (no una por elemento)',
       build: build,
       act: (bloc) => bloc.add(const SubjectSyllabusEvent.started('s1')),
       skip: 1,
@@ -300,13 +303,29 @@ void main() {
           loading: false,
           notes: [note],
           files: [file],
+          availability: {'n1': available},
         ),
+      ],
+      verify: (bloc) {
+        verify(() => getAvailability('s1')).called(1);
+        expect(bloc.state.materials.map((m) => m.id), containsAll(['n1', 'f1']));
+      },
+    );
+
+    blocTest<SubjectSyllabusBloc, SubjectSyllabusState>(
+      'si fallan los documentos de IA, la lista sale igual (sin iconos)',
+      setUp: () => when(
+        () => getAvailability('s1'),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
+      build: build,
+      act: (bloc) => bloc.add(const SubjectSyllabusEvent.started('s1')),
+      skip: 1,
+      expect: () => const [
         SubjectSyllabusState(
           subjectId: 's1',
           loading: false,
           notes: [note],
           files: [file],
-          availability: {'n1': available},
         ),
       ],
     );
@@ -321,9 +340,6 @@ void main() {
         when(
           () => getNotes(subjectId: 's1'),
         ).thenAnswer((_) async => const Success([note, note2]));
-        when(
-          () => getAvailability(StudySourceType.note, 'n2'),
-        ).thenAnswer((_) async => const Success(DocumentAvailability.none));
         changes.emit({DataTopic.academic});
         await pump();
         await pump();

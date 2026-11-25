@@ -9,11 +9,15 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/study_source_type.dart';
 import '../../../../../domain/models/academic/subject_file.dart';
+import '../../../../../domain/models/academic/subject_material.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../auth/session/bloc/session_bloc.dart';
 import '../../academic_routes.dart';
+import '../../material_share/bloc/material_share_bloc.dart';
+import '../../material_share/page/material_share_sheet.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
 import '../../widgets/ai_assistant_sheet.dart';
@@ -27,11 +31,18 @@ class FileViewerPage extends StatelessWidget {
   final String fileId;
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    // En web pdfx necesita pdf.js en index.html: el PDF se abre en otra pestaña.
-    create: (_) =>
-        getIt<FileViewerBloc>()..add(FileViewerEvent.started(fileId)),
-    child: const _FileViewerView(),
+  Widget build(BuildContext context) => MultiBlocProvider(
+    providers: [
+      // En web pdfx necesita pdf.js en index.html: el PDF se abre en otra
+      // pestaña.
+      BlocProvider(
+        create: (_) =>
+            getIt<FileViewerBloc>()..add(FileViewerEvent.started(fileId)),
+      ),
+      // «Compartir» y «Descargar» (ADR 0064), con la hoja de la lista.
+      BlocProvider(create: (_) => getIt<MaterialShareBloc>()),
+    ],
+    child: const MaterialShareFeedback(child: _FileViewerView()),
   );
 }
 
@@ -133,11 +144,20 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
                   ),
                 ),
               IconButton(
+                tooltip: l10n.academicMaterialShare,
+                icon: const Icon(AppIcons.share),
+                onPressed: () => showMaterialShareSheet(
+                  context,
+                  FileMaterial(file),
+                  profilePrivacy: context.read<SessionBloc>().account?.privacy,
+                ),
+              ),
+              IconButton(
                 tooltip: l10n.academicFileOpenExternal,
                 icon: const Icon(AppIcons.openExternal),
                 onPressed: () => _openExternal(context, content.url.url),
               ),
-              // Una sola acción: a la vista, sin menú de tres puntos.
+              // Borrar, aparte y en rojo.
               IconButton(
                 tooltip: l10n.academicFileDeleteAction,
                 icon: Icon(AppIcons.delete, color: context.colors.error),

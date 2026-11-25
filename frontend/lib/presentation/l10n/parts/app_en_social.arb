@@ -381,5 +381,9 @@
   "togetherStudyChangeTimes": "Change times",
   "togetherStudyTimesChanged": "Now: {focus} min of focus and {rest} min of break",
   "togetherStudyTimesTooLate": "The room has already started: the times can't be changed now.",
-  "togetherStudyLengthOptionSpoken": "{focus} minutes of study and {rest} minutes of break"
+  "togetherStudyLengthOptionSpoken": "{focus} minutes of study and {rest} minutes of break",
+  "socialPostTypeNote": "Note",
+  "socialNotifNoteReceivedTitle": "Someone sent you a note",
+  "socialNotifNoteReceivedBody": "{name} sent you “{title}”",
+  "socialNotifActionNote": "View note"
 }

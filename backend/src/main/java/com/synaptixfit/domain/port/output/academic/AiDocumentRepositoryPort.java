@@ -30,6 +30,22 @@ public interface AiDocumentRepositoryPort {
 
     Set<AiDocumentType> typesFor(UUID userId, AiDocumentSource source, String sourceId);
 
+    /**
+     * Los tipos guardados de varias fuentes a la vez (la lista «Material», ADR 0064), por id de fuente; solo salen
+     * las que tienen alguno. La versión por defecto pregunta una a una; el adaptador lo hace con una consulta.
+     */
+    default Map<String, Set<AiDocumentType>> typesForAll(UUID userId, AiDocumentSource source,
+                                                         Collection<String> sourceIds) {
+        Map<String, Set<AiDocumentType>> found = new HashMap<>();
+        for (String id : sourceIds) {
+            Set<AiDocumentType> types = typesFor(userId, source, id);
+            if (!types.isEmpty()) {
+                found.put(id, types);
+            }
+        }
+        return found;
+    }
+
     AiDocument save(AiDocument document);
 
     void delete(UUID id);

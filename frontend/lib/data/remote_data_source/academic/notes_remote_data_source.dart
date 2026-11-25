@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
 import 'dto/note_dtos.dart';
+import 'dto/note_sharing_dtos.dart';
 
 /// Endpoints de apuntes (`/api/v1/notes`).
 class NotesRemoteDataSource {
@@ -75,6 +76,39 @@ class NotesRemoteDataSource {
   Future<SharedNoteDto> getSharedNote(String id) async {
     final response = await _dio.get<Map<String, dynamic>>('$_base/shared/$id');
     return SharedNoteDto.fromJson(response.data!);
+  }
+
+  /// «Compartir › Con un amigo» (ADR 0064).
+  Future<SentNoteDto> sendToFriend(String id, String friendId) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/$id/recipients',
+      data: {'friendId': friendId},
+    );
+    return SentNoteDto.fromJson(response.data!);
+  }
+
+  /// «Compartir › En el muro» (ADR 0064).
+  Future<WallShareDto> shareOnWall(String id) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/$id/wall',
+      data: const <String, dynamic>{},
+    );
+    return WallShareDto.fromJson(response.data!);
+  }
+
+  /// El apunte en PDF: los bytes y el nombre que propone el servidor.
+  Future<({String fileName, List<int> bytes})> getPdf(String id) async {
+    final response = await _dio.get<List<int>>(
+      '$_base/$id/pdf',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return (
+      fileName: fileNameFromDisposition(
+        response.headers.value('content-disposition'),
+        'apunte.pdf',
+      ),
+      bytes: response.data ?? const <int>[],
+    );
   }
 
   /// Copia privada en mis apuntes (`POST /notes/shared/{id}/copy`).

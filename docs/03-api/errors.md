@@ -225,6 +225,9 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `SUBJECT_CATALOG_NOT_FOUND` | 404 | La asignatura del catálogo no existe | Esa asignatura del plan de estudios no existe. | Activo |
 | `SUBJECT_SEMESTER_NOT_FOUND` | 404 | La asignatura no tiene semestre asignado | Esta asignatura no tiene curso ni semestre asignados. | Activo |
 | `NOTE_NOT_FOUND` | 404 | El apunte no existe, no es tuyo o (en `/notes/shared/{id}` y su copia) ya no puedes verlo | No encontramos ese apunte. | Activo |
+| `NOTE_RECIPIENT_NOT_FRIEND` | 422 | «Compartir › Con un amigo» (`POST /notes/{id}/recipients`) a alguien que no es amigo mutuo (amistad aceptada, sin bloqueo, cuenta activa) o a uno mismo (ADR 0064) | Solo puedes pasar apuntes a tus amigos. | Activo |
+| `NOTE_WALL_PROFILE_PRIVATE` | 422 | «Compartir › En el muro» (`POST /notes/{id}/wall`) con el perfil privado: nadie más vería la publicación ni el apunte (ADR 0064) | Tu perfil es privado: nadie más vería la publicación. Cambia la privacidad para publicarlo. | Activo |
+| `NOTE_PDF_UNAVAILABLE` | 503 | No se ha podido generar el PDF de un apunte (`GET /notes/{id}/pdf`; fallo de PDFBox) (ADR 0064) | No hemos podido crear el PDF. Inténtalo en un rato. | Activo |
 | `FILE_NOT_FOUND` | 404 | El archivo no existe o no es tuyo | No encontramos ese archivo. | Activo |
 | `FILE_TYPE_NOT_ALLOWED` | 400 | Tipo MIME no permitido | Ese tipo de archivo no está permitido. | Activo |
 | `FILE_TOO_LARGE` | 400 | Supera el máximo (25 MB en archivos de asignatura, 15 MB en el plan docente) | El archivo es demasiado grande. Prueba con uno más pequeño. | Activo |

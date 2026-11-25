@@ -8,6 +8,7 @@ import com.synaptixfit.application.port.input.social.GetFeedUseCase;
 import com.synaptixfit.application.port.input.social.GetPostUseCase;
 import com.synaptixfit.application.port.input.social.LikePostUseCase;
 import com.synaptixfit.application.port.input.social.PublishAchievementPostUseCase;
+import com.synaptixfit.application.port.input.social.RetractNotePostUseCase;
 import com.synaptixfit.application.port.input.social.ReportPostUseCase;
 import com.synaptixfit.application.port.input.social.UnlikePostUseCase;
 import com.synaptixfit.domain.exception.social.PostAlreadySharedException;
@@ -19,6 +20,7 @@ import com.synaptixfit.domain.model.social.FeedPeriod;
 import com.synaptixfit.domain.model.social.FeedQuery;
 import com.synaptixfit.domain.model.social.LikeStatus;
 import com.synaptixfit.domain.model.social.Post;
+import com.synaptixfit.domain.model.social.PostType;
 import com.synaptixfit.domain.model.social.PostView;
 import com.synaptixfit.domain.port.output.social.FriendshipRepositoryPort;
 import com.synaptixfit.domain.port.output.social.PostLikeRepositoryPort;
@@ -32,7 +34,8 @@ import java.util.UUID;
 
 /** Muro social: publicaciones (también las automáticas de logros, sin duplicados) y «me gusta». */
 public class PostService implements GetFeedUseCase, GetPostUseCase, CreatePostUseCase, EditPostUseCase,
-        DeletePostUseCase, ReportPostUseCase, LikePostUseCase, UnlikePostUseCase, PublishAchievementPostUseCase {
+        DeletePostUseCase, ReportPostUseCase, LikePostUseCase, UnlikePostUseCase, PublishAchievementPostUseCase,
+        RetractNotePostUseCase {
 
     private final PostRepositoryPort posts;
     private final PostLikeRepositoryPort likes;
@@ -88,9 +91,15 @@ public class PostService implements GetFeedUseCase, GetPostUseCase, CreatePostUs
         if (posts.existsByAuthorTypeAndMetadata(command.userId(), command.type(), command.metadata())) {
             return false;
         }
-        posts.save(Post.publish(command.userId(), command.type(), command.description(), null, command.metadata(),
-                clock.instant()));
-        return true;
+        // La base de datos tiene la última palabra (índice único de las de un apunte): si otra petición la acaba de
+        // guardar, cuenta como «ya publicada».
+        return posts.saveIfAbsent(Post.publish(command.userId(), command.type(), command.description(), null,
+                command.metadata(), clock.instant()));
+    }
+
+    @Override
+    public void retractNotePost(UUID userId, UUID noteId) {
+        posts.deleteByAuthorTypeAndMetadata(userId, PostType.NOTE, Post.noteMetadata(noteId));
     }
 
     @Override

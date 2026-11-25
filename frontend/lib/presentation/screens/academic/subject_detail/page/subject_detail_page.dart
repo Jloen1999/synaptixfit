@@ -11,6 +11,8 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../shell/widgets/first_time_guide.dart';
 import '../../academic_routes.dart';
+import '../../material_share/bloc/material_share_bloc.dart';
+import '../../material_share/page/material_share_sheet.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
 import '../bloc/subject_detail_bloc.dart';
@@ -22,13 +24,14 @@ import 'summary_tab.dart';
 import 'syllabus_tab.dart';
 import 'topics_tab.dart';
 
-/// Pestañas del detalle de asignatura, en orden (ADR 0057); `?tab=<nombre>`
-/// abre una (`?tab=notes`, el «Ver» de mover un apunte).
+/// Pestañas del detalle de asignatura, en orden (ADR 0057 y 0064: Apuntes
+/// antes que Evaluación); `?tab=<nombre>` abre una (`?tab=notes`, el «Ver» de
+/// mover un apunte). Los nombres no cambian: los enlaces viejos siguen valiendo.
 enum SubjectDetailTab {
   summary,
   topics,
-  evaluation,
   notes,
+  evaluation,
   guide;
 
   /// La de `?tab=`; un valor desconocido (p. ej. `progress` de un enlace
@@ -37,8 +40,10 @@ enum SubjectDetailTab {
       values.asNameMap()[value] ?? summary;
 }
 
-/// Detalle de asignatura en cinco pestañas: Resumen, Temario, Evaluación,
-/// Apuntes y Guía (ADR 0057). [initialTab] la elige quien enlaza.
+/// Detalle de asignatura en cinco pestañas: Resumen, Temario, Apuntes,
+/// Evaluación y Guía (ADR 0057 y 0064). [initialTab] la elige quien enlaza.
+/// «Compartir» y «Descargar» de la lista «Material» usan un
+/// [MaterialShareBloc] de la página, que pinta sus avisos.
 class SubjectDetailPage extends StatelessWidget {
   const SubjectDetailPage({
     super.key,
@@ -67,8 +72,11 @@ class SubjectDetailPage extends StatelessWidget {
             getIt<SubjectSyllabusBloc>()
               ..add(SubjectSyllabusEvent.started(subjectId)),
       ),
+      BlocProvider(create: (_) => getIt<MaterialShareBloc>()),
     ],
-    child: _SubjectDetailView(initialTab: initialTab),
+    child: MaterialShareFeedback(
+      child: _SubjectDetailView(initialTab: initialTab),
+    ),
   );
 }
 
@@ -232,33 +240,11 @@ class _SubjectDetailViewState extends State<_SubjectDetailView>
                       onDelete: () => _delete(context, subject),
                     ),
                   ],
-                  bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(
-                      TokensLayout.minTouchTarget,
-                    ),
-                    child: AcademicBody(
-                      child: TabBar(
-                        key: _tabsKey,
-                        // Cinco pestañas: con el texto grande o en un móvil
-                        // estrecho se desplazan en vez de cortarse.
-                        isScrollable: true,
-                        tabAlignment: TabAlignment.start,
-                        indicatorColor: color,
-                        labelColor: color,
-                        dividerColor: context.colors.outlineVariant,
-                        tabs: [
-                          Tab(text: l10n.academicTabSummary),
-                          Tab(text: l10n.academicTabTopics),
-                          Tab(text: l10n.academicTabEvaluation),
-                          Tab(text: l10n.academicTabNotes),
-                          Tab(text: l10n.academicTabGuide),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
-                // La cabecera se desplaza con el contenido: con el texto al 200 %
-                // (o en horizontal) no deja las pestañas sin sitio.
+                // La cabecera y las pestañas, en este orden, se desplazan con
+                // el contenido (como en la maqueta): el lector oye el nombre
+                // antes que las pestañas, y con el texto al 200 % (o en
+                // horizontal) no se comen la pantalla.
                 body: NestedScrollView(
                   headerSliverBuilder: (context, _) => [
                     if (state.busy)
@@ -270,6 +256,27 @@ class _SubjectDetailViewState extends State<_SubjectDetailView>
                         child: _SubjectHeader(subject: subject),
                       ),
                     ),
+                    SliverToBoxAdapter(
+                      child: AcademicBody(
+                        child: TabBar(
+                          key: _tabsKey,
+                          // Cinco pestañas: con el texto grande o en un móvil
+                          // estrecho se desplazan en vez de cortarse.
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.start,
+                          indicatorColor: color,
+                          labelColor: color,
+                          dividerColor: context.colors.outlineVariant,
+                          tabs: [
+                            Tab(text: l10n.academicTabSummary),
+                            Tab(text: l10n.academicTabTopics),
+                            Tab(text: l10n.academicTabNotes),
+                            Tab(text: l10n.academicTabEvaluation),
+                            Tab(text: l10n.academicTabGuide),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                   body: TabBarView(
                     children: [
@@ -278,8 +285,8 @@ class _SubjectDetailViewState extends State<_SubjectDetailView>
                         practiceKey: _practiceKey,
                       ),
                       const TopicsTab(),
-                      const EvaluationTab(),
                       const SyllabusTab(),
+                      const EvaluationTab(),
                       const GuideTab(),
                     ],
                   ),
@@ -293,9 +300,10 @@ class _SubjectDetailViewState extends State<_SubjectDetailView>
   }
 }
 
-/// El nombre entero (en varias líneas si hace falta), «6 ECTS · 2.º curso ·
-/// 1.er cuatri», los días de clase y, si lo está, «Archivada». Las acciones van
-/// en el Resumen.
+/// Cabecera de la maqueta (ADR 0064): una franja con el color de la
+/// asignatura, el nombre entero (en varias líneas si hace falta) y una sola
+/// línea de datos, «6 ECTS · 2.º curso · 1.er cuatri» ([subjectMetaText]). El
+/// color acompaña al nombre, nunca lo sustituye. «Archivada» va en su píldora.
 class _SubjectHeader extends StatelessWidget {
   const _SubjectHeader({required this.subject});
 
@@ -304,10 +312,7 @@ class _SubjectHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final meta = [
-      subjectMetaText(context, subject),
-      ?classDaysText(context, subject.classDays),
-    ].where((t) => t.isNotEmpty).join(' · ');
+    final meta = subjectMetaText(context, subject);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         TokensSpacing.m,
@@ -315,40 +320,53 @@ class _SubjectHeader extends StatelessWidget {
         TokensSpacing.m,
         TokensSpacing.xs,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(
-              subject.name,
-              style: context.textStyles.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ExcludeSemantics(
+              child: Container(
+                width: TokensSize.blockStripe,
+                decoration: BoxDecoration(
+                  color: subjectColor(context, subject.id),
+                  borderRadius: BorderRadius.circular(TokensRadius.pill),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: TokensSpacing.xxs),
-          Wrap(
-            spacing: TokensSpacing.s,
-            runSpacing: TokensSpacing.xs,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (subject.archived)
-                AppPill(
-                  label: l10n.academicSubjectArchivedBadge,
-                  color: context.colors.onSurfaceVariant,
-                  icon: AppIcons.archive,
-                ),
-              if (meta.isNotEmpty)
-                Text(
-                  meta,
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
+            const SizedBox(width: TokensSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      subject.name,
+                      style: context.textStyles.headlineSmall,
+                    ),
                   ),
-                ),
-            ],
-          ),
-        ],
+                  if (meta.isNotEmpty) ...[
+                    const SizedBox(height: TokensSpacing.xxs),
+                    Text(
+                      meta,
+                      style: context.textStyles.bodyMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  if (subject.archived) ...[
+                    const SizedBox(height: TokensSpacing.xs),
+                    AppPill(
+                      label: l10n.academicSubjectArchivedBadge,
+                      color: context.colors.onSurfaceVariant,
+                      icon: AppIcons.archive,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -401,6 +419,8 @@ class _SubjectMenu extends StatelessWidget {
             ),
           ),
         ),
+        // Eliminar, aparte y en rojo.
+        const PopupMenuDivider(),
         PopupMenuItem(
           value: onDelete,
           child: ListTile(

@@ -25,6 +25,7 @@ public final class SocialPersistenceMapper {
             case BADGE_UNLOCKED -> "badge_unlocked";
             case ROUTINE -> "rutina";
             case CHALLENGE -> "reto";
+            case NOTE -> "apunte";
         };
     }
 
@@ -35,6 +36,7 @@ public final class SocialPersistenceMapper {
             case "badge_unlocked" -> PostType.BADGE_UNLOCKED;
             case "rutina" -> PostType.ROUTINE;
             case "reto" -> PostType.CHALLENGE;
+            case "apunte" -> PostType.NOTE;
             default -> PostType.MILESTONE_REACHED;
         };
     }

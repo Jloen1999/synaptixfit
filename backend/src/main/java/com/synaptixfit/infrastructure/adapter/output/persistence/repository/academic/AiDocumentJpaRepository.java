@@ -20,6 +20,11 @@ public interface AiDocumentJpaRepository extends JpaRepository<AiDocumentEntity,
 
     List<AiDocumentEntity> findByUserIdAndSourceTypeAndSourceId(UUID userId, String sourceType, String sourceId);
 
+    /** Pares (fuente, tipo) de varias fuentes del usuario, sin leer el contenido. */
+    @Query("select d.sourceId, d.type from AiDocumentEntity d where d.userId = :userId "
+            + "and d.sourceType = :sourceType and d.sourceId in :sourceIds")
+    List<Object[]> findTypesBySources(UUID userId, String sourceType, Collection<String> sourceIds);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from AiDocumentEntity d where d.userId = :userId and d.sourceType = :sourceType "
             + "and d.sourceId = :sourceId")

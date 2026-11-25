@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
 import 'dto/note_dtos.dart';
+import 'dto/note_sharing_dtos.dart';
 import 'dto/study_dtos.dart';
 
 /// Endpoints del asistente de estudio con IA (`/api/v1/study`).
@@ -45,6 +46,19 @@ class StudyRemoteDataSource {
       _docPath(sourceType, sourceId),
     );
     return DocumentAvailabilityDto.fromJson(response.data!);
+  }
+
+  /// Documentos de todo el material de una asignatura (ADR 0064).
+  Future<List<SourceDocumentsDto>> getSubjectAvailability(
+    String subjectId,
+  ) async {
+    final response = await _dio.get<List<dynamic>>(
+      '$_base/subjects/$subjectId/documents',
+    );
+    return [
+      for (final item in response.data ?? const <dynamic>[])
+        SourceDocumentsDto.fromJson(item as Map<String, dynamic>),
+    ];
   }
 
   Future<ArtifactDto> generateArtifact(Map<String, dynamic> body) async {

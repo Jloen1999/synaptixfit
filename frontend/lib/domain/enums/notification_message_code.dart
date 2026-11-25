@@ -15,7 +15,10 @@ enum NotificationMessageCode {
   friendStreakInvited('FRIEND_STREAK_INVITED'),
   workoutTogetherInvited('WORKOUT_TOGETHER_INVITED'),
   studyRoomInvited('STUDY_ROOM_INVITED'),
-  friendStreakNudge('FRIEND_STREAK_NUDGE');
+  friendStreakNudge('FRIEND_STREAK_NUDGE'),
+
+  /// «Compartir › Con un amigo» (ADR 0064).
+  noteReceived('NOTE_RECEIVED');
 
   const NotificationMessageCode(this.apiValue);
 

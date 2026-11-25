@@ -381,5 +381,9 @@
   "togetherStudyChangeTimes": "Modifier les durées",
   "togetherStudyTimesChanged": "Maintenant : {focus} min de concentration et {rest} min de pause",
   "togetherStudyTimesTooLate": "La salle a déjà commencé : les durées ne peuvent plus être modifiées.",
-  "togetherStudyLengthOptionSpoken": "{focus} minutes d'étude et {rest} de pause"
+  "togetherStudyLengthOptionSpoken": "{focus} minutes d'étude et {rest} de pause",
+  "socialPostTypeNote": "Note",
+  "socialNotifNoteReceivedTitle": "On t’a envoyé une note",
+  "socialNotifNoteReceivedBody": "{name} t’a envoyé « {title} »",
+  "socialNotifActionNote": "Voir la note"
 }

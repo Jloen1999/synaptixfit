@@ -9,10 +9,11 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/note.dart';
 import '../../../../../domain/models/academic/study_document.dart';
 import '../../../../../domain/models/academic/subject_file.dart';
+import '../../../../../domain/models/academic/subject_material.dart';
 import '../../../../../domain/use_cases/academic/delete_note_use_case.dart';
 import '../../../../../domain/use_cases/academic/delete_subject_file_use_case.dart';
-import '../../../../../domain/use_cases/academic/get_document_availability_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_notes_use_case.dart';
+import '../../../../../domain/use_cases/academic/get_subject_document_availability_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_subject_files_use_case.dart';
 import '../../../../../domain/use_cases/academic/register_study_material_use_case.dart';
 import '../../../../../domain/use_cases/academic/upload_subject_file_use_case.dart';
@@ -21,9 +22,11 @@ part 'subject_syllabus_bloc.freezed.dart';
 part 'subject_syllabus_event.dart';
 part 'subject_syllabus_state.dart';
 
-/// Pestaña Temario: apuntes y archivos de la asignatura con sus documentos de
-/// IA guardados, subida de archivos y acceso al repaso o la práctica. Se
-/// refresca sola cuando otra pantalla crea o cambia un apunte (ADR 0010).
+/// Pestaña Apuntes: la lista «Material» (apuntes y archivos juntos, ADR 0064)
+/// con sus documentos de IA guardados, subida de archivos y acceso al repaso o
+/// la práctica. Apuntes, archivos y documentos llegan en tres peticiones a la
+/// vez (antes, una más por elemento). Se refresca sola cuando otra pantalla
+/// crea o cambia un apunte (ADR 0010).
 class SubjectSyllabusBloc
     extends Bloc<SubjectSyllabusEvent, SubjectSyllabusState>
     with DataChangeRefreshMixin<SubjectSyllabusEvent, SubjectSyllabusState> {
@@ -31,7 +34,7 @@ class SubjectSyllabusBloc
     required this._watchChanges,
     required this._getNotes,
     required this._getFiles,
-    required this._getAvailability,
+    required this._getSubjectAvailability,
     required this._uploadFile,
     required this._deleteFile,
     required this._deleteNote,
@@ -56,7 +59,7 @@ class SubjectSyllabusBloc
   final WatchDataChangesUseCaseContract _watchChanges;
   final GetNotesUseCaseContract _getNotes;
   final GetSubjectFilesUseCaseContract _getFiles;
-  final GetDocumentAvailabilityUseCaseContract _getAvailability;
+  final GetSubjectDocumentAvailabilityUseCaseContract _getSubjectAvailability;
   final UploadSubjectFileUseCaseContract _uploadFile;
   final DeleteSubjectFileUseCaseContract _deleteFile;
   final DeleteNoteUseCaseContract _deleteNote;
@@ -67,49 +70,30 @@ class SubjectSyllabusBloc
     required bool silent,
   }) async {
     if (!silent) emit(state.copyWith(loading: true, error: null));
-    final (notes, files) = await (
+    final (notes, files, availability) = await (
       _getNotes(subjectId: state.subjectId),
       _getFiles(state.subjectId),
+      _getSubjectAvailability(state.subjectId),
     ).wait;
     final error = notes.errorOrNull ?? files.errorOrNull;
     if (error != null) {
       emit(state.copyWith(loading: false, error: error));
       return;
     }
-    final noteList = notes.valueOrNull!;
-    final fileList = files.valueOrNull!;
+    // Los documentos solo pintan iconos: si fallan, la lista sale igual.
     emit(
       state.copyWith(
         loading: false,
         error: null,
-        notes: noteList,
-        files: fileList,
+        notes: notes.valueOrNull!,
+        files: files.valueOrNull!,
+        availability: {
+          for (final MapEntry(:key, :value)
+              in (availability.valueOrNull ?? const {}).entries)
+            if (value.any) key: value,
+        },
       ),
     );
-    emit(
-      state.copyWith(availability: await _availabilityFor(noteList, fileList)),
-    );
-  }
-
-  /// Documentos de IA guardados de cada fuente (en paralelo; los fallos se
-  /// ignoran porque solo sirven para mostrar iconos).
-  Future<Map<String, DocumentAvailability>> _availabilityFor(
-    List<Note> notes,
-    List<SubjectFile> files,
-  ) async {
-    final sources = [
-      for (final n in notes) (StudySourceType.note, n.id),
-      for (final f in files.where((f) => f.aiReadable))
-        (StudySourceType.file, f.id),
-    ];
-    final results = await Future.wait(
-      sources.map((s) => _getAvailability(s.$1, s.$2)),
-    );
-    return {
-      for (var i = 0; i < sources.length; i++)
-        if (results[i].valueOrNull case final DocumentAvailability a when a.any)
-          sources[i].$2: a,
-    };
   }
 
   Future<void> _onUpload(

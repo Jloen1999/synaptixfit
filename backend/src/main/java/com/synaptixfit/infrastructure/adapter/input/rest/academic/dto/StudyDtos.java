@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.academic.dto;
 
+import com.synaptixfit.application.port.input.academic.GetSubjectDocumentAvailabilityUseCase;
 import com.synaptixfit.domain.model.academic.AiDocument;
 import com.synaptixfit.domain.model.academic.AiDocumentType;
 import com.synaptixfit.domain.model.academic.ArtifactKind;
@@ -88,6 +89,17 @@ public final class StudyDtos {
         public static DocumentAvailabilityResponse from(Set<AiDocumentType> types) {
             return new DocumentAvailabilityResponse(types.contains(AiDocumentType.SUMMARY),
                     types.contains(AiDocumentType.MIND_MAP), types.contains(AiDocumentType.PRACTICE), types);
+        }
+    }
+
+    /** Documentos guardados de un apunte o archivo de la asignatura (la lista «Material», ADR 0064). */
+    public record SourceDocumentsResponse(StudySourceType sourceType, UUID sourceId, boolean summary,
+                                          boolean mindMap, boolean practice) {
+
+        public static SourceDocumentsResponse from(GetSubjectDocumentAvailabilityUseCase.SourceDocuments d) {
+            return new SourceDocumentsResponse(d.sourceType(), d.sourceId(),
+                    d.types().contains(AiDocumentType.SUMMARY), d.types().contains(AiDocumentType.MIND_MAP),
+                    d.types().contains(AiDocumentType.PRACTICE));
         }
     }
 

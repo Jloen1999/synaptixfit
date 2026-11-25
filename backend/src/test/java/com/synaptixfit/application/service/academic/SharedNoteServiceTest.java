@@ -12,6 +12,7 @@ import com.synaptixfit.domain.model.academic.SharedNoteSummary;
 import com.synaptixfit.domain.model.academic.Subject;
 import com.synaptixfit.domain.model.shared.AuthorAudience;
 import com.synaptixfit.domain.model.shared.Visibility;
+import com.synaptixfit.domain.port.output.academic.NoteRecipientRepositoryPort;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -19,9 +20,16 @@ import org.junit.jupiter.api.Test;
 class SharedNoteServiceTest {
 
     private final AcademicFakes f = new AcademicFakes();
-    private final SharedNoteService shared = new SharedNoteService(f.notes, f.subjects, AcademicFakes.CLOCK);
-    private final NoteService notes = new NoteService(f.notes, f.subjects, f.materials, f.aiDocuments, f.users,
+    private final java.util.Set<String> grants = new java.util.HashSet<>();
+    private final NoteRecipientRepositoryPort recipients = new NoteRecipientRepositoryPort() {
+        public void add(UUID noteId, UUID recipientId, java.time.Instant at) { grants.add(noteId + ":" + recipientId); }
+        public boolean isRecipient(UUID noteId, UUID userId) { return grants.contains(noteId + ":" + userId); }
+        public void deleteBetween(UUID userId, UUID otherUserId) { grants.clear(); }
+    };
+    private final SharedNoteService shared = new SharedNoteService(f.notes, recipients, f.subjects,
             AcademicFakes.CLOCK);
+    private final NoteService notes = new NoteService(f.notes, f.subjects, f.materials, f.aiDocuments, f.users,
+            f.events::add, AcademicFakes.CLOCK);
     private final UUID author = UUID.randomUUID();
     private final UUID reader = UUID.randomUUID();
 
@@ -51,6 +59,22 @@ class SharedNoteServiceTest {
         assertThatThrownBy(() -> shared.getSharedNote(reader, note.id())).isInstanceOf(NoteNotFoundException.class);
 
         assertThat(shared.getSharedNote(author, note.id()).note().id()).isEqualTo(note.id());
+    }
+
+    @Test
+    void aFriendWhoReceivedAPrivateNoteReadsItWhileTheyStayFriends() {
+        Note note = f.notes.save(Note.create(author, null, "Privado", "x", Visibility.PRIVATE, false,
+                AcademicFakes.NOW));
+        f.audiences.put(author, new AuthorAudience(true, false, Visibility.PRIVATE, true, false));
+        assertThatThrownBy(() -> shared.getSharedNote(reader, note.id())).isInstanceOf(NoteNotFoundException.class);
+
+        recipients.add(note.id(), reader, AcademicFakes.NOW);
+        assertThat(shared.getSharedNote(reader, note.id()).note().id()).isEqualTo(note.id());
+
+        f.audiences.put(author, new AuthorAudience(true, false, Visibility.PRIVATE, false, false));
+        assertThatThrownBy(() -> shared.getSharedNote(reader, note.id())).isInstanceOf(NoteNotFoundException.class);
+        f.audiences.put(author, new AuthorAudience(true, false, Visibility.PRIVATE, true, true));
+        assertThatThrownBy(() -> shared.getSharedNote(reader, note.id())).isInstanceOf(NoteNotFoundException.class);
     }
 
     @Test

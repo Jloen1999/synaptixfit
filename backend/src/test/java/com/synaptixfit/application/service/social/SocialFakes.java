@@ -93,6 +93,10 @@ final class SocialFakes {
                 return posts.values().stream().anyMatch(p -> p.authorId().equals(userId) && p.type() == type
                         && java.util.Objects.equals(p.metadata(), metadata));
             }
+            public void deleteByAuthorTypeAndMetadata(UUID userId, PostType type, String metadata) {
+                posts.values().removeIf(p -> p.authorId().equals(userId) && p.type() == type
+                        && java.util.Objects.equals(p.metadata(), metadata));
+            }
             public void delete(UUID id) { posts.remove(id); }
         };
     }

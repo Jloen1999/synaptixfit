@@ -68,9 +68,13 @@ PostLink? parsePostLink(Object? metadata) {
     'routine' || 'rutina' => PostLinkKind.routine,
     'challenge' || 'reto' => PostLinkKind.challenge,
     'badge' || 'insignia' => PostLinkKind.badge,
+    'note' || 'apunte' => PostLinkKind.note,
     _ => null,
   };
-  final name = read(['entityName', 'entity_name', 'entidad_nombre']);
+  // El apunte (ADR 0064) no lleva nombre: así no se duplica al renombrarlo.
+  final name =
+      read(['entityName', 'entity_name', 'entidad_nombre']) ??
+      (kind == PostLinkKind.note ? '' : null);
   if (kind == null || name == null) return null;
   return PostLink(
     kind: kind,

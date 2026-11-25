@@ -78,7 +78,8 @@ void main() {
   }
 
   group('pestañas por enlace', () {
-    test('?tab= abre la suya; uno desconocido, el Resumen', () {
+    test('?tab= abre la suya; uno desconocido, el Resumen; Apuntes va antes '
+        'que Evaluación (ADR 0064)', () {
       expect(SubjectDetailTab.fromQuery('notes'), SubjectDetailTab.notes);
       expect(SubjectDetailTab.fromQuery('guide'), SubjectDetailTab.guide);
       expect(SubjectDetailTab.fromQuery('progress'), SubjectDetailTab.summary);
@@ -86,8 +87,8 @@ void main() {
       expect(SubjectDetailTab.values.map((t) => t.name), [
         'summary',
         'topics',
-        'evaluation',
         'notes',
+        'evaluation',
         'guide',
       ]);
     });

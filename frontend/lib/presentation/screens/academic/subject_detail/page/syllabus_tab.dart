@@ -3,29 +3,31 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../domain/enums/ai_document_type.dart';
-import '../../../../../domain/enums/study_source_type.dart';
 import '../../../../../domain/errors/app_error.dart';
-import '../../../../../domain/models/academic/note.dart';
 import '../../../../../domain/models/academic/study_document.dart';
-import '../../../../../domain/models/academic/subject_file.dart';
+import '../../../../../domain/models/academic/subject_material.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../academic_routes.dart';
-import '../../widgets/academic_visuals.dart';
+import '../../material_share/bloc/material_share_bloc.dart';
+import '../../material_share/page/material_share_sheet.dart';
 import '../../widgets/academic_widgets.dart';
 import '../../widgets/ai_assistant_sheet.dart';
 import '../../widgets/file_pick.dart';
+import '../../widgets/material_tile.dart';
 import '../bloc/subject_detail_bloc.dart';
 import '../bloc/subject_progress_bloc.dart';
 import '../bloc/subject_syllabus_bloc.dart';
 
-/// Pestaña Temario: apuntes y archivos de la asignatura.
+/// Pestaña Apuntes: una sola lista «Material» con apuntes y archivos juntos
+/// (ADR 0064). Cada fila dice qué es, se abre con un toque y lleva «Acciones»
+/// (repasar, practicar, la ayuda de la IA, compartir, descargar y eliminar).
 class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
   const SyllabusTab({super.key});
 
-  /// Abre una ruta y, al volver, recarga el temario y la cabecera (recuentos).
+  /// Abre una ruta y, al volver, recarga la lista y la cabecera (recuentos).
   Future<void> _openAndRefresh(BuildContext context, String location) async {
     final syllabus = context.read<SubjectSyllabusBloc>();
     final detail = context.read<SubjectDetailBloc>();
@@ -48,6 +50,66 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
       case null:
         break;
     }
+  }
+
+  String _route(SubjectMaterial material) => switch (material) {
+    NoteMaterial(:final note) => AcademicPaths.note(note.id),
+    FileMaterial(:final file) => AcademicPaths.file(file.id),
+  };
+
+  Future<void> _actions(
+    BuildContext context,
+    SubjectMaterial material,
+    DocumentAvailability availability,
+  ) async {
+    final syllabus = context.read<SubjectSyllabusBloc>();
+    final share = context.read<MaterialShareBloc>();
+    final action = await showMaterialActionsSheet(context, material);
+    if (action == null || !context.mounted) return;
+    switch (action) {
+      case MaterialAction.open:
+        await _openAndRefresh(context, _route(material));
+      case MaterialAction.review || MaterialAction.practice:
+        syllabus.add(
+          SubjectSyllabusEvent.materialRequested(
+            sourceType: material.sourceType,
+            sourceId: material.id,
+            practice: action == MaterialAction.practice,
+          ),
+        );
+      case MaterialAction.assistant:
+        await showAiAssistantSheet(
+          context,
+          sourceType: material.sourceType,
+          sourceId: material.id,
+          title: material.title,
+          availability: availability,
+        );
+        syllabus.add(const SubjectSyllabusEvent.refreshed());
+      case MaterialAction.share:
+        await showMaterialShareSheet(context, material);
+      case MaterialAction.download:
+        share.add(MaterialShareEvent.downloadRequested(material));
+      case MaterialAction.delete:
+        await _delete(context, material);
+    }
+  }
+
+  Future<void> _delete(BuildContext context, SubjectMaterial material) async {
+    final l10n = context.localizations;
+    final bloc = context.read<SubjectSyllabusBloc>();
+    final isNote = material is NoteMaterial;
+    final ok = await confirmDestructive(
+      context,
+      title: isNote ? l10n.academicNoteDeleteTitle : l10n.academicFileDeleteTitle,
+      message: l10n.academicDeleteMessage(material.title),
+    );
+    if (!ok || bloc.isClosed) return;
+    bloc.add(
+      isNote
+          ? SubjectSyllabusEvent.noteDeleted(material.id)
+          : SubjectSyllabusEvent.fileDeleted(material.id),
+    );
   }
 
   @override
@@ -93,6 +155,7 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
             ),
           );
         }
+        final materials = state.materials;
         return RefreshIndicator(
           onRefresh: () async => context.read<SubjectSyllabusBloc>().add(
             const SubjectSyllabusEvent.refreshed(),
@@ -109,77 +172,50 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                   ),
                 ),
                 const SizedBox(height: TokensSpacing.l),
-                // Título y acciones en un Wrap: con texto grande las dos
-                // acciones bajan de línea en vez de cortarse.
+                Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.academicMaterialTitle(materials.length),
+                    style: context.textStyles.titleMedium,
+                  ),
+                ),
+                const SizedBox(height: TokensSpacing.s),
+                // Las tres formas de añadir, como botones con borde y en un
+                // Wrap: con el texto grande bajan de línea en vez de cortarse.
                 Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: TokensSpacing.s,
+                  runSpacing: TokensSpacing.s,
                   children: [
-                    Text(
-                      l10n.academicNotesTitle(state.notes.length),
-                      style: context.textStyles.titleMedium,
-                    ),
-                    TextButton.icon(
+                    AppSecondaryButton(
+                      label: l10n.academicNoteNew,
+                      icon: const Icon(AppIcons.add),
                       onPressed: () => _openAndRefresh(
                         context,
                         AcademicPaths.newNote(subjectId: state.subjectId),
                       ),
-                      icon: const Icon(AppIcons.add),
-                      label: Text(l10n.academicNoteNew),
                     ),
-                    TextButton.icon(
-                      onPressed: () => _openAndRefresh(
+                    Semantics(
+                      label: l10n.academicScanEntrySemantics,
+                      button: true,
+                      excludeSemantics: true,
+                      // Excluye al botón: el lector pulsa este nodo.
+                      onTap: () => _openAndRefresh(
                         context,
                         AcademicPaths.scanNote(subjectId: state.subjectId),
                       ),
-                      icon: const Icon(Icons.photo_camera_outlined),
-                      label: Text(
-                        l10n.academicScanEntry,
-                        semanticsLabel: l10n.academicScanEntrySemantics,
+                      child: AppSecondaryButton(
+                        label: l10n.academicScanEntry,
+                        icon: const Icon(AppIcons.camera),
+                        onPressed: () => _openAndRefresh(
+                          context,
+                          AcademicPaths.scanNote(subjectId: state.subjectId),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: TokensSpacing.s),
-                if (state.notes.isEmpty)
-                  _EmptyHint(
-                    icon: Icons.note_alt_outlined,
-                    text: l10n.academicNotesEmpty,
-                  )
-                else
-                  AppCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: [
-                        for (final note in state.notes)
-                          _NoteTile(
-                            note: note,
-                            availability:
-                                state.availability[note.id] ??
-                                DocumentAvailability.none,
-                            onOpen: () => _openAndRefresh(
-                              context,
-                              AcademicPaths.note(note.id),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: TokensSpacing.l),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.academicFilesTitle(state.files.length),
-                        style: context.textStyles.titleMedium,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: state.uploading
-                          ? null
-                          : () => _upload(context),
-                      icon: const Icon(Icons.upload_file_rounded),
-                      label: Text(l10n.academicFileUpload),
+                    AppSecondaryButton(
+                      label: l10n.academicFileUpload,
+                      icon: const Icon(AppIcons.upload),
+                      onPressed: state.uploading ? null : () => _upload(context),
                     ),
                   ],
                 ),
@@ -197,28 +233,40 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                     color: context.colors.tertiary,
                   ),
                 ],
-                const SizedBox(height: TokensSpacing.s),
-                if (state.files.isEmpty)
-                  _EmptyHint(
-                    icon: Icons.folder_open_outlined,
-                    text: l10n.academicFilesEmpty,
+                const SizedBox(height: TokensSpacing.m),
+                if (materials.isEmpty)
+                  AppEmptyState(
+                    icon: AppIcons.folderEmpty,
+                    title: l10n.academicMaterialEmptyTitle,
+                    message: l10n.academicMaterialEmptyBody,
                   )
                 else
                   AppCard(
                     padding: EdgeInsets.zero,
                     child: Column(
                       children: [
-                        for (final file in state.files)
-                          _FileTile(
-                            file: file,
+                        for (final (i, material) in materials.indexed) ...[
+                          if (i > 0) const Divider(height: 1),
+                          MaterialTile(
+                            material: material,
                             availability:
-                                state.availability[file.id] ??
+                                state.availability[material.id] ??
                                 DocumentAvailability.none,
-                            onOpen: () => _openAndRefresh(
+                            onOpen: () =>
+                                _openAndRefresh(context, _route(material)),
+                            onActions: () => _actions(
                               context,
-                              AcademicPaths.file(file.id),
+                              material,
+                              state.availability[material.id] ??
+                                  DocumentAvailability.none,
+                            ),
+                            onOpenDocument: (type) => _openDocument(
+                              context,
+                              material,
+                              type,
                             ),
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -230,6 +278,19 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
       },
     );
   }
+
+  void _openDocument(
+    BuildContext context,
+    SubjectMaterial material,
+    AiDocumentType type,
+  ) => context.push(
+    AcademicPaths.aiDocument(
+      material.sourceType,
+      material.id,
+      type,
+      material.title,
+    ),
+  );
 }
 
 class _GenerateBanner extends StatelessWidget {
@@ -242,7 +303,7 @@ class _GenerateBanner extends StatelessWidget {
     final l10n = context.localizations;
     return AppCard(
       onTap: onTap,
-      color: context.colors.tertiaryContainer.withValues(alpha: 0.5),
+      color: context.colors.tertiaryContainer,
       child: Row(
         children: [
           Icon(AppIcons.proposal, color: context.colors.tertiary),
@@ -264,319 +325,6 @@ class _GenerateBanner extends StatelessWidget {
           ),
           const Icon(AppIcons.next),
         ],
-      ),
-    );
-  }
-}
-
-class _EmptyHint extends StatelessWidget {
-  const _EmptyHint({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    child: Row(
-      children: [
-        Icon(icon, color: context.colors.onSurfaceVariant),
-        const SizedBox(width: TokensSpacing.m),
-        Expanded(
-          child: Text(
-            text,
-            style: context.textStyles.bodyMedium?.copyWith(
-              color: context.colors.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Iconos de los documentos de IA guardados; cada uno abre su documento.
-class _SavedDocIcons extends StatelessWidget {
-  const _SavedDocIcons({
-    required this.sourceType,
-    required this.sourceId,
-    required this.title,
-    required this.availability,
-  });
-
-  final StudySourceType sourceType;
-  final String sourceId;
-  final String title;
-  final DocumentAvailability availability;
-
-  @override
-  Widget build(BuildContext context) {
-    final types = [
-      for (final t in const [
-        AiDocumentType.summary,
-        AiDocumentType.mindMap,
-        AiDocumentType.practice,
-      ])
-        if (availability.has(t)) t,
-    ];
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final type in types)
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: context.aiDocumentLabel(type),
-            icon: Icon(
-              aiDocumentIcon(type),
-              color: context.colors.tertiary,
-              size: 20,
-            ),
-            onPressed: () => context.push(
-              AcademicPaths.aiDocument(sourceType, sourceId, type, title),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-enum _SourceAction { assistant, review, practice, delete }
-
-class _SourceMenu extends StatelessWidget {
-  const _SourceMenu({
-    required this.onSelected,
-    required this.aiEnabled,
-    required this.title,
-  });
-
-  final ValueChanged<_SourceAction> onSelected;
-  final bool aiEnabled;
-
-  /// Nombre del apunte o archivo: el botón dice qué borra.
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    // Sin IA solo queda «Eliminar»: a la vista, sin menú de tres puntos.
-    if (!aiEnabled) {
-      return IconButton(
-        tooltip: l10n.academicDeleteNamed(title),
-        icon: Icon(AppIcons.delete, color: context.colors.error),
-        onPressed: () => onSelected(_SourceAction.delete),
-      );
-    }
-    return PopupMenuButton<_SourceAction>(
-      tooltip: l10n.academicMoreActions,
-      onSelected: onSelected,
-      itemBuilder: (_) => [
-        if (aiEnabled)
-          PopupMenuItem(
-            value: _SourceAction.assistant,
-            child: ListTile(
-              leading: const Icon(AppIcons.proposal),
-              title: Text(l10n.academicAiAssistantTitle),
-            ),
-          ),
-        if (aiEnabled)
-          PopupMenuItem(
-            value: _SourceAction.review,
-            child: ListTile(
-              leading: const Icon(Icons.replay_rounded),
-              title: Text(l10n.academicActionReview),
-            ),
-          ),
-        if (aiEnabled)
-          PopupMenuItem(
-            value: _SourceAction.practice,
-            child: ListTile(
-              leading: const Icon(Icons.quiz_outlined),
-              title: Text(l10n.academicActionPractice),
-            ),
-          ),
-        PopupMenuItem(
-          value: _SourceAction.delete,
-          child: ListTile(
-            leading: Icon(AppIcons.delete, color: context.colors.error),
-            title: Text(l10n.commonDelete),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-Future<void> _handleSourceAction(
-  BuildContext context, {
-  required _SourceAction action,
-  required StudySourceType sourceType,
-  required String sourceId,
-  required String title,
-  required DocumentAvailability availability,
-}) async {
-  final bloc = context.read<SubjectSyllabusBloc>();
-  final l10n = context.localizations;
-  switch (action) {
-    case _SourceAction.assistant:
-      await showAiAssistantSheet(
-        context,
-        sourceType: sourceType,
-        sourceId: sourceId,
-        title: title,
-        availability: availability,
-      );
-    case _SourceAction.review || _SourceAction.practice:
-      bloc.add(
-        SubjectSyllabusEvent.materialRequested(
-          sourceType: sourceType,
-          sourceId: sourceId,
-          practice: action == _SourceAction.practice,
-        ),
-      );
-    case _SourceAction.delete:
-      final isNote = sourceType == StudySourceType.note;
-      final ok = await confirmDestructive(
-        context,
-        title: isNote
-            ? l10n.academicNoteDeleteTitle
-            : l10n.academicFileDeleteTitle,
-        message: l10n.academicDeleteMessage(title),
-      );
-      if (!ok) return;
-      bloc.add(
-        isNote
-            ? SubjectSyllabusEvent.noteDeleted(sourceId)
-            : SubjectSyllabusEvent.fileDeleted(sourceId),
-      );
-  }
-}
-
-class _NoteTile extends StatelessWidget {
-  const _NoteTile({
-    required this.note,
-    required this.availability,
-    required this.onOpen,
-  });
-
-  final Note note;
-  final DocumentAvailability availability;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final updated = note.updatedAt ?? note.createdAt;
-    return AppFocusOutline(
-      child: ListTile(
-        onTap: onOpen,
-        leading: Icon(
-          note.quickNote
-              ? Icons.sticky_note_2_outlined
-              : Icons.description_outlined,
-          color: context.colors.tertiary,
-        ),
-        title: Text(
-          note.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.textStyles.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        subtitle: Row(
-          children: [
-            Icon(
-              context.visibilityIcon(note.visibility),
-              size: 14,
-              color: context.colors.onSurfaceVariant,
-              semanticLabel: context.visibilityLabel(note.visibility),
-            ),
-            if (updated != null) ...[
-              const SizedBox(width: TokensSpacing.xs),
-              Text(shortDate(updated)),
-            ],
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SavedDocIcons(
-              sourceType: StudySourceType.note,
-              sourceId: note.id,
-              title: note.title,
-              availability: availability,
-            ),
-            _SourceMenu(
-              aiEnabled: true,
-              title: note.title,
-              onSelected: (action) => _handleSourceAction(
-                context,
-                action: action,
-                sourceType: StudySourceType.note,
-                sourceId: note.id,
-                title: note.title,
-                availability: availability,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FileTile extends StatelessWidget {
-  const _FileTile({
-    required this.file,
-    required this.availability,
-    required this.onOpen,
-  });
-
-  final SubjectFile file;
-  final DocumentAvailability availability;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppFocusOutline(
-      child: ListTile(
-        onTap: onOpen,
-        leading: Icon(fileIcon(file), color: context.colors.tertiary),
-        title: Text(
-          file.fileName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.textStyles.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        subtitle: Text(
-          [
-            fileSize(file.sizeBytes),
-            if (file.createdAt != null) shortDate(file.createdAt!),
-          ].join(' · '),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SavedDocIcons(
-              sourceType: StudySourceType.file,
-              sourceId: file.id,
-              title: file.fileName,
-              availability: availability,
-            ),
-            _SourceMenu(
-              aiEnabled: file.aiReadable,
-              title: file.fileName,
-              onSelected: (action) => _handleSourceAction(
-                context,
-                action: action,
-                sourceType: StudySourceType.file,
-                sourceId: file.id,
-                title: file.fileName,
-                availability: availability,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

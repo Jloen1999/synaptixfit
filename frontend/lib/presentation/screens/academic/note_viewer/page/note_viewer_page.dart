@@ -5,27 +5,38 @@ import 'package:go_router/go_router.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/study_source_type.dart';
 import '../../../../../domain/models/academic/note.dart';
+import '../../../../../domain/models/academic/subject_material.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../auth/session/bloc/session_bloc.dart';
 import '../../academic_routes.dart';
+import '../../material_share/bloc/material_share_bloc.dart';
+import '../../material_share/page/material_share_sheet.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
 import '../../widgets/ai_assistant_sheet.dart';
 import '../bloc/note_viewer_bloc.dart';
 
-/// Visor de un apunte en Markdown.
+/// Visor de un apunte en Markdown: el texto entero se selecciona de una vez
+/// (`AcademicMarkdown`, ADR 0064) y «Compartir» abre la misma hoja que la
+/// lista «Material».
 class NoteViewerPage extends StatelessWidget {
   const NoteViewerPage({super.key, required this.noteId});
 
   final String noteId;
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) =>
-        getIt<NoteViewerBloc>()..add(NoteViewerEvent.started(noteId)),
-    child: const _NoteViewerView(),
+  Widget build(BuildContext context) => MultiBlocProvider(
+    providers: [
+      BlocProvider(
+        create: (_) =>
+            getIt<NoteViewerBloc>()..add(NoteViewerEvent.started(noteId)),
+      ),
+      BlocProvider(create: (_) => getIt<MaterialShareBloc>()),
+    ],
+    child: const MaterialShareFeedback(child: _NoteViewerView()),
   );
 }
 
@@ -124,6 +135,15 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
                 tooltip: l10n.academicAiAssistantTitle,
                 icon: Icon(AppIcons.proposal, color: context.colors.tertiary),
                 onPressed: () => _assistant(context, state),
+              ),
+              IconButton(
+                tooltip: l10n.academicMaterialShare,
+                icon: const Icon(AppIcons.share),
+                onPressed: () => showMaterialShareSheet(
+                  context,
+                  NoteMaterial(note),
+                  profilePrivacy: context.read<SessionBloc>().account?.privacy,
+                ),
               ),
               IconButton(
                 tooltip: l10n.commonEdit,

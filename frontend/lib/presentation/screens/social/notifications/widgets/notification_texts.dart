@@ -94,6 +94,12 @@ NotificationTexts notificationTexts(AppLocalizations l10n, AppNotification n) {
       description: l10n.socialNotifStudyRoomBody(name),
       action: l10n.socialNotifActionTogether,
     ),
+    // «Compartir › Con un amigo» (ADR 0064).
+    NotificationMessageCode.noteReceived => (
+      title: l10n.socialNotifNoteReceivedTitle,
+      description: l10n.socialNotifNoteReceivedBody(name, p['title'] ?? ''),
+      action: l10n.socialNotifActionNote,
+    ),
   };
 }
 

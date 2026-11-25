@@ -5,7 +5,10 @@ enum PostType {
   milestoneReached('MILESTONE_REACHED'),
   badgeUnlocked('BADGE_UNLOCKED'),
   routine('ROUTINE'),
-  challenge('CHALLENGE');
+  challenge('CHALLENGE'),
+
+  /// Un apunte compartido en el muro (ADR 0064); lo publica el servidor.
+  note('NOTE');
 
   const PostType(this.apiValue);
 

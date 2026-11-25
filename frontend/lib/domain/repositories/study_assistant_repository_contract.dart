@@ -27,6 +27,13 @@ abstract interface class StudyAssistantRepositoryContract {
     String sourceId,
   );
 
+  /// Documentos guardados de todos los apuntes y archivos de una asignatura
+  /// en una petición (ADR 0064), por id de fuente; las que no tienen ninguno
+  /// no salen.
+  Future<AppResult<Map<String, DocumentAvailability>>> getSubjectAvailability(
+    String subjectId,
+  );
+
   Future<AppResult<StudyArtifact>> generateArtifact(
     ArtifactKind kind,
     List<StudySourceRef> sources,

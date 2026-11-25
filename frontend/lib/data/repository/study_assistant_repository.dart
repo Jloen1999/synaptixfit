@@ -54,6 +54,16 @@ class StudyAssistantRepository implements StudyAssistantRepositoryContract {
   );
 
   @override
+  Future<AppResult<Map<String, DocumentAvailability>>> getSubjectAvailability(
+    String subjectId,
+  ) => RepositoryErrorHandler.guard(
+    () async => {
+      for (final d in await _remote.getSubjectAvailability(subjectId))
+        d.sourceId: d.toDomain(),
+    },
+  );
+
+  @override
   Future<AppResult<StudyArtifact>> generateArtifact(
     ArtifactKind kind,
     List<StudySourceRef> sources,

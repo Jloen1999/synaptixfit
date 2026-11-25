@@ -262,4 +262,17 @@ abstract final class AppIcons {
   static const IconData imageUnavailable = Icons.image_not_supported_outlined;
   static const IconData zoomIn = Icons.zoom_in_rounded;
   static const IconData zoomOut = Icons.zoom_out_rounded;
+
+  // Lista «Material» y «Compartir» (ADR 0064).
+  /// Abrir un material para leerlo (neutro: no sale de la app).
+  static const IconData read = Icons.menu_book_outlined;
+  static const IconData noteDocument = Icons.description_outlined;
+  static const IconData quickNote = Icons.sticky_note_2_outlined;
+  static const IconData practice = Icons.quiz_outlined;
+  static const IconData upload = Icons.upload_file_rounded;
+  static const IconData folderEmpty = Icons.folder_open_outlined;
+  static const IconData moreActions = Icons.more_horiz_rounded;
+
+  /// «Compartir › Fuera de la app» (menú del sistema), distinto de «Compartir».
+  static const IconData shareOutside = Icons.ios_share_rounded;
 }

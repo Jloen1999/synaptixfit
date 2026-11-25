@@ -5,6 +5,7 @@ import '../../../../domain/enums/post_type.dart';
 import '../../../../domain/models/social/post_link.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../theme/app_icons.dart';
 
 /// Tiempo relativo corto («ahora», «hace 5 min», «hace 3 h», «hace 2 d» o fecha).
 String socialTimeAgo(AppLocalizations l10n, DateTime date, {DateTime? now}) {
@@ -25,6 +26,7 @@ extension PostTypeStyle on PostType {
     PostType.badgeUnlocked => l10n.socialPostTypeBadge,
     PostType.routine => l10n.socialPostTypeRoutine,
     PostType.challenge => l10n.socialPostTypeChallenge,
+    PostType.note => l10n.socialPostTypeNote,
   };
 
   IconData get icon => switch (this) {
@@ -34,16 +36,18 @@ extension PostTypeStyle on PostType {
     PostType.badgeUnlocked => Icons.military_tech_rounded,
     PostType.routine => Icons.list_alt_rounded,
     PostType.challenge => Icons.flag_rounded,
+    PostType.note => AppIcons.note,
   };
 
   /// Entrenamiento en `secondary`; logros y retos en `palette.accent` (el lima
-  /// de `primary` es para acciones).
+  /// de `primary` es para acciones); apuntes en `tertiary`, como en Académico.
   Color color(BuildContext context) => switch (this) {
     PostType.sessionCompleted || PostType.routine => context.colors.secondary,
     PostType.challengeCompleted ||
     PostType.milestoneReached ||
     PostType.badgeUnlocked ||
     PostType.challenge => context.palette.accent,
+    PostType.note => context.colors.tertiary,
   };
 }
 
@@ -53,6 +57,7 @@ extension PostLinkStyle on PostLink {
     PostLinkKind.routine => Icons.fitness_center_rounded,
     PostLinkKind.challenge => Icons.flag_rounded,
     PostLinkKind.badge => Icons.military_tech_rounded,
+    PostLinkKind.note => AppIcons.note,
   };
 
   /// Ruta de otro módulo (ver el mapa de rutas compartido) o `null`.
@@ -60,6 +65,7 @@ extension PostLinkStyle on PostLink {
     PostLinkKind.routine when id != null => '/training/routines/$id',
     PostLinkKind.challenge when id != null => '/challenges/$id',
     PostLinkKind.badge => '/progress?tab=badges',
+    PostLinkKind.note when id != null => '/academic/notes/shared/$id',
     _ => null,
   };
 }

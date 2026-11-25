@@ -7,6 +7,7 @@ import com.synaptixfit.domain.model.academic.AcademicSearch;
 import com.synaptixfit.domain.exception.academic.NoteNotFoundException;
 import com.synaptixfit.domain.model.academic.AuthoredNote;
 import com.synaptixfit.domain.model.academic.Note;
+import com.synaptixfit.domain.model.academic.NoteAccess;
 import com.synaptixfit.domain.model.academic.SharedNote;
 import com.synaptixfit.domain.model.academic.SharedNoteSummary;
 import com.synaptixfit.domain.model.academic.Subject;
@@ -14,6 +15,7 @@ import com.synaptixfit.domain.model.shared.AudienceScope;
 import com.synaptixfit.domain.model.shared.EffectiveVisibility;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.shared.Visibility;
+import com.synaptixfit.domain.port.output.academic.NoteRecipientRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.NoteRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectRepositoryPort;
 import java.time.Clock;
@@ -22,17 +24,21 @@ import java.util.UUID;
 
 /**
  * Apuntes compartidos por otros usuarios: listado de resúmenes, lectura de uno y copia privada.
- * La visibilidad la decide {@link EffectiveVisibility}; un apunte que no se puede ver se trata como
- * inexistente ({@code NOTE_NOT_FOUND}). Usa {@link NoteRepositoryPort} y {@link SubjectRepositoryPort}.
+ * Quién lo lee lo decide {@link NoteAccess} (visibilidad efectiva o «Compartir › Con un amigo»); un apunte que no
+ * se puede ver se trata como inexistente ({@code NOTE_NOT_FOUND}). Usa {@link NoteRepositoryPort},
+ * {@link NoteRecipientRepositoryPort} y {@link SubjectRepositoryPort}.
  */
 public class SharedNoteService implements ListSharedNotesUseCase, GetSharedNoteUseCase, CopySharedNoteUseCase {
 
     private final NoteRepositoryPort notes;
+    private final NoteRecipientRepositoryPort recipients;
     private final SubjectRepositoryPort subjects;
     private final Clock clock;
 
-    public SharedNoteService(NoteRepositoryPort notes, SubjectRepositoryPort subjects, Clock clock) {
+    public SharedNoteService(NoteRepositoryPort notes, NoteRecipientRepositoryPort recipients,
+                             SubjectRepositoryPort subjects, Clock clock) {
         this.notes = notes;
+        this.recipients = recipients;
         this.subjects = subjects;
         this.clock = clock;
     }
@@ -54,7 +60,9 @@ public class SharedNoteService implements ListSharedNotesUseCase, GetSharedNoteU
         AuthoredNote found = notes.findAuthored(userId, noteId).orElseThrow(() -> new NoteNotFoundException(noteId));
         Note note = found.note();
         boolean own = note.userId().equals(userId);
-        if (!own && !EffectiveVisibility.canView(note.visibility(), found.audience())) {
+        // Lo que deja ver su visibilidad o, si su autor me lo pasó, mientras sigamos siendo amigos (ADR 0064).
+        if (!own && !NoteAccess.canRead(note.visibility(), found.audience(),
+                recipients.isRecipient(noteId, userId))) {
             throw new NoteNotFoundException(noteId);
         }
         return new SharedNote(note, found.authorName(), found.authorAvatarUrl(), found.catalogSubjectId(),

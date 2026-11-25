@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import '../../domain/enums/shared_notes_scope.dart';
 import '../../domain/enums/visibility.dart';
+import '../../domain/models/academic/material_sharing.dart';
 import '../../domain/models/academic/note.dart';
 import '../../domain/models/academic/note_scan.dart';
 import '../../domain/models/result/app_result.dart';
@@ -140,4 +143,37 @@ class NoteRepository implements NoteRepositoryContract {
       RepositoryErrorHandler.guard(
         () async => (await _remote.copySharedNote(noteId)).toDomain(),
       );
+
+  @override
+  Future<AppResult<SentNote>> sendNoteToFriend(String noteId, String friendId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.sendToFriend(noteId, friendId)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<NoteWallShare>> shareNoteOnWall(String noteId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.shareOnWall(noteId)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<Note>> setNoteVisibility(
+    String noteId,
+    Visibility visibility,
+  ) => RepositoryErrorHandler.guard(
+    () async => (await _remote.updateNote(noteId, {
+      'visibility': visibility.apiValue,
+    })).toDomain(),
+  );
+
+  @override
+  Future<AppResult<MaterialFile>> getNotePdf(String noteId) =>
+      RepositoryErrorHandler.guard(() async {
+        final pdf = await _remote.getPdf(noteId);
+        return MaterialFile(
+          fileName: pdf.fileName,
+          mimeType: 'application/pdf',
+          bytes: Uint8List.fromList(pdf.bytes),
+        );
+      });
 }

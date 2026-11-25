@@ -32,6 +32,12 @@ class DataChangeInterceptor extends Interceptor {
   /// apunte llama a la IA pero no guarda nada (ADR 0058).
   static const _ignoredEndings = ['/document-questions'];
 
+  /// Acciones con un id en medio de la ruta que tocan más que su prefijo:
+  /// publicar un apunte en el muro (ADR 0064) también cambia lo social.
+  static const _endings = <String, Set<DataTopic>>{
+    '/wall': {DataTopic.academic, DataTopic.social},
+  };
+
   static const _ignored = [
     '/api/v1/auth/',
     '/api/v1/badges/evaluate',
@@ -144,6 +150,11 @@ class DataChangeInterceptor extends Interceptor {
     if (!_mutating.contains(method.toUpperCase())) return const {};
     if (_ignored.any(path.startsWith) || _ignoredEndings.any(path.endsWith)) {
       return const {};
+    }
+    for (final MapEntry(key: ending, value: topics) in _endings.entries) {
+      if (path.startsWith('/api/v1/notes/') && path.endsWith(ending)) {
+        return topics;
+      }
     }
     for (final MapEntry(key: prefix, value: topics) in _routes.entries) {
       if (path == prefix || path.startsWith('$prefix/')) return topics;

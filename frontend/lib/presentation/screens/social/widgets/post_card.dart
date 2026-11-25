@@ -147,6 +147,7 @@ class _PostCardState extends State<PostCard> {
                   PostLinkKind.routine => l10n.socialPostTypeRoutine,
                   PostLinkKind.challenge => l10n.socialPostTypeChallenge,
                   PostLinkKind.badge => l10n.socialLinkBadge,
+                  PostLinkKind.note => l10n.socialPostTypeNote,
                 },
                 color: post.type.color(context),
                 onTap: linkRoute == null || widget.onLinkTap == null

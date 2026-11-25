@@ -29,4 +29,7 @@ abstract class SubjectSyllabusState with _$SubjectSyllabusState {
   const SubjectSyllabusState._();
 
   bool get uploading => uploadProgress != null;
+
+  /// Apuntes y archivos en una sola lista, lo más reciente primero (ADR 0064).
+  List<SubjectMaterial> get materials => SubjectMaterial.merge(notes, files);
 }

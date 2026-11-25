@@ -270,25 +270,6 @@ String nextClassText(
       : l10n.academicNextClassAt(when, room);
 }
 
-/// «Clase: lun y mié» con los días de clase (1 = lunes), o nulo sin días.
-String? classDaysText(BuildContext context, List<int> days) {
-  if (days.isEmpty) return null;
-  final l10n = context.localizations;
-  final names = DateFormat.E(l10n.localeName);
-  // El 1 de enero de 2024 fue lunes: sirve de semana de referencia.
-  final labels = [for (final d in days) names.format(DateTime(2024, 1, d))];
-  return l10n.academicClassDays(_joinList(context, labels));
-}
-
-String _joinList(BuildContext context, List<String> items) {
-  if (items.length == 1) return items.first;
-  final l10n = context.localizations;
-  return l10n.commonListAnd(
-    items.sublist(0, items.length - 1).join(', '),
-    items.last,
-  );
-}
-
 /// «2.º curso · 1.er cuatri»: el único formato de curso y cuatrimestre de la
 /// app (ADR 0057). Lo que no se sabe se omite; sin nada, nulo.
 String? courseTermText(BuildContext context, int? course, int? term) {

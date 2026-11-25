@@ -5,7 +5,7 @@ info:
     en formato RFC 9457 con el campo code (docs/03-api/errors.md).
   version: v1
 servers:
-- url: http://localhost:8080
+- url: http://localhost
   description: Generated server url
 security:
 - bearer: []
@@ -3894,6 +3894,55 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/NoteResponse"
+  /api/v1/notes/{noteId}/wall:
+    post:
+      tags:
+      - Academic - Notes
+      operationId: wall
+      parameters:
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShareNoteOnWallRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WallShareResponse"
+  /api/v1/notes/{noteId}/recipients:
+    post:
+      tags:
+      - Academic - Notes
+      operationId: send
+      parameters:
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendNoteRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SentNoteResponse"
   /api/v1/notes/shared/{noteId}/copy:
     post:
       tags:
@@ -6152,6 +6201,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AcademicCatalogSubjectResponse"
+  /api/v1/study/subjects/{subjectId}/documents:
+    get:
+      tags:
+      - Academic - Study assistant
+      operationId: subjectAvailability
+      parameters:
+      - name: subjectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SourceDocumentsResponse"
   /api/v1/study/sources/{sourceType}/{sourceId}/documents:
     get:
       tags:
@@ -6845,6 +6915,26 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ReminderPlanResponse"
+  /api/v1/notes/{noteId}/pdf:
+    get:
+      tags:
+      - Academic - Notes
+      operationId: pdf
+      parameters:
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: El apunte en PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
   /api/v1/notes/shared:
     get:
       tags:
@@ -12974,6 +13064,7 @@ components:
           - BADGE_UNLOCKED
           - ROUTINE
           - CHALLENGE
+          - NOTE
         description:
           type: string
           maxLength: 2000
@@ -13015,6 +13106,7 @@ components:
           - BADGE_UNLOCKED
           - ROUTINE
           - CHALLENGE
+          - NOTE
         description:
           type: string
         imageUrl:
@@ -14386,6 +14478,7 @@ components:
           - WORKOUT_TOGETHER_INVITED
           - FRIEND_STREAK_NUDGE
           - STUDY_ROOM_INVITED
+          - NOTE_RECEIVED
         messageParams:
           type: object
           additionalProperties:
@@ -14420,6 +14513,40 @@ components:
           type: boolean
       required:
       - title
+    ShareNoteOnWallRequest:
+      type: object
+      properties:
+        comment:
+          type: string
+          maxLength: 2000
+          minLength: 0
+    WallShareResponse:
+      type: object
+      properties:
+        alreadyShared:
+          type: boolean
+        visibility:
+          type: string
+          enum:
+          - PRIVATE
+          - FRIENDS
+          - PUBLIC
+    SendNoteRequest:
+      type: object
+      properties:
+        friendId:
+          type: string
+          format: uuid
+      required:
+      - friendId
+    SentNoteResponse:
+      type: object
+      properties:
+        friendId:
+          type: string
+          format: uuid
+        friendName:
+          type: string
     ScannedNoteDraftResponse:
       type: object
       properties:
@@ -15975,6 +16102,23 @@ components:
           type: string
           format: uuid
         selected:
+          type: boolean
+    SourceDocumentsResponse:
+      type: object
+      properties:
+        sourceType:
+          type: string
+          enum:
+          - NOTE
+          - FILE
+        sourceId:
+          type: string
+          format: uuid
+        summary:
+          type: boolean
+        mindMap:
+          type: boolean
+        practice:
           type: boolean
     DocumentAvailabilityResponse:
       type: object

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../../domain/models/academic/material_sharing.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/repositories/share_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
@@ -24,5 +25,15 @@ class ShareRepository implements ShareRepositoryContract {
   Future<AppResult<bool>> shareText({required String text, String? subject}) =>
       RepositoryErrorHandler.guard(
         () => _system.shareText(text: text, subject: subject),
+      );
+
+  @override
+  Future<AppResult<bool>> shareFile(MaterialFile file) =>
+      RepositoryErrorHandler.guard(
+        () => _system.shareFile(
+          bytes: file.bytes,
+          fileName: file.fileName,
+          mimeType: file.mimeType,
+        ),
       );
 }

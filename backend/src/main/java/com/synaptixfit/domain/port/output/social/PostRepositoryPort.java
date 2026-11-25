@@ -15,6 +15,22 @@ public interface PostRepositoryPort {
     /** ¿Tiene el usuario una publicación de ese tipo con exactamente esos metadatos? */
     boolean existsByAuthorTypeAndMetadata(UUID userId, PostType type, String metadata);
 
+    /**
+     * Guarda una publicación nueva salvo que choque con una igual (el índice único de las de un apunte, ADR 0064).
+     * Devuelve {@code false} si ya existía: así dos peticiones a la vez no la duplican. La versión por defecto
+     * comprueba antes; el adaptador deja que decida la base de datos.
+     */
+    default boolean saveIfAbsent(Post post) {
+        if (existsByAuthorTypeAndMetadata(post.authorId(), post.type(), post.metadata())) {
+            return false;
+        }
+        save(post);
+        return true;
+    }
+
+    /** Borra las publicaciones de ese autor, tipo y metadatos (con likes y comentarios). */
+    void deleteByAuthorTypeAndMetadata(UUID userId, PostType type, String metadata);
+
     /** Borra la publicación con sus likes y comentarios (cascada). */
     void delete(UUID id);
 }

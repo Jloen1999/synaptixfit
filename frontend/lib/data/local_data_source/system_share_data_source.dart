@@ -31,4 +31,20 @@ class SystemShareDataSource {
     );
     return result.status != ShareResultStatus.dismissed;
   }
+
+  /// Un archivo cualquiera (el PDF de un apunte o el original, ADR 0064).
+  /// `false` si la persona cerró el menú sin compartir.
+  Future<bool> shareFile({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+  }) async {
+    final result = await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile.fromData(bytes, mimeType: mimeType, name: fileName)],
+        fileNameOverrides: [fileName],
+      ),
+    );
+    return result.status != ShareResultStatus.dismissed;
+  }
 }

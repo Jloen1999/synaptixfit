@@ -260,7 +260,7 @@
   "academicGenerateSaveNote": "Guardar como apunte",
   "academicGenerateSaveQuiz": "Guardar preguntas",
   "academicGenerateSaveTitle": "Guardar resultado",
-  "academicGenerateSavedNote": "Guardado como apunte. Lo tienes en su asignatura, en «Apuntes y archivos».",
+  "academicGenerateSavedNote": "Guardado como apunte. Lo tienes en su asignatura, en la pestaña «Apuntes».",
   "academicGenerateSavedQuiz": "Preguntas guardadas para practicar",
   "academicGenerateEphemeral": "Sin guardar: se perderá si sales",
   "academicReviewTitle": "Repaso espaciado",
@@ -799,7 +799,7 @@
       }
     }
   },
-  "academicInboxMoved": "Apunte movido a {subject}. Lo tienes en su pestaña «Apuntes y archivos».",
+  "academicInboxMoved": "Apunte movido a {subject}. Lo tienes en la pestaña «Apuntes».",
   "@academicInboxMoved": {
     "placeholders": {
       "subject": {
@@ -1076,7 +1076,7 @@
       }
     }
   },
-  "academicAiSavedAsNote": "Guardado como apunte en su asignatura, en «Apuntes y archivos». Ya puedes corregirlo.",
+  "academicAiSavedAsNote": "Guardado como apunte en su asignatura, en la pestaña «Apuntes». Ya puedes corregirlo.",
   "academicScanCameraDenied": "Sin permiso de cámara. Actívalo en los ajustes del móvil o elige fotos de la galería.",
   "academicScanCameraMissing": "Este dispositivo no tiene cámara. Elige las fotos de tu galería.",
   "academicScanChangePhotos": "Cambiar las fotos",
@@ -1218,7 +1218,7 @@
   "academicSubjectUnarchivedWhere": "Asignatura restaurada: vuelve a salir en Académico y en el calendario.",
   "academicDeleteNamed": "Eliminar «{title}»",
   "@academicDeleteNamed": {
-    "description": "Botón de papelera de un apunte o archivo en «Apuntes y archivos».",
+    "description": "Botón de papelera de un apunte o archivo en la pestaña «Apuntes».",
     "placeholders": {
       "title": {
         "type": "String"
@@ -1710,5 +1710,114 @@
     }
   },
   "academicErrorQuizQuestionAlreadyAnswered": "Esta pregunta ya está contestada.",
-  "academicPracticeBackToList": "Volver a la lista"
+  "academicPracticeBackToList": "Volver a la lista",
+  "academicMaterialTitle": "Material ({count})",
+  "@academicMaterialTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicMaterialEmptyTitle": "Aún no hay material",
+  "academicMaterialEmptyBody": "Escribe un apunte, fotografía tus hojas o sube un PDF, una imagen o un documento (máx. 25 MB).",
+  "academicMaterialKindNote": "Apunte",
+  "academicMaterialKindQuickNote": "Nota rápida",
+  "academicMaterialKindPdf": "PDF",
+  "academicMaterialKindImage": "Imagen",
+  "academicMaterialKindFile": "Archivo",
+  "academicMaterialKindFileNamed": "Archivo {extension}",
+  "@academicMaterialKindFileNamed": {
+    "placeholders": {
+      "extension": {
+        "type": "String"
+      }
+    }
+  },
+  "academicMaterialActions": "Acciones de «{title}»",
+  "@academicMaterialActions": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicMaterialOpen": "Abrir",
+  "academicMaterialShare": "Compartir",
+  "academicMaterialDownload": "Descargar",
+  "academicMaterialOpenDoc": "{doc} de «{title}»",
+  "@academicMaterialOpenDoc": {
+    "placeholders": {
+      "doc": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicShareTitle": "Compartir «{title}»",
+  "@academicShareTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicShareFriend": "Con un amigo",
+  "academicShareFriendHint": "Le llega un aviso y puede leerlo.",
+  "academicShareEveryone": "Para todos",
+  "academicShareEveryoneHint": "Sale en Apuntes compartidos: cualquiera puede leerlo y guardarse una copia.",
+  "academicShareEveryoneAlready": "Ya está en Apuntes compartidos.",
+  "academicShareWall": "En el muro",
+  "academicShareWallHint": "Se publica en el muro y el apunte pasa a ser para todos.",
+  "academicShareOutside": "Fuera de la app",
+  "academicShareOutsideNoteHint": "En PDF: WhatsApp, correo, Drive…",
+  "academicShareOutsideFileHint": "El archivo original: WhatsApp, correo, Drive…",
+  "academicShareDownloadNoteHint": "El PDF: guárdalo donde elijas.",
+  "academicShareDownloadFileHint": "El archivo original: guárdalo donde elijas.",
+  "academicShareFilesOutsideOnly": "Un archivo solo se comparte fuera de la app. Para compartir dentro, escribe un apunte con lo importante.",
+  "academicShareFriendPickerTitle": "¿A quién se lo pasas?",
+  "academicShareFriendPickerConfirm": "Pasar el apunte",
+  "academicShareSentToFriend": "Enviado a {name}: le llega en sus avisos.",
+  "@academicShareSentToFriend": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicShareEveryoneDone": "Está en Apuntes compartidos, para todos.",
+  "academicShareEveryoneFriends": "Está en Apuntes compartidos, solo para tus amigos (así es tu perfil).",
+  "academicShareProfilePrivate": "Tu perfil es privado: nadie más puede ver el apunte.",
+  "academicSharePrivacyAction": "Privacidad",
+  "academicShareWallDone": "Publicado en el muro.",
+  "academicShareWallAlready": "Ya estaba en el muro.",
+  "academicDownloadDone": "Guardado: {fileName}",
+  "@academicDownloadDone": {
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "academicErrorNoteRecipientNotFriend": "Solo puedes pasar apuntes a tus amigos.",
+  "academicShareSentToFriendUnnamed": "Enviado: le llega en sus avisos.",
+  "academicShareEveryoneConfirmTitle": "¿Hacerlo público?",
+  "academicShareEveryoneConfirmPublic": "Saldrá en Apuntes compartidos: cualquiera podrá leerlo y guardarse una copia.",
+  "academicShareEveryoneConfirmFriends": "Saldrá en Apuntes compartidos, pero solo lo verán tus amigos (así es tu perfil).",
+  "academicShareEveryoneConfirmPrivate": "Tu perfil es privado: aunque lo hagas público, nadie más lo verá hasta que cambies la privacidad.",
+  "academicShareEveryoneConfirmGeneral": "Saldrá en Apuntes compartidos para quien pueda ver tu perfil.",
+  "academicShareEveryoneConfirmAction": "Hacer público",
+  "academicShareWallConfirmTitle": "¿Publicar en el muro?",
+  "academicShareWallConfirmPublic": "Lo verá cualquiera en Tú › Comunidad › Muro y el apunte pasará a ser para todos.",
+  "academicShareWallConfirmFriends": "Lo verán tus amigos en Tú › Comunidad › Muro y el apunte pasará a ser visible para ellos.",
+  "academicShareWallConfirmGeneral": "Lo verá quien pueda ver tu perfil, en Tú › Comunidad › Muro, y el apunte pasará a ser para todos.",
+  "academicShareWallConfirmAction": "Publicar",
+  "academicShareWallPrivateTitle": "Tu perfil es privado",
+  "academicShareWallPrivateBody": "Nadie más vería la publicación ni el apunte. Cambia la privacidad para publicarlo.",
+  "academicErrorNoteWallProfilePrivate": "Tu perfil es privado: nadie más vería la publicación. Cambia la privacidad para publicarlo.",
+  "academicErrorNotePdfUnavailable": "No hemos podido crear el PDF. Inténtalo en un rato.",
+  "academicMaterialActionsShort": "Acciones",
+  "academicLinkOpenFailed": "No hemos podido abrir el enlace."
 }

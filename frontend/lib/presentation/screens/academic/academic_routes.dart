@@ -83,7 +83,8 @@ abstract final class AcademicPaths {
 
   static String subject(String subjectId) => '/academic/subjects/$subjectId';
 
-  /// Asignatura abierta en «Apuntes y archivos» (tras mover o guardar allí).
+  /// Asignatura abierta en «Apuntes» (la lista «Material», tras mover o
+  /// guardar allí).
   static String subjectNotes(String subjectId) =>
       _withQuery(subject(subjectId), {'tab': SubjectDetailTab.notes.name});
 
@@ -199,6 +200,10 @@ abstract final class AcademicExternalPaths {
 
   /// Privacidad del perfil (módulo profile, «Editar cuenta»).
   static const privacySettings = '/profile/account';
+
+  /// El muro (módulo social, pantalla completa): «Ver» tras publicar un
+  /// apunte (ADR 0064).
+  static const wall = '/social';
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).

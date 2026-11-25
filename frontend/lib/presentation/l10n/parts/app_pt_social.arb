@@ -381,5 +381,9 @@
   "togetherStudyChangeTimes": "Alterar tempos",
   "togetherStudyTimesChanged": "Agora: {focus} min de concentração e {rest} min de pausa",
   "togetherStudyTimesTooLate": "A sala já começou: os tempos já não se podem mudar.",
-  "togetherStudyLengthOptionSpoken": "{focus} minutos de estudo e {rest} de pausa"
+  "togetherStudyLengthOptionSpoken": "{focus} minutos de estudo e {rest} de pausa",
+  "socialPostTypeNote": "Apontamento",
+  "socialNotifNoteReceivedTitle": "Passaram-te um apontamento",
+  "socialNotifNoteReceivedBody": "{name} passou-te «{title}»",
+  "socialNotifActionNote": "Ver apontamento"
 }

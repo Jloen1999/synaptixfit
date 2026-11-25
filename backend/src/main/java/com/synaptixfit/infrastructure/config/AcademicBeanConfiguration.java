@@ -72,6 +72,7 @@ import com.synaptixfit.application.service.academic.SubjectFileService;
 import com.synaptixfit.application.service.academic.SubjectService;
 import com.synaptixfit.domain.port.output.academic.AcademicCatalogPort;
 import com.synaptixfit.domain.port.output.academic.AiDocumentRepositoryPort;
+import com.synaptixfit.domain.port.output.academic.NoteRecipientRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.NoteRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.PhysicalLoadPort;
 import com.synaptixfit.domain.port.output.academic.QuestionAttemptRepositoryPort;
@@ -111,6 +112,7 @@ public class AcademicBeanConfiguration {
     private final SubjectSemesterRepositoryPort semesters;
     private final AcademicCatalogPort catalog;
     private final NoteRepositoryPort notes;
+    private final NoteRecipientRepositoryPort noteRecipients;
     private final SubjectFileRepositoryPort files;
     private final AiDocumentRepositoryPort aiDocuments;
     private final StudyDocumentCodecPort codec;
@@ -138,7 +140,7 @@ public class AcademicBeanConfiguration {
                                      TestSessionRepositoryPort sessions, FileStoragePort storage,
                                      DomainEventPublisherPort events, AwardExperienceUseCase awardExperience,
                                      UserRepositoryPort users, SubjectAgendaPort subjectAgenda,
-                                     Clock clock,
+                                     NoteRecipientRepositoryPort noteRecipients, Clock clock,
                                      @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.subjects = subjects;
@@ -146,6 +148,7 @@ public class AcademicBeanConfiguration {
         this.semesters = semesters;
         this.catalog = catalog;
         this.notes = notes;
+        this.noteRecipients = noteRecipients;
         this.files = files;
         this.aiDocuments = aiDocuments;
         this.codec = codec;
@@ -231,7 +234,7 @@ public class AcademicBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     NoteService noteService() {
-        return new NoteService(notes, subjects, materials, aiDocuments, users, clock);
+        return new NoteService(notes, subjects, materials, aiDocuments, users, events, clock);
     }
 
     @Bean
@@ -241,7 +244,7 @@ public class AcademicBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     SharedNoteService sharedNoteService() {
-        return new SharedNoteService(notes, subjects, clock);
+        return new SharedNoteService(notes, noteRecipients, subjects, clock);
     }
 
     @Bean

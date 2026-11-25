@@ -55,6 +55,14 @@ public final class Post {
         return type == PostType.SESSION_COMPLETED && metadata != null;
     }
 
+    /**
+     * Metadatos de la publicación de un apunte (ADR 0064). Estables y sin el título, para que un índice único los
+     * reconozca: publicar el mismo apunte otra vez o al renombrarlo no lo duplica, y borrarlo lo retira.
+     */
+    public static String noteMetadata(UUID noteId) {
+        return "{\"entityType\":\"note\",\"entityId\":\"" + noteId + "\"}";
+    }
+
     public static Post publish(UUID authorId, PostType type, String description, String imageUrl, String metadata,
                                Instant now) {
         return new Post(UUID.randomUUID(), authorId, type, description, imageUrl, metadata, now, null, false, null);

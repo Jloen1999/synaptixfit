@@ -1,5 +1,6 @@
 import '../enums/shared_notes_scope.dart';
 import '../enums/visibility.dart';
+import '../models/academic/material_sharing.dart';
 import '../models/academic/note.dart';
 import '../models/academic/note_scan.dart';
 import '../models/result/app_result.dart';
@@ -57,4 +58,20 @@ abstract interface class NoteRepositoryContract {
   Future<AppResult<ScannedNoteDraft>> readNotePhotos(
     List<NotePhotoUpload> photos,
   );
+
+  /// «Compartir › Con un amigo» (ADR 0064): lo puede leer y le llega un aviso.
+  Future<AppResult<SentNote>> sendNoteToFriend(String noteId, String friendId);
+
+  /// «Compartir › En el muro» (ADR 0064): lo publica y lo abre a quien ve el
+  /// muro.
+  Future<AppResult<NoteWallShare>> shareNoteOnWall(String noteId);
+
+  /// Cambia solo la visibilidad (el servidor la rebaja al tope del perfil).
+  Future<AppResult<Note>> setNoteVisibility(
+    String noteId,
+    Visibility visibility,
+  );
+
+  /// El apunte en PDF, generado por el servidor.
+  Future<AppResult<MaterialFile>> getNotePdf(String noteId);
 }
