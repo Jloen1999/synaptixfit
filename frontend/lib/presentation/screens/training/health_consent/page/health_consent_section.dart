@@ -45,15 +45,16 @@ class _HealthConsentTile extends StatelessWidget with ErrorsMessageMixin {
             onPressed: () => Navigator.pop(dialogContext),
             child: Text(l10n.commonCancel),
           ),
-          TextButton(
+          // Conservar es lo seguro (relleno); borrar, rojo y con borde.
+          FilledButton(
             onPressed: () => Navigator.pop(dialogContext, _WithdrawChoice.keep),
             child: Text(l10n.profileHealthConsentWithdrawKeep),
           ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: context.colors.error),
+          AppDangerButton(
+            icon: null,
             onPressed: () =>
                 Navigator.pop(dialogContext, _WithdrawChoice.delete),
-            child: Text(l10n.profileHealthConsentWithdrawDelete),
+            label: l10n.profileHealthConsentWithdrawDelete,
           ),
         ],
       ),

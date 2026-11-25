@@ -65,8 +65,9 @@ class MaterialTile extends StatelessWidget {
     final details = [
       kind,
       if (material case FileMaterial(:final file)) fileSize(file.sizeBytes),
-      if (material case NoteMaterial(:final note)
-          when note.visibility != Visibility.private)
+      if (material case NoteMaterial(
+        :final note,
+      ) when note.visibility != Visibility.private)
         context.visibilityLabel(note.visibility),
       if (date != null) shortDate(date),
     ].join(' · ');
@@ -103,13 +104,17 @@ class MaterialTile extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(right: TokensSpacing.s),
                       child: Semantics(
+                        container: true,
                         label: l10n.academicMaterialActions(material.title),
                         button: true,
                         excludeSemantics: true,
                         onTap: onActions,
-                        child: AppSecondaryButton(
-                          label: actionsLabel,
+                        // Con borde («Otra opción», ADR 0065): una fila
+                        // tonal por elemento llenaba la lista de botones
+                        // secundarios.
+                        child: OutlinedButton.icon(
                           icon: const Icon(AppIcons.moreActions),
+                          label: Text(actionsLabel),
                           onPressed: onActions,
                         ),
                       ),
@@ -138,6 +143,7 @@ class MaterialTile extends StatelessWidget {
                 children: [
                   for (final type in docs)
                     Semantics(
+                      container: true,
                       label: l10n.academicMaterialOpenDoc(
                         context.aiDocumentLabel(type),
                         material.title,
@@ -213,7 +219,15 @@ class MaterialTile extends StatelessWidget {
 }
 
 /// Lo que se puede hacer con un material desde su hoja de acciones.
-enum MaterialAction { open, review, practice, assistant, share, download, delete }
+enum MaterialAction {
+  open,
+  review,
+  practice,
+  assistant,
+  share,
+  download,
+  delete,
+}
 
 /// Hoja «Acciones» de un material (ADR 0064): abrir, repasar, practicar y la
 /// ayuda de la IA (si la IA lo puede leer), compartir, descargar y, aparte y
@@ -227,12 +241,11 @@ Future<MaterialAction?> showMaterialActionsSheet(
   isScrollControlled: true,
   builder: (sheetContext) {
     final l10n = sheetContext.localizations;
-    Widget item(MaterialAction action, IconData icon, String label) =>
-        ListTile(
-          leading: Icon(icon),
-          title: Text(label),
-          onTap: () => Navigator.of(sheetContext).pop(action),
-        );
+    Widget item(MaterialAction action, IconData icon, String label) => ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      onTap: () => Navigator.of(sheetContext).pop(action),
+    );
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
@@ -299,7 +312,8 @@ Future<MaterialAction?> showMaterialActionsSheet(
               textColor: sheetContext.colors.error,
               leading: const Icon(AppIcons.delete),
               title: Text(l10n.academicDeleteNamed(material.title)),
-              onTap: () => Navigator.of(sheetContext).pop(MaterialAction.delete),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(MaterialAction.delete),
             ),
           ],
         ),

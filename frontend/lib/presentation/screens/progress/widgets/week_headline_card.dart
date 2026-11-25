@@ -220,7 +220,7 @@ class _StreakLine extends StatelessWidget {
                 _StreakButton(
                   busy: busy,
                   onPressed: onResume,
-                  icon: Icons.play_arrow_rounded,
+                  icon: AppIcons.start,
                   label: l10n.progressStreakResume,
                 ),
             ],
@@ -231,7 +231,7 @@ class _StreakLine extends StatelessWidget {
             child: _StreakButton(
               busy: busy,
               onPressed: onPause,
-              icon: Icons.pause_rounded,
+              icon: AppIcons.pause,
               label: l10n.progressStreakPause,
             ),
           ),

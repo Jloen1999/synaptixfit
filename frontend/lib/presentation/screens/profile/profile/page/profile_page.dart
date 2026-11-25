@@ -290,6 +290,9 @@ class _ProfileTiles extends StatelessWidget {
                 ? l10n.profileFriendsPending(pendingRequests)
                 : null,
             badgeCount: pendingRequests,
+            // Tonos como la maqueta: lo social y la mente en violeta, el
+            // cuerpo en lima y lo que no es de un dominio, neutro.
+            tone: AppTileTone.tertiary,
             onTap: () => openProfileScreen(
               context,
               pendingRequests > 0
@@ -301,12 +304,14 @@ class _ProfileTiles extends StatelessWidget {
             icon: AppIcons.community,
             label: l10n.profileWall,
             detail: l10n.profileWallDetail,
+            tone: AppTileTone.tertiary,
             onTap: () => openProfileScreen(context, ProfilePaths.community),
           ),
           AppShortcutTile(
             icon: AppIcons.preview,
             label: l10n.profilePublicProfileTile,
             detail: account.privacy.label(l10n),
+            tone: AppTileTone.neutral,
             onTap: () => openProfileScreen(
               context,
               ProfilePaths.publicProfile(account.id),
@@ -318,6 +323,8 @@ class _ProfileTiles extends StatelessWidget {
               label: l10n.profilePhysicalTile,
               // Sin peso ni altura también falta lo principal.
               detail: body.isEmpty ? l10n.profileTileMissing : body.join(' · '),
+              // Cuerpo en lima, mente en violeta (un color por dominio).
+              tone: AppTileTone.secondary,
               onTap: () => openProfileScreen(context, ProfilePaths.physical),
             ),
           if (account.usageFocus.includesAcademic)
@@ -327,12 +334,14 @@ class _ProfileTiles extends StatelessWidget {
               detail: academic == null
                   ? l10n.profileTileMissing
                   : academic.degree,
+              tone: AppTileTone.tertiary,
               onTap: () => openProfileScreen(context, ProfilePaths.studies),
             ),
           AppShortcutTile(
             icon: AppIcons.settings,
             label: l10n.profileSettingsTitle,
             detail: l10n.profileSettingsDetail,
+            tone: AppTileTone.neutral,
             onTap: () => openProfileScreen(context, ProfilePaths.settings),
           ),
         ],

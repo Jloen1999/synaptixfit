@@ -12,7 +12,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../social/together/widgets/together_labels.dart';
-import '../../../social/widgets/social_feedback.dart';
+import '../../../social/widgets/show_social_feedback.dart';
 import '../../../social/widgets/user_tile.dart';
 import '../../progress_routes.dart';
 import '../../widgets/chart_card.dart';
@@ -99,6 +99,7 @@ class _CommunityBody extends StatelessWidget {
                     detail: l10n.progressCommunityFriendsCount(
                       state.friendsTotal,
                     ),
+                    tone: AppTileTone.neutral,
                     onTap: () => _open(context, ProgressExternalPaths.friends),
                   ),
                   AppShortcutTile(
@@ -106,6 +107,7 @@ class _CommunityBody extends StatelessWidget {
                     label: l10n.progressCommunitySearchTile,
                     semanticsLabel: l10n.progressCommunitySearchSemantics,
                     detail: l10n.progressCommunitySearchDetail,
+                    tone: AppTileTone.neutral,
                     onTap: () =>
                         _open(context, ProgressExternalPaths.friendSearch),
                   ),
@@ -113,6 +115,7 @@ class _CommunityBody extends StatelessWidget {
                     icon: AppIcons.community,
                     label: l10n.progressCommunityWallTile,
                     detail: l10n.progressCommunityWallDetail,
+                    tone: AppTileTone.neutral,
                     onTap: () =>
                         _open(context, ProgressExternalPaths.socialWall),
                   ),
@@ -120,6 +123,7 @@ class _CommunityBody extends StatelessWidget {
                     icon: AppIcons.communityChallenges,
                     label: l10n.progressCommunityOthersChallengesTile,
                     detail: l10n.progressCommunityOthersChallengesDetail,
+                    tone: AppTileTone.neutral,
                     onTap: () => _open(
                       context,
                       ProgressExternalPaths.communityChallenges,
@@ -189,10 +193,6 @@ class _RequestsCard extends StatelessWidget {
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colors.onTertiaryContainer,
-                  side: BorderSide(color: colors.onTertiaryContainer),
-                ),
                 icon: const Icon(AppIcons.next),
                 label: Text(
                   l10n.progressCommunitySeeAllRequests(state.requestsTotal),
@@ -320,7 +320,7 @@ class _TogetherSection extends StatelessWidget {
                   if (i > 0) const Divider(height: 1),
                   AppFocusOutline(
                     child: ListTile(
-                      leading: AppTintedIcon(icon: row.icon),
+                      leading: AppTintedIcon(icon: row.icon, tone: row.tone),
                       title: Text(row.title),
                       subtitle: row.detail == null ? null : Text(row.detail!),
                       trailing: const Icon(AppIcons.next),
@@ -341,12 +341,14 @@ class _TogetherSection extends StatelessWidget {
     return switch (item) {
       TogetherNowInvitations(:final count) => _TogetherRow(
         icon: AppIcons.invitation,
+        tone: AppTileTone.tertiary,
         title: l10n.progressCommunityTogetherInvitations(count),
         detail: l10n.progressCommunityTogetherInvitationsDetail,
         path: ProgressExternalPaths.together,
       ),
       TogetherNowStudyRoom(:final room) => _TogetherRow(
         icon: AppIcons.focusTimer,
+        tone: AppTileTone.tertiary,
         title: l10n.togetherStudyTitle,
         detail: switch (room.phase) {
           StudyRoomPhase.waiting => l10n.togetherStudyWaiting,
@@ -360,12 +362,14 @@ class _TogetherSection extends StatelessWidget {
       ),
       TogetherNowWorkout(:final workout) => _TogetherRow(
         icon: AppIcons.routine,
+        tone: AppTileTone.secondary,
         title: workout.routineName ?? l10n.togetherWorkoutTitle,
         detail: workout.routineName == null ? null : l10n.togetherWorkoutTitle,
         path: ProgressExternalPaths.togetherWorkout(workout.id),
       ),
       TogetherNowChallenge(:final challenge) => _TogetherRow(
         icon: AppIcons.challenge,
+        tone: AppTileTone.accent,
         title: challenge.title,
         detail: l10n.togetherChallengeUntil(
           DateFormat.MMMEd(l10n.localeName).format(challenge.endAt),
@@ -374,6 +378,7 @@ class _TogetherSection extends StatelessWidget {
       ),
       TogetherNowStreak(:final streak) => _TogetherRow(
         icon: AppIcons.streak,
+        tone: AppTileTone.accent,
         title: l10n.togetherStreakWith(
           togetherName(context, streak.friend.name),
           streak.days,
@@ -384,16 +389,20 @@ class _TogetherSection extends StatelessWidget {
   }
 }
 
-/// Una fila de «Con amigos ahora»: qué es, cómo va y adónde lleva.
+/// Una fila de «Con amigos ahora»: qué es, cómo va y adónde lleva. El tono
+/// sigue la maqueta: lo social y estudiar en violeta, entrenar en lima, retos
+/// y rachas en naranja (el texto dice qué es: el color es decorativo).
 class _TogetherRow {
   const _TogetherRow({
     required this.icon,
+    required this.tone,
     required this.title,
     required this.path,
     this.detail,
   });
 
   final IconData icon;
+  final AppTileTone tone;
   final String title;
   final String? detail;
   final String path;

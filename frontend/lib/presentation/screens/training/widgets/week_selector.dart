@@ -77,12 +77,15 @@ class _WeekSelectorState extends State<WeekSelector> {
               // «S2 · 3 nov – 9 nov» se lee «ese dos»: el lector oye
               // «Semana 2, 3 nov – 9 nov».
               child: Semantics(
+                container: true,
                 label: i < widget.ranges.length && widget.ranges[i] != null
                     ? l10n.trainingWeekSpoken(i + 1, widget.ranges[i]!)
                     : weekTitle(l10n, i + 1, null),
                 selected: i == widget.selected,
                 button: true,
                 excludeSemantics: true,
+                // El chip queda excluido: el lector pulsa este nodo.
+                onTap: () => widget.onSelected(i),
                 child: ChoiceChip(
                   selected: i == widget.selected,
                   avatar: widget.completed.contains(i)

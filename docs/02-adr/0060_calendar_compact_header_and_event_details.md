@@ -112,4 +112,5 @@ abría la página: va en la guía, que se ve una vez por cuenta y teléfono.
 - Sin cambios en el servidor ni en la API: la ficha usa lo que ya llegaba (bloques, línea de tiempo, retos, sesión).
 - `RescheduleBlockToNextFreeSlotUseCase` y su llamada en `data/` quedan sin uso en el cliente; se pueden quitar en una
   limpieza (el endpoint del servidor no cambia).
-- Pendiente de otra tanda: «Ir a la clase» de la maqueta (no hay a dónde ir más allá de la asignatura, que ya se abre).
+- «Ir a la clase» de la maqueta, resuelto en el ADR 0065: abre el enlace de la videollamada escrito en «Lugar»; sin
+  enlace, la acción principal de una clase es «Abrir asignatura».

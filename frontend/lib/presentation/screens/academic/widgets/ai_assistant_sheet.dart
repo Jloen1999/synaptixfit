@@ -117,7 +117,7 @@ class _AssistantOption extends StatelessWidget {
                 ? AppPill(
                     label: l10n.academicAiSaved,
                     color: context.palette.success,
-                    icon: Icons.check_rounded,
+                    icon: AppIcons.check,
                   )
                 : const Icon(AppIcons.next),
             onTap: onTap,

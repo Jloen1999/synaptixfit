@@ -17,7 +17,7 @@ import '../../../../../domain/use_cases/social/reject_friend_request_use_case.da
 import '../../../../../domain/use_cases/social/together/get_together_overview_use_case.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../mixins/data_change_refresh_mixin.dart';
-import '../../../social/widgets/social_feedback.dart';
+import '../../../social/feedback/social_feedback.dart';
 
 part 'community_bloc.freezed.dart';
 part 'community_event.dart';

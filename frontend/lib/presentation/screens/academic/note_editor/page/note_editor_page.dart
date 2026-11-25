@@ -398,7 +398,7 @@ class _MetaRow extends StatelessWidget {
           isExpanded: true,
           decoration: InputDecoration(
             labelText: l10n.academicNoteSubject,
-            prefixIcon: const Icon(Icons.school_outlined),
+            prefixIcon: const Icon(AppIcons.subject),
           ),
           items: [
             DropdownMenuItem(child: Text(l10n.academicNoteNoSubject)),
@@ -427,10 +427,7 @@ class _MetaRow extends StatelessWidget {
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: FilterChip(
-            avatar: const Icon(
-              Icons.sticky_note_2_outlined,
-              size: TokensSize.iconXs,
-            ),
+            avatar: const Icon(AppIcons.quickNote, size: TokensSize.iconXs),
             label: Text(l10n.academicQuickNote),
             selected: quick,
             onSelected: onQuick,

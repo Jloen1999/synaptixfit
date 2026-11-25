@@ -49,10 +49,7 @@ class _DegreesView extends StatelessWidget with ErrorsMessageMixin {
             child: Text(l10n.commonCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: dialogContext.colors.error,
-              foregroundColor: dialogContext.colors.onError,
-            ),
+            style: AppDangerButton.confirmStyleOf(dialogContext),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(l10n.profileDegreesUnlinkAction),
           ),

@@ -214,9 +214,8 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
                                   _MockExamView._nextPending(state),
                                 ),
                               ),
-                        onDontKnow: () => bloc.add(
-                          const MockExamEvent.dontKnowSubmitted(),
-                        ),
+                        onDontKnow: () =>
+                            bloc.add(const MockExamEvent.dontKnowSubmitted()),
                       ),
                     ),
                   ),
@@ -228,7 +227,7 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
               ),
               MockExamState(notCounted: true) => _NotCountedView(back: back),
               _ when question == null => AppEmptyState(
-                icon: Icons.quiz_outlined,
+                icon: AppIcons.exam,
                 title: l10n.academicPracticeNoBankTitle,
               ),
               _ => AcademicBody(
@@ -270,7 +269,7 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
                         child: AppPill(
                           label: l10n.academicExamAnswered,
                           color: context.colors.tertiary,
-                          icon: Icons.lock_outline_rounded,
+                          icon: AppIcons.readOnly,
                         ),
                       ),
                     // Entregar sin contestarlas todas: aparte, con borde (la
@@ -343,6 +342,7 @@ class _QuestionNavigator extends StatelessWidget {
               ? context.colors.tertiary
               : context.colors.outline;
           return Semantics(
+            container: true,
             label: l10n.academicQuestionOf(i + 1, questions.length),
             // «No lo sé» tiene su propio estado (icono y texto), no «Respondida».
             value: question.dontKnow
@@ -451,7 +451,7 @@ class _ElapsedClockState extends State<_ElapsedClock> {
         child: Row(
           children: [
             Icon(
-              Icons.timer_outlined,
+              AppIcons.focusTimer,
               size: TokensSize.iconXs,
               color: context.colors.onSurfaceVariant,
             ),

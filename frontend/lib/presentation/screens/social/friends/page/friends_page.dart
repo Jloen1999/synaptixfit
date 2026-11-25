@@ -12,7 +12,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../social_routes.dart';
 import '../../widgets/social_dialogs.dart';
-import '../../widgets/social_feedback.dart';
+import '../../widgets/show_social_feedback.dart';
 import '../../widgets/social_layout.dart';
 import '../../widgets/user_tile.dart';
 import '../bloc/friends_bloc.dart';
@@ -474,7 +474,7 @@ class _SearchResultTile extends StatelessWidget {
         child: Text(l10n.socialUnblock),
       ),
       FriendshipRelation.friends => AppPill(
-        icon: Icons.check_rounded,
+        icon: AppIcons.check,
         label: l10n.socialRelationFriends,
         color: context.palette.success,
       ),

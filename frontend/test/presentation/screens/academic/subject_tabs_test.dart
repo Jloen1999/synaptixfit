@@ -17,6 +17,7 @@ import 'package:synaptixfit/presentation/screens/academic/subject_detail/page/su
 import 'package:synaptixfit/presentation/screens/academic/subject_detail/page/summary_tab.dart';
 import 'package:synaptixfit/presentation/screens/academic/subject_detail/page/topics_tab.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
+import 'package:synaptixfit/presentation/widgets/widgets.dart';
 
 import 'academic_fixtures.dart';
 
@@ -35,17 +36,19 @@ void main() {
     WidgetTester tester,
     Widget child, {
     SubjectProgressState? progress,
+    SubjectDetailState? detail,
     double scale = 1,
+    double width = 360,
   }) async {
     final progressBloc = _Progress();
     final detailBloc = _Detail();
     when(() => progressBloc.state).thenReturn(
       progress ?? const SubjectProgressState(subjectId: 's1', loading: false),
     );
-    when(
-      () => detailBloc.state,
-    ).thenReturn(const SubjectDetailState(subjectId: 's1', loading: false));
-    tester.view.physicalSize = Size(360, 1800 * scale);
+    when(() => detailBloc.state).thenReturn(
+      detail ?? const SubjectDetailState(subjectId: 's1', loading: false),
+    );
+    tester.view.physicalSize = Size(width, 1800 * scale);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -152,6 +155,55 @@ void main() {
     await tester.scrollUntilVisible(find.text('Temas hechos'), 200);
     expect(find.text('0 de 1'), findsOneWidget);
     expect(find.text('3,1 de 4,5 puntos'), findsOneWidget);
+  });
+
+  group('Resumen: una sola acción rellena (ADR 0065)', () {
+    const withSubject = SubjectDetailState(
+      subjectId: 's1',
+      loading: false,
+      subject: subject,
+    );
+
+    testWidgets('sin repasos, «Concentrarme» es la principal', (tester) async {
+      await pump(tester, const SummaryTab(), detail: withSubject);
+      expect(find.byType(AppPrimaryButton), findsOneWidget);
+      expect(
+        find.widgetWithText(AppPrimaryButton, 'Concentrarme'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('con repasos, «Repasar» rellena y «Concentrarme» tonal', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        const SummaryTab(),
+        detail: withSubject,
+        progress: const SubjectProgressState(
+          subjectId: 's1',
+          loading: false,
+          retention: retention,
+          due: [material],
+        ),
+      );
+      expect(find.byType(AppPrimaryButton), findsOneWidget);
+      expect(find.widgetWithText(AppPrimaryButton, 'Repasar'), findsOneWidget);
+      expect(
+        find.widgetWithText(AppSecondaryButton, 'Concentrarme'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a 320 px y 200 %, «Calendario» baja bajo «Lo próximo»', (
+      tester,
+    ) async {
+      await pump(tester, const SummaryTab(), scale: 2, width: 320);
+      expect(tester.takeException(), isNull);
+      final title = tester.getRect(find.text('Lo próximo'));
+      final button = tester.getRect(find.text('Calendario'));
+      expect(button.top, greaterThanOrEqualTo(title.bottom - 1));
+    });
   });
 
   testWidgets('Temario: cuenta los hechos y marca con la casilla', (

@@ -200,6 +200,7 @@ class _MissedItem extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Semantics(
+                  container: true,
                   label: l10n.homeMissedDidItFor(name),
                   excludeSemantics: true,
                   button: true,
@@ -212,6 +213,7 @@ class _MissedItem extends StatelessWidget {
                 ),
                 if (start != null && end != null)
                   Semantics(
+                    container: true,
                     label: l10n.homeMissedMoveFor(name),
                     excludeSemantics: true,
                     button: true,
@@ -228,18 +230,16 @@ class _MissedItem extends StatelessWidget {
             Padding(
               padding: EdgeInsets.zero,
               child: Semantics(
+                container: true,
                 label: l10n.homeMissedRemoveFor(name),
                 excludeSemantics: true,
                 button: true,
                 enabled: !busy,
                 onTap: busy ? null : onRemove,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: context.colors.error,
-                    side: BorderSide(color: context.colors.error),
-                  ),
+                child: AppDangerButton(
+                  icon: null,
                   onPressed: busy ? null : onRemove,
-                  child: Text(l10n.homeMissedRemove),
+                  label: l10n.homeMissedRemove,
                 ),
               ),
             ),

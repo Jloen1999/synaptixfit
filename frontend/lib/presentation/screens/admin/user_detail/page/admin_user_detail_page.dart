@@ -14,7 +14,7 @@ import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../widgets/admin_dialogs.dart';
 import '../../widgets/admin_labels.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 import '../../widgets/admin_widgets.dart';
 import '../bloc/admin_user_detail_bloc.dart';
 import 'admin_user_dialogs.dart';
@@ -641,16 +641,13 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final color = spec.destructive ? colors.error : null;
+    // Lo destructivo, con el estilo de `AppDangerButton` (rojo, borde y
+    // anillo de foco); el contenido lleva su indicador de carga.
+    final size = OutlinedButton.styleFrom(minimumSize: const Size(0, 44));
     return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        minimumSize: const Size(0, 44),
-        side: spec.destructive && spec.onPressed != null
-            ? BorderSide(color: colors.error.withValues(alpha: 0.6))
-            : null,
-      ),
+      style: spec.destructive
+          ? AppDangerButton.styleOf(context).merge(size)
+          : size,
       onPressed: spec.onPressed,
       icon: spec.busy
           ? const SizedBox.square(

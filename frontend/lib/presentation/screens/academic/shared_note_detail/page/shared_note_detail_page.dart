@@ -135,7 +135,7 @@ class _NoteBody extends StatelessWidget {
               AppPill(
                 label: subject,
                 color: context.colors.tertiary,
-                icon: Icons.school_outlined,
+                icon: AppIcons.subject,
               ),
             AppPill(
               label: context.visibilityLabel(note.visibility),
@@ -146,7 +146,7 @@ class _NoteBody extends StatelessWidget {
               AppPill(
                 label: l10n.academicUpdatedAt(dateTime(note.updatedAt!)),
                 color: context.colors.onSurfaceVariant,
-                icon: Icons.schedule_rounded,
+                icon: AppIcons.duration,
               ),
           ],
         ),

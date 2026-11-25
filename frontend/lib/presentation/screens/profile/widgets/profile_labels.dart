@@ -10,6 +10,11 @@ import '../../../../domain/enums/visibility.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../theme/app_icons.dart';
 
+/// Lo que se ve en una cifra del perfil (IMC, peso, altura) cuando falta: la
+/// palabra no cabe en la columna; el lector oye `profileNotSet` («Sin
+/// indicar») y las filas de texto lo dicen a la vista (`ProfileInfoRow`).
+const profileMissingValue = '—';
+
 /// Textos e iconos de los enums del módulo profile.
 extension SexLabel on Sex {
   String label(AppLocalizations l10n) => switch (this) {

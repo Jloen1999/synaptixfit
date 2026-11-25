@@ -107,9 +107,9 @@ class _SetupChecklistCardState extends State<SetupChecklistCard> {
   static IconData _icon(HomeSetupTask task) => switch (task) {
     HomeSetupTask.subjects => Icons.class_outlined,
     HomeSetupTask.wellnessProfile => AppIcons.bodyWeight,
-    HomeSetupTask.routine => Icons.fitness_center_rounded,
+    HomeSetupTask.routine => AppIcons.routine,
     HomeSetupTask.weekPlan => AppIcons.calendar,
-    HomeSetupTask.academicProfile => Icons.school_outlined,
+    HomeSetupTask.academicProfile => AppIcons.subject,
   };
 
   static String _title(BuildContext context, HomeSetupTask task) {

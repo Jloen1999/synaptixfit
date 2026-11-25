@@ -215,11 +215,7 @@ class _Header extends StatelessWidget {
             ),
             trailing: onToggle == null || onFace != null
                 ? null
-                : Icon(
-                    open
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                  ),
+                : Icon(open ? AppIcons.collapse : AppIcons.expand),
             onTap: onToggle,
           ),
         ),
@@ -475,10 +471,7 @@ class _ExplanationState extends State<_Explanation> with ErrorsMessageMixin {
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            adapted ? AppIcons.filters : Icons.check_circle_rounded,
-            color: color,
-          ),
+          Icon(adapted ? AppIcons.filters : AppIcons.done, color: color),
           const SizedBox(width: TokensSpacing.s),
           Expanded(
             child: Text(

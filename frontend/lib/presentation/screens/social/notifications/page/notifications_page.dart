@@ -11,7 +11,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/social_dialogs.dart';
-import '../../widgets/social_feedback.dart';
+import '../../widgets/show_social_feedback.dart';
 import '../../widgets/social_format.dart';
 import '../../social_routes.dart';
 import '../../widgets/social_layout.dart';
@@ -263,11 +263,13 @@ class _NotificationTile extends StatelessWidget {
     final color = _color(context);
     final unread = !notification.read;
     final priority = notification.priority;
-    return Semantics(
-      label: unread ? l10n.socialNotificationUnread : null,
-      child: AppCard(
-        onTap: onTap,
-        color: unread ? context.colors.surfaceContainerLow : null,
+    // «No leída» va dentro de la tarjeta (su nodo propio): por fuera se
+    // fundía con la lista en vez de leerse con su notificación.
+    return AppCard(
+      onTap: onTap,
+      color: unread ? context.colors.surfaceContainerLow : null,
+      child: Semantics(
+        label: unread ? l10n.socialNotificationUnread : null,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

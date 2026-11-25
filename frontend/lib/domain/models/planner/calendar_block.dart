@@ -50,6 +50,31 @@ abstract class CalendarBlock with _$CalendarBlock {
   bool get isLocked => fixed || immovable;
 
   Duration get duration => end.difference(start);
+
+  /// Enlace `https` de una clase en línea escrito en «Lugar» (Teams, Meet,
+  /// Zoom…), sin la puntuación que lo cierra en la frase («(https://…).»);
+  /// nulo si es un aula u otro texto. Solo `https`, como el resto de enlaces.
+  Uri? get onlineLink => _linkMatch?.$1;
+
+  /// «Lugar» con el enlace cambiado por su dominio («teams.microsoft.com»):
+  /// la dirección entera no se entiende leída ni dicha en voz alta.
+  String? get locationShown {
+    final text = location?.trim();
+    final match = _linkMatch;
+    if (text == null || match == null) return text;
+    return text.replaceFirst(match.$2, match.$1.host);
+  }
+
+  static final _link = RegExp(r'https://\S+');
+  static final _closing = RegExp(r'[.,;:)\]>]+$');
+
+  (Uri, String)? get _linkMatch {
+    final found = _link.firstMatch(location ?? '')?.group(0);
+    if (found == null) return null;
+    final raw = found.replaceFirst(_closing, '');
+    final uri = Uri.tryParse(raw);
+    return uri != null && uri.host.isNotEmpty ? (uri, raw) : null;
+  }
 }
 
 /// Bloque creado o movido junto con los bloques con los que se solapa.

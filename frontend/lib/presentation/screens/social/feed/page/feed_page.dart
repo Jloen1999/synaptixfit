@@ -18,7 +18,7 @@ import '../../social_routes.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/post_editor_sheet.dart';
 import '../../widgets/social_dialogs.dart';
-import '../../widgets/social_feedback.dart';
+import '../../widgets/show_social_feedback.dart';
 import '../../widgets/social_format.dart';
 import '../../widgets/social_layout.dart';
 import '../bloc/feed_bloc.dart';
@@ -218,7 +218,7 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _create,
-          icon: const Icon(Icons.edit_rounded),
+          icon: const Icon(AppIcons.edit),
           label: Text(l10n.socialPublish),
         ),
         body: Column(
@@ -424,7 +424,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                         Icon(
-                          Icons.edit_rounded,
+                          AppIcons.edit,
                           color: context.colors.primary,
                           size: TokensSize.iconS,
                         ),
@@ -507,7 +507,7 @@ class _EmptyFeed extends StatelessWidget {
               children: [
                 AppPrimaryButton(
                   label: l10n.socialPublish,
-                  icon: Icons.edit_rounded,
+                  icon: AppIcons.edit,
                   onPressed: onCreate,
                 ),
                 AppSecondaryButton(

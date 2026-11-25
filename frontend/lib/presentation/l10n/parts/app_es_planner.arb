@@ -999,6 +999,9 @@
   "plannerDetailsMove": "Pasar a otro día",
   "plannerDetailsDelete": "Eliminar",
   "plannerDetailsEdit": "Editar",
+  "plannerDetailsGoToClass": "Entrar a la clase en línea",
+  "plannerDetailsLinkFailed": "No hemos podido abrir el enlace de la clase.",
   "guideCalendarSummaryTitle": "Tu semana en cifras",
-  "guideCalendarSummaryBody": "Toca una cifra para ver el detalle: entregas, horas de estudio y deporte o choques de horario."
+  "guideCalendarSummaryBody": "Toca una cifra para ver el detalle: entregas, horas de estudio y deporte o choques de horario.",
+  "plannerDetailsGoToClassSpoken": "Entrar a la clase en línea. Se abre fuera de la app"
 }

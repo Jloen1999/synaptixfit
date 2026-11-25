@@ -7,7 +7,7 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import '../comments/bloc/comments_bloc.dart';
 import 'social_dialogs.dart';
-import 'social_feedback.dart';
+import 'show_social_feedback.dart';
 import 'social_format.dart';
 
 enum _CommentAction { edit, delete, report }
@@ -61,6 +61,7 @@ class CommentTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Semantics(
+            container: true,
             button: onAuthorTap != null,
             label: comment.author.fullName,
             child: AppFocusOutline(

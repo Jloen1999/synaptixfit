@@ -38,7 +38,7 @@ class StudyWeekCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             InlineNotice(
-              icon: Icons.cloud_off_rounded,
+              icon: AppIcons.unavailable,
               message: l10n.progressSectionUnavailable,
             ),
             const SizedBox(height: TokensSpacing.s),
@@ -107,7 +107,7 @@ class StudyWeekCard extends StatelessWidget {
               ),
               AppMetricTile(
                 bare: true,
-                icon: Icons.replay_rounded,
+                icon: AppIcons.review,
                 color: study,
                 value: '${data.reviewsCompleted}',
                 label: l10n.progressStudyReviewsLabel,
@@ -115,7 +115,7 @@ class StudyWeekCard extends StatelessWidget {
               if (data.testsCompleted > 0)
                 AppMetricTile(
                   bare: true,
-                  icon: Icons.quiz_outlined,
+                  icon: AppIcons.exam,
                   color: study,
                   value: l10n.progressStudyScore(data.averageTestScore ?? 0),
                   label: l10n.progressStudyTestsLabel(data.testsCompleted),
@@ -166,11 +166,7 @@ class _GoalProgress extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: color,
-                      size: TokensSize.iconS,
-                    ),
+                    Icon(AppIcons.done, color: color, size: TokensSize.iconS),
                     const SizedBox(width: TokensSpacing.xs),
                     Flexible(
                       child: Text(

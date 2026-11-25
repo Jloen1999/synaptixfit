@@ -285,8 +285,7 @@ class _PlanEditor extends StatelessWidget {
         ),
         if (plan != null) ...[
           const SizedBox(height: TokensSpacing.s),
-          TextButton.icon(
-            style: TextButton.styleFrom(foregroundColor: context.colors.error),
+          AppDangerButton(
             onPressed: state.saving
                 ? null
                 : () async {
@@ -298,8 +297,7 @@ class _PlanEditor extends StatelessWidget {
                     );
                     if (ok) bloc.add(const WeeklyPlanEvent.deleted());
                   },
-            icon: const Icon(AppIcons.delete),
-            label: Text(l10n.trainingDeletePlanTitle),
+            label: l10n.trainingDeletePlanTitle,
           ),
         ],
       ],

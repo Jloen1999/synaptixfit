@@ -17,7 +17,7 @@ import 'package:synaptixfit/domain/use_cases/admin/set_admin_user_shadowban_use_
 import 'package:synaptixfit/domain/use_cases/admin/update_admin_user_identity_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/admin/wipe_admin_user_use_case.dart';
 import 'package:synaptixfit/presentation/screens/admin/user_detail/bloc/admin_user_detail_bloc.dart';
-import 'package:synaptixfit/presentation/screens/admin/widgets/admin_status.dart';
+import 'package:synaptixfit/presentation/screens/admin/feedback/admin_status.dart';
 
 import 'admin_fixtures.dart';
 

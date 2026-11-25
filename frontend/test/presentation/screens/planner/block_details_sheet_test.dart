@@ -123,10 +123,7 @@ void main() {
     expect(find.text('Tema 4: GROUP BY'), findsOneWidget);
     // Una sola acción rellena; lo que aún no empezó no se marca.
     expect(find.bySubtype<FilledButton>(), findsOneWidget);
-    expect(
-      filled('Concentrarme'),
-      findsOneWidget,
-    );
+    expect(filled('Concentrarme'), findsOneWidget);
     expect(
       find.text('Podrás marcarlo como hecho cuando empiece.'),
       findsOneWidget,
@@ -175,43 +172,41 @@ void main() {
         title: 'Dentista',
       ),
     );
-    expect(
-      filled('Marcar como hecho'),
-      findsOneWidget,
-    );
+    expect(filled('Marcar como hecho'), findsOneWidget);
     // El nombre de lo personal es el título, no una nota aparte.
     expect(find.text('Dentista'), findsOneWidget);
     await tester.tap(find.text('Marcar como hecho'));
     expect(actions, [BlockDetailsAction.toggleDone]);
   });
 
-  testWidgets('hecho: sin acción rellena, «Desmarcar» y no se pasa a otro día', (
-    tester,
-  ) async {
-    await pump(
-      tester,
-      BlockDetails(
-        block: event(
-          type: BlockType.sport,
-          start: DateTime(2025, 10, 15, 8),
-          status: ItemTimeStatus.done,
-          completed: true,
+  testWidgets(
+    'hecho: sin acción rellena, «Desmarcar» y no se pasa a otro día',
+    (tester) async {
+      await pump(
+        tester,
+        BlockDetails(
+          block: event(
+            type: BlockType.sport,
+            start: DateTime(2025, 10, 15, 8),
+            status: ItemTimeStatus.done,
+            completed: true,
+          ),
+          title: 'Deporte',
         ),
-        title: 'Deporte',
-      ),
-    );
-    expect(find.bySubtype<FilledButton>(), findsNothing);
-    expect(find.text('Hecho'), findsOneWidget);
-    expect(find.text('Desmarcar'), findsOneWidget);
-    expect(find.text('Pasar a otro día'), findsNothing);
-    // Dice por qué no se puede pasar a otro día.
-    expect(
-      find.text('Ya está hecho: desmárcalo antes de moverlo.'),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Desmarcar'));
-    expect(actions, [BlockDetailsAction.toggleDone]);
-  });
+      );
+      expect(find.bySubtype<FilledButton>(), findsNothing);
+      expect(find.text('Hecho'), findsOneWidget);
+      expect(find.text('Desmarcar'), findsOneWidget);
+      expect(find.text('Pasar a otro día'), findsNothing);
+      // Dice por qué no se puede pasar a otro día.
+      expect(
+        find.text('Ya está hecho: desmárcalo antes de moverlo.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Desmarcar'));
+      expect(actions, [BlockDetailsAction.toggleDone]);
+    },
+  );
 
   testWidgets('sin hacer: se marca, se pasa a otro día y se dice con texto', (
     tester,
@@ -227,10 +222,7 @@ void main() {
       ),
     );
     expect(find.text('Sin hacer'), findsOneWidget);
-    expect(
-      filled('Marcar como hecho'),
-      findsOneWidget,
-    );
+    expect(filled('Marcar como hecho'), findsOneWidget);
     expect(find.text('Pasar a otro día'), findsOneWidget);
   });
 
@@ -262,10 +254,7 @@ void main() {
       type: BlockType.sport,
     ).copyWith(routineId: 'r1', routineDayId: 'd1');
     await pump(tester, BlockDetails(block: routine, title: 'Tirón y core'));
-    expect(
-      filled('Empezar el entreno'),
-      findsOneWidget,
-    );
+    expect(filled('Empezar el entreno'), findsOneWidget);
     // Lo marca la sesión: no hay «Marcar como hecho».
     expect(find.text('Marcar como hecho'), findsNothing);
     expect(find.text('Abrir en la rutina'), findsOneWidget);
@@ -282,10 +271,7 @@ void main() {
         title: 'Tirón y core',
       ),
     );
-    expect(
-      filled('Abrir en la rutina'),
-      findsOneWidget,
-    );
+    expect(filled('Abrir en la rutina'), findsOneWidget);
   });
 
   testWidgets('un evento fijo no se pasa a otro día y se dice «Fijo»', (
@@ -307,32 +293,36 @@ void main() {
     expect(find.text('Eliminar'), findsOneWidget);
   });
 
-  testWidgets('mientras se hace algo, los botones no se pueden pulsar dos veces', (
-    tester,
-  ) async {
-    await pump(
-      tester,
-      BlockDetails(
-        block: event(
-          type: BlockType.personal,
-          start: DateTime(2025, 10, 14, 18),
-          status: ItemTimeStatus.missed,
+  testWidgets(
+    'mientras se hace algo, los botones no se pueden pulsar dos veces',
+    (tester) async {
+      await pump(
+        tester,
+        BlockDetails(
+          block: event(
+            type: BlockType.personal,
+            start: DateTime(2025, 10, 14, 18),
+            status: ItemTimeStatus.missed,
+          ),
+          title: 'Recados',
+          busy: true,
         ),
-        title: 'Recados',
-        busy: true,
-      ),
-    );
-    await tester.tap(find.text('Pasar a otro día'));
-    await tester.tap(find.text('Eliminar'));
-    await tester.tap(find.text('Editar'));
-    expect(actions, isEmpty);
-  });
+      );
+      await tester.tap(find.text('Pasar a otro día'));
+      await tester.tap(find.text('Eliminar'));
+      await tester.tap(find.text('Editar'));
+      expect(actions, isEmpty);
+    },
+  );
 
   testWidgets('sin nombre de la asignatura no sale la línea (no se llama '
       '«Asignatura»)', (tester) async {
     await pump(
       tester,
-      BlockDetails(block: event().copyWith(subjectId: 's1'), title: 'Estudio'),
+      BlockDetails(
+        block: event().copyWith(subjectId: 's1'),
+        title: 'Estudio',
+      ),
     );
     expect(find.text('Asignatura'), findsNothing);
     expect(find.text('Abrir asignatura'), findsNothing);
@@ -376,28 +366,29 @@ void main() {
       subjectName: 'Bases de datos',
     );
 
-    testWidgets('cumple tamaño táctil, etiquetas y contraste (claro y oscuro)', (
-      tester,
-    ) async {
-      final handle = tester.ensureSemantics();
-      for (final theme in [AppTheme.light, AppTheme.dark]) {
-        await pump(tester, details, theme: theme);
-        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(textContrastGuideline));
-      }
-      // El título es el encabezado; el lugar y la asignatura dicen qué son.
-      expect(
-        find.bySemanticsLabel('Bases de datos').evaluate().isNotEmpty,
-        isTrue,
-      );
-      expect(find.bySemanticsLabel('Ubicación: Aula 2.4'), findsOneWidget);
-      expect(
-        find.bySemanticsLabel('Abrir asignatura Bases de datos'),
-        findsOneWidget,
-      );
-      handle.dispose();
-    });
+    testWidgets(
+      'cumple tamaño táctil, etiquetas y contraste (claro y oscuro)',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        for (final theme in [AppTheme.light, AppTheme.dark]) {
+          await pump(tester, details, theme: theme);
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(textContrastGuideline));
+        }
+        // El título es el encabezado; el lugar y la asignatura dicen qué son.
+        expect(
+          find.bySemanticsLabel('Bases de datos').evaluate().isNotEmpty,
+          isTrue,
+        );
+        expect(find.bySemanticsLabel('Ubicación: Aula 2.4'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel('Abrir asignatura Bases de datos'),
+          findsOneWidget,
+        );
+        handle.dispose();
+      },
+    );
 
     testWidgets('con el texto al 200 % y a 320 px no se corta ni se solapa', (
       tester,
@@ -408,6 +399,118 @@ void main() {
       final move = tester.getTopLeft(find.text('Pasar a otro día'));
       final delete = tester.getTopLeft(find.text('Eliminar'));
       expect(delete.dy, greaterThan(move.dy));
+    });
+  });
+
+  group('clase (ADR 0065): «Entrar a la clase en línea» o la asignatura', () {
+    testWidgets('hoy, con enlace y sin acabar, entrar es la principal', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pump(
+        tester,
+        BlockDetails(
+          block: event(type: BlockType.classSession).copyWith(
+            subjectId: 's1',
+            location: 'Teams: (https://teams.microsoft.com/l/abc).',
+          ),
+          title: 'Bases de datos',
+          subjectName: 'Bases de datos',
+        ),
+      );
+      expect(filled('Entrar a la clase en línea'), findsOneWidget);
+      // El lector oye que sale de la app.
+      expect(
+        find.bySemanticsLabel(
+          'Entrar a la clase en línea. Se abre fuera de la app',
+        ),
+        findsOneWidget,
+      );
+      // En «Lugar», solo el dominio del enlace.
+      expect(find.text('Teams: (teams.microsoft.com).'), findsOneWidget);
+      // La asignatura sigue a mano, con su botón.
+      expect(find.text('Abrir asignatura'), findsOneWidget);
+      await tester.tap(find.text('Entrar a la clase en línea'));
+      expect(actions, [BlockDetailsAction.goToClass]);
+      handle.dispose();
+    });
+
+    testWidgets(
+      'otro día, aunque tenga enlace, la principal es la asignatura',
+      (tester) async {
+        await pump(
+          tester,
+          BlockDetails(
+            block: event(type: BlockType.classSession, start: tomorrow)
+                .copyWith(
+                  subjectId: 's1',
+                  location: 'https://meet.example.com/abc-defg',
+                ),
+            title: 'Bases de datos',
+            subjectName: 'Bases de datos',
+          ),
+        );
+        expect(find.text('Entrar a la clase en línea'), findsNothing);
+        expect(filled('Abrir asignatura'), findsOneWidget);
+      },
+    );
+
+    testWidgets('a 320 px y texto al 200 %, «Abrir asignatura» baja de línea', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        BlockDetails(
+          block: event().copyWith(subjectId: 's1'),
+          title: 'Bases de datos',
+          subjectName: 'Ingeniería del software',
+        ),
+        width: 320,
+        textScale: 2,
+      );
+      expect(tester.takeException(), isNull);
+      final subject = tester.getRect(find.text('Ingeniería del software'));
+      final open = tester.getRect(find.text('Abrir asignatura'));
+      // Debajo del nombre, no al lado partiéndolo.
+      expect(open.top, greaterThanOrEqualTo(subject.bottom - 1));
+    });
+
+    testWidgets('en un aula, la principal abre la asignatura (sin repetirla)', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        BlockDetails(
+          block: event(
+            type: BlockType.classSession,
+          ).copyWith(subjectId: 's1', location: 'Aula 2.4'),
+          title: 'Bases de datos',
+          subjectName: 'Bases de datos',
+        ),
+      );
+      expect(find.text('Entrar a la clase en línea'), findsNothing);
+      expect(filled('Abrir asignatura'), findsOneWidget);
+      expect(find.text('Abrir asignatura'), findsOneWidget);
+      expect(find.text('Aula 2.4'), findsOneWidget);
+      await tester.tap(find.text('Abrir asignatura'));
+      expect(actions, [BlockDetailsAction.openSubject]);
+    });
+
+    testWidgets('una clase que ya pasó no lleva al enlace', (tester) async {
+      await pump(
+        tester,
+        BlockDetails(
+          block: event(
+            type: BlockType.classSession,
+            start: DateTime(2025, 10, 15, 8),
+            status: ItemTimeStatus.done,
+            completed: true,
+          ).copyWith(location: 'https://meet.example.com/abc-defg'),
+          title: 'Bases de datos',
+        ),
+      );
+      expect(find.text('Entrar a la clase en línea'), findsNothing);
+      expect(find.text('Cuenta como asistida.'), findsOneWidget);
     });
   });
 }

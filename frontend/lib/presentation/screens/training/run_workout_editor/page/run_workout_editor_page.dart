@@ -157,15 +157,11 @@ class _EditorViewState extends State<_EditorView> with ErrorsMessageMixin {
                   if (state.workoutId != null) ...[
                     const SizedBox(height: TokensSpacing.m),
                     Center(
-                      child: TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: context.colors.error,
-                        ),
+                      child: AppDangerButton(
                         onPressed: state.saving
                             ? null
                             : () => context.pop(RunWorkoutEditorPage.deleted),
-                        icon: const Icon(AppIcons.delete),
-                        label: Text(l10n.runDeleteWorkout),
+                        label: l10n.runDeleteWorkout,
                       ),
                     ),
                   ],

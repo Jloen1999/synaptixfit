@@ -129,26 +129,37 @@ class ProfileFieldError extends StatelessWidget {
   }
 }
 
-/// Fila etiqueta–valor para los resúmenes del perfil.
+/// Fila etiqueta–valor para los resúmenes del perfil. Si falta el dato
+/// ([value] nulo) dice «Sin indicar» y, con [onEdit], toda la fila es un botón
+/// que abre «Editar» para ponerlo (lo nombrado se puede tocar).
 class ProfileInfoRow extends StatelessWidget {
   const ProfileInfoRow({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
+    this.onEdit,
   });
 
   final IconData icon;
   final String label;
-  final String value;
+  final String? value;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final l10n = context.localizations;
+    final value = this.value;
+    final missing = value == null;
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xs),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: context.colors.onSurfaceVariant),
+          Icon(
+            icon,
+            size: TokensSize.iconS,
+            color: context.colors.onSurfaceVariant,
+          ),
           const SizedBox(width: TokensSpacing.s),
           Expanded(
             child: Text(
@@ -161,14 +172,44 @@ class ProfileInfoRow extends StatelessWidget {
           const SizedBox(width: TokensSpacing.s),
           Flexible(
             child: Text(
-              value,
+              value ?? l10n.profileNotSet,
               textAlign: TextAlign.end,
               style: context.textStyles.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: missing ? null : FontWeight.w600,
+                color: missing ? context.colors.onSurfaceVariant : null,
               ),
             ),
           ),
+          if (missing && onEdit != null) ...[
+            const SizedBox(width: TokensSpacing.xs),
+            Icon(
+              AppIcons.edit,
+              size: TokensSize.iconS,
+              color: context.colors.onSurfaceVariant,
+            ),
+          ],
         ],
+      ),
+    );
+    final edit = onEdit;
+    if (!missing || edit == null) return row;
+    return AppFocusOutline(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(TokensRadius.m),
+        onTap: edit,
+        child: Semantics(
+          button: true,
+          onTapHint: l10n.commonEdit,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: TokensLayout.minTouchTarget,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: row,
+            ),
+          ),
+        ),
       ),
     );
   }

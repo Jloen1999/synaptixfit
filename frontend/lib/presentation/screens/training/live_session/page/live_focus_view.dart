@@ -178,7 +178,7 @@ class LiveSessionHeader extends StatelessWidget {
                     IconButton(
                       tooltip: l10n.trainingLivePrevious,
                       onPressed: index <= 0 ? null : () => go(index - 1),
-                      icon: const Icon(Icons.chevron_left_rounded),
+                      icon: const Icon(AppIcons.previous),
                     ),
                     Expanded(
                       child: Text(
@@ -195,7 +195,7 @@ class LiveSessionHeader extends StatelessWidget {
                       onPressed: index >= s.exercises.length - 1
                           ? null
                           : () => go(index + 1),
-                      icon: const Icon(Icons.chevron_right_rounded),
+                      icon: const Icon(AppIcons.next),
                     ),
                   ],
                 )
@@ -267,10 +267,15 @@ class _StripItem extends StatelessWidget {
       sets,
     );
     return Semantics(
+      container: true,
       button: true,
       selected: selected,
       label: now ? l10n.trainingLiveStripItemNow(item) : item,
       excludeSemantics: true,
+      // El InkWell queda excluido: el lector pulsa este nodo.
+      onTap: () => context.read<LiveSessionBloc>().add(
+        LiveSessionEvent.exerciseSelected(exercise.id),
+      ),
       child: AppFocusOutline(
         borderRadius: BorderRadius.circular(TokensRadius.m),
         child: InkWell(
@@ -308,7 +313,7 @@ class _StripItem extends StatelessWidget {
                     end: 0,
                     bottom: 0,
                     child: Icon(
-                      Icons.check_circle_rounded,
+                      AppIcons.done,
                       color: context.palette.success,
                       size: TokensSize.iconS,
                     ),
@@ -325,7 +330,7 @@ class _StripItem extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.play_arrow_rounded,
+                        AppIcons.start,
                         color: context.colors.primary,
                         size: TokensSize.iconXs,
                       ),
@@ -523,7 +528,7 @@ class LiveExerciseView extends StatelessWidget {
                   if (onSwap != null && original == null)
                     TextButton.icon(
                       onPressed: () => onSwap!(e),
-                      icon: const Icon(Icons.swap_horiz_rounded),
+                      icon: const Icon(AppIcons.swap),
                       label: Text(l10n.trainingSwapTodayAction),
                     ),
                 ],
@@ -639,11 +644,7 @@ class _ExerciseTitle extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.play_arrow_rounded,
-                    size: TokensSize.iconXs,
-                    color: primary,
-                  ),
+                  Icon(AppIcons.start, size: TokensSize.iconXs, color: primary),
                   const SizedBox(width: TokensSpacing.xxs),
                   Text(
                     l10n.trainingLiveNowExercise,
@@ -700,7 +701,7 @@ class _SwappedNote extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                Icons.swap_horiz_rounded,
+                AppIcons.swap,
                 size: TokensSize.iconS,
                 color: context.colors.onSecondaryContainer,
               ),
@@ -771,8 +772,12 @@ class _WarmupSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(TokensRadius.s),
                 onTap: () => onWarmup(exercise, w.setNumber, w),
                 // Botón con su acción: «Corregir» (el lápiz es decorativo).
+                // Nodo propio con la acción: en la lista, la primera fila se
+                // fundía con el padre.
                 child: Semantics(
+                  container: true,
                   button: true,
+                  onTap: () => onWarmup(exercise, w.setNumber, w),
                   hint: l10n.trainingWarmupSetFix,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
@@ -1063,9 +1068,7 @@ class _LiveSetRow extends StatelessWidget {
                   : context.palette.onWarning,
             ),
             onPressed: () => onUnmark(e, done),
-            icon: Icon(
-              done.completed ? Icons.check_rounded : Icons.cancel_rounded,
-            ),
+            icon: Icon(done.completed ? AppIcons.check : Icons.cancel_rounded),
           );
 
     final numberText = Text(
@@ -1171,7 +1174,7 @@ class _LiveSetRow extends StatelessWidget {
                   Icon(
                     timerPaused
                         ? Icons.pause_circle_rounded
-                        : Icons.timer_outlined,
+                        : AppIcons.focusTimer,
                     size: TokensSize.iconXs,
                     color: statusColor,
                   ),
@@ -1604,14 +1607,14 @@ class _LiveClockPillState extends State<LiveClockPill>
               ],
               if (mode == SeriesClockMode.paused) ...[
                 Icon(
-                  Icons.pause_rounded,
+                  AppIcons.pause,
                   size: TokensSize.iconXs,
                   color: foreground,
                 ),
                 const SizedBox(width: TokensSpacing.xxs),
               ],
               Icon(
-                Icons.timer_outlined,
+                AppIcons.focusTimer,
                 size: TokensSize.iconXs,
                 color: foreground,
               ),
@@ -2298,7 +2301,7 @@ class _DoingSet extends StatelessWidget {
                       children: [
                         if (!running) ...[
                           Icon(
-                            Icons.pause_rounded,
+                            AppIcons.pause,
                             color: color,
                             size: TokensSize.iconM,
                           ),
@@ -2342,7 +2345,7 @@ class _DoingSet extends StatelessWidget {
                 onPressed: saving
                     ? null
                     : () => bloc.add(const LiveSessionEvent.pauseRequested()),
-                icon: const Icon(Icons.pause_rounded),
+                icon: const Icon(AppIcons.pause),
               )
             else
               OutlinedButton.icon(
@@ -2359,7 +2362,7 @@ class _DoingSet extends StatelessWidget {
             Expanded(
               child: AppPrimaryButton(
                 label: l10n.trainingSetDoneShort,
-                icon: Icons.check_rounded,
+                icon: AppIcons.check,
                 focusNode: focus,
                 loading: saving,
                 onPressed: onDone,

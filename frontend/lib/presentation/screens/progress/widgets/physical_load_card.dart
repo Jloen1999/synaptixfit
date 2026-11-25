@@ -6,6 +6,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import 'chart_card.dart';
 import 'progress_labels.dart';
+import '../../../theme/app_icons.dart';
 
 /// Carga física diaria de los últimos 28 días (gráfica pequeña).
 class PhysicalLoadCard extends StatelessWidget {
@@ -23,9 +24,7 @@ class PhysicalLoadCard extends StatelessWidget {
         title: l10n.progressLoadTitle,
         subtitle: l10n.progressLoadSubtitle,
         child: InlineNotice(
-          icon: data == null
-              ? Icons.cloud_off_rounded
-              : Icons.show_chart_rounded,
+          icon: data == null ? AppIcons.unavailable : Icons.show_chart_rounded,
           message: data == null
               ? l10n.progressSectionUnavailable
               : l10n.progressLoadEmpty,

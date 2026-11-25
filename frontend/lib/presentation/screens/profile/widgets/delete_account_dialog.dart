@@ -112,10 +112,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
           child: Text(l10n.commonCancel),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: context.colors.error,
-            foregroundColor: context.colors.onError,
-          ),
+          style: AppDangerButton.confirmStyleOf(context),
           onPressed: ready
               ? () => Navigator.pop<DeleteAccountConfirmation>(context, (
                   password: widget.hasPassword ? _password.text : null,

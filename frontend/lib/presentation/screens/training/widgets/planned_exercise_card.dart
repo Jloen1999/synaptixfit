@@ -201,6 +201,7 @@ class _PlannedExerciseCardState extends State<PlannedExerciseCard> {
                 children: [
                   if (widget.onReplace != null)
                     Semantics(
+                      container: true,
                       button: true,
                       label: l10n.trainingReplaceExerciseNamed(name),
                       excludeSemantics: true,
@@ -213,6 +214,7 @@ class _PlannedExerciseCardState extends State<PlannedExerciseCard> {
                     ),
                   if (widget.onRemove != null)
                     Semantics(
+                      container: true,
                       button: true,
                       label: l10n.trainingRemoveExerciseNamed(name),
                       excludeSemantics: true,
@@ -388,6 +390,7 @@ class _PlannedSetsTableState extends State<PlannedSetsTable> {
     final shown = value == null ? '–' : formatNumber(value.toDouble());
     if (!widget.editable) {
       return Semantics(
+        container: true,
         label: l10n.trainingFieldValueSpoken(spoken, shown),
         excludeSemantics: true,
         child: Text(
@@ -449,6 +452,7 @@ class _PlannedSetsTableState extends State<PlannedSetsTable> {
         message: l10n.trainingRemoveFromPlan,
         excludeFromSemantics: true,
         child: Semantics(
+          container: true,
           button: true,
           enabled: onTap != null,
           label: l10n.trainingRemoveSetNamed(n, widget.exerciseName),
@@ -608,6 +612,7 @@ class _PlannedSetsTableState extends State<PlannedSetsTable> {
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: Semantics(
+              container: true,
               button: true,
               label: l10n.trainingAddSetNamed(widget.exerciseName),
               excludeSemantics: true,

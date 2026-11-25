@@ -69,7 +69,7 @@ class _MockExamSetupView extends StatelessWidget {
                           label: state.canStart
                               ? l10n.academicMockSetupStart(state.count)
                               : l10n.academicMockSetupPickOne,
-                          icon: Icons.play_arrow_rounded,
+                          icon: AppIcons.start,
                           onPressed: state.canStart
                               ? () => _start(context, state)
                               : null,
@@ -89,7 +89,7 @@ class _MockExamSetupView extends StatelessWidget {
                   bloc.add(MockExamSetupEvent.started(state.subjectId)),
             ),
             _ when !ready => AppEmptyState(
-              icon: Icons.quiz_outlined,
+              icon: AppIcons.exam,
               title: l10n.academicMockSetupEmptyTitle,
               message: l10n.academicMockSetupEmptyMessage,
               action: AppSecondaryButton(
@@ -165,8 +165,8 @@ class _Form extends StatelessWidget {
                           : null,
                       secondary: Icon(
                         source.originType == StudySourceType.file
-                            ? Icons.description_outlined
-                            : Icons.sticky_note_2_outlined,
+                            ? AppIcons.noteDocument
+                            : AppIcons.quickNote,
                       ),
                       title: Text(
                         source.title,

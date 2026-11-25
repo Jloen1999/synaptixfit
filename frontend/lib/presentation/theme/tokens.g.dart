@@ -47,7 +47,7 @@ abstract final class TokensLightColors {
   static const Color study = Color(0xFF6D28D9);
   static const Color streak = Color(0xFFB03A0A);
   static const Color navigationBar = Color(0xFFFFFFFF);
-  static const Color buttonOutline = Color(0xFFD1D5DB);
+  static const Color buttonOutline = Color(0xFF767D8A);
 }
 
 abstract final class TokensDarkColors {
@@ -93,7 +93,7 @@ abstract final class TokensDarkColors {
   static const Color study = Color(0xFFA78BFA);
   static const Color streak = Color(0xFFFDBA74);
   static const Color navigationBar = Color(0xFF11141B);
-  static const Color buttonOutline = Color(0xFF2A303C);
+  static const Color buttonOutline = Color(0xFF7C8496);
 }
 
 abstract final class TokensSpacing {

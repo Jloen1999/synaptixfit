@@ -23,6 +23,7 @@ class ExerciseMediaCredits extends StatelessWidget {
     final l10n = context.localizations;
     final line = credits.map((c) => _kindLabel(l10n, c)).join(' · ');
     return Semantics(
+      container: true,
       button: true,
       label: l10n.trainingMediaCreditsSpoken(line),
       onTap: () => _showCredits(context, credits),

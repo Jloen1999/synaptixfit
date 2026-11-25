@@ -28,7 +28,7 @@ import 'package:synaptixfit/presentation/screens/admin/exercises/bloc/admin_exer
 import 'package:synaptixfit/presentation/screens/admin/hub/bloc/admin_hub_bloc.dart';
 import 'package:synaptixfit/presentation/screens/admin/metrics/bloc/admin_metrics_bloc.dart';
 import 'package:synaptixfit/presentation/screens/admin/reports/bloc/admin_reports_bloc.dart';
-import 'package:synaptixfit/presentation/screens/admin/widgets/admin_status.dart';
+import 'package:synaptixfit/presentation/screens/admin/feedback/admin_status.dart';
 
 import 'admin_fixtures.dart';
 

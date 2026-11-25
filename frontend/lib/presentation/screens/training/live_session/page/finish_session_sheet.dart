@@ -82,7 +82,7 @@ class _FinishSessionSheetState extends State<FinishSessionSheet> {
           const SizedBox(height: TokensSpacing.l),
           AppPrimaryButton(
             label: l10n.commonSave,
-            icon: Icons.check_rounded,
+            icon: AppIcons.check,
             onPressed: () => Navigator.of(context).pop(_effort),
           ),
         ],

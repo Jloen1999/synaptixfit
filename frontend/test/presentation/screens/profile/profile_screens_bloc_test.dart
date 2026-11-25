@@ -104,6 +104,53 @@ void main() {
     );
 
     blocTest<ProfileBloc, ProfileState>(
+      'las fichas Físico y Académico no piden las solicitudes de amistad',
+      setUp: () {
+        when(
+          () => account(),
+        ).thenAnswer((_) async => const Success(testAccount));
+        when(
+          () => summary(),
+        ).thenAnswer((_) async => const Success(testSummary));
+      },
+      build: build,
+      act: (bloc) async {
+        bloc.add(const ProfileEvent.started(friendRequests: false));
+        await Future<void>.delayed(Duration.zero);
+        // Refrescar la ficha tampoco las pide.
+        bloc.add(const ProfileEvent.refreshed());
+      },
+      skip: 1,
+      expect: () => const [
+        ProfileState(
+          status: ProfileStatus.ready,
+          account: testAccount,
+          summary: testSummary,
+          countsFriendRequests: false,
+        ),
+        ProfileState(
+          status: ProfileStatus.ready,
+          account: testAccount,
+          summary: testSummary,
+          refreshing: true,
+          countsFriendRequests: false,
+        ),
+        ProfileState(
+          status: ProfileStatus.ready,
+          account: testAccount,
+          summary: testSummary,
+          countsFriendRequests: false,
+        ),
+      ],
+      verify: (_) => verifyNever(
+        () => friendships(
+          kind: FriendshipListKind.received,
+          size: any(named: 'size'),
+        ),
+      ),
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
       'carga cuenta y resumen',
       setUp: () {
         when(

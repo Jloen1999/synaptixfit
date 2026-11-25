@@ -1100,7 +1100,7 @@ Widget? _ruleGoButton(BuildContext context, ChallengeRuleMetric? metric) {
     ),
     ChallengeRuleMetric.checkIns => push(
       l10n.challengesRuleGoCheckIn,
-      Icons.fact_check_outlined,
+      AppIcons.checkIn,
       ChallengesExternalPaths.checkIn,
     ),
     ChallengeRuleMetric.plannedWeeks => go(

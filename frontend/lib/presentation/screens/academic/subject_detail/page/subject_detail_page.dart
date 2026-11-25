@@ -393,7 +393,7 @@ class _SubjectMenu extends StatelessWidget {
     final l10n = context.localizations;
     return PopupMenuButton<VoidCallback>(
       tooltip: l10n.academicSubjectMoreActions(subject.name),
-      icon: const Icon(Icons.more_vert_rounded),
+      icon: const Icon(AppIcons.menu),
       enabled: !busy,
       onSelected: (action) => action(),
       itemBuilder: (_) => [

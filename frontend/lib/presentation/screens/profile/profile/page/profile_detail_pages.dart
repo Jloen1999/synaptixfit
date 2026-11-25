@@ -60,7 +60,9 @@ class _ProfileSectionScaffold extends StatelessWidget with ErrorsMessageMixin {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<ProfileBloc>()..add(const ProfileEvent.started()),
+      create: (_) =>
+          getIt<ProfileBloc>()
+            ..add(const ProfileEvent.started(friendRequests: false)),
       child: Scaffold(
         appBar: AppPageBar.reading(
           leading: const AppBackButton(fallback: ProfilePaths.root),
@@ -84,7 +86,8 @@ class _ProfileSectionScaffold extends StatelessWidget with ErrorsMessageMixin {
               ),
               ProfileStatus.failure => AppErrorView(
                 error: state.error!,
-                onRetry: () => bloc.add(const ProfileEvent.started()),
+                onRetry: () =>
+                    bloc.add(const ProfileEvent.started(friendRequests: false)),
               ),
               ProfileStatus.ready => RefreshIndicator(
                 onRefresh: () async {
@@ -132,6 +135,7 @@ class ProfileWellnessSummary extends StatelessWidget {
       );
     }
     final number = NumberFormat('0.#');
+    void edit() => openProfileScreen(context, ProfilePaths.editWellness);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -145,7 +149,7 @@ class ProfileWellnessSummary extends StatelessWidget {
                     child: _Metric(
                       icon: AppIcons.bmi,
                       color: context.palette.sessions,
-                      value: p.bmi == null ? '—' : number.format(p.bmi),
+                      value: p.bmi == null ? null : number.format(p.bmi),
                       label: l10n.profileBmiLabel,
                     ),
                   ),
@@ -154,7 +158,7 @@ class ProfileWellnessSummary extends StatelessWidget {
                       icon: AppIcons.bodyWeight,
                       color: context.colors.secondary,
                       value: p.weightKg == null
-                          ? '—'
+                          ? null
                           : l10n.profileKgValue(number.format(p.weightKg)),
                       label: l10n.profileFieldWeightShort,
                     ),
@@ -164,7 +168,7 @@ class ProfileWellnessSummary extends StatelessWidget {
                       icon: AppIcons.bodyHeight,
                       color: context.palette.calories,
                       value: p.heightCm == null
-                          ? '—'
+                          ? null
                           : l10n.profileCmValue(number.format(p.heightCm)),
                       label: l10n.profileFieldHeightShort,
                     ),
@@ -175,21 +179,24 @@ class ProfileWellnessSummary extends StatelessWidget {
               ProfileInfoRow(
                 icon: p.primaryGoal?.icon ?? AppIcons.goal,
                 label: l10n.profileFieldGoal,
-                value: p.primaryGoal?.label(l10n) ?? p.primaryGoalLabel ?? '—',
+                value: p.primaryGoal?.label(l10n) ?? p.primaryGoalLabel,
+                onEdit: edit,
               ),
               ProfileInfoRow(
                 icon: AppIcons.activityLevel,
                 label: l10n.profileFieldActivityLevel,
-                value: p.activityLevel?.label(l10n) ?? '—',
+                value: p.activityLevel?.label(l10n),
+                onEdit: edit,
               ),
               ProfileInfoRow(
                 icon: AppIcons.calendar,
                 label: l10n.profileFieldAvailableDays,
                 value: p.availableDays.isEmpty
-                    ? '—'
+                    ? null
                     : p.availableDays
                           .map((d) => ProfileWeekdays.short(l10n, d))
                           .join(' · '),
+                onEdit: edit,
               ),
               if (p.minutesPerSession != null)
                 ProfileInfoRow(
@@ -235,6 +242,7 @@ class ProfileAcademicSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final p = profile;
+    void edit() => openProfileScreen(context, ProfilePaths.editAcademic);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -254,19 +262,22 @@ class ProfileAcademicSummary extends StatelessWidget {
                 ProfileInfoRow(
                   icon: AppIcons.university,
                   label: l10n.profileFieldUniversity,
-                  value: p.university ?? '—',
+                  value: p.university,
+                  onEdit: edit,
                 ),
                 ProfileInfoRow(
                   icon: AppIcons.subject,
                   label: l10n.profileFieldDegree,
-                  value: p.degree ?? '—',
+                  value: p.degree,
+                  onEdit: edit,
                 ),
                 ProfileInfoRow(
                   icon: AppIcons.semester,
                   label: l10n.profileFieldSemester,
                   value: p.semester == null
-                      ? '—'
+                      ? null
                       : l10n.profileSemesterValue(p.semester!),
+                  onEdit: edit,
                 ),
                 if (p.modality != null)
                   ProfileInfoRow(
@@ -409,16 +420,26 @@ class _Metric extends StatelessWidget {
 
   final IconData icon;
   final Color color;
-  final String value;
+
+  /// Nulo si falta: a la vista «—» (la cifra no cabe en palabras) y el
+  /// lector oye «Sin indicar».
+  final String? value;
   final String label;
 
   @override
   Widget build(BuildContext context) {
+    final value = this.value;
     return Column(
       children: [
         Icon(icon, color: color),
         const SizedBox(height: TokensSpacing.xs),
-        Text(value, style: context.textStyles.titleMedium),
+        Text(
+          value ?? profileMissingValue,
+          semanticsLabel: value == null
+              ? context.localizations.profileNotSet
+              : null,
+          style: context.textStyles.titleMedium,
+        ),
         Text(
           label,
           style: context.textStyles.labelSmall?.copyWith(

@@ -273,22 +273,25 @@ class _GoalEntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final format = DateFormat.yMMMd();
-    final title = entry.goal?.label(l10n) ?? entry.goalLabel ?? '—';
+    final title =
+        entry.goal?.label(l10n) ?? entry.goalLabel ?? l10n.profileNotSet;
     final start = entry.startDate == null
-        ? '—'
+        ? l10n.profileDateNotSet
         : format.format(entry.startDate!);
     final period = entry.active
         ? l10n.profileGoalSince(start)
         : l10n.profileGoalPeriod(
             start,
-            entry.endDate == null ? '—' : format.format(entry.endDate!),
+            entry.endDate == null
+                ? l10n.profileDateNotSet
+                : format.format(entry.endDate!),
           );
     final previous = entry.previousGoal?.label(l10n) ?? entry.previousGoalLabel;
     return AppCard(
       child: Row(
         children: [
           Icon(
-            entry.goal?.icon ?? Icons.flag_outlined,
+            entry.goal?.icon ?? AppIcons.goal,
             color: entry.active
                 ? context.colors.secondary
                 : context.colors.onSurfaceVariant,

@@ -73,6 +73,7 @@ class _TimelineRow extends StatelessWidget {
             child: Column(
               children: [
                 Semantics(
+                  container: true,
                   label: typeLabel,
                   child: CircleAvatar(
                     radius: 16,

@@ -46,6 +46,7 @@ class PersonalRecordRow extends StatelessWidget {
         ? l10n.trainingRecordBroken(name, value)
         : l10n.trainingRecordBrokenUnnamed(value);
     return Semantics(
+      container: true,
       label: text(recordValueSpoken(context, record)),
       excludeSemantics: true,
       child: Row(

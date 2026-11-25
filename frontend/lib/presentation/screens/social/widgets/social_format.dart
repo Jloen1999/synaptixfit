@@ -30,11 +30,11 @@ extension PostTypeStyle on PostType {
   };
 
   IconData get icon => switch (this) {
-    PostType.sessionCompleted => Icons.fitness_center_rounded,
+    PostType.sessionCompleted => AppIcons.routine,
     PostType.challengeCompleted => Icons.emoji_events_rounded,
     PostType.milestoneReached => Icons.workspace_premium_rounded,
     PostType.badgeUnlocked => Icons.military_tech_rounded,
-    PostType.routine => Icons.list_alt_rounded,
+    PostType.routine => AppIcons.routineList,
     PostType.challenge => Icons.flag_rounded,
     PostType.note => AppIcons.note,
   };
@@ -54,7 +54,7 @@ extension PostTypeStyle on PostType {
 /// Icono y ruta del contenido enlazado en una publicación.
 extension PostLinkStyle on PostLink {
   IconData get icon => switch (kind) {
-    PostLinkKind.routine => Icons.fitness_center_rounded,
+    PostLinkKind.routine => AppIcons.routine,
     PostLinkKind.challenge => Icons.flag_rounded,
     PostLinkKind.badge => Icons.military_tech_rounded,
     PostLinkKind.note => AppIcons.note,

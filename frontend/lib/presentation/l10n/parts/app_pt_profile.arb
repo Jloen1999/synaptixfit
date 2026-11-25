@@ -159,7 +159,7 @@
   "profileFieldTargetGpaHint": "Escala de 0 a 5",
   "profileFieldClassesStart": "Início das aulas",
   "profileFieldClassesEnd": "Fim das aulas",
-  "profileDateNotSet": "Sem data",
+  "profileDateNotSet": "data não indicada",
   "profileModalityInPerson": "Presencial",
   "profileModalityHybrid": "Híbrida",
   "profileModalityOnline": "Online",
@@ -436,5 +436,6 @@
   "profileStreakOpenHint": "Ver a tua sequência e o teu nível em Tu",
   "profileOnboardingBannerAction": "Terminar",
   "profileBirthDateMissing": "Falta a tua data de nascimento.",
-  "profileBirthDateAddIt": "Adicioná-la"
+  "profileBirthDateAddIt": "Adicioná-la",
+  "profileNotSet": "Não indicado"
 }

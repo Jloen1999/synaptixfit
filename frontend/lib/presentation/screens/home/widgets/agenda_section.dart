@@ -305,7 +305,7 @@ class _AgendaSectionState extends State<AgendaSection> {
                             widget.onReviewAll != null)
                           OutlinedButton.icon(
                             onPressed: widget.onReviewAll,
-                            icon: const Icon(Icons.playlist_play_rounded),
+                            icon: const Icon(AppIcons.reviewAll),
                             label: Text(l10n.homeReviewAll),
                           ),
                       ],
@@ -316,7 +316,7 @@ class _AgendaSectionState extends State<AgendaSection> {
                       child: ListTile(
                         minTileHeight: TokensSize.listTileMin,
                         leading: Icon(
-                          Icons.replay_circle_filled_outlined,
+                          AppIcons.review,
                           color: context.palette.study,
                         ),
                         title: Text(
@@ -642,6 +642,7 @@ class _EventTile extends StatelessWidget {
         // El lector oye qué se empieza, no solo «Empezar».
         final start = startEnabled ? onStartTraining : null;
         return Semantics(
+          container: true,
           label: '${l10n.homeTrainingStart}: $title',
           excludeSemantics: true,
           button: true,
@@ -655,6 +656,7 @@ class _EventTile extends StatelessWidget {
         );
       case _EventAction.didIt when onSetCompleted != null:
         return Semantics(
+          container: true,
           label: '${l10n.homeAgendaDidIt}: $title',
           excludeSemantics: true,
           button: true,
@@ -711,7 +713,7 @@ class _EventTile extends StatelessWidget {
         : switch (event.status) {
             ItemTimeStatus.missed when event.kind == HomeEventKind.deadline =>
               AppPill(
-                icon: Icons.event_busy_rounded,
+                icon: AppIcons.overdue,
                 label: l10n.homeAgendaOverdue,
                 color: context.colors.error,
               ),
@@ -721,7 +723,7 @@ class _EventTile extends StatelessWidget {
               color: context.palette.warning,
             ),
             ItemTimeStatus.inProgress => AppPill(
-              icon: Icons.play_circle_outline_rounded,
+              icon: AppIcons.inProgress,
               label: l10n.homeAgendaNow,
               color: context.colors.primary,
             ),
@@ -742,7 +744,7 @@ class _EventTile extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.flag_outlined,
+                AppIcons.challenge,
                 size: TokensSize.iconXs,
                 color: context.palette.accent,
               ),
@@ -856,15 +858,9 @@ class _EventTile extends StatelessWidget {
     }
     return switch (type) {
       HomeEventType.study => (Icons.menu_book_outlined, context.palette.study),
-      HomeEventType.classSession => (
-        Icons.school_outlined,
-        context.colors.tertiary,
-      ),
-      HomeEventType.review => (Icons.replay_rounded, context.palette.study),
-      HomeEventType.sport => (
-        Icons.fitness_center_rounded,
-        context.colors.secondary,
-      ),
+      HomeEventType.classSession => (AppIcons.subject, context.colors.tertiary),
+      HomeEventType.review => (AppIcons.review, context.palette.study),
+      HomeEventType.sport => (AppIcons.routine, context.colors.secondary),
       HomeEventType.rest => (
         Icons.self_improvement_rounded,
         context.colors.primary,

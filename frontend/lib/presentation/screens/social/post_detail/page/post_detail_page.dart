@@ -14,7 +14,7 @@ import '../../widgets/comment_widgets.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/post_editor_sheet.dart';
 import '../../widgets/social_dialogs.dart';
-import '../../widgets/social_feedback.dart';
+import '../../widgets/show_social_feedback.dart';
 import '../../widgets/social_layout.dart';
 import '../bloc/post_detail_bloc.dart';
 

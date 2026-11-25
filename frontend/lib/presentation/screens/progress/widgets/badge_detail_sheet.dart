@@ -78,9 +78,7 @@ class _BadgeDetailSheet extends StatelessWidget {
                     color: context.colors.onSurfaceVariant,
                   ),
                   _Pill(
-                    icon: badge.earned
-                        ? Icons.check_circle_rounded
-                        : Icons.lock_rounded,
+                    icon: badge.earned ? AppIcons.done : Icons.lock_rounded,
                     label: badge.earned
                         ? l10n.progressBadgeEarned
                         : l10n.progressBadgeLocked,

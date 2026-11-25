@@ -306,9 +306,7 @@ class _NodeBox extends StatelessWidget {
                     ),
                     if (node.hasChildren)
                       Icon(
-                        node.expanded
-                            ? Icons.chevron_left_rounded
-                            : AppIcons.next,
+                        node.expanded ? AppIcons.previous : AppIcons.next,
                         size: 20,
                         color: color,
                         semanticLabel: node.expanded

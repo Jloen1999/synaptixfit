@@ -498,7 +498,7 @@ class _SubjectPicker extends StatelessWidget {
       isExpanded: true,
       decoration: InputDecoration(
         labelText: l10n.plannerPomodoroSubjectLabel,
-        prefixIcon: const Icon(Icons.school_outlined),
+        prefixIcon: const Icon(AppIcons.subject),
       ),
       items: [
         DropdownMenuItem(child: Text(l10n.plannerPomodoroNoSubject)),
@@ -533,17 +533,17 @@ class _Controls extends StatelessWidget {
     final (label, icon, event) = switch (state.status) {
       PomodoroStatus.idle => (
         focus ? l10n.plannerPomodoroStartFocus : l10n.plannerPomodoroStartBreak,
-        Icons.play_arrow_rounded,
+        AppIcons.start,
         const PomodoroEvent.startPressed(),
       ),
       PomodoroStatus.running => (
         l10n.plannerPomodoroPause,
-        Icons.pause_rounded,
+        AppIcons.pause,
         const PomodoroEvent.pausePressed(),
       ),
       PomodoroStatus.paused => (
         l10n.plannerPomodoroResume,
-        Icons.play_arrow_rounded,
+        AppIcons.start,
         const PomodoroEvent.resumePressed(),
       ),
     };
@@ -579,7 +579,7 @@ class _Controls extends StatelessWidget {
         // sala con temporizador común (secundaria, ADR 0045).
         if (state.untouched && !asking) ...[
           const SizedBox(height: TokensSpacing.s),
-          TextButton.icon(
+          FilledButton.tonalIcon(
             key: guide.friends,
             onPressed: () => context.push(
               PlannerExternalPaths.studyWithFriends(
@@ -604,9 +604,7 @@ class _Controls extends StatelessWidget {
                 : l10n.plannerPomodoroToFocusHint,
             child: OutlinedButton.icon(
               onPressed: () => bloc.add(const PomodoroEvent.skipPressed()),
-              icon: Icon(
-                focus ? Icons.free_breakfast_rounded : Icons.psychology_rounded,
-              ),
+              icon: Icon(focus ? AppIcons.breakPhase : AppIcons.focusPhase),
               label: Text(
                 focus
                     ? l10n.plannerPomodoroToBreak
@@ -663,8 +661,8 @@ class _PhaseHeader extends StatelessWidget {
         children: [
           Icon(
             phase == FocusPhase.focus
-                ? Icons.psychology_rounded
-                : Icons.free_breakfast_rounded,
+                ? AppIcons.focusPhase
+                : AppIcons.breakPhase,
             color: color,
             size: TokensSize.iconM,
           ),
@@ -727,7 +725,7 @@ class _TotalsRow extends StatelessWidget {
       children: [
         Expanded(
           child: AppMetricTile(
-            icon: Icons.psychology_rounded,
+            icon: AppIcons.focusPhase,
             color: context.palette.study,
             value: '${totals.focusMinutes}',
             label: l10n.plannerFocusMinutesLabel,
@@ -745,7 +743,7 @@ class _TotalsRow extends StatelessWidget {
         const SizedBox(width: TokensSpacing.s),
         Expanded(
           child: AppMetricTile(
-            icon: Icons.free_breakfast_rounded,
+            icon: AppIcons.breakPhase,
             color: context.colors.secondary,
             value: '${totals.breakMinutes}',
             label: l10n.plannerBreakMinutesLabel,

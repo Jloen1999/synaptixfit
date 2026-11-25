@@ -10,7 +10,7 @@ import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/use_cases/admin/dismiss_report_use_case.dart';
 import '../../../../../domain/use_cases/admin/get_reported_content_use_case.dart';
 import '../../../../../domain/use_cases/admin/remove_reported_content_use_case.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 
 part 'admin_reports_bloc.freezed.dart';
 part 'admin_reports_event.dart';

@@ -11,7 +11,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/admin_dialogs.dart';
 import '../../widgets/admin_labels.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 import '../../widgets/admin_widgets.dart';
 import '../bloc/admin_reports_bloc.dart';
 
@@ -250,11 +250,10 @@ class _ReportCard extends StatelessWidget {
                 label: Text(l10n.adminReportsDismiss),
               ),
               if (item.type != AdminReportType.user)
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colors.error,
-                    foregroundColor: colors.onError,
-                  ),
+                // Retirar contenido: rojo con borde y aparte (ADR 0065); el
+                // relleno rojo es solo para confirmarlo en el diálogo.
+                OutlinedButton.icon(
+                  style: AppDangerButton.styleOf(context),
                   onPressed: busy
                       ? null
                       : () async {

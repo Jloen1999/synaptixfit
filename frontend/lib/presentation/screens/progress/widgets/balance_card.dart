@@ -214,6 +214,7 @@ class _Metric extends StatelessWidget {
       message: hint,
       excludeFromSemantics: true,
       child: Semantics(
+        container: true,
         label: l10n.homeGaugeSemantics(
           title,
           value,

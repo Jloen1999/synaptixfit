@@ -17,7 +17,7 @@ import 'package:synaptixfit/domain/use_cases/social/get_post_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/report_post_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/set_post_like_use_case.dart';
 import 'package:synaptixfit/presentation/screens/social/feed/bloc/feed_bloc.dart';
-import 'package:synaptixfit/presentation/screens/social/widgets/social_feedback.dart';
+import 'package:synaptixfit/presentation/screens/social/feedback/social_feedback.dart';
 
 import 'social_fixtures.dart';
 

@@ -31,10 +31,7 @@ Future<bool> showDeleteChallengeDialog(BuildContext context) async {
           child: Text(l10n.commonCancel),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: context.colors.error,
-            foregroundColor: context.colors.onError,
-          ),
+          style: AppDangerButton.confirmStyleOf(context),
           onPressed: () => Navigator.pop(context, true),
           child: Text(l10n.commonDelete),
         ),

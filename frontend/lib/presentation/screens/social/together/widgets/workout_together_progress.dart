@@ -40,6 +40,7 @@ class WorkoutTogetherProgress extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xs),
             child: Semantics(
+              container: true,
               label: [
                 slot.name,
                 for (final m in people)

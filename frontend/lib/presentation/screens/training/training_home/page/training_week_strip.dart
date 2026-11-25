@@ -125,11 +125,7 @@ class _DayDot extends StatelessWidget {
           ),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.check_rounded,
-          size: TokensSize.iconS,
-          color: success,
-        ),
+        child: Icon(AppIcons.check, size: TokensSize.iconS, color: success),
       ),
       TrainingDayState.planned => DecoratedBox(
         decoration: BoxDecoration(

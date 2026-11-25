@@ -159,7 +159,7 @@
   "profileFieldTargetGpaHint": "Échelle de 0 à 5",
   "profileFieldClassesStart": "Début des cours",
   "profileFieldClassesEnd": "Fin des cours",
-  "profileDateNotSet": "Sans date",
+  "profileDateNotSet": "date non renseignée",
   "profileModalityInPerson": "En présentiel",
   "profileModalityHybrid": "Hybride",
   "profileModalityOnline": "En ligne",
@@ -436,5 +436,6 @@
   "profileStreakOpenHint": "Voir ta série et ton niveau dans Moi",
   "profileOnboardingBannerAction": "Terminer",
   "profileBirthDateMissing": "Il te manque ta date de naissance.",
-  "profileBirthDateAddIt": "L’ajouter"
+  "profileBirthDateAddIt": "L’ajouter",
+  "profileNotSet": "Non renseigné"
 }

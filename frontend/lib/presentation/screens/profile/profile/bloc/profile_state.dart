@@ -15,6 +15,10 @@ abstract class ProfileState with _$ProfileState {
     /// Solicitudes de amistad recibidas sin responder.
     @Default(0) int pendingRequests,
 
+    /// Si esta pantalla pide el recuento de solicitudes: el Perfil sí; las
+    /// fichas Físico y Académico no (lo fija `started`, lo sigue `refreshed`).
+    @Default(true) bool countsFriendRequests,
+
     /// Error de la última carga (con datos previos se muestra como aviso).
     AppError? error,
   }) = _ProfileState;

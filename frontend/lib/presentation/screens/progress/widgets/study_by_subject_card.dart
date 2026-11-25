@@ -88,6 +88,7 @@ class _SubjectRow extends StatelessWidget {
         : l10n.progressBySubjectRecall(s.reviews, (recall * 100).round());
     final maxWeek = s.minutesByWeek.fold<int>(1, math.max);
     return Semantics(
+      container: true,
       label:
           '$name. ${_duration(context, s.totalMinutes)}. $reviewText'
           '${s.weak ? '. ${l10n.progressBySubjectWeak}' : ''}',
@@ -142,7 +143,7 @@ class _SubjectRow extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.replay_rounded,
+                AppIcons.review,
                 size: TokensSize.iconXs,
                 color: recallColor,
               ),

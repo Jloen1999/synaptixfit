@@ -101,7 +101,9 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
     final isNote = material is NoteMaterial;
     final ok = await confirmDestructive(
       context,
-      title: isNote ? l10n.academicNoteDeleteTitle : l10n.academicFileDeleteTitle,
+      title: isNote
+          ? l10n.academicNoteDeleteTitle
+          : l10n.academicFileDeleteTitle,
       message: l10n.academicDeleteMessage(material.title),
     );
     if (!ok || bloc.isClosed) return;
@@ -195,6 +197,7 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                       ),
                     ),
                     Semantics(
+                      container: true,
                       label: l10n.academicScanEntrySemantics,
                       button: true,
                       excludeSemantics: true,
@@ -215,7 +218,9 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                     AppSecondaryButton(
                       label: l10n.academicFileUpload,
                       icon: const Icon(AppIcons.upload),
-                      onPressed: state.uploading ? null : () => _upload(context),
+                      onPressed: state.uploading
+                          ? null
+                          : () => _upload(context),
                     ),
                   ],
                 ),
@@ -260,11 +265,8 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                               state.availability[material.id] ??
                                   DocumentAvailability.none,
                             ),
-                            onOpenDocument: (type) => _openDocument(
-                              context,
-                              material,
-                              type,
-                            ),
+                            onOpenDocument: (type) =>
+                                _openDocument(context, material, type),
                           ),
                         ],
                       ],

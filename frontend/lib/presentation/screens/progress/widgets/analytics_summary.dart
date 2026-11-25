@@ -73,7 +73,7 @@ class WeeklySummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.insights_rounded, color: context.colors.primary),
+              Icon(AppIcons.progressSummary, color: context.colors.primary),
               const SizedBox(width: TokensSpacing.s),
               Expanded(
                 child: Column(
@@ -104,7 +104,7 @@ class WeeklySummaryCard extends StatelessWidget {
           const SizedBox(height: TokensSpacing.m),
           if (data == null)
             InlineNotice(
-              icon: Icons.cloud_off_rounded,
+              icon: AppIcons.unavailable,
               message: l10n.progressSectionUnavailable,
             )
           else

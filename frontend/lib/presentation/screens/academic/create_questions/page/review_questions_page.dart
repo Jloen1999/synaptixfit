@@ -324,7 +324,7 @@ class _OptionLine extends StatelessWidget {
           children: [
             if (correct) ...[
               Icon(
-                Icons.check_rounded,
+                AppIcons.check,
                 size: TokensSize.iconXs,
                 color: context.palette.success,
               ),
@@ -459,7 +459,7 @@ class _AnswerDialogState extends State<_AnswerDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.commonCancel),
         ),
-        TextButton(
+        FilledButton(
           onPressed: valid ? () => Navigator.of(context).pop(_answer) : null,
           child: Text(l10n.commonSave),
         ),

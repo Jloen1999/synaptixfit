@@ -188,6 +188,7 @@ class _TemplateCard extends StatelessWidget {
           if (!t.running) ...[
             const SizedBox(height: TokensSpacing.m),
             Semantics(
+              container: true,
               label: l10n.challengesTemplatesStartNamed(t.title),
               excludeSemantics: true,
               button: true,

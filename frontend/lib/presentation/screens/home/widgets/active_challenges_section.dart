@@ -96,8 +96,8 @@ class _ChallengeTile extends StatelessWidget {
               ? AppDateBlock(
                   caption: typeLabel,
                   icon: challenge.academic
-                      ? Icons.school_outlined
-                      : Icons.fitness_center_rounded,
+                      ? AppIcons.subject
+                      : AppIcons.routine,
                   color: typeColor,
                   compact: !side,
                 )

@@ -11,7 +11,7 @@ import 'package:synaptixfit/domain/use_cases/admin/get_admin_exercise_use_case.d
 import 'package:synaptixfit/domain/use_cases/admin/suggest_admin_exercise_names_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/admin/update_admin_exercise_use_case.dart';
 import 'package:synaptixfit/presentation/screens/admin/exercise_form/bloc/admin_exercise_form_bloc.dart';
-import 'package:synaptixfit/presentation/screens/admin/widgets/admin_status.dart';
+import 'package:synaptixfit/presentation/screens/admin/feedback/admin_status.dart';
 
 import 'admin_fixtures.dart';
 

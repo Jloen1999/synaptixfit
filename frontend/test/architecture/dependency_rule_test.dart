@@ -64,4 +64,29 @@ void main() {
       expect(violations, isEmpty, reason: violations.join('\n'));
     });
   }
+
+  // Un bloc no depende de cómo se pinta: el estado que comparten los blocs de
+  // una zona va en `screens/<zona>/feedback/`, nunca en `widgets/` (ADR 0065).
+  test('los blocs no importan widgets', () {
+    final violations = <String>[];
+    final blocs = Directory('lib/presentation/screens')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where(
+          (f) =>
+              f.uri.pathSegments.contains('bloc') &&
+              f.path.endsWith('.dart') &&
+              !f.path.endsWith('.g.dart') &&
+              !f.path.endsWith('.freezed.dart'),
+        );
+    for (final file in blocs) {
+      for (final line in file.readAsLinesSync()) {
+        final import = line.trimLeft();
+        if (import.startsWith('import ') && import.contains('widgets/')) {
+          violations.add('${file.path} → $line');
+        }
+      }
+    }
+    expect(violations, isEmpty, reason: violations.join('\n'));
+  });
 }

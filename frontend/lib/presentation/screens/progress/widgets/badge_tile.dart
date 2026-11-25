@@ -53,6 +53,7 @@ class BadgeTile extends StatelessWidget {
         button: true,
         label: semantics,
         excludeSemantics: true,
+        onTap: onTap,
         child: Column(
           children: [
             BadgeEmblem(badge: badge),

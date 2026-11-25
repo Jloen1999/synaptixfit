@@ -140,7 +140,7 @@ class HomeHeader extends StatelessWidget {
         IconButton(
           tooltip: l10n.homeAdminPanel,
           onPressed: onAdmin,
-          icon: const Icon(Icons.admin_panel_settings_outlined),
+          icon: const Icon(AppIcons.admin),
         ),
     ];
     if (large) {

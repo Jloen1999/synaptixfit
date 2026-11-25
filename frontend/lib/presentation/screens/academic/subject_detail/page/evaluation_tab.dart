@@ -192,7 +192,7 @@ class _OutlookNote extends StatelessWidget {
         l10n.academicPassOutOfReach,
       ),
       PassOutlook.needsAverage when required != null => (
-        Icons.flag_outlined,
+        AppIcons.goal,
         context.colors.primary,
         l10n.academicPassNeeds(grade(required)),
       ),

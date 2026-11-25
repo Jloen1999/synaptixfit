@@ -437,6 +437,7 @@ class _DayButton extends StatelessWidget {
             color: context.colors.onSurfaceVariant,
           );
     return Semantics(
+      container: true,
       button: true,
       label: semantics,
       hint: l10n.homePlanDayOpen,

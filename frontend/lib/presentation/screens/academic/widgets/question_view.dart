@@ -172,14 +172,18 @@ class _FeedbackCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final (color, icon, title) = feedback.dontKnow
-        ? (context.colors.tertiary, AppIcons.dontKnow, l10n.academicDontKnowTitle)
-        : feedback.correct
         ? (
-            context.palette.success,
-            Icons.check_circle_rounded,
-            l10n.academicAnswerCorrect,
+            context.colors.tertiary,
+            AppIcons.dontKnow,
+            l10n.academicDontKnowTitle,
           )
-        : (context.colors.error, Icons.cancel_rounded, l10n.academicAnswerWrong);
+        : feedback.correct
+        ? (context.palette.success, AppIcons.done, l10n.academicAnswerCorrect)
+        : (
+            context.colors.error,
+            Icons.cancel_rounded,
+            l10n.academicAnswerWrong,
+          );
     return Semantics(
       liveRegion: true,
       container: true,
@@ -421,7 +425,7 @@ class _OptionTile extends StatelessWidget {
         selected ? context.colors.tertiary : context.colors.outlineVariant,
     };
     final icon = switch (state) {
-      _OptionState.correct => Icons.check_circle_rounded,
+      _OptionState.correct => AppIcons.done,
       _OptionState.wrong => Icons.cancel_rounded,
       _OptionState.idle when multiple =>
         selected

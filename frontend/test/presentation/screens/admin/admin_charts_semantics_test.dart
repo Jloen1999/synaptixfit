@@ -12,7 +12,7 @@ import 'package:synaptixfit/presentation/screens/admin/metrics/bloc/admin_metric
 import 'package:synaptixfit/presentation/screens/admin/metrics/page/admin_metrics_page.dart';
 import 'package:synaptixfit/presentation/screens/admin/user_detail/bloc/admin_user_detail_bloc.dart';
 import 'package:synaptixfit/presentation/screens/admin/user_detail/page/admin_user_stats_tab.dart';
-import 'package:synaptixfit/presentation/screens/admin/widgets/admin_status.dart';
+import 'package:synaptixfit/presentation/screens/admin/feedback/admin_status.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 import 'admin_fixtures.dart';

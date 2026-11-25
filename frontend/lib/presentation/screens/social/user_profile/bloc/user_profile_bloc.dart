@@ -17,7 +17,7 @@ import '../../../../../domain/use_cases/social/reject_friend_request_use_case.da
 import '../../../../../domain/use_cases/social/remove_friendship_use_case.dart';
 import '../../../../../domain/use_cases/social/send_friend_request_use_case.dart';
 import '../../../../../domain/use_cases/social/set_post_like_use_case.dart';
-import '../../widgets/social_feedback.dart';
+import '../../feedback/social_feedback.dart';
 
 part 'user_profile_bloc.freezed.dart';
 part 'user_profile_event.dart';

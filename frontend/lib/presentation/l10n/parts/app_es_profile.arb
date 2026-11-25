@@ -338,7 +338,7 @@
   "profileFieldTargetGpaHint": "Escala de 0 a 5",
   "profileFieldClassesStart": "Inicio de clases",
   "profileFieldClassesEnd": "Fin de clases",
-  "profileDateNotSet": "Sin fecha",
+  "profileDateNotSet": "fecha sin indicar",
   "profileModalityInPerson": "Presencial",
   "profileModalityHybrid": "Híbrida",
   "profileModalityOnline": "Online",
@@ -732,5 +732,6 @@
   "profileStreakOpenHint": "Ver tu racha y tu nivel en Tú",
   "profileOnboardingBannerAction": "Terminar",
   "profileBirthDateMissing": "Te falta la fecha de nacimiento.",
-  "profileBirthDateAddIt": "Añadirla"
+  "profileBirthDateAddIt": "Añadirla",
+  "profileNotSet": "Sin indicar"
 }

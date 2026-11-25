@@ -8,7 +8,7 @@ import '../../../../../domain/use_cases/social/edit_post_use_case.dart';
 import '../../../../../domain/use_cases/social/get_post_use_case.dart';
 import '../../../../../domain/use_cases/social/report_post_use_case.dart';
 import '../../../../../domain/use_cases/social/set_post_like_use_case.dart';
-import '../../widgets/social_feedback.dart';
+import '../../feedback/social_feedback.dart';
 
 part 'post_detail_bloc.freezed.dart';
 part 'post_detail_event.dart';

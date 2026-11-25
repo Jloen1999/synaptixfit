@@ -67,7 +67,7 @@ class NextTrainingCard extends StatelessWidget {
         if (next == null)
           AppCard(
             child: AppEmptyState(
-              icon: Icons.fitness_center_rounded,
+              icon: AppIcons.routine,
               title: l10n.homeTrainingEmptyTitle,
               message: l10n.homeTrainingEmptyMessage,
               action: AppSecondaryButton(
@@ -106,14 +106,14 @@ class NextTrainingCard extends StatelessWidget {
                         label: next.inProgress
                             ? l10n.homeTrainingContinue
                             : l10n.homeTrainingStart,
-                        icon: const Icon(Icons.play_arrow_rounded),
+                        icon: const Icon(AppIcons.start),
                         loading: starting,
                         onPressed: onStart,
                       ),
                     if (!checkInDone)
                       AppSecondaryButton(
                         label: l10n.homeTrainingCheckIn,
-                        icon: const Icon(Icons.fact_check_outlined),
+                        icon: const Icon(AppIcons.checkIn),
                         onPressed: starting ? null : onCheckIn,
                       ),
                   ],
@@ -123,7 +123,7 @@ class NextTrainingCard extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.check_circle_rounded,
+                        AppIcons.done,
                         size: TokensSize.iconXs,
                         color: context.palette.success,
                       ),
@@ -195,7 +195,7 @@ class NextTrainingCard extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: AppSecondaryButton(
               label: l10n.homeTrainingCheckIn,
-              icon: const Icon(Icons.fact_check_outlined),
+              icon: const Icon(AppIcons.checkIn),
               onPressed: onCheckIn,
             ),
           ),

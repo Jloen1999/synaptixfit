@@ -270,12 +270,8 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
             if (widget.deadline != null && widget.onDelete != null) ...[
               const SizedBox(height: TokensSpacing.s),
               Center(
-                child: TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: context.colors.error,
-                  ),
-                  icon: const Icon(AppIcons.delete),
-                  label: Text(l10n.plannerDeleteDeadline),
+                child: AppDangerButton(
+                  label: l10n.plannerDeleteDeadline,
                   onPressed: () {
                     Navigator.of(context).pop();
                     widget.onDelete!();

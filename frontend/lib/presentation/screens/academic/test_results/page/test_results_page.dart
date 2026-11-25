@@ -81,15 +81,14 @@ class _TestResultsView extends StatelessWidget {
                     Expanded(
                       child: AppSecondaryButton(
                         label: l10n.academicExamRetry,
-                        icon: const Icon(Icons.replay_rounded),
+                        icon: const Icon(AppIcons.review),
                         // Otro de la asignatura (el de antes pudo mezclar
                         // apuntes); sin asignatura, otro del mismo apunte.
-                        onPressed: () => context.pushReplacement(
-                          switch (state.subjectId) {
-                            final id? => AcademicPaths.subjectMockExam(id),
-                            null => AcademicPaths.exam(session.materialId),
-                          },
-                        ),
+                        onPressed: () =>
+                            context.pushReplacement(switch (state.subjectId) {
+                              final id? => AcademicPaths.subjectMockExam(id),
+                              null => AcademicPaths.exam(session.materialId),
+                            }),
                       ),
                     ),
                     const SizedBox(width: TokensSpacing.s),
@@ -148,7 +147,7 @@ class _ReviewItem extends StatelessWidget {
                       : question.dontKnow
                       ? AppIcons.dontKnow
                       : correct
-                      ? Icons.check_circle_rounded
+                      ? AppIcons.done
                       : Icons.cancel_rounded,
                   color: color,
                 ),

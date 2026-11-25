@@ -49,18 +49,16 @@ class _CycleView extends StatelessWidget with ErrorsMessageMixin {
                   MaterialLocalizations.of(context).cancelButtonLabel,
                 ),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  l10n.trainingCycleDisableDelete,
-                  style: context.textStyles.labelLarge?.copyWith(
-                    color: context.colors.error,
-                  ),
-                ),
-              ),
-              TextButton(
+              // Como al retirar el permiso de salud: conservar el historial
+              // es lo seguro (relleno); borrarlo, rojo, con borde y al final.
+              FilledButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(l10n.trainingCycleDisableKeep),
+              ),
+              AppDangerButton(
+                icon: null,
+                onPressed: () => Navigator.pop(context, true),
+                label: l10n.trainingCycleDisableDelete,
               ),
             ],
           ),
@@ -320,11 +318,9 @@ class _Tracking extends StatelessWidget {
         ),
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
+          child: AppDangerButton(
             onPressed: () => onManage(_MenuAction.deleteAll),
-            style: TextButton.styleFrom(foregroundColor: context.colors.error),
-            icon: const Icon(AppIcons.delete),
-            label: Text(l10n.trainingCycleDeleteAll),
+            label: l10n.trainingCycleDeleteAll,
           ),
         ),
       ],

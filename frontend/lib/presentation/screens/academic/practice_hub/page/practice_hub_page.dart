@@ -104,7 +104,7 @@ class _PracticeHubView extends StatelessWidget {
                         ),
                       ),
                     _ModeCard(
-                      icon: Icons.quiz_outlined,
+                      icon: AppIcons.practice,
                       color: context.colors.tertiary,
                       title: l10n.academicFreePracticeTitle,
                       subtitle: l10n.academicFreePracticeHint,
@@ -124,7 +124,7 @@ class _PracticeHubView extends StatelessWidget {
                       ),
                     ),
                     _ModeCard(
-                      icon: Icons.timer_outlined,
+                      icon: AppIcons.focusTimer,
                       color: context.palette.sessions,
                       title: l10n.academicExamTitle,
                       subtitle: l10n.academicExamHint,
@@ -188,7 +188,7 @@ class _NoBank extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return AppEmptyState(
-      icon: Icons.quiz_outlined,
+      icon: AppIcons.practice,
       title: l10n.academicPracticeNoBankTitle,
       message: l10n.academicPracticeNoBankMessage,
       action: AppPrimaryButton(

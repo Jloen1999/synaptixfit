@@ -6,7 +6,7 @@ import '../../../../../domain/models/admin/admin_page.dart';
 import '../../../../../domain/models/admin/admin_queries.dart';
 import '../../../../../domain/models/admin/audit_entry.dart';
 import '../../../../../domain/use_cases/admin/search_audit_log_use_case.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 
 part 'admin_audit_bloc.freezed.dart';
 part 'admin_audit_event.dart';

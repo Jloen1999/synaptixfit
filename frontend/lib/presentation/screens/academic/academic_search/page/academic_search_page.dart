@@ -225,11 +225,10 @@ class _HitTile extends StatelessWidget {
   };
 
   IconData get _icon => switch (kind) {
-    AcademicSearchKind.subject => Icons.school_outlined,
-    AcademicSearchKind.note => Icons.description_outlined,
+    AcademicSearchKind.subject => AppIcons.subject,
+    AcademicSearchKind.note => AppIcons.noteDocument,
     AcademicSearchKind.file => Icons.attach_file_rounded,
-    AcademicSearchKind.deadline =>
-      hit.exam ? Icons.quiz_outlined : Icons.assignment_outlined,
+    AcademicSearchKind.deadline => hit.exam ? AppIcons.exam : AppIcons.delivery,
   };
 
   @override

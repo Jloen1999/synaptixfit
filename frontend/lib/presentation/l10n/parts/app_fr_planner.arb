@@ -429,6 +429,9 @@
   "plannerDetailsMove": "Passer à un autre jour",
   "plannerDetailsDelete": "Supprimer",
   "plannerDetailsEdit": "Modifier",
+  "plannerDetailsGoToClass": "Rejoindre le cours en ligne",
+  "plannerDetailsLinkFailed": "Nous n'avons pas pu ouvrir le lien du cours.",
   "guideCalendarSummaryTitle": "Ta semaine en chiffres",
-  "guideCalendarSummaryBody": "Touche un chiffre pour voir le détail : rendus, heures d’étude et de sport ou conflits d’horaire."
+  "guideCalendarSummaryBody": "Touche un chiffre pour voir le détail : rendus, heures d’étude et de sport ou conflits d’horaire.",
+  "plannerDetailsGoToClassSpoken": "Rejoindre le cours en ligne. S'ouvre en dehors de l'appli"
 }

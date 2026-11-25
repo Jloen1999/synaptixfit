@@ -20,7 +20,7 @@ class InsightCard extends StatelessWidget {
     final l10n = context.localizations;
     final (icon, color, tone) = switch (insight.severity) {
       InsightSeverity.positive => (
-        Icons.check_circle_rounded,
+        AppIcons.done,
         context.palette.success,
         l10n.progressInsightSeverityPositive,
       ),
@@ -30,7 +30,7 @@ class InsightCard extends StatelessWidget {
         l10n.progressInsightSeverityInfo,
       ),
       InsightSeverity.warning => (
-        Icons.warning_amber_rounded,
+        AppIcons.warning,
         context.palette.warning,
         l10n.progressInsightSeverityWarning,
       ),

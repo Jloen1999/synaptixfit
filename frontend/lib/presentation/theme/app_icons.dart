@@ -136,8 +136,9 @@ abstract final class AppIcons {
   /// Escribir un correo (profesorado de la guía docente).
   static const IconData email = Icons.mail_outline_rounded;
 
-  /// Importar la guía docente (PDF de la asignatura).
-  static const IconData importGuide = Icons.description_rounded;
+  /// Importar la guía docente (PDF de la asignatura). Distinto de
+  /// [noteDocument], que es un apunte ya hecho.
+  static const IconData importGuide = Icons.post_add_rounded;
 
   /// Más detalles de algo pequeño (p. ej. los créditos de una foto). No es la
   /// «?» de las ayudas opcionales.
@@ -228,8 +229,9 @@ abstract final class AppIcons {
   /// Retos que publica la comunidad («De otros», «Retos de otros»).
   static const IconData communityChallenges = Icons.public_rounded;
 
-  /// Invitaciones de amigos por contestar.
-  static const IconData invitation = Icons.mail_outline_rounded;
+  /// Invitaciones de amigos por contestar (sobre sin leer; [email] es
+  /// escribir un correo).
+  static const IconData invitation = Icons.mark_email_unread_outlined;
 
   /// Una sección que no se pudo cargar (sin conexión o error).
   static const IconData unavailable = Icons.cloud_off_rounded;
@@ -247,14 +249,20 @@ abstract final class AppIcons {
   static const IconData admin = Icons.admin_panel_settings_outlined;
   static const IconData bodyHeight = Icons.height_rounded;
   static const IconData activityLevel = Icons.directions_run_rounded;
-  static const IconData goal = Icons.flag_outlined;
+
+  /// Objetivo (perfil físico, nota que hace falta): una diana, no la bandera
+  /// de [challenge].
+  static const IconData goal = Icons.track_changes_rounded;
   static const IconData weightHistory = Icons.show_chart_rounded;
   static const IconData university = Icons.account_balance_outlined;
   static const IconData semester = Icons.timeline_rounded;
   static const IconData modality = Icons.location_city_outlined;
   static const IconData degrees = Icons.workspace_premium_outlined;
   static const IconData pickSubjects = Icons.playlist_add_check_rounded;
-  static const IconData enrollment = Icons.upload_file_rounded;
+
+  /// Matrícula (importar las asignaturas): distinto de [upload] (subir un
+  /// archivo cualquiera).
+  static const IconData enrollment = Icons.assignment_ind_outlined;
 
   // Fotos (apuntes y foto de perfil, ADR 0051 y 0052).
   static const IconData camera = Icons.photo_camera_rounded;
@@ -268,11 +276,51 @@ abstract final class AppIcons {
   static const IconData read = Icons.menu_book_outlined;
   static const IconData noteDocument = Icons.description_outlined;
   static const IconData quickNote = Icons.sticky_note_2_outlined;
-  static const IconData practice = Icons.quiz_outlined;
+
+  /// Practicar preguntas: distinto de [exam] (un examen o un simulacro),
+  /// que salen juntos en Resumen y en «Practicar».
+  static const IconData practice = Icons.model_training_rounded;
   static const IconData upload = Icons.upload_file_rounded;
   static const IconData folderEmpty = Icons.folder_open_outlined;
+
+  /// Botón «Acciones» de una fila que abre una hoja con sus acciones (lista
+  /// de material). Un menú desplegable ⋮ de la barra usa [menu].
   static const IconData moreActions = Icons.more_horiz_rounded;
 
   /// «Compartir › Fuera de la app» (menú del sistema), distinto de «Compartir».
   static const IconData shareOutside = Icons.ios_share_rounded;
+
+  /// Menú desplegable de tres puntos (⋮) con tres o más acciones (barra de
+  /// la asignatura, calendario). Para una hoja de acciones, [moreActions].
+  static const IconData menu = Icons.more_vert_rounded;
+
+  /// Registro diario «¿Qué tal estás hoy?».
+  static const IconData checkIn = Icons.fact_check_outlined;
+
+  /// Mover a otro sitio (un apunte de la bandeja a su asignatura).
+  static const IconData move = Icons.drive_file_move_outlined;
+
+  /// Crear un apunte (guardar lo generado como apunte).
+  static const IconData newNote = Icons.note_add_outlined;
+
+  /// Repasar todo seguido (la cola de repasos de hoy).
+  static const IconData reviewAll = Icons.playlist_play_rounded;
+
+  /// Pausar un cronómetro (serie, sesión). Reanudar usa [start].
+  static const IconData pause = Icons.pause_rounded;
+
+  /// Cambiar algo por otra cosa (un ejercicio «solo hoy», reemplazar).
+  static const IconData swap = Icons.swap_horiz_rounded;
+
+  /// Terminar una sesión: bandera de meta, distinta de la de Retos.
+  static const IconData finish = Icons.sports_score_rounded;
+
+  /// «Apuntar estudio pasado» (menú ⋮ del calendario).
+  static const IconData pastStudy = Icons.history_edu_rounded;
+
+  /// Escanear con la cámara (un horario, unos apuntes).
+  static const IconData scan = Icons.document_scanner_rounded;
+
+  /// Sincronizar con otro calendario (menú ⋮ del calendario).
+  static const IconData calendarSync = Icons.cloud_sync_rounded;
 }

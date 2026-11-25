@@ -13,7 +13,7 @@ import '../../../auth/session/bloc/session_bloc.dart';
 import '../../social_routes.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/social_dialogs.dart';
-import '../../widgets/social_feedback.dart';
+import '../../widgets/show_social_feedback.dart';
 import '../../widgets/social_layout.dart';
 import '../bloc/user_profile_bloc.dart';
 import 'public_badges_section.dart';
@@ -519,14 +519,11 @@ class _RelationActions extends StatelessWidget {
         if (profile.relation != FriendshipRelation.blocked)
           Align(
             alignment: AlignmentDirectional.centerEnd,
-            child: TextButton.icon(
-              style: TextButton.styleFrom(
-                foregroundColor: context.colors.error,
-              ),
+            child: AppDangerButton(
               onPressed: () =>
                   _run(context, ProfileRelationAction.block, confirm: true),
-              icon: const Icon(AppIcons.block),
-              label: Text(l10n.socialBlock),
+              icon: AppIcons.block,
+              label: l10n.socialBlock,
             ),
           ),
       ],

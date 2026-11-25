@@ -176,7 +176,7 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
                         Expanded(
                           child: AppSecondaryButton(
                             label: l10n.academicActionReview,
-                            icon: const Icon(Icons.replay_rounded),
+                            icon: const Icon(AppIcons.review),
                             loading: state.requestedPractice == false,
                             onPressed: state.busy
                                 ? null
@@ -191,7 +191,7 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
                         Expanded(
                           child: AppPrimaryButton(
                             label: l10n.academicActionPractice,
-                            icon: Icons.quiz_outlined,
+                            icon: AppIcons.practice,
                             loading: state.requestedPractice == true,
                             onPressed: state.busy
                                 ? null

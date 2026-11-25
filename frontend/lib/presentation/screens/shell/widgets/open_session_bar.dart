@@ -60,6 +60,8 @@ class OpenSessionBar extends StatelessWidget {
         ? l10n.trainingOpenSessionPaused(spokenClock(l10n, trained))
         : status;
     final color = paused ? context.palette.warning : context.palette.accent;
+    void open() =>
+        unawaited(context.push<void>(TrainingPaths.session(session.id)));
     return Material(
       color: Color.alphaBlend(
         color.withValues(alpha: AppPill.tintAlpha),
@@ -67,11 +69,13 @@ class OpenSessionBar extends StatelessWidget {
       ),
       child: AppFocusOutline(
         child: InkWell(
-          onTap: () =>
-              unawaited(context.push<void>(TrainingPaths.session(session.id))),
+          onTap: open,
+          // Nodo propio (container) con la acción: si no, el lector oye el
+          // botón pero el toque se queda en el InkWell de fuera.
           child: Semantics(
             container: true,
             button: true,
+            onTap: open,
             label: l10n.trainingOpenSessionSpoken(spokenStatus),
             excludeSemantics: true,
             child: ConstrainedBox(

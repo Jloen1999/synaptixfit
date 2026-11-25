@@ -11,6 +11,7 @@ import '../../../../domain/enums/visibility.dart';
 import '../../../../domain/models/academic/subject.dart';
 import '../../../../domain/models/academic/subject_file.dart';
 import '../../../extensions/context_extensions.dart';
+import '../../../theme/app_icons.dart';
 
 /// Color de una asignatura derivado de su id (estable entre sesiones) a partir
 /// de los colores del tema.
@@ -126,7 +127,7 @@ IconData artifactIcon(ArtifactKind kind) => switch (kind) {
 IconData timelineIcon(SubjectTimelineType type) => switch (type) {
   SubjectTimelineType.study => Icons.menu_book_rounded,
   SubjectTimelineType.classSession => Icons.co_present_rounded,
-  SubjectTimelineType.review => Icons.replay_rounded,
+  SubjectTimelineType.review => AppIcons.review,
   SubjectTimelineType.exam => Icons.assignment_late_rounded,
   SubjectTimelineType.assignment => Icons.assignment_turned_in_rounded,
   SubjectTimelineType.presentation => Icons.record_voice_over_rounded,
@@ -173,7 +174,7 @@ extension AcademicLabels on BuildContext {
   }
 
   IconData visibilityIcon(Visibility visibility) => switch (visibility) {
-    Visibility.private => Icons.lock_outline_rounded,
+    Visibility.private => AppIcons.readOnly,
     Visibility.friends => Icons.group_outlined,
     Visibility.public => Icons.public_rounded,
   };

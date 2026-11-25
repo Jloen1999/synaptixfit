@@ -369,7 +369,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
               child: AppPrimaryButton(
                 focusNode: _readFocus,
                 label: l10n.academicScanRead(state.photos.length),
-                icon: Icons.document_scanner_rounded,
+                icon: AppIcons.scan,
                 onPressed: () => bloc.add(const NoteScanEvent.readRequested()),
               ),
             ),
@@ -520,7 +520,7 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                       : AppPill(
                           label: l10n.academicScanRaw,
                           color: context.palette.warning,
-                          icon: Icons.info_outline_rounded,
+                          icon: AppIcons.info,
                         ),
                 ),
                 const SizedBox(height: TokensSpacing.s),
@@ -556,7 +556,7 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: l10n.academicNoteSubject,
-                    prefixIcon: const Icon(Icons.school_outlined),
+                    prefixIcon: const Icon(AppIcons.subject),
                   ),
                   items: [
                     DropdownMenuItem(child: Text(l10n.academicNoteNoSubject)),
@@ -610,7 +610,7 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                   listenable: Listenable.merge([_title, _text]),
                   builder: (context, _) => AppPrimaryButton(
                     label: l10n.academicScanSave,
-                    icon: Icons.check_rounded,
+                    icon: AppIcons.check,
                     loading: state.saving,
                     onPressed:
                         _title.text.trim().isEmpty || _text.text.trim().isEmpty

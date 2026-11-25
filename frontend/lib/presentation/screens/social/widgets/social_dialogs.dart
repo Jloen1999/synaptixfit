@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../extensions/context_extensions.dart';
+import '../../../widgets/app_danger_button.dart';
 
 /// Pide confirmación antes de una acción (destructiva o de reporte).
 Future<bool> confirmSocialAction(
@@ -26,10 +27,7 @@ Future<bool> confirmSocialAction(
         FilledButton(
           autofocus: !destructive,
           style: destructive
-              ? FilledButton.styleFrom(
-                  backgroundColor: dialogContext.colors.error,
-                  foregroundColor: dialogContext.colors.onError,
-                )
+              ? AppDangerButton.confirmStyleOf(dialogContext)
               : null,
           onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(confirmLabel),

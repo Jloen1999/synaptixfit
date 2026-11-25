@@ -57,6 +57,7 @@ class _QuickActionButton extends StatelessWidget {
     // La acción va también en el nodo del lector: con `excludeSemantics`, el
     // toque del InkWell no le llegaría (TalkBack y VoiceOver).
     return Semantics(
+      container: true,
       button: true,
       enabled: action.onTap != null,
       label: action.label,

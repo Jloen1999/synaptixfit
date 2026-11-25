@@ -8,7 +8,7 @@ import '../../../../../domain/models/admin/admin_queries.dart';
 import '../../../../../domain/use_cases/admin/delete_admin_exercise_use_case.dart';
 import '../../../../../domain/use_cases/admin/search_admin_exercises_use_case.dart';
 import '../../../../../domain/use_cases/admin/set_admin_exercise_active_use_case.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 
 part 'admin_exercises_bloc.freezed.dart';
 part 'admin_exercises_event.dart';

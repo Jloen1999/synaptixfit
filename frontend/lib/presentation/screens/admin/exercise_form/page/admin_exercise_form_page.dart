@@ -15,7 +15,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/admin_labels.dart';
 import '../../widgets/admin_multi_select_field.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 import '../../widgets/admin_widgets.dart';
 import '../bloc/admin_exercise_form_bloc.dart';
 import '../../admin_routes.dart';

@@ -429,6 +429,9 @@
   "plannerDetailsMove": "Move to another day",
   "plannerDetailsDelete": "Delete",
   "plannerDetailsEdit": "Edit",
+  "plannerDetailsGoToClass": "Join the online class",
+  "plannerDetailsLinkFailed": "We couldn't open the class link.",
   "guideCalendarSummaryTitle": "Your week in numbers",
-  "guideCalendarSummaryBody": "Tap a number to see the details: deadlines, study and sport hours or time clashes."
+  "guideCalendarSummaryBody": "Tap a number to see the details: deadlines, study and sport hours or time clashes.",
+  "plannerDetailsGoToClassSpoken": "Join the online class. Opens outside the app"
 }

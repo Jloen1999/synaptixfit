@@ -96,37 +96,41 @@ class PublicBadgeTile extends StatelessWidget {
     final l10n = context.localizations;
     // La etiqueta va dentro del InkWell para fusionarse con su acción y su
     // foco; por fuera, con excludeSemantics, se perderían los dos.
-    return SizedBox(
-      width: TokensSize.medallion,
-      child: AppFocusOutline(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(TokensRadius.m),
-          onTap: () => _showDetail(context),
-          child: Semantics(
-            label: l10n.socialProfileBadgeSemantics(
-              badge.name,
-              l10n.badgeRarity(badge.rarity),
-            ),
-            hint: l10n.socialProfileBadgeHint,
-            excludeSemantics: true,
-            child: Padding(
-              padding: const EdgeInsets.all(TokensSpacing.xs),
-              child: Column(
-                children: [
-                  AppBadgeEmblem(
-                    icon: badge.icon,
-                    rarity: badge.rarity,
-                    size: TokensSize.thumbnailS,
-                  ),
-                  const SizedBox(height: TokensSpacing.xs),
-                  Text(
-                    badge.name,
-                    style: context.textStyles.labelMedium,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+    // Nodo propio: en la fila, la primera insignia se fundía con el padre.
+    return Semantics(
+      container: true,
+      child: SizedBox(
+        width: TokensSize.medallion,
+        child: AppFocusOutline(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(TokensRadius.m),
+            onTap: () => _showDetail(context),
+            child: Semantics(
+              label: l10n.socialProfileBadgeSemantics(
+                badge.name,
+                l10n.badgeRarity(badge.rarity),
+              ),
+              hint: l10n.socialProfileBadgeHint,
+              excludeSemantics: true,
+              child: Padding(
+                padding: const EdgeInsets.all(TokensSpacing.xs),
+                child: Column(
+                  children: [
+                    AppBadgeEmblem(
+                      icon: badge.icon,
+                      rarity: badge.rarity,
+                      size: TokensSize.thumbnailS,
+                    ),
+                    const SizedBox(height: TokensSpacing.xs),
+                    Text(
+                      badge.name,
+                      style: context.textStyles.labelMedium,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

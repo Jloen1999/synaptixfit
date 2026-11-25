@@ -172,7 +172,7 @@ class _SourcePicker extends StatelessWidget {
     if (state.sources.isEmpty) {
       final subjectId = state.subjectId;
       return AppEmptyState(
-        icon: Icons.note_add_outlined,
+        icon: AppIcons.newNote,
         title: l10n.createQuestionsNoSources,
         message: l10n.createQuestionsPickSourceEmpty,
         action: subjectId == null
@@ -203,8 +203,8 @@ class _SourcePicker extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: Icon(
                 source.type == StudySourceType.file
-                    ? Icons.description_outlined
-                    : Icons.sticky_note_2_outlined,
+                    ? AppIcons.noteDocument
+                    : AppIcons.quickNote,
                 color: context.palette.study,
               ),
               title: Text(

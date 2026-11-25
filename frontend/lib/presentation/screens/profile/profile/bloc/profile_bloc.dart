@@ -21,8 +21,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     required this._getSummary,
     required this._getFriendships,
   }) : super(const ProfileState()) {
-    on<ProfileStarted>((_, emit) => _load(emit, showLoading: true));
-    on<ProfileRefreshed>((_, emit) => _load(emit, showLoading: false));
+    on<ProfileStarted>(
+      (event, emit) => _load(
+        emit,
+        showLoading: true,
+        countsFriendRequests: event.friendRequests,
+      ),
+    );
+    on<ProfileRefreshed>(
+      (_, emit) => _load(
+        emit,
+        showLoading: false,
+        countsFriendRequests: state.countsFriendRequests,
+      ),
+    );
   }
 
   final GetAccountUseCaseContract _getAccount;
@@ -32,18 +44,29 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   Future<void> _load(
     Emitter<ProfileState> emit, {
     required bool showLoading,
+    required bool countsFriendRequests,
   }) async {
     if (showLoading || state.summary == null) {
-      emit(state.copyWith(status: ProfileStatus.loading, error: null));
+      emit(
+        state.copyWith(
+          status: ProfileStatus.loading,
+          error: null,
+          countsFriendRequests: countsFriendRequests,
+        ),
+      );
     } else {
       emit(state.copyWith(refreshing: true, error: null));
     }
     // Solo hace falta el total de solicitudes recibidas: una página de uno.
-    final (accountResult, summaryResult, requestsResult) = await (
+    // Se lanza a la vez que lo demás.
+    final requests = countsFriendRequests
+        ? _getFriendships(kind: FriendshipListKind.received, size: 1)
+        : null;
+    final (accountResult, summaryResult) = await (
       _getAccount(),
       _getSummary(),
-      _getFriendships(kind: FriendshipListKind.received, size: 1),
     ).wait;
+    final requestsResult = await requests;
     final error = accountResult.errorOrNull ?? summaryResult.errorOrNull;
     if (error != null) {
       emit(
@@ -64,7 +87,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         summary: summaryResult.valueOrNull,
         // Si el recuento falla no se avisa: es un extra, no impide usar el perfil.
         pendingRequests:
-            requestsResult.valueOrNull?.totalItems ?? state.pendingRequests,
+            requestsResult?.valueOrNull?.totalItems ?? state.pendingRequests,
         error: null,
         refreshing: false,
       ),

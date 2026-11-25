@@ -12,7 +12,7 @@ import 'package:synaptixfit/domain/use_cases/social/remove_friendship_use_case.d
 import 'package:synaptixfit/domain/use_cases/social/search_users_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/send_friend_request_use_case.dart';
 import 'package:synaptixfit/presentation/screens/social/friends/bloc/friends_bloc.dart';
-import 'package:synaptixfit/presentation/screens/social/widgets/social_feedback.dart';
+import 'package:synaptixfit/presentation/screens/social/feedback/social_feedback.dart';
 
 import 'social_fixtures.dart';
 

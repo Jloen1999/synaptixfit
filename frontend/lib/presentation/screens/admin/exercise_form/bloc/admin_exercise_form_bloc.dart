@@ -9,7 +9,7 @@ import '../../../../../domain/use_cases/admin/get_admin_exercise_names_use_case.
 import '../../../../../domain/use_cases/admin/get_admin_exercise_use_case.dart';
 import '../../../../../domain/use_cases/admin/suggest_admin_exercise_names_use_case.dart';
 import '../../../../../domain/use_cases/admin/update_admin_exercise_use_case.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 
 part 'admin_exercise_form_bloc.freezed.dart';
 part 'admin_exercise_form_event.dart';

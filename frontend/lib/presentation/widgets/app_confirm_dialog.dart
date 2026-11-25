@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../extensions/context_extensions.dart';
+import 'app_danger_button.dart';
 
 /// Confirmación antes de una acción. Si es [destructive] el botón va en color
 /// de error y el foco inicial en Cancelar (la opción segura); si no, en la
@@ -30,12 +31,7 @@ Future<bool> showConfirmDialog(
           ),
           FilledButton(
             autofocus: !destructive,
-            style: destructive
-                ? FilledButton.styleFrom(
-                    backgroundColor: context.colors.error,
-                    foregroundColor: context.colors.onError,
-                  )
-                : null,
+            style: destructive ? AppDangerButton.confirmStyleOf(context) : null,
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(confirmLabel),
           ),

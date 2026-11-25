@@ -8,7 +8,7 @@ import 'package:synaptixfit/domain/use_cases/notifications/get_notifications_use
 import 'package:synaptixfit/domain/use_cases/notifications/mark_all_notifications_read_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/notifications/mark_notification_read_use_case.dart';
 import 'package:synaptixfit/presentation/screens/social/notifications/bloc/notifications_bloc.dart';
-import 'package:synaptixfit/presentation/screens/social/widgets/social_feedback.dart';
+import 'package:synaptixfit/presentation/screens/social/feedback/social_feedback.dart';
 
 import 'social_fixtures.dart';
 

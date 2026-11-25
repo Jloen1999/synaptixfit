@@ -9,6 +9,7 @@ import '../../../../domain/enums/badge_rarity.dart';
 import '../../../../domain/enums/community_post_kind.dart';
 import '../../../../domain/models/progress/badge.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../theme/app_icons.dart';
 
 /// Formatos numéricos y de fecha del módulo (locale `es`).
 abstract final class ProgressFormat {
@@ -138,9 +139,9 @@ extension ProgressLabels on AppLocalizations {
 /// rareza está en [BadgeRarityColor] (`widgets/app_badge_emblem.dart`).
 IconData badgeCategoryIcon(BadgeCategory? category) => switch (category) {
   null => Icons.apps_rounded,
-  BadgeCategory.training => Icons.fitness_center_rounded,
+  BadgeCategory.training => AppIcons.routine,
   BadgeCategory.study => Icons.school_rounded,
   BadgeCategory.social => Icons.groups_rounded,
-  BadgeCategory.streak => Icons.local_fire_department_rounded,
+  BadgeCategory.streak => AppIcons.streak,
   BadgeCategory.special => Icons.auto_awesome_rounded,
 };

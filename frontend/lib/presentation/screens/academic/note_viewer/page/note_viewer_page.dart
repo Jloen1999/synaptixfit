@@ -165,7 +165,7 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
                   Expanded(
                     child: AppSecondaryButton(
                       label: l10n.academicActionReview,
-                      icon: const Icon(Icons.replay_rounded),
+                      icon: const Icon(AppIcons.review),
                       onPressed: state.busy
                           ? null
                           : () => context.read<NoteViewerBloc>().add(
@@ -179,7 +179,7 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
                   Expanded(
                     child: AppPrimaryButton(
                       label: l10n.academicActionPractice,
-                      icon: Icons.quiz_outlined,
+                      icon: AppIcons.practice,
                       onPressed: state.busy
                           ? null
                           : () => context.read<NoteViewerBloc>().add(
@@ -214,13 +214,13 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
                             AppPill(
                               label: l10n.academicQuickNote,
                               color: context.palette.accent,
-                              icon: Icons.sticky_note_2_outlined,
+                              icon: AppIcons.quickNote,
                             ),
                           if (updated != null)
                             AppPill(
                               label: l10n.academicUpdatedAt(dateTime(updated)),
                               color: context.colors.onSurfaceVariant,
-                              icon: Icons.schedule_rounded,
+                              icon: AppIcons.duration,
                             ),
                         ],
                       ),

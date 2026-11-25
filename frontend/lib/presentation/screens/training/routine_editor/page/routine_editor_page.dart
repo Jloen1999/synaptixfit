@@ -141,6 +141,7 @@ class _StepIndicator extends StatelessWidget {
                 ),
               ),
             Semantics(
+              container: true,
               label: l10n.trainingStepSemantics(
                 i + 1,
                 labels.length,

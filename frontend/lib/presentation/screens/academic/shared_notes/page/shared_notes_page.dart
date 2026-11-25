@@ -110,7 +110,7 @@ class _SharedNotesView extends StatelessWidget with ErrorsMessageMixin {
         message: l10n.academicSharedCommunityEmptyMessage,
         action: AppSecondaryButton(
           label: l10n.academicSharedShareNote,
-          icon: const Icon(Icons.note_add_outlined),
+          icon: const Icon(AppIcons.newNote),
           onPressed: () => context.push(AcademicPaths.newNote()),
         ),
       ),

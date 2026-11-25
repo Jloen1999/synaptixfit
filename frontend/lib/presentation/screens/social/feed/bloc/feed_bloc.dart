@@ -15,7 +15,7 @@ import '../../../../../domain/use_cases/social/get_feed_use_case.dart';
 import '../../../../../domain/use_cases/social/get_post_use_case.dart';
 import '../../../../../domain/use_cases/social/report_post_use_case.dart';
 import '../../../../../domain/use_cases/social/set_post_like_use_case.dart';
-import '../../widgets/social_feedback.dart';
+import '../../feedback/social_feedback.dart';
 
 part 'feed_bloc.freezed.dart';
 part 'feed_event.dart';

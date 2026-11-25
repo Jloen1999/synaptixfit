@@ -147,7 +147,9 @@ class SubjectCard extends StatelessWidget {
                           excludeSemantics: true,
                           label: l10n.academicImportGuideFor(subject.name),
                           onTap: importGuide,
-                          child: TextButton(
+                          // Tonal (secundario, ADR 0065): como texto suelto
+                          // no se reconocía como botón.
+                          child: FilledButton.tonal(
                             onPressed: importGuide,
                             child: Text(l10n.academicNoSyllabusImport),
                           ),

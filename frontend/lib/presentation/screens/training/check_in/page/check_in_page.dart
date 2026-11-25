@@ -261,9 +261,7 @@ class _FormState extends State<_Form> with ErrorsMessageMixin {
                       ),
                       subtitle: Text(l10n.trainingCheckInDetailsHint),
                       trailing: Icon(
-                        _details
-                            ? Icons.expand_less_rounded
-                            : Icons.expand_more_rounded,
+                        _details ? AppIcons.collapse : AppIcons.expand,
                       ),
                       onTap: () => setState(() => _details = !_details),
                     ),
@@ -323,7 +321,7 @@ class _FormState extends State<_Form> with ErrorsMessageMixin {
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right_rounded),
+                    const Icon(AppIcons.next),
                   ],
                 ),
               ),
@@ -556,7 +554,7 @@ class _HistoryTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(
         checkIn.requiresAdaptation
-            ? Icons.warning_amber_rounded
+            ? AppIcons.warning
             : Icons.check_circle_outline_rounded,
         color: color,
       ),

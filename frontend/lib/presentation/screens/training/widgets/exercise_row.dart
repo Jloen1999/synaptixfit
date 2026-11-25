@@ -220,6 +220,7 @@ class _ExerciseRowState extends State<ExerciseRow> {
     String spoken, {
     Color? color,
   }) => Semantics(
+    container: true,
     button: true,
     label: spoken,
     excludeSemantics: true,

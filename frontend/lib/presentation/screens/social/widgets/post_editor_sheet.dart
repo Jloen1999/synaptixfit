@@ -7,7 +7,7 @@ import '../../../../domain/models/social/post.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
-import 'social_feedback.dart';
+import 'show_social_feedback.dart';
 import 'social_format.dart';
 
 /// Datos de una publicación nueva o editada.

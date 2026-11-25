@@ -66,7 +66,7 @@ class StreakCard extends StatelessWidget {
                       ),
                     if (streak.activeToday)
                       _StatusChip(
-                        icon: Icons.check_circle_rounded,
+                        icon: AppIcons.done,
                         label: l10n.progressStreakActiveToday,
                         color: context.palette.success,
                       ),
@@ -170,6 +170,7 @@ class _MilestoneChip extends StatelessWidget {
         ? context.palette.onAccent
         : context.colors.onSurfaceVariant;
     return Semantics(
+      container: true,
       label: reached
           ? l10n.progressStreakMilestoneReached(days)
           : l10n.progressStreakMilestonePending(days),
@@ -191,7 +192,7 @@ class _MilestoneChip extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              reached ? Icons.check_rounded : Icons.flag_outlined,
+              reached ? AppIcons.check : AppIcons.goal,
               size: TokensSize.iconXs,
               color: color,
             ),

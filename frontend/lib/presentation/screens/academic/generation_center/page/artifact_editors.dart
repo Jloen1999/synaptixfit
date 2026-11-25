@@ -46,11 +46,16 @@ class _SummaryEditorState extends State<_SummaryEditor> {
           appBar: AppPageBar(
             title: Text(l10n.academicGenerateFixSummaryTitle),
             actions: [
-              TextButton(
-                onPressed: _controller.text.trim().isEmpty
-                    ? null
-                    : () => Navigator.of(context).pop(_controller.text),
-                child: Text(l10n.academicGenerateFixDone),
+              // La única acción del editor, rellena como «Guardar» del editor
+              // de apuntes.
+              Padding(
+                padding: const EdgeInsets.only(right: TokensSpacing.s),
+                child: AppPrimaryButton(
+                  label: l10n.academicGenerateFixDone,
+                  onPressed: _controller.text.trim().isEmpty
+                      ? null
+                      : () => Navigator.of(context).pop(_controller.text),
+                ),
               ),
             ],
           ),
@@ -268,6 +273,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                       children: [
                         AppFocusOutline(
                           child: Semantics(
+                            container: true,
                             label: l10n.academicGenerateCorrectOption(i + 1),
                             child: Radio<int>(value: i),
                           ),
@@ -353,7 +359,7 @@ class _EditorSheet extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.l),
                 AppPrimaryButton(
                   label: l10n.academicGenerateFixApply,
-                  icon: Icons.check_rounded,
+                  icon: AppIcons.check,
                   onPressed: canSave ? onSave : null,
                 ),
               ],

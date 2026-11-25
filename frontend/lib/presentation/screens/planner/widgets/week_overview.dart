@@ -253,6 +253,7 @@ class _BalanceChip extends StatelessWidget {
     // El nombre empieza por el texto visible (WCAG 2.5.3) y añade qué es y
     // el estado; a la vista, el estado lo dice el tooltip («Equilibrada»).
     return Semantics(
+      container: true,
       button: true,
       label: l10n.plannerChipBalanceLabel(label, state),
       excludeSemantics: true,

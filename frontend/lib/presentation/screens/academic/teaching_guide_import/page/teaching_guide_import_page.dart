@@ -187,7 +187,7 @@ class _PickStep extends StatelessWidget {
                   radius: TokensSize.emptyBadge / 2,
                   backgroundColor: context.colors.tertiaryContainer,
                   child: Icon(
-                    Icons.description_rounded,
+                    AppIcons.importGuide,
                     size: TokensSize.iconL,
                     color: context.colors.onTertiaryContainer,
                   ),
@@ -220,7 +220,7 @@ class _PickStep extends StatelessWidget {
                 width: double.infinity,
                 child: AppPrimaryButton(
                   label: l10n.academicImportPick,
-                  icon: Icons.upload_file_rounded,
+                  icon: AppIcons.upload,
                   onPressed: () => _pick(context),
                 ),
               ),
@@ -359,16 +359,10 @@ class _StepRow extends StatelessWidget {
                   SizedBox.square(
                     dimension: TokensSize.iconM,
                     child: done
-                        ? Icon(
-                            Icons.check_circle_rounded,
-                            color: context.palette.success,
-                          )
+                        ? Icon(AppIcons.done, color: context.palette.success)
                         : active
                         ? const CircularProgressIndicator()
-                        : Icon(
-                            Icons.radio_button_unchecked_rounded,
-                            color: context.colors.outline,
-                          ),
+                        : Icon(AppIcons.todo, color: context.colors.outline),
                   ),
                   const SizedBox(width: TokensSpacing.sm),
                   Expanded(
@@ -770,7 +764,7 @@ class _ReviewStepState extends State<_ReviewStep> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
-                            Icons.warning_amber_rounded,
+                            AppIcons.warning,
                             size: TokensSize.iconXs,
                             color: context.palette.warning,
                           ),
@@ -825,7 +819,7 @@ class _ReviewStepState extends State<_ReviewStep> {
                   label: creatingNew
                       ? l10n.academicImportApplyNew
                       : l10n.academicImportApplyExisting,
-                  icon: Icons.check_rounded,
+                  icon: AppIcons.check,
                   loading: applying,
                   onPressed: _submit,
                 ),
@@ -1057,9 +1051,11 @@ class _AssessmentTile extends StatelessWidget {
             children: [
               if (a.dueDate == null)
                 Semantics(
+                  container: true,
                   label: l10n.academicImportAddDateFor(a.name),
                   button: true,
                   excludeSemantics: true,
+                  onTap: onPickDate,
                   child: TextButton.icon(
                     onPressed: onPickDate,
                     icon: const Icon(Icons.event_rounded),
@@ -1068,12 +1064,14 @@ class _AssessmentTile extends StatelessWidget {
                 )
               else ...[
                 Semantics(
+                  container: true,
                   label: l10n.academicImportDateOf(
                     a.name,
                     shortDate(a.dueDate!),
                   ),
                   button: true,
                   excludeSemantics: true,
+                  onTap: onPickDate,
                   child: TextButton.icon(
                     onPressed: onPickDate,
                     icon: const Icon(Icons.event_available_rounded),
@@ -1122,7 +1120,7 @@ class _DoneStep extends StatelessWidget {
         SliverFillRemaining(
           hasScrollBody: false,
           child: AppEmptyState(
-            icon: Icons.check_circle_rounded,
+            icon: AppIcons.done,
             title: l10n.academicImportDoneTitle,
             message: message,
             action: AppPrimaryButton(
@@ -1169,12 +1167,12 @@ class _FailedStep extends StatelessWidget {
                 child: state.canRetry
                     ? AppSecondaryButton(
                         label: l10n.academicImportPickAnother,
-                        icon: const Icon(Icons.upload_file_rounded),
+                        icon: const Icon(AppIcons.upload),
                         onPressed: pickAnother,
                       )
                     : AppPrimaryButton(
                         label: l10n.academicImportPickAnother,
-                        icon: Icons.upload_file_rounded,
+                        icon: AppIcons.upload,
                         onPressed: pickAnother,
                       ),
               ),

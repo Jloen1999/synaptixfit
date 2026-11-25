@@ -12,9 +12,13 @@ class AppPrimaryButton extends StatelessWidget {
     this.icon,
     this.loading = false,
     this.focusNode,
+    this.semanticsLabel,
   });
 
   final String label;
+
+  /// Lo que oye el lector si [label] no basta («…, se abre fuera de la app»).
+  final String? semanticsLabel;
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool loading;
@@ -38,7 +42,7 @@ class AppPrimaryButton extends StatelessWidget {
               ),
             ),
           )
-        : Text(label);
+        : Text(label, semanticsLabel: semanticsLabel);
     if (icon != null && !loading) {
       return FilledButton.icon(
         onPressed: onTap,

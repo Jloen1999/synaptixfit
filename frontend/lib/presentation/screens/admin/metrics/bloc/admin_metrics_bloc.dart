@@ -5,7 +5,7 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/admin/platform_metrics.dart';
 import '../../../../../domain/use_cases/admin/get_activity_trend_use_case.dart';
 import '../../../../../domain/use_cases/admin/get_platform_metrics_use_case.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 
 part 'admin_metrics_bloc.freezed.dart';
 part 'admin_metrics_event.dart';

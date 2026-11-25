@@ -50,10 +50,7 @@ Future<bool> confirmDestructive(
           child: Text(l10n.commonCancel),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: context.colors.error,
-            foregroundColor: context.colors.onError,
-          ),
+          style: AppDangerButton.confirmStyleOf(context),
           onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(confirmLabel ?? l10n.commonDelete),
         ),

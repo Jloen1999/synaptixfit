@@ -470,6 +470,7 @@ class _RowButton extends StatelessWidget {
     if (semantic == null || loading) return button;
     // El lector oye qué se empieza, no solo «Empezar».
     return Semantics(
+      container: true,
       label: semantic,
       excludeSemantics: true,
       button: true,
@@ -537,7 +538,7 @@ class _TrainingRow extends StatelessWidget {
       leading: ExerciseThumbnail(
         url: day.coverImageUrl,
         size: TokensSize.thumbnailS,
-        icon: day.coverModality?.icon ?? Icons.fitness_center_rounded,
+        icon: day.coverModality?.icon ?? AppIcons.routine,
       ),
       overline: overline,
       title: title,

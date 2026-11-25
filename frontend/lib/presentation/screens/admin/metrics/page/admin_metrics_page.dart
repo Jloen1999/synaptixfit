@@ -9,7 +9,7 @@ import '../../../../../domain/models/admin/platform_metrics.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 import '../../widgets/admin_widgets.dart';
 import '../bloc/admin_metrics_bloc.dart';
 

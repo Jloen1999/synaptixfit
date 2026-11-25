@@ -718,11 +718,7 @@ class _EditorViewState extends State<_EditorView>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Icon(
-              _moreOptions
-                  ? Icons.expand_less_rounded
-                  : Icons.expand_more_rounded,
-            ),
+            trailing: Icon(_moreOptions ? AppIcons.collapse : AppIcons.expand),
             onTap: () => setState(() => _moreOptions = !_moreOptions),
           ),
         ),
@@ -789,7 +785,7 @@ class _EditorViewState extends State<_EditorView>
           label: l10n.plannerFieldTopics,
           hint: l10n.plannerFieldTopicsHint,
           controller: _topics,
-          icon: Icons.notes_rounded,
+          icon: AppIcons.note,
           maxLines: 3,
         ),
         small,
@@ -798,7 +794,7 @@ class _EditorViewState extends State<_EditorView>
         AppTextField(
           label: l10n.plannerFieldLocation,
           controller: _location,
-          icon: Icons.place_outlined,
+          icon: AppIcons.location,
         ),
         small,
       ],
@@ -834,7 +830,7 @@ class _EditorViewState extends State<_EditorView>
           onChanged: (v) => setState(() => _private = v),
           title: Text(l10n.plannerFieldPrivate),
           subtitle: Text(l10n.plannerFieldPrivateHint),
-          secondary: const Icon(Icons.lock_outline_rounded),
+          secondary: const Icon(AppIcons.readOnly),
         ),
       ),
       if (_type == BlockType.sport) ...[
@@ -844,7 +840,7 @@ class _EditorViewState extends State<_EditorView>
           isExpanded: true,
           decoration: InputDecoration(
             labelText: l10n.plannerFieldRoutine,
-            prefixIcon: const Icon(Icons.fitness_center_rounded),
+            prefixIcon: const Icon(AppIcons.routine),
           ),
           items: [
             DropdownMenuItem(value: null, child: Text(l10n.plannerNoRoutine)),
@@ -955,7 +951,7 @@ class _EditorViewState extends State<_EditorView>
     final startField = PickerField(
       label: l10n.plannerFieldStart,
       value: PlannerFormats.minutes(_startMin),
-      icon: Icons.schedule_rounded,
+      icon: AppIcons.duration,
       onTap: locked ? null : pickStart,
     );
     switch (_type.timeInput) {
@@ -984,7 +980,7 @@ class _EditorViewState extends State<_EditorView>
         final endField = PickerField(
           label: l10n.plannerFieldEnd,
           value: PlannerFormats.minutes(_endMin),
-          icon: Icons.schedule_rounded,
+          icon: AppIcons.duration,
           onTap: locked
               ? null
               : () async {
@@ -1057,7 +1053,7 @@ class _EditorViewState extends State<_EditorView>
     final l10n = context.localizations;
     if (state.routines.isEmpty) {
       return AppEmptyState(
-        icon: Icons.fitness_center_rounded,
+        icon: AppIcons.routine,
         title: l10n.plannerNoRoutinesTitle,
         message: l10n.plannerNoRoutinesMessage,
       );
@@ -1078,7 +1074,7 @@ class _EditorViewState extends State<_EditorView>
           isExpanded: true,
           decoration: InputDecoration(
             labelText: l10n.plannerFieldRoutine,
-            prefixIcon: const Icon(Icons.fitness_center_rounded),
+            prefixIcon: const Icon(AppIcons.routine),
           ),
           items: [
             for (final r in state.routines)
@@ -1133,7 +1129,7 @@ class _EditorViewState extends State<_EditorView>
               child: PickerField(
                 label: l10n.plannerFieldPreferredTime,
                 value: PlannerFormats.minutes(_distTime),
-                icon: Icons.schedule_rounded,
+                icon: AppIcons.duration,
                 onTap: () async {
                   final m = await pickPlannerTime(context, _distTime);
                   if (m != null) setState(() => _distTime = m);
@@ -1182,6 +1178,7 @@ class _StepHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      container: true,
       header: true,
       label: context.localizations.plannerStepSemantics(number, total, title),
       child: ExcludeSemantics(

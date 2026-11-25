@@ -295,10 +295,9 @@ class _NoteSheetState extends State<_NoteSheet> {
           ),
           if (widget.initial.isNotEmpty) ...[
             const SizedBox(height: TokensSpacing.s),
-            TextButton.icon(
+            AppDangerButton(
               onPressed: () => Navigator.of(context).pop(''),
-              icon: const Icon(AppIcons.delete),
-              label: Text(l10n.trainingNoteDelete),
+              label: l10n.trainingNoteDelete,
             ),
           ],
         ],

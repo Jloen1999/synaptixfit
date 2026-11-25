@@ -17,7 +17,7 @@ import 'package:synaptixfit/domain/use_cases/social/reject_friend_request_use_ca
 import 'package:synaptixfit/domain/use_cases/social/together/get_together_overview_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/sync/watch_data_changes_use_case.dart';
 import 'package:synaptixfit/presentation/screens/progress/community/bloc/community_bloc.dart';
-import 'package:synaptixfit/presentation/screens/social/widgets/social_feedback.dart';
+import 'package:synaptixfit/presentation/screens/social/feedback/social_feedback.dart';
 
 import '../social/social_fixtures.dart';
 

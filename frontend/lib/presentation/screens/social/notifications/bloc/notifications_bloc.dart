@@ -7,7 +7,7 @@ import '../../../../../domain/use_cases/notifications/delete_notification_use_ca
 import '../../../../../domain/use_cases/notifications/get_notifications_use_case.dart';
 import '../../../../../domain/use_cases/notifications/mark_all_notifications_read_use_case.dart';
 import '../../../../../domain/use_cases/notifications/mark_notification_read_use_case.dart';
-import '../../widgets/social_feedback.dart';
+import '../../feedback/social_feedback.dart';
 
 part 'notifications_bloc.freezed.dart';
 part 'notifications_event.dart';

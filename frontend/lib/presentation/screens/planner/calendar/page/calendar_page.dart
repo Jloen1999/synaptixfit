@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/guide_id.dart';
@@ -287,6 +288,21 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         if (subjectId == null) return;
         await context.push<void>(PlannerExternalPaths.subject(subjectId));
         _bloc.add(const CalendarEvent.refreshed());
+      case BlockDetailsAction.goToClass:
+        final link = block.onlineLink;
+        var opened = false;
+        // Sin app que lo abra, `launchUrl` lanza `PlatformException` en vez
+        // de devolver falso: se trata igual, con su aviso.
+        try {
+          opened =
+              link != null &&
+              await launchUrl(link, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          opened = false;
+        }
+        if (!opened && mounted) {
+          context.showSnack(context.localizations.plannerDetailsLinkFailed);
+        }
     }
   }
 
@@ -803,25 +819,21 @@ class _PlannerMenu extends StatelessWidget {
         AppIcons.proposal,
         l10n.plannerMenuSuggestions,
       ),
-      (
-        PlannerPaths.pastStudy,
-        Icons.history_edu_rounded,
-        l10n.plannerMenuPastStudy,
-      ),
+      (PlannerPaths.pastStudy, AppIcons.pastStudy, l10n.plannerMenuPastStudy),
       (
         PlannerPaths.scheduleScan,
-        Icons.document_scanner_rounded,
+        AppIcons.scan,
         l10n.plannerMenuScheduleImport,
       ),
       (
         PlannerPaths.calendarSync,
-        Icons.cloud_sync_rounded,
+        AppIcons.calendarSync,
         l10n.plannerMenuCalendarSync,
       ),
     ];
     return PopupMenuButton<String>(
       tooltip: l10n.plannerMoreOptions,
-      icon: const Icon(Icons.more_vert_rounded),
+      icon: const Icon(AppIcons.menu),
       onSelected: onOpen,
       itemBuilder: (_) => [
         for (final (path, icon, label) in items)

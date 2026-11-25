@@ -738,7 +738,7 @@ class _LiveViewState extends State<_LiveView> {
                           child: Row(
                             children: [
                               Icon(
-                                Icons.timer_outlined,
+                                AppIcons.focusTimer,
                                 size: TokensSize.iconXs,
                                 color: context.colors.secondary,
                               ),
@@ -1006,23 +1006,23 @@ class _FreeBottomBarState extends State<_FreeBottomBar> {
           icon: Icon(icon),
         );
     final Widget timer = state.paused || (timed && !running)
-        ? iconAction(l10n.trainingResume, Icons.play_arrow_rounded, resume)
+        ? iconAction(l10n.trainingResume, AppIcons.start, resume)
         : !timed
         ? iconAction(
             l10n.trainingSetTimerStart,
-            Icons.timer_outlined,
+            AppIcons.focusTimer,
             next > 50
                 ? null
                 : () => bloc.add(LiveSessionEvent.setTimerStarted(null, next)),
           )
         : iconAction(
             l10n.trainingPause,
-            Icons.pause_rounded,
+            AppIcons.pause,
             () => bloc.add(const LiveSessionEvent.pauseRequested()),
           );
     final log = AppPrimaryButton(
       label: timed ? l10n.trainingSetDoneShort : l10n.trainingFreeLogSet(next),
-      icon: Icons.check_rounded,
+      icon: AppIcons.check,
       focusNode: _doneFocus,
       onPressed: state.saving || next > 50
           ? null
@@ -1032,32 +1032,30 @@ class _FreeBottomBarState extends State<_FreeBottomBar> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                timed
-                    // El tiempo ya está en el reloj ⏱ de arriba: aquí no se
-                    // repite la cifra.
-                    ? (running
-                          ? l10n.trainingSetRowInProgress
-                          : l10n.trainingSetRowPaused)
-                    : l10n.trainingFreeSetsCount(sets.length),
-                semanticsLabel: timed
-                    ? (running
-                          ? l10n.trainingSetTimerRunning(next)
-                          : l10n.trainingSetTimerPaused(next))
-                    : null,
-                style: context.textStyles.labelLarge,
-              ),
-            ),
-            TextButton.icon(
-              onPressed: finish,
-              focusNode: _finishFocus,
-              icon: const Icon(Icons.flag_outlined),
-              label: Text(l10n.trainingFinishAction),
-            ),
-          ],
+        AppTextWithAction(
+          actionLabel: l10n.trainingFinishAction,
+          actionIcon: true,
+          action: TextButton.icon(
+            onPressed: finish,
+            focusNode: _finishFocus,
+            icon: const Icon(AppIcons.finish),
+            label: Text(l10n.trainingFinishAction),
+          ),
+          child: Text(
+            timed
+                // El tiempo ya está en el reloj ⏱ de arriba: aquí no se
+                // repite la cifra.
+                ? (running
+                      ? l10n.trainingSetRowInProgress
+                      : l10n.trainingSetRowPaused)
+                : l10n.trainingFreeSetsCount(sets.length),
+            semanticsLabel: timed
+                ? (running
+                      ? l10n.trainingSetTimerRunning(next)
+                      : l10n.trainingSetTimerPaused(next))
+                : null,
+            style: context.textStyles.labelLarge,
+          ),
         ),
         const SizedBox(height: TokensSpacing.s),
         Row(
@@ -1096,7 +1094,7 @@ class _FreeBottomBarState extends State<_FreeBottomBar> {
                   alignment: AlignmentDirectional.centerEnd,
                   child: TextButton.icon(
                     onPressed: finish,
-                    icon: const Icon(Icons.flag_outlined),
+                    icon: const Icon(AppIcons.finish),
                     label: Text(context.localizations.trainingFinishAction),
                   ),
                 ),
@@ -1148,7 +1146,7 @@ class _ExerciseList extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(
-                          Icons.check_circle_rounded,
+                          AppIcons.done,
                           color: context.colors.onSecondaryContainer,
                         ),
                         const SizedBox(width: TokensSpacing.s),
@@ -1281,7 +1279,7 @@ class _BookendsCardState extends State<_BookendsCard> {
                   trailing: AnimatedRotation(
                     turns: _expanded ? 0.5 : 0,
                     duration: context.motion(TokensDuration.normal),
-                    child: const Icon(Icons.expand_more_rounded),
+                    child: const Icon(AppIcons.expand),
                   ),
                   onTap: () => setState(() => _expanded = !_expanded),
                 ),
@@ -1297,7 +1295,7 @@ class _BookendsCardState extends State<_BookendsCard> {
                       icon: e.category.icon,
                     ),
                     title: Text(e.name),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    trailing: const Icon(AppIcons.next),
                     // En una hoja, como «Cómo se hace» de la sesión: apilar
                     // la ruta del ejercicio (vive dentro de la pestaña) desde
                     // esta pantalla completa dejaba una pantalla oscura.
@@ -1429,7 +1427,7 @@ class _ExerciseCard extends StatelessWidget {
                       Icon(
                         active
                             ? Icons.play_circle_fill_rounded
-                            : Icons.pause_circle_outline_rounded,
+                            : AppIcons.paused,
                         size: TokensSize.iconXs,
                         color: active
                             ? context.colors.secondary
@@ -1473,6 +1471,7 @@ class _ExerciseCard extends StatelessWidget {
               overflowSpacing: TokensSpacing.xs,
               children: [
                 Semantics(
+                  container: true,
                   label: l10n.trainingHowToNamed(exercise.exerciseName),
                   button: true,
                   excludeSemantics: true,
@@ -1601,11 +1600,8 @@ class _SetRow extends StatelessWidget {
     final l10n = context.localizations;
     final s = set;
     final (icon, color) = switch (s) {
-      null => (Icons.radio_button_unchecked_rounded, context.colors.outline),
-      SessionSet(completed: true) => (
-        Icons.check_circle_rounded,
-        context.palette.success,
-      ),
+      null => (AppIcons.todo, context.colors.outline),
+      SessionSet(completed: true) => (AppIcons.done, context.palette.success),
       _ => (Icons.cancel_rounded, context.palette.warning),
     };
     final summary = s == null
@@ -1828,15 +1824,22 @@ class _LeaveSheet extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: TokensSpacing.s),
         child: Align(alignment: AlignmentDirectional.centerStart, child: text),
       );
+      // Título y explicación en dos líneas: rectángulo redondeado, no una
+      // píldora estirada (ADR 0065).
+      const shape = RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(TokensRadius.m)),
+      );
       return primary
           ? FilledButton(
               // Foco inicial en la acción principal (relleno: su anillo no
               // crea un segundo botón destacado).
               autofocus: true,
+              style: FilledButton.styleFrom(shape: shape),
               onPressed: () => Navigator.of(context).pop(choice),
               child: child,
             )
           : OutlinedButton(
+              style: OutlinedButton.styleFrom(shape: shape),
               onPressed: () => Navigator.of(context).pop(choice),
               child: child,
             );
@@ -1889,12 +1892,9 @@ class _LeaveSheet extends StatelessWidget {
             // Lo que no guarda, apartado del resto.
             const SizedBox(height: TokensSpacing.m),
             // Descartar no guarda: aparte de «Terminar» y confirmado.
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: context.colors.error,
-              ),
+            AppDangerButton(
               onPressed: () => Navigator.of(context).pop(_LeaveChoice.discard),
-              child: Text(l10n.trainingDiscardSession),
+              label: l10n.trainingDiscardSession,
             ),
           ],
         ),

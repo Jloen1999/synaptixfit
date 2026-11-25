@@ -148,7 +148,7 @@ class _FlashcardsView extends StatelessWidget with ErrorsMessageMixin {
     FlashcardRating.mastered => (
       l10n.academicFlashcardsMastered,
       context.palette.success,
-      Icons.check_circle_rounded,
+      AppIcons.done,
     ),
     FlashcardRating.doubtful => (
       l10n.academicFlashcardsDoubtful,
@@ -325,7 +325,7 @@ class _Finished extends StatelessWidget {
           else ...[
             AppPrimaryButton(
               label: l10n.academicFlashcardsAgain,
-              icon: Icons.replay_rounded,
+              icon: AppIcons.review,
               onPressed: () => bloc.add(const FlashcardsEvent.restarted()),
             ),
             const SizedBox(height: TokensSpacing.s),

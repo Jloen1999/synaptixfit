@@ -94,11 +94,8 @@ class UnfinishedSessionCard extends StatelessWidget {
     );
     // Descartar no guarda: en rojo y aparte (vocabulario §4).
     final discard = withHint(
-      OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: context.colors.error,
-          side: BorderSide(color: context.colors.error),
-        ),
+      AppDangerButton(
+        icon: null,
         onPressed: busy
             ? null
             : () async {
@@ -110,7 +107,7 @@ class UnfinishedSessionCard extends StatelessWidget {
                 );
                 if (ok) onDiscard();
               },
-        child: Text(l10n.homeUnfinishedDiscard),
+        label: l10n.homeUnfinishedDiscard,
       ),
       l10n.homeUnfinishedDiscardHint,
     );

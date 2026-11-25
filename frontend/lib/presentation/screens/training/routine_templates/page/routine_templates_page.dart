@@ -474,6 +474,7 @@ class _TemplateCard extends StatelessWidget {
           ],
           const SizedBox(height: TokensSpacing.m),
           Semantics(
+            container: true,
             label: l10n.trainingTemplatesUseNamed(t.name),
             excludeSemantics: true,
             button: true,

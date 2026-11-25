@@ -126,7 +126,7 @@ class _AnalyticsView extends StatelessWidget with ErrorsMessageMixin {
           message: l10n.progressAnalyticsEmptyMessage,
           action: AppPrimaryButton(
             label: l10n.progressAnalyticsEmptyAction,
-            icon: Icons.fitness_center_rounded,
+            icon: AppIcons.routine,
             onPressed: () => context.go(ProgressExternalPaths.training),
           ),
         ),

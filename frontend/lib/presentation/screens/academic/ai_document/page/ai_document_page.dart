@@ -264,7 +264,7 @@ class _SaveAsNoteRow extends StatelessWidget {
           const SizedBox(height: TokensSpacing.xs),
           AppSecondaryButton(
             label: l10n.academicAiSaveAsNote,
-            icon: const Icon(Icons.note_add_outlined),
+            icon: const Icon(AppIcons.newNote),
             loading: state.saving,
             onPressed: () => _save(context),
           ),
@@ -291,7 +291,7 @@ class _SavedBanner extends StatelessWidget {
               ? context.localizations.academicAiSaved
               : context.localizations.academicAiSavedAt(dateTime(updated)),
           color: context.palette.success,
-          icon: Icons.check_rounded,
+          icon: AppIcons.check,
         ),
       ),
     );
@@ -315,7 +315,7 @@ class _PracticeReady extends StatelessWidget {
           ? null
           : AppPrimaryButton(
               label: l10n.academicPracticeStart,
-              icon: Icons.play_arrow_rounded,
+              icon: AppIcons.start,
               onPressed: () =>
                   context.pushReplacement(AcademicPaths.practice(materialId)),
             ),

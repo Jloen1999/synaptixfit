@@ -175,7 +175,7 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
                       Row(
                         children: [
                           Icon(
-                            Icons.lock_outline_rounded,
+                            AppIcons.readOnly,
                             size: TokensSize.iconXs,
                             color: context.colors.onSurfaceVariant,
                           ),
@@ -241,7 +241,7 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
                       )
                     else
                       AppEmptyState.compact(
-                        icon: Icons.cloud_off_rounded,
+                        icon: AppIcons.unavailable,
                         title: l10n.academicReviewNoOptions,
                         action: AppSecondaryButton(
                           label: l10n.commonRetry,
@@ -330,7 +330,7 @@ class _SaveBar extends StatelessWidget {
           padding: const EdgeInsets.all(TokensSpacing.m),
           child: AppPrimaryButton(
             label: label,
-            icon: Icons.check_rounded,
+            icon: AppIcons.check,
             loading: state.submitting,
             onPressed: !state.reviewed || quality == null || state.submitting
                 ? null
@@ -479,7 +479,7 @@ class _MaterialHeader extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.schedule_rounded,
+                    AppIcons.duration,
                     size: TokensSize.iconXs,
                     color: context.palette.warning,
                   ),
@@ -614,7 +614,7 @@ class _QualityOption extends StatelessWidget {
               if (selected) ...[
                 const SizedBox(width: TokensSpacing.xs),
                 Icon(
-                  Icons.check_circle_rounded,
+                  AppIcons.done,
                   color: context.colors.primary,
                   size: TokensSize.iconS,
                 ),
@@ -654,7 +654,7 @@ class _OutcomeCard extends StatelessWidget {
         child: Column(
           children: [
             Icon(
-              Icons.check_circle_rounded,
+              AppIcons.done,
               color: context.palette.success,
               size: TokensSize.iconL,
             ),

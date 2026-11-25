@@ -304,6 +304,7 @@ class TogetherAvatars extends StatelessWidget {
       children: [
         for (final p in people)
           Semantics(
+            container: true,
             label: togetherName(context, p.name),
             excludeSemantics: true,
             child: AppAvatar(

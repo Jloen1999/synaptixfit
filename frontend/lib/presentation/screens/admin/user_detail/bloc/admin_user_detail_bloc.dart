@@ -19,7 +19,7 @@ import '../../../../../domain/use_cases/admin/set_admin_user_progress_use_case.d
 import '../../../../../domain/use_cases/admin/set_admin_user_shadowban_use_case.dart';
 import '../../../../../domain/use_cases/admin/update_admin_user_identity_use_case.dart';
 import '../../../../../domain/use_cases/admin/wipe_admin_user_use_case.dart';
-import '../../widgets/admin_status.dart';
+import '../../feedback/admin_status.dart';
 
 part 'admin_user_detail_bloc.freezed.dart';
 part 'admin_user_detail_event.dart';

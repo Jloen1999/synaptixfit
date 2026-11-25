@@ -16,7 +16,7 @@ La app **arranca en oscuro** por defecto; en Ajustes → Apariencia se elige Osc
 | Barra inferior y riel (`navigationBar`) | `#11141B`, línea superior `#222734` | `#FFFFFF` |
 | Texto / secundario | `#F3F4F6` / `#9CA3AF` | `#0B0D12` / `#4B5563` |
 | `primary` (acción, destino activo) | lima `#C6F432`, texto encima `#0B0D12` | lima oscuro `#3F6212`, texto blanco |
-| Botón secundario (`buttonOutline`) | contorno `#2A303C`, texto claro | contorno `#D1D5DB`, texto oscuro |
+| Botón con borde y chips (`buttonOutline`) | contorno `#7C8496` sobre `surface`, texto claro | contorno `#767D8A` sobre blanco, texto oscuro |
 
 ## Color
 
@@ -32,7 +32,7 @@ La app **arranca en oscuro** por defecto; en Ajustes → Apariencia se elige Osc
 
 Superficies: `background` para el lienzo, `surface` para tarjetas y `surfaceContainer*` para rellenos. Todos los colores de texto superan 4,5:1 sobre `surface`, `background` y `surfaceContainerHigh`, también tintados al 12 %. En oscuro, el texto secundario `#9CA3AF` da 6,9:1 sobre la tarjeta y 7,7:1 sobre el lienzo; el lima da 15:1 con su texto oscuro.
 
-Barra de navegación: icono y etiqueta siempre visibles; el destino activo va en `primary` con icono relleno, etiqueta en negrita y un indicador casi invisible (`primary` al 12 %). El borde del botón secundario es decorativo (el texto identifica el botón); los campos de texto sí llevan `outline` (≥ 3:1 contra su relleno y el lienzo).
+Barra de navegación: icono y etiqueta siempre visibles; el destino activo va en `primary` con icono relleno, etiqueta en negrita y un indicador casi invisible (`primary` al 12 %). El borde de los botones con borde y de los chips (`buttonOutline`) llega a 3:1 contra la superficie, el lienzo y todos los `*Container` (ADR 0065): un botón sobre una tarjeta tintada no se confunde con texto en negrita. Los campos de texto llevan `outline` (≥ 3:1 contra su relleno y el lienzo).
 
 `outline` es solo para bordes, iconos y gráficos (3:1): **nunca como color de texto**. Los estados neutros con texto (bloqueado, sin evaluar, archivada, abandonado, inactivo) usan `onSurfaceVariant`.
 
@@ -65,7 +65,8 @@ Manrope para títulos y cifras (pesos 700–800; `display*`, `headline*` en 800,
 | `AppInlineMessage` | Aviso junto a lo que lo provoca (un campo, una hoja, un formulario de acceso), en tono error, aviso o éxito, con el color al 12 %. No se cierra solo como un SnackBar; su texto es región viva |
 | `AppMetricTile` | Cifra con icono, etiqueta y desglose; se anuncia como una sola frase. `bare: true` dentro de otra tarjeta (nada de tarjeta dentro de tarjeta) |
 | `AppSectionHeader` | Título de sección (encabezado accesible) con acción; `actionExpanded` si la acción despliega o pliega («Ver todas» / «Ver menos») |
-| `AppPrimaryButton` · `AppSecondaryButton` | Botones con estado de carga anunciado |
+| `AppPrimaryButton` · `AppSecondaryButton` | Botones con estado de carga anunciado (principal relleno; secundario tonal) |
+| `AppDangerButton` | Borrar, descartar o bloquear (ADR 0065): borde y texto `error`, papelera por defecto (`icon: null` sin icono), siempre aparte de la acción principal. Nunca un `TextButton` rojo |
 | `AppTextField` | Campo con etiqueta visible, ayuda y contraseña con botón etiquetado |
 | `AppNumberCell` | Celda numérica de una tabla (series, reps, kg, segundos): aspecto de campo del tema, teclado numérico, confirma al salir o con Intro (no a cada tecla), borde rojo y aviso hablado fuera de rango; el lector oye «Serie 2, repeticiones». Mínimo 48 dp de alto |
 | `AppCoverCard` · `AppCoverPill` | Tarjeta con foto. Con texto normal, la foto se ve tal cual en el lado final de la cabecera (`TokensLayout.coverPhotoShare` del ancho), fundida con la superficie (`coverPhotoFade`), y el texto va en la zona lisa: AA con cualquier foto. Lo que necesita el ancho entero (botón principal, progreso del ciclo, lista de ejercicios, acciones) va en `footer`, debajo y sin foto. Con el texto por encima del 130 % o sin foto, fondo a dos tonos (de la superficie a `coverTintLight`/`coverTintDark` de `primary`, lo oscuro de la foto al extremo más oscuro) con velo en el lado del texto; sin foto, un degradado del mismo tono (`contrast_test.dart`). Las pastillas encima van con `AppCoverPill` (base opaca). Foto y velo con `Ink`: la onda del toque se ve. Dos variantes (`layout`): `AppCoverLayout.side` (la descrita, para las tarjetas de rutina de Gimnasio y Comunidad) y `AppCoverLayout.bottom` (ADR 0042, tarjetas de sesión: historial, sesión abierta, próximo entreno de Inicio y Gimnasio, cabecera del detalle): la foto, con sus colores, va en una franja de `TokensSize.coverBanner` arriba, cuya parte baja (desde `coverBannerFadeMid`) se funde con la superficie, y el texto va debajo sobre la superficie lisa: AA con cualquier foto. Debajo de la foto va siempre el color de reserva (también mientras carga o si falla). Estado en `AppCoverPill` y tres datos como mucho |
@@ -92,7 +93,7 @@ Antes de crear un widget nuevo, busca en el barrel `widgets.dart`. Los envoltori
 
 ## Estructura de la app
 
-- **Navegación:** 5 pestañas en este orden: **Inicio · Calendario · Académico · Entreno · Tú** (ADR 0038 y 0061); con un solo enfoque de uso se oculta Académico o Entreno (Calendario se ve siempre). Barra inferior en móvil, riel lateral con la marca en pantallas anchas (`MainShellPage`). Entreno tiene los apartados «Gimnasio» y «Correr» (`TrainingSectionBar`, ADR 0037); «Tú», tu foto y tu nombre (abren el Perfil) y «Resumen · Retos · Insignias · Comunidad», cada uno con su icono (ADR 0061). Accesos en tarjetitas (Tú › Retos, Tú › Comunidad, Perfil): `AppShortcutTile` dentro de `AppTileGrid` (icono en un cuadrado de color, nombre, detalle y globo opcional; con el texto al 200 % pasan a filas de la mitad).
+- **Navegación:** 5 pestañas en este orden: **Inicio · Calendario · Académico · Entreno · Tú** (ADR 0038 y 0061); con un solo enfoque de uso se oculta Académico o Entreno (Calendario se ve siempre). Barra inferior en móvil, riel lateral con la marca en pantallas anchas (`MainShellPage`). Entreno tiene los apartados «Gimnasio» y «Correr» (`TrainingSectionBar`, ADR 0037); «Tú», tu foto y tu nombre (abren el Perfil) y «Resumen · Retos · Insignias · Comunidad», cada uno con su icono (ADR 0061). Accesos en tarjetitas (Tú › Retos, Tú › Comunidad, Perfil): `AppShortcutTile` dentro de `AppTileGrid` (icono en un cuadrado de color, nombre, detalle y globo opcional; con el texto al 200 % pasan a filas de la mitad). El cuadrado (`tone`, `AppTileTone`) es el contenedor del color del dominio con el icono en su `on*Container` (lima para el cuerpo, violeta para la mente y lo social del perfil, naranja `accent` para retos y rachas de «Con amigos ahora») o neutro (`surfaceContainerLow` con icono `onSurface`: Ajustes, las tarjetitas de Tú › Comunidad); «Nuevo» va relleno (ADR 0065).
 - **Guías la primera vez (ADR 0049):** sesión en vivo, Inicio, Calendario, Gimnasio, Concentrarme, Académico y la ficha de asignatura enseñan dónde está lo importante una sola vez por cuenta y teléfono (`FirstTimeGuide` + `AppGuideTour`), con la pantalla ya cargada y nada encima; si se llega desde un aviso, esperan a la próxima vez. Ajustes › Ayuda › «Ver las guías otra vez».
 - **Inicio pone primero lo que hay que hacer:** saludo → aviso solo si es urgente (entregas vencidas, sobrecarga física o mucha fatiga) → «Tu día» (anillo de lo hecho hoy —eventos con seguimiento sin las clases y entregas de hoy, lo cuenta el servidor (ADR 0050)—, lo que toca ahora con su botón y tres cifras; la única acción principal visible al abrir) → agenda → próximo entreno → configuración pendiente → (resto de avisos) → «Tu equilibrio» compacto (una fila con barra para la mente y otra para el cuerpo, nivel en palabras, sin cifras técnicas como el ACWR; sin botón propio para no repetir el de «Tu día») → retos y semana. «Tu día» es plana con el tinte de marca al 12 %, sin degradado. En «Tu semana» lo planificado es una barra hueca con borde y lo hecho, una barra rellena encima (verde si el día está completo), con su leyenda. En pantallas anchas se reparte en dos columnas: lo de hoy y el estado a la izquierda; retos y semana a la derecha. Todas las tarjetas llevan a su pantalla.
 - **Logros globales:** la subida de nivel y las insignias nuevas se celebran una sola vez en un diálogo común (`AchievementsHost`), estés en la pestaña que estés.
@@ -120,6 +121,30 @@ con «Importar guía docente»), `YourGradeCard` («Tu nota»: puntos grandes, �
 con icono: aprobado en `success`, no se llega en `warning`, lo que falta en `primary`) y `ProfessorCard` (iniciales,
 papel en pastilla, despacho, tutorías y «Escribir» solo con email). Las ayudas opcionales («Lo que dominas», «Cómo te
 evalúan») usan `AppHelpToggle`.
+
+## Botones (ADR 0065)
+
+Cuatro formas, como la fila de botones de la maqueta `inicio-calendario.html`:
+
+| Papel | Forma | Widget |
+|---|---|---|
+| Principal (uno por pantalla u hoja) | Relleno `primary` | `AppPrimaryButton` / `FilledButton` |
+| Secundario | Tonal `primaryContainer` | `AppSecondaryButton` / `FilledButton.tonal` |
+| Otra opción | Fondo `surface`, borde `buttonOutline` (3:1), texto `onSurface` | `OutlinedButton`; `TextButton` sale igual por el tema (versión compacta) |
+| Eliminar | Borde y texto `error`, aparte | `AppDangerButton` |
+
+Ninguna acción es texto de color suelto: el tema pone fondo y contorno a todo `TextButton` (también «Cancelar» de los
+diálogos y «Ver todas» de `AppSectionHeader`). Única excepción: la acción de un aviso (`SnackBarAction`), que Flutter
+pinta como texto con su propio tema. Forma: píldora con una línea y rectángulo redondeado si el texto se parte (radio
+de media altura de una línea, no `StadiumBorder`); opciones de dos líneas, `TokensRadius.m`.
+
+- Confirmar un borrado **dentro de un diálogo** es la única acción rellena en rojo (`AppDangerButton.confirmStyleOf`,
+  con el foco inicial en «Cancelar»); fuera de un diálogo, borrar siempre es `AppDangerButton` (con borde).
+- Un texto con un botón al lado (`AppTextWithAction`): el botón baja a su línea si al texto no le queda al menos su
+  ancho (320 px, 200 %).
+- Lo vigilan `button_hierarchy_test.dart`, `text_button_style_test.dart` (ningún rojo a mano, ningún `TextButton` sin
+  borde ni tema local, todo botón del lector que excluye a sus hijos con `onTap`), `contrast_test.dart` y
+  `app_text_with_action_test.dart`.
 
 ## Principios
 

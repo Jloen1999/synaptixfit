@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
+import '../../../widgets/app_danger_button.dart';
 
 /// Pide confirmación antes de una acción. Si [typeToConfirm] no es nulo, el
 /// botón solo se habilita tras escribir ese texto exacto (acciones irreversibles).
@@ -105,10 +106,7 @@ class _ConfirmDialogState extends State<_ConfirmDialog> {
         ),
         FilledButton(
           style: widget.destructive
-              ? FilledButton.styleFrom(
-                  backgroundColor: colors.error,
-                  foregroundColor: colors.onError,
-                )
+              ? AppDangerButton.confirmStyleOf(context)
               : null,
           onPressed: _enabled ? () => Navigator.of(context).pop(true) : null,
           child: Text(widget.confirmLabel),

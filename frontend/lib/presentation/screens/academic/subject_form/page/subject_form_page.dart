@@ -173,7 +173,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
                     AppTextField(
                       label: l10n.academicSubjectName,
                       controller: _name,
-                      icon: Icons.school_outlined,
+                      icon: AppIcons.subject,
                       textInputAction: TextInputAction.next,
                       validator: (v) => (v ?? '').trim().length < 2
                           ? l10n.validationTooShort

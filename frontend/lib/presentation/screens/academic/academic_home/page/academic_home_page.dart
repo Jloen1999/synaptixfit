@@ -148,7 +148,7 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                 ),
                 group(l10n.academicAddGroupNotes),
                 option(
-                  Icons.sticky_note_2_outlined,
+                  AppIcons.quickNote,
                   l10n.academicQuickNote,
                   l10n.academicQuickNoteHint,
                   AcademicPaths.newNote(quick: true),
@@ -334,7 +334,7 @@ class _AcademicHomeViewState extends State<_AcademicHomeView>
                         child: AppEmptyState(
                           icon: state.showArchived
                               ? AppIcons.archive
-                              : Icons.school_outlined,
+                              : AppIcons.subject,
                           title: state.showArchived
                               ? l10n.academicArchivedEmptyTitle
                               : l10n.academicEmptyTitle,
@@ -554,7 +554,7 @@ class _NotesInbox extends StatelessWidget {
               for (final subject in subjects)
                 AppFocusOutline(
                   child: ListTile(
-                    leading: const Icon(Icons.school_outlined),
+                    leading: const Icon(AppIcons.subject),
                     title: Text(subject.name),
                     onTap: () => Navigator.of(sheetContext).pop(subject.id),
                   ),
@@ -695,12 +695,16 @@ class _InboxRow extends StatelessWidget {
     // El lector oye a qué apunte se refiere cada «Mover»; mientras se mueve,
     // el botón lo dice.
     final move = Semantics(
+      container: true,
       label: moving
           ? l10n.academicInboxMoving
           : l10n.academicInboxMoveSpoken(note.title),
       excludeSemantics: true,
       button: true,
       enabled: onMove != null,
+      // El hijo queda excluido: sin esto el lector anuncia un botón que no
+      // se puede pulsar.
+      onTap: onMove,
       child: TextButton.icon(
         onPressed: onMove,
         icon: moving
@@ -708,7 +712,7 @@ class _InboxRow extends StatelessWidget {
                 dimension: TokensSize.iconXs,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(Icons.drive_file_move_outlined),
+            : const Icon(AppIcons.move),
         label: Text(moving ? l10n.academicInboxMoving : l10n.academicInboxMove),
       ),
     );

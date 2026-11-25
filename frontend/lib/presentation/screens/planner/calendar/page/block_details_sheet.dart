@@ -42,6 +42,10 @@ enum BlockDetailsAction {
 
   /// «Abrir asignatura».
   openSubject,
+
+  /// «Entrar a la clase en línea»: abre fuera de la app el enlace escrito en
+  /// «Lugar» ([CalendarBlock.onlineLink]).
+  goToClass,
 }
 
 /// Lo que se enseña de un evento en su ficha: el bloque y los nombres que
@@ -71,7 +75,8 @@ class BlockDetails {
 
   /// La acción que toca ahora, la única rellena de la ficha (o ninguna):
   /// concentrarse en un estudio que no ha pasado, empezar el entreno de hoy,
-  /// abrir la rutina de otro día o marcar como hecho lo que ya empezó.
+  /// abrir la rutina de otro día, marcar como hecho lo que ya empezó o, en
+  /// una clase, ir a ella (ADR 0060 y 0065).
   BlockDetailsAction? primaryAt(DateTime now) {
     final b = block;
     if (_routineDay) {
@@ -81,13 +86,38 @@ class BlockDetails {
           ? BlockDetailsAction.startTraining
           : BlockDetailsAction.openRoutine;
     }
-    if (b.completed || b.type == BlockType.classSession) return null;
+    if (b.type == BlockType.classSession) return _classPrimaryAt(now);
+    if (b.completed) return null;
     if (b.type.isStudy && b.timeStatus != ItemTimeStatus.missed) {
       return BlockDetailsAction.focus;
     }
     return b.timeStatus == ItemTimeStatus.upcoming
         ? null
         : BlockDetailsAction.toggleDone;
+  }
+
+  /// Margen alrededor del inicio en que una clase en línea ya «toca» aunque
+  /// sea otro día (una clase a las 0:05 vista a las 23:55).
+  static const _joinWindow = Duration(minutes: 15);
+
+  /// Una clase de hoy (o a 15 min de empezar) que no ha acabado y tiene
+  /// enlace: «Entrar a la clase en línea» lo abre. Otro día, o si no hay nada
+  /// que abrir (un aula se lee en la ficha, no se abre), lo útil es la
+  /// asignatura: sus apuntes y entregas antes o después de clase.
+  BlockDetailsAction? _classPrimaryAt(DateTime now) {
+    final ongoing =
+        block.timeStatus == ItemTimeStatus.upcoming ||
+        block.timeStatus == ItemTimeStatus.inProgress;
+    final due =
+        PlannerWeek.isSameDay(block.start, now) ||
+        block.start.difference(now).abs() <= _joinWindow;
+    if (ongoing && due && block.onlineLink != null) {
+      return BlockDetailsAction.goToClass;
+    }
+    if (block.subjectId != null && subjectName != null) {
+      return BlockDetailsAction.openSubject;
+    }
+    return null;
   }
 }
 
@@ -154,14 +184,19 @@ class BlockDetailsSheet extends StatelessWidget {
             detail: PlannerFormats.duration(l10n, block.duration.inMinutes),
           ),
           // Sin el nombre de la asignatura no hay nada que nombrar ni abrir.
+          // Si «Abrir asignatura» ya es la acción principal, no se repite.
           if (block.subjectId != null && details.subjectName != null)
-            _subjectLine(context, details.subjectName!),
+            _subjectLine(
+              context,
+              details.subjectName!,
+              withButton: primary != BlockDetailsAction.openSubject,
+            ),
           if (block.challengeId != null)
             _Line(icon: AppIcons.challenge, text: _challengeText(context)),
-          if (block.location?.trim().isNotEmpty ?? false)
+          if (block.locationShown case final place? when place.isNotEmpty)
             _Line(
               icon: AppIcons.location,
-              text: block.location!.trim(),
+              text: place,
               semanticPrefix: l10n.plannerFieldLocation,
             ),
           if (!block.type.requiresName &&
@@ -175,6 +210,10 @@ class BlockDetailsSheet extends StatelessWidget {
           if (primary != null) ...[
             AppPrimaryButton(
               label: _label(context, primary),
+              // Que el lector sepa que sale de la app antes de pulsar.
+              semanticsLabel: primary == BlockDetailsAction.goToClass
+                  ? l10n.plannerDetailsGoToClassSpoken
+                  : null,
               icon: _icon(primary),
               loading: details.busy,
               onPressed: () => onAction(primary),
@@ -218,21 +257,29 @@ class BlockDetailsSheet extends StatelessWidget {
   }
 
   /// Asignatura con «Abrir asignatura» (botón con su nombre para el lector).
-  Widget _subjectLine(BuildContext context, String name) {
+  Widget _subjectLine(
+    BuildContext context,
+    String name, {
+    required bool withButton,
+  }) {
     final l10n = context.localizations;
     return _Line(
       icon: AppIcons.subject,
       text: name,
-      trailing: Semantics(
-        button: true,
-        label: l10n.plannerDetailsOpenSubjectFor(name),
-        excludeSemantics: true,
-        onTap: () => onAction(BlockDetailsAction.openSubject),
-        child: TextButton(
-          onPressed: () => onAction(BlockDetailsAction.openSubject),
-          child: Text(l10n.plannerDetailsOpenSubject),
-        ),
-      ),
+      trailingLabel: l10n.plannerDetailsOpenSubject,
+      trailing: !withButton
+          ? null
+          : Semantics(
+              container: true,
+              button: true,
+              label: l10n.plannerDetailsOpenSubjectFor(name),
+              excludeSemantics: true,
+              onTap: () => onAction(BlockDetailsAction.openSubject),
+              child: TextButton(
+                onPressed: () => onAction(BlockDetailsAction.openSubject),
+                child: Text(l10n.plannerDetailsOpenSubject),
+              ),
+            ),
     );
   }
 
@@ -304,7 +351,10 @@ class BlockDetailsSheet extends StatelessWidget {
       const SizedBox(height: TokensSpacing.l),
       Align(
         alignment: AlignmentDirectional.centerEnd,
-        child: _DeleteButton(onPressed: run(BlockDetailsAction.delete)),
+        child: AppDangerButton(
+          label: l10n.plannerDetailsDelete,
+          onPressed: run(BlockDetailsAction.delete),
+        ),
       ),
     ];
   }
@@ -315,7 +365,14 @@ class BlockDetailsSheet extends StatelessWidget {
       BlockDetailsAction.focus => l10n.plannerFocusOnBlock,
       BlockDetailsAction.startTraining => l10n.plannerDetailsStartTraining,
       BlockDetailsAction.openRoutine => l10n.plannerOpenRoutine,
-      _ => l10n.plannerMarkCompleted,
+      BlockDetailsAction.goToClass => l10n.plannerDetailsGoToClass,
+      BlockDetailsAction.openSubject => l10n.plannerDetailsOpenSubject,
+      BlockDetailsAction.toggleDone => l10n.plannerMarkCompleted,
+      BlockDetailsAction.classWent => l10n.plannerClassWent,
+      BlockDetailsAction.classAbsent => l10n.plannerClassDidNotGo,
+      BlockDetailsAction.move => l10n.plannerDetailsMove,
+      BlockDetailsAction.delete => l10n.plannerDetailsDelete,
+      BlockDetailsAction.edit => l10n.plannerDetailsEdit,
     };
   }
 
@@ -323,7 +380,14 @@ class BlockDetailsSheet extends StatelessWidget {
     BlockDetailsAction.focus => AppIcons.focusTimer,
     BlockDetailsAction.startTraining => AppIcons.start,
     BlockDetailsAction.openRoutine => AppIcons.routine,
-    _ => AppIcons.markDone,
+    BlockDetailsAction.goToClass => AppIcons.openExternal,
+    BlockDetailsAction.openSubject => AppIcons.subject,
+    BlockDetailsAction.toggleDone ||
+    BlockDetailsAction.classWent ||
+    BlockDetailsAction.classAbsent => AppIcons.markDone,
+    BlockDetailsAction.move => AppIcons.calendar,
+    BlockDetailsAction.delete => AppIcons.delete,
+    BlockDetailsAction.edit => AppIcons.edit,
   };
 }
 
@@ -427,6 +491,7 @@ class _Line extends StatelessWidget {
     required this.text,
     this.detail,
     this.trailing,
+    this.trailingLabel = '',
     this.semanticPrefix,
   });
 
@@ -434,6 +499,10 @@ class _Line extends StatelessWidget {
   final String text;
   final String? detail;
   final Widget? trailing;
+
+  /// Texto visible de [trailing] (un botón de texto): con él se mide si cabe
+  /// al lado o baja de línea.
+  final String trailingLabel;
 
   /// Qué es el dato para el lector («Ubicación: Aula 2.4»): a la vista lo
   /// dice el icono.
@@ -444,6 +513,25 @@ class _Line extends StatelessWidget {
     final prefix = semanticPrefix;
     final detail = this.detail;
     final trailing = this.trailing;
+    final texts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          text,
+          semanticsLabel: prefix == null ? null : '$prefix: $text',
+          style: context.textStyles.bodyLarge?.copyWith(
+            fontWeight: detail == null ? null : FontWeight.w600,
+          ),
+        ),
+        if (detail != null)
+          Text(
+            detail,
+            style: context.textStyles.bodyLarge?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xs),
       child: Row(
@@ -454,27 +542,14 @@ class _Line extends StatelessWidget {
           ),
           const SizedBox(width: TokensSpacing.m),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  text,
-                  semanticsLabel: prefix == null ? null : '$prefix: $text',
-                  style: context.textStyles.bodyLarge?.copyWith(
-                    fontWeight: detail == null ? null : FontWeight.w600,
+            child: trailing == null
+                ? texts
+                : AppTextWithAction(
+                    actionLabel: trailingLabel,
+                    action: trailing,
+                    child: texts,
                   ),
-                ),
-                if (detail != null)
-                  Text(
-                    detail,
-                    style: context.textStyles.bodyLarge?.copyWith(
-                      color: context.colors.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ),
           ),
-          ?trailing,
         ],
       ),
     );
@@ -542,27 +617,6 @@ class _ActionsRow extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-/// «Eliminar» en rojo, con icono y texto (no solo color).
-class _DeleteButton extends StatelessWidget {
-  const _DeleteButton({required this.onPressed});
-
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final error = context.colors.error;
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: error,
-        side: BorderSide(color: error),
-      ),
-      onPressed: onPressed,
-      icon: const Icon(AppIcons.delete),
-      label: Text(context.localizations.plannerDetailsDelete),
     );
   }
 }

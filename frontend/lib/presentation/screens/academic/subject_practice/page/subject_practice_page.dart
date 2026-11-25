@@ -130,7 +130,7 @@ class _SubjectPracticeViewState extends State<_SubjectPracticeView> {
             // Sin preguntas ni repasos: solo el estado vacío con su acción.
             SubjectPracticeState(all: []) when state.due.isEmpty =>
               AppEmptyState(
-                icon: Icons.quiz_outlined,
+                icon: AppIcons.practice,
                 title: l10n.academicPracticeEmptyTitle,
                 message: l10n.academicPracticeEmptyMessage,
                 action: AppPrimaryButton(
@@ -178,7 +178,7 @@ class _SubjectPracticeViewState extends State<_SubjectPracticeView> {
             padding: gutter,
             sliver: SliverToBoxAdapter(
               child: AppEmptyState.compact(
-                icon: Icons.quiz_outlined,
+                icon: AppIcons.practice,
                 title: l10n.academicPracticeEmptyTitle,
               ),
             ),
@@ -289,7 +289,7 @@ class _WaysCard extends StatelessWidget {
             ),
           if (hasDue && hasQuestions)
             _WayRow(
-              icon: Icons.quiz_outlined,
+              icon: AppIcons.practice,
               title: l10n.academicFreePracticeTitle,
               subtitle: l10n.academicPracticeFreeHint,
               onTap: onFreePractice,
@@ -398,7 +398,9 @@ class _ListHeader extends StatelessWidget {
           // Ya lo anuncia `AppSearchEmpty`: sin recuento encima.
           AppSearchEmpty(
             query: state.query,
-            actionLabel: otherFilters ? l10n.academicPracticeClearFilters : null,
+            actionLabel: otherFilters
+                ? l10n.academicPracticeClearFilters
+                : null,
             actionIcon: AppIcons.clearFilters,
             onAction: otherFilters ? onClear : null,
           )
@@ -710,8 +712,7 @@ class QuestionSheet extends StatefulWidget {
   State<QuestionSheet> createState() => _QuestionSheetState();
 }
 
-class _QuestionSheetState extends State<QuestionSheet>
-    with ErrorsMessageMixin {
+class _QuestionSheetState extends State<QuestionSheet> with ErrorsMessageMixin {
   late int _index = widget.initialIndex;
   String _draft = '';
   ScrollController? _scroll;
@@ -794,8 +795,7 @@ class _QuestionSheetState extends State<QuestionSheet>
                                 result.explanation ?? question.explanation,
                           ),
                   ),
-                  if (state.actionError case final error?
-                      when result == null)
+                  if (state.actionError case final error? when result == null)
                     Padding(
                       padding: const EdgeInsets.only(top: TokensSpacing.m),
                       child: AppInlineMessage(

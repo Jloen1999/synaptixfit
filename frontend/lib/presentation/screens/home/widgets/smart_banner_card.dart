@@ -133,7 +133,7 @@ class SmartBannerContent {
         actionPath: HomeExternalPaths.training,
       ),
       HomeBannerType.checkInPending => SmartBannerContent(
-        icon: Icons.fact_check_outlined,
+        icon: AppIcons.checkIn,
         title: l10n.homeBannerCheckInPendingTitle,
         message: l10n.homeBannerCheckInPendingMessage,
         tone: SmartBannerTone.neutral,

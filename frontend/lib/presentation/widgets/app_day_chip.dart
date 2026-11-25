@@ -44,6 +44,7 @@ class AppDayChip extends StatelessWidget {
     final foreground = selected ? colors.onPrimary : colors.onSurface;
     final radius = BorderRadius.circular(TokensRadius.l);
     return Semantics(
+      container: true,
       button: true,
       selected: selected,
       label: semanticLabel,

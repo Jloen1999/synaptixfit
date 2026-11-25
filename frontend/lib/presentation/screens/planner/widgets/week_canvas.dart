@@ -625,6 +625,7 @@ class _DayHeader extends StatelessWidget {
     // día es un encabezado para saltar de columna en columna.
     final date = PlannerFormats.longDate(day);
     return Semantics(
+      container: true,
       header: true,
       label: isToday ? context.localizations.plannerTodayDate(date) : date,
       excludeSemantics: true,

@@ -8,7 +8,7 @@ import 'package:synaptixfit/domain/models/admin/admin_queries.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/admin/search_admin_users_use_case.dart';
 import 'package:synaptixfit/presentation/screens/admin/users/bloc/admin_users_bloc.dart';
-import 'package:synaptixfit/presentation/screens/admin/widgets/admin_status.dart';
+import 'package:synaptixfit/presentation/screens/admin/feedback/admin_status.dart';
 
 import 'admin_fixtures.dart';
 

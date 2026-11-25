@@ -201,15 +201,11 @@ class _DetailView extends StatelessWidget {
                                       : () => _correct(context, entry),
                                 ),
                           // Eliminar borra para siempre: en tono de error.
-                          OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: context.colors.error,
-                            ),
+                          AppDangerButton(
                             onPressed: state.busy
                                 ? null
                                 : () => _delete(context, entry),
-                            icon: const Icon(AppIcons.delete),
-                            label: Text(l10n.trainingDeleteSession),
+                            label: l10n.trainingDeleteSession,
                           ),
                         ],
                       ),

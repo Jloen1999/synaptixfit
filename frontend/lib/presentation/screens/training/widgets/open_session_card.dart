@@ -71,10 +71,7 @@ class OpenSessionCard extends StatelessWidget {
             children: [
               // Descartar no guarda: en rojo, como en la hoja de salir de la
               // sesión (un color por verbo, vocabulario §4).
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: context.colors.error,
-                ),
+              AppDangerButton(
                 onPressed: busy
                     ? null
                     : () async {
@@ -86,7 +83,7 @@ class OpenSessionCard extends StatelessWidget {
                         );
                         if (ok) onDiscard();
                       },
-                child: Text(l10n.trainingDiscardSession),
+                label: l10n.trainingDiscardSession,
               ),
               // Sin destacar: en Gimnasio la acción principal es «Empezar».
               if (open.stale || onContinue == null)

@@ -154,7 +154,7 @@ class SharedNoteCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          Icons.school_outlined,
+                          AppIcons.subject,
                           size: TokensSize.iconXs,
                           color: context.colors.tertiary,
                         ),

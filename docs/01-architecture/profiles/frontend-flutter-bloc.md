@@ -57,7 +57,10 @@ lib/
 └── presentation/                 # Entrada + estado
     ├── di/presentation_di.dart
     ├── extensions/  l10n/  mixins/  theme/  widgets/
-    └── screens/<zona>/<pantalla>/{bloc,page}/
+    └── screens/<zona>/
+        ├── <pantalla>/{bloc,page}/
+        ├── feedback/             # Estado que comparten los blocs de la zona
+        └── widgets/              # Piezas visuales de la zona
 ```
 
 ## 2. Composición
@@ -186,6 +189,7 @@ void main() {
 2. **`Result<T, E>`** para éxito o error; no se lanzan excepciones fuera de `data/`.
 3. **Barrels** (`pages.dart`, `widgets.dart`) para agrupar exports.
 4. **Widgets reutilizables** en `widgets/`. Solo parametrizan lo que varía; lo fijo va dentro.
+   - **Estado compartido de una zona** (enums de carga, avisos de una vez que emiten varios blocs: `SocialFeedback`, `AdminStatus`) va en `screens/<zona>/feedback/`, sin Flutter de interfaz. Lo que lo pinta (un `SnackBar`, una pastilla) va en `widgets/`. Un bloc nunca importa `widgets/`; lo comprueba `dependency_rule_test.dart` («los blocs no importan widgets»).
 5. **Textos** siempre en `.arb`, accesibles con `context.localizations`.
 
 ## Diferencias respecto al núcleo

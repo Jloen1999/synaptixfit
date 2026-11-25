@@ -8,7 +8,7 @@ import '../../../../../domain/use_cases/social/delete_comment_use_case.dart';
 import '../../../../../domain/use_cases/social/edit_comment_use_case.dart';
 import '../../../../../domain/use_cases/social/get_comments_use_case.dart';
 import '../../../../../domain/use_cases/social/report_comment_use_case.dart';
-import '../../widgets/social_feedback.dart';
+import '../../feedback/social_feedback.dart';
 
 part 'comments_bloc.freezed.dart';
 part 'comments_event.dart';

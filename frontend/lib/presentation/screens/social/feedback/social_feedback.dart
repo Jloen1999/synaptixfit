@@ -1,14 +1,12 @@
-import 'package:flutter/widgets.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../domain/errors/app_error.dart';
-import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
-import '../../../mixins/errors_message_mixin.dart';
-import '../social_routes.dart';
 
 part 'social_feedback.freezed.dart';
+
+// Estado que comparten los blocs del módulo social (carga y avisos de una
+// vez); la página los pinta con `showSocialFeedback` (widgets/).
 
 /// Estado de carga de una lista o pantalla del módulo social.
 enum SocialLoadStatus { loading, loaded, failure }
@@ -60,37 +58,4 @@ sealed class SocialFeedback with _$SocialFeedback {
 
   const factory SocialFeedback.message(SocialMessage message) =
       SocialFeedbackMessage;
-}
-
-class _ErrorText with ErrorsMessageMixin {
-  const _ErrorText();
-}
-
-/// Texto traducido de un [AppError] (nunca el `detail` del servidor).
-String socialErrorText(BuildContext context, AppError error) =>
-    const _ErrorText().errorMessage(context, error);
-
-/// Muestra el aviso en un SnackBar. Bloquear dice dónde se deshace y lleva
-/// allí con «Ver» (salvo [inFriends]: ya se está en Amigos).
-void showSocialFeedback(
-  BuildContext context,
-  SocialFeedback feedback, {
-  bool inFriends = false,
-}) {
-  if (feedback case SocialFeedbackMessage(
-    message: SocialMessage.userBlocked,
-  ) when !inFriends) {
-    context.showActionSnack(
-      context.localizations.socialMsgUserBlocked,
-      actionLabel: context.localizations.commonView,
-      onAction: () => context.push(SocialPaths.blocked),
-    );
-    return;
-  }
-  context.showSnack(switch (feedback) {
-    SocialFeedbackError(:final error) => socialErrorText(context, error),
-    SocialFeedbackMessage(:final message) => message.text(
-      context.localizations,
-    ),
-  });
 }

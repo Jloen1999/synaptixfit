@@ -166,7 +166,7 @@ class _SetupView extends StatelessWidget {
     final bloc = context.read<GenerationCenterBloc>();
     if (state.subjects.isEmpty) {
       return AppEmptyState(
-        icon: Icons.school_outlined,
+        icon: AppIcons.subject,
         title: l10n.academicEmptyTitle,
         message: l10n.academicGenerateNoSubjects,
       );
@@ -251,7 +251,7 @@ class _SetupView extends StatelessWidget {
           else if (state.notes.isEmpty && state.files.isEmpty)
             AppCard(
               child: AppEmptyState.compact(
-                icon: Icons.note_add_outlined,
+                icon: AppIcons.newNote,
                 title: l10n.academicGenerateNoSources,
                 // Crear la fuente aquí mismo: antes había que salir a buscarla.
                 action: Wrap(
@@ -266,7 +266,7 @@ class _SetupView extends StatelessWidget {
                     ),
                     AppSecondaryButton(
                       label: l10n.academicGenerateUploadFile,
-                      icon: const Icon(Icons.upload_file_rounded),
+                      icon: const Icon(AppIcons.upload),
                       loading: state.uploading,
                       onPressed: () => _uploadFile(context),
                     ),
@@ -285,7 +285,7 @@ class _SetupView extends StatelessWidget {
                         type: StudySourceType.note,
                         id: note.id,
                       ),
-                      icon: Icons.description_outlined,
+                      icon: AppIcons.noteDocument,
                       title: note.title,
                       selected: state.selected,
                     ),
@@ -429,7 +429,7 @@ class _ResultBar extends StatelessWidget {
       label: asNote
           ? l10n.academicGenerateSaveNote
           : l10n.academicGenerateSaveQuiz,
-      icon: asNote ? Icons.note_add_outlined : Icons.quiz_outlined,
+      icon: asNote ? AppIcons.newNote : AppIcons.practice,
       loading: state.saving,
       onPressed: state.canSave ? () => _save(context) : null,
     );
@@ -569,7 +569,7 @@ class _ArtifactView extends StatelessWidget {
               AppPill(
                 label: l10n.academicGenerateEphemeral,
                 color: context.palette.warning,
-                icon: Icons.info_outline_rounded,
+                icon: AppIcons.info,
               ),
               if (edited)
                 AppPill(
@@ -671,8 +671,8 @@ class _ArtifactView extends StatelessWidget {
                               children: [
                                 Icon(
                                   o == q.correctAnswer
-                                      ? Icons.check_circle_rounded
-                                      : Icons.radio_button_unchecked_rounded,
+                                      ? AppIcons.done
+                                      : AppIcons.todo,
                                   size: TokensSize.iconXs,
                                   color: o == q.correctAnswer
                                       ? context.palette.success

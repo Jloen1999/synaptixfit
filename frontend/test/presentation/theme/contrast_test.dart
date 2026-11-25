@@ -207,6 +207,52 @@ void main() {
         expectRatio('borde nota elegida', c.primary, c.surface, 3);
       });
 
+      // Botones con borde y de texto (ADR 0065): fondo `surface` y borde a
+      // 3:1 frente a la superficie y a las tarjetas tintadas que los rodean
+      // (1.4.11), para que no se lean como texto en negrita suelto.
+      test('borde de los botones', () {
+        for (final (name, bg) in [
+          ('surface', c.surface),
+          ('background', c.background),
+          ('surfaceContainerLow', c.surfaceContainerLow),
+          ('surfaceContainerHigh', c.surfaceContainerHigh),
+          ('primaryContainer', c.primaryContainer),
+          ('secondaryContainer', c.secondaryContainer),
+          ('tertiaryContainer', c.tertiaryContainer),
+          ('errorContainer', c.errorContainer),
+          ('accentContainer', c.accentContainer),
+        ]) {
+          expectRatio('borde de botón/$name', c.buttonOutline, bg, 3);
+        }
+        // El texto del botón (`onSurface`) sobre su fondo `surface`.
+        expectRatio('texto de botón', c.onSurface, c.surface, 4.5);
+      });
+
+      // Cuadradito de las tarjetitas (`AppTintedIcon`): icono `on*Container`
+      // sobre su contenedor y `onSurface` sobre `surfaceContainerLow`.
+      test('cuadradito de las tarjetitas', () {
+        expectRatio('tile neutro', c.onSurface, c.surfaceContainerLow, 3);
+        expectRatio(
+          'tile primario',
+          c.onPrimaryContainer,
+          c.primaryContainer,
+          3,
+        );
+        expectRatio(
+          'tile secundario',
+          c.onSecondaryContainer,
+          c.secondaryContainer,
+          3,
+        );
+        expectRatio(
+          'tile terciario',
+          c.onTertiaryContainer,
+          c.tertiaryContainer,
+          3,
+        );
+        expectRatio('tile acento', c.onAccentContainer, c.accentContainer, 3);
+      });
+
       test('gráficos e iconos', () {
         for (final color in [
           c.accent,
@@ -251,6 +297,7 @@ void main() {
 /// Los colores de un modo como instancia, para recorrer ambos temas igual.
 class _Colors {
   const _Colors({
+    required this.buttonOutline,
     required this.onSurface,
     required this.onSurfaceVariant,
     required this.surface,
@@ -291,7 +338,9 @@ class _Colors {
     required this.onCycleContainer,
   });
 
+  final Color buttonOutline;
   static const light = _Colors(
+    buttonOutline: TokensLightColors.buttonOutline,
     onSurface: TokensLightColors.onSurface,
     onSurfaceVariant: TokensLightColors.onSurfaceVariant,
     surface: TokensLightColors.surface,
@@ -333,6 +382,7 @@ class _Colors {
   );
 
   static const dark = _Colors(
+    buttonOutline: TokensDarkColors.buttonOutline,
     onSurface: TokensDarkColors.onSurface,
     onSurfaceVariant: TokensDarkColors.onSurfaceVariant,
     surface: TokensDarkColors.surface,

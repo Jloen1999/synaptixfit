@@ -68,7 +68,11 @@ class SummaryTab extends StatelessWidget {
     return SubjectTabBody(
       children: (context, state) => [
         if (subject != null && !subject.archived) ...[
-          _MainActions(subject: subject, onOpen: _open),
+          _MainActions(
+            subject: subject,
+            onOpen: _open,
+            primary: state.due.isEmpty,
+          ),
           const SizedBox(height: TokensSpacing.m),
         ],
         _NextUpCard(items: state.timeline),
@@ -105,23 +109,38 @@ class SummaryTab extends StatelessWidget {
 }
 
 /// «Concentrarme» (Pomodoro que cuenta para la asignatura) y «Nueva entrega»
-/// con la asignatura ya puesta.
+/// con la asignatura ya puesta. Con repasos para hoy, la acción principal es
+/// «Repasar ahora» y «Concentrarme» pasa a tonal (una sola rellena, ADR 0065).
 class _MainActions extends StatelessWidget {
-  const _MainActions({required this.subject, required this.onOpen});
+  const _MainActions({
+    required this.subject,
+    required this.onOpen,
+    required this.primary,
+  });
 
   final Subject subject;
   final Future<void> Function(BuildContext context, String location) onOpen;
 
+  /// «Concentrarme» es la acción principal de la pestaña.
+  final bool primary;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final focus = AppPrimaryButton(
-      label: l10n.academicFocus,
-      icon: AppIcons.focusTimer,
-      onPressed: () => context.push(
-        AcademicPaths.pomodoro(subjectId: subject.id, title: subject.name),
-      ),
+    void onFocus() => context.push(
+      AcademicPaths.pomodoro(subjectId: subject.id, title: subject.name),
     );
+    final Widget focus = primary
+        ? AppPrimaryButton(
+            label: l10n.academicFocus,
+            icon: AppIcons.focusTimer,
+            onPressed: onFocus,
+          )
+        : AppSecondaryButton(
+            label: l10n.academicFocus,
+            icon: const Icon(AppIcons.focusTimer),
+            onPressed: onFocus,
+          );
     final deadline = AppSecondaryButton(
       label: l10n.academicNewDeadline,
       icon: const Icon(AppIcons.add),
@@ -173,23 +192,20 @@ class _NextUpCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    l10n.academicTimelineTitle,
-                    style: context.textStyles.titleMedium,
-                  ),
-                ),
+          // El calendario es una pestaña: se cambia a ella (no se apila).
+          AppTextWithAction(
+            actionLabel: l10n.academicOpenPlanner,
+            action: TextButton(
+              onPressed: () => context.go(AcademicPaths.planner),
+              child: Text(l10n.academicOpenPlanner),
+            ),
+            child: Semantics(
+              header: true,
+              child: Text(
+                l10n.academicTimelineTitle,
+                style: context.textStyles.titleMedium,
               ),
-              // El calendario es una pestaña: se cambia a ella (no se apila).
-              TextButton(
-                onPressed: () => context.go(AcademicPaths.planner),
-                child: Text(l10n.academicOpenPlanner),
-              ),
-            ],
+            ),
           ),
           if (items.isEmpty)
             Padding(
@@ -381,7 +397,7 @@ class _PracticeCard extends StatelessWidget {
             children: [
               AppSecondaryButton(
                 label: l10n.academicPracticeOpen,
-                icon: const Icon(Icons.quiz_outlined),
+                icon: const Icon(AppIcons.practice),
                 onPressed: onPractice,
               ),
               AppSecondaryButton(

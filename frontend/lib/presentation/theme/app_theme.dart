@@ -140,6 +140,19 @@ abstract final class AppTheme {
       TokensLayout.minTouchTarget,
       TokensSize.controlHeight,
     );
+    // Píldora con el texto en una línea y rectángulo redondeado si el texto
+    // se parte (200 %, poco ancho): un `StadiumBorder` de dos líneas se
+    // convierte en un óvalo. Mismo radio que la mitad del alto de una línea.
+    const buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(
+        Radius.circular(TokensSize.controlHeight / 2),
+      ),
+    );
+    const compactButtonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(
+        Radius.circular(TokensLayout.minTouchTarget / 2),
+      ),
+    );
     final buttonText = textTheme.labelLarge?.copyWith(
       fontWeight: FontWeight.w700,
       letterSpacing: 0.1,
@@ -237,7 +250,7 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           minimumSize: buttonSize,
           padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.l),
-          shape: const StadiumBorder(),
+          shape: buttonShape,
           textStyle: buttonText,
         ).copyWith(side: focusRing()),
       ),
@@ -246,20 +259,26 @@ abstract final class AppTheme {
           minimumSize: buttonSize,
           padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.l),
           foregroundColor: scheme.onSurface,
-          shape: const StadiumBorder(),
+          // Fondo de superficie y borde a 3:1 (ADR 0065), como `.btn-o` de la
+          // maqueta: sobre una tarjeta tintada sigue pareciendo un botón y
+          // no texto en negrita suelto.
+          backgroundColor: scheme.surface,
+          shape: buttonShape,
           textStyle: buttonText,
-          // Contorno discreto: el texto ya identifica el botón (WCAG 1.4.11
-          // no exige 3:1 al borde de un botón con etiqueta visible).
         ).copyWith(side: focusRing(BorderSide(color: buttonOutline))),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: buttonSize,
           elevation: 0,
-          shape: const StadiumBorder(),
+          shape: buttonShape,
           textStyle: buttonText,
         ).copyWith(side: focusRing()),
       ),
+      // «Otra opción» compacta (ADR 0065): un botón de texto se pinta como el
+      // de borde (texto `onSurface`, fondo `surface` y contorno a 3:1) para
+      // que se vea que es un botón y no texto de color suelto. Los avisos
+      // (SnackBar) ponen su propio tema encima y su acción sigue siendo texto.
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(
@@ -267,9 +286,11 @@ abstract final class AppTheme {
             TokensLayout.minTouchTarget,
           ),
           padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.sm),
-          shape: const StadiumBorder(),
+          foregroundColor: scheme.onSurface,
+          backgroundColor: scheme.surface,
+          shape: compactButtonShape,
           textStyle: buttonText,
-        ).copyWith(side: focusRing()),
+        ).copyWith(side: focusRing(BorderSide(color: buttonOutline))),
       ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(

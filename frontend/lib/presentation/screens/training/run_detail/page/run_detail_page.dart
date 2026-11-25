@@ -325,6 +325,7 @@ class _Splits extends StatelessWidget {
       children: [
         for (final s in splits)
           Semantics(
+            container: true,
             label: [
               l10n.runSplitSpoken(
                 s.number,
