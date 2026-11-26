@@ -6,7 +6,7 @@
 
 ## Contexto
 
-La revisión del 19-11 con estudiantes reales dejó claro que Inicio no se entendía de un vistazo:
+La revisión de uso del 19-11, hecha por el autor con la app en el móvil, dejó claro que Inicio no se entendía de un vistazo:
 
 - «Tu día» medía 300-350 px (anillo de 64 px, «Ahora / A continuación / Te queda», «Hoy toca: entreno normal» suelto y la
   cuenta atrás) y la Agenda empezaba hacia y≈500 en un móvil de 390×844. El título del evento no se podía tocar y «Hoy
