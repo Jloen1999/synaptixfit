@@ -311,23 +311,27 @@ class _PastActivityViewState extends State<_PastActivityView>
           child: ListView(
             padding: const EdgeInsets.all(TokensSpacing.m),
             children: [
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(
-                    value: false,
-                    label: Text(l10n.trainingPastActivityModeOther),
-                    icon: const Icon(Icons.sports_soccer_outlined),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    label: Text(l10n.trainingPastActivityModeRoutine),
-                    icon: const Icon(Icons.fitness_center_rounded),
-                  ),
-                ],
-                selected: {_routineMode},
-                onSelectionChanged: (s) => _setRoutineMode(s.first),
-              ),
-              const SizedBox(height: TokensSpacing.m),
+              // Desde Correr solo se apunta deporte: el día de la rutina se
+              // apunta desde Gimnasio o el historial, donde se busca.
+              if (widget.from != TrainingSection.run) ...[
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(
+                      value: false,
+                      label: Text(l10n.trainingPastActivityModeOther),
+                      icon: const Icon(Icons.sports_soccer_outlined),
+                    ),
+                    ButtonSegment(
+                      value: true,
+                      label: Text(l10n.trainingPastActivityModeRoutine),
+                      icon: const Icon(Icons.fitness_center_rounded),
+                    ),
+                  ],
+                  selected: {_routineMode},
+                  onSelectionChanged: (s) => _setRoutineMode(s.first),
+                ),
+                const SizedBox(height: TokensSpacing.m),
+              ],
               Text(
                 _routineMode
                     ? l10n.trainingPastActivityRoutineIntro
@@ -336,157 +340,189 @@ class _PastActivityViewState extends State<_PastActivityView>
                   color: context.colors.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: TokensSpacing.l),
-              if (_routineMode)
-                ..._routineSection(context, state)
-              else ...[
-                AppSectionHeader(title: l10n.trainingPastActivityWhat),
-                AppSegmentedChoice<ActivityKind>(
-                  label: l10n.trainingPastActivityKind,
-                  values: ActivityKind.values,
-                  selected: _kind,
-                  labelOf: (k) => activityKindLabel(l10n, k),
-                  onChanged: (k) => setState(() {
-                    // La distancia escrita era de otra unidad o no aplica.
-                    if (k != _kind) _distance.clear();
-                    _kind = k;
-                    _distanceError = null;
-                  }),
-                ),
-                const SizedBox(height: TokensSpacing.m),
-                if (_kind == ActivityKind.match ||
-                    _kind == ActivityKind.other) ...[
-                  Wrap(
-                    spacing: TokensSpacing.s,
-                    runSpacing: TokensSpacing.s,
-                    children: [
-                      for (final (name, kind) in suggestions)
-                        if (kind == _kind)
-                          ChoiceChip(
-                            label: Text(name),
-                            selected: _title.text == name,
-                            onSelected: (_) =>
-                                setState(() => _title.text = name),
-                          ),
-                    ],
-                  ),
-                  const SizedBox(height: TokensSpacing.s),
-                ],
-                AppTextField(
-                  controller: _title,
-                  label: l10n.trainingPastActivityName,
-                  icon: Icons.sports_soccer_outlined,
-                  textInputAction: TextInputAction.done,
-                  maxLength: 200,
-                  onChanged: (_) => setState(() {}),
-                ),
-                if (_kind?.measuresDistance ?? false) ...[
-                  const SizedBox(height: TokensSpacing.m),
-                  AppTextField(
-                    controller: _distance,
-                    label: _inMeters
-                        ? l10n.trainingPastActivityMeters
-                        : l10n.trainingPastActivityDistance,
-                    icon: Icons.straighten_rounded,
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: !_inMeters,
-                    ),
-                    textInputAction: TextInputAction.done,
-                    suffixText: _inMeters
-                        ? l10n.trainingPastActivityMetersSuffix
-                        : l10n.trainingPastActivityKmSuffix,
-                    helper: _inMeters
-                        ? l10n.trainingPastActivityMetersHint
-                        : l10n.trainingPastActivityDistanceHint,
-                    // El error va en el propio campo (el lector lo lee con
-                    // él) y sustituye a la ayuda mientras se ve.
-                    errorText: _distanceError,
-                    onChanged: (_) => setState(() => _distanceError = null),
-                  ),
-                ],
-              ],
               const SizedBox(height: TokensSpacing.m),
-              AppSectionHeader(title: l10n.trainingPastActivityWhen),
-              Wrap(
-                spacing: TokensSpacing.s,
-                runSpacing: TokensSpacing.s,
-                children: [
-                  for (var i = 0; i < _days; i++)
-                    Builder(
-                      builder: (context) {
-                        final day = today.subtract(Duration(days: i));
-                        final label = switch (i) {
-                          0 => l10n.trainingPastActivityToday,
-                          1 => l10n.trainingPastActivityYesterday,
-                          _ => toBeginningOfSentenceCase(
-                            DateFormat.MEd(l10n.localeName).format(day),
-                          ),
-                        };
-                        return ChoiceChip(
-                          label: Text(label),
-                          selected: DateUtils.isSameDay(day, _day),
-                          onSelected: (_) => setState(() {
-                            _day = day;
-                            _notFinished = null;
-                          }),
-                        );
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: TokensSpacing.m),
-              // Para un día de la rutina basta con el día: no hay hora de inicio.
-              if (!_routineMode)
-                AppCard(
-                  padding: EdgeInsets.zero,
-                  child: AppFocusOutline(
-                    child: ListTile(
-                      leading: const Icon(Icons.schedule_rounded),
-                      title: Text(l10n.trainingPastActivityStart),
-                      trailing: Text(
-                        _time.format(context),
-                        style: context.textStyles.titleMedium,
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_routineMode)
+                      ..._routineSection(context, state)
+                    else ...[
+                      AppSectionHeader(title: l10n.trainingPastActivityWhat),
+                      AppSegmentedChoice<ActivityKind>(
+                        label: l10n.trainingPastActivityKind,
+                        values: ActivityKind.values,
+                        selected: _kind,
+                        labelOf: (k) => activityKindLabel(l10n, k),
+                        onChanged: (k) => setState(() {
+                          // La distancia escrita era de otra unidad o no aplica.
+                          if (k != _kind) _distance.clear();
+                          _kind = k;
+                          _distanceError = null;
+                        }),
                       ),
-                      onTap: _pickTime,
-                    ),
-                  ),
+                      const SizedBox(height: TokensSpacing.m),
+                      if (_kind == ActivityKind.match ||
+                          _kind == ActivityKind.other) ...[
+                        Wrap(
+                          spacing: TokensSpacing.s,
+                          runSpacing: TokensSpacing.s,
+                          children: [
+                            for (final (name, kind) in suggestions)
+                              if (kind == _kind)
+                                ChoiceChip(
+                                  label: Text(name),
+                                  selected: _title.text == name,
+                                  onSelected: (_) =>
+                                      setState(() => _title.text = name),
+                                ),
+                          ],
+                        ),
+                        const SizedBox(height: TokensSpacing.s),
+                      ],
+                      AppTextField(
+                        controller: _title,
+                        label: l10n.trainingPastActivityName,
+                        icon: Icons.sports_soccer_outlined,
+                        textInputAction: TextInputAction.done,
+                        maxLength: 200,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      if (_kind?.measuresDistance ?? false) ...[
+                        const SizedBox(height: TokensSpacing.m),
+                        AppTextField(
+                          controller: _distance,
+                          label: _inMeters
+                              ? l10n.trainingPastActivityMeters
+                              : l10n.trainingPastActivityDistance,
+                          icon: Icons.straighten_rounded,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: !_inMeters,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          suffixText: _inMeters
+                              ? l10n.trainingPastActivityMetersSuffix
+                              : l10n.trainingPastActivityKmSuffix,
+                          helper: _inMeters
+                              ? l10n.trainingPastActivityMetersHint
+                              : l10n.trainingPastActivityDistanceHint,
+                          // El error va en el propio campo (el lector lo lee con
+                          // él) y sustituye a la ayuda mientras se ve.
+                          errorText: _distanceError,
+                          onChanged: (_) =>
+                              setState(() => _distanceError = null),
+                        ),
+                      ],
+                    ],
+                  ],
                 ),
-              const SizedBox(height: TokensSpacing.m),
-              AppStepperField(
-                label: l10n.trainingPastActivityDuration,
-                value: _minutes,
-                // Deporte desde 10 min (una carrera corta cuenta); un día de
-                // rutina, desde 30 y como mucho 4 h (lo que admite el servidor).
-                min: _routineMode ? 30 : SportActivity.minMinutes,
-                max: _routineMode ? 240 : 300,
-                step: 5,
-                display: l10n.trainingPastActivityMinutes,
-                // El aviso de «aún no has terminado» deja de valer al cambiar.
-                onChanged: (v) => setState(() {
-                  _minutes = v;
-                  _notFinished = null;
-                }),
               ),
-              const SizedBox(height: TokensSpacing.l),
-              if (_notFinished case final message?) ...[
-                AppInlineMessage(message: message),
-                const SizedBox(height: TokensSpacing.m),
-              ],
-              if (state.error case final error?) ...[
-                AppInlineMessage(message: errorMessage(context, error)),
-                const SizedBox(height: TokensSpacing.m),
-              ],
-              AppPrimaryButton(
-                label: l10n.trainingPastActivitySave,
-                icon: Icons.check_rounded,
-                loading: state.submitting,
-                onPressed: !_routineMode
-                    ? _save
-                    : state.routine == null
-                    ? null
-                    : () => _saveRoutineDay(state),
+              const SizedBox(height: TokensSpacing.m),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppSectionHeader(title: l10n.trainingPastActivityWhen),
+                    Wrap(
+                      spacing: TokensSpacing.s,
+                      runSpacing: TokensSpacing.s,
+                      children: [
+                        for (var i = 0; i < _days; i++)
+                          Builder(
+                            builder: (context) {
+                              final day = today.subtract(Duration(days: i));
+                              final label = switch (i) {
+                                0 => l10n.trainingPastActivityToday,
+                                1 => l10n.trainingPastActivityYesterday,
+                                _ => toBeginningOfSentenceCase(
+                                  DateFormat.MEd(l10n.localeName).format(day),
+                                ),
+                              };
+                              return ChoiceChip(
+                                label: Text(label),
+                                selected: DateUtils.isSameDay(day, _day),
+                                onSelected: (_) => setState(() {
+                                  _day = day;
+                                  _notFinished = null;
+                                }),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: TokensSpacing.s),
+                    // Para un día de la rutina basta con el día: no hay hora de inicio.
+                    if (!_routineMode)
+                      AppFocusOutline(
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.schedule_rounded),
+                          title: Text(l10n.trainingPastActivityStart),
+                          trailing: Text(
+                            _time.format(context),
+                            style: context.textStyles.titleMedium,
+                          ),
+                          onTap: _pickTime,
+                        ),
+                      ),
+                    const SizedBox(height: TokensSpacing.s),
+                    AppStepperField(
+                      label: l10n.trainingPastActivityDuration,
+                      value: _minutes,
+                      // Deporte desde 10 min (una carrera corta cuenta); un día de
+                      // rutina, desde 30 y como mucho 4 h (lo que admite el servidor).
+                      min: _routineMode ? 30 : SportActivity.minMinutes,
+                      max: _routineMode ? 240 : 300,
+                      step: 5,
+                      display: l10n.trainingPastActivityMinutes,
+                      // El aviso de «aún no has terminado» deja de valer al cambiar.
+                      onChanged: (v) => setState(() {
+                        _minutes = v;
+                        _notFinished = null;
+                      }),
+                    ),
+                  ],
+                ),
               ),
             ],
+          ),
+        ),
+        // «Guardar» siempre a la vista, sin bajar hasta el final; los avisos
+        // de por qué no se guardó salen justo encima.
+        bottomNavigationBar: SafeArea(
+          child: AppContentWidth.reading(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                TokensSpacing.m,
+                TokensSpacing.s,
+                TokensSpacing.m,
+                TokensSpacing.m,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_notFinished case final message?) ...[
+                    AppInlineMessage(message: message),
+                    const SizedBox(height: TokensSpacing.s),
+                  ],
+                  if (state.error case final error?) ...[
+                    AppInlineMessage(message: errorMessage(context, error)),
+                    const SizedBox(height: TokensSpacing.s),
+                  ],
+                  AppPrimaryButton(
+                    label: l10n.trainingPastActivitySave,
+                    icon: Icons.check_rounded,
+                    loading: state.submitting,
+                    onPressed: !_routineMode
+                        ? _save
+                        : state.routine == null
+                        ? null
+                        : () => _saveRoutineDay(state),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

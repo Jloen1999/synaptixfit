@@ -367,6 +367,7 @@ abstract class RoutineTemplateDto with _$RoutineTemplateDto {
     @Default(<int>[]) List<int> dayNumbers,
     @Default(<TemplateRunDayDto>[]) List<TemplateRunDayDto> runDays,
     @Default(0) int exerciseCount,
+    String? coverImageUrl,
   }) = _RoutineTemplateDto;
 
   const RoutineTemplateDto._();
@@ -393,6 +394,7 @@ abstract class RoutineTemplateDto with _$RoutineTemplateDto {
     dayNumbers: dayNumbers,
     runDays: [for (final d in runDays) d.toDomain()],
     exerciseCount: exerciseCount,
+    coverImageUrl: coverImageUrl,
   );
 }
 

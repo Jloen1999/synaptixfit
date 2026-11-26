@@ -182,7 +182,7 @@ void main() {
     expect(find.text('Rodaje suave'), findsOneWidget);
     expect(find.text('Salir a correr'), findsOneWidget);
     expect(find.bySemanticsLabel('Correr libre'), findsOneWidget);
-    expect(find.bySemanticsLabel('Apuntar partido'), findsOneWidget);
+    expect(find.bySemanticsLabel('Apuntar actividad'), findsOneWidget);
     expect(find.byType(RunMap), findsNothing);
     // «Próximo» enseña uno y despliega el resto.
     expect(find.text('Series 1'), findsOneWidget);

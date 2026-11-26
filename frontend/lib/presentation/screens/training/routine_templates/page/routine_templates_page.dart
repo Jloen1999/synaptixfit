@@ -386,6 +386,10 @@ class _Filters extends StatelessWidget {
       };
 }
 
+/// Tarjeta de plantilla, para elegir de un vistazo: foto de uno de sus
+/// ejercicios de fondo ([AppCoverCard]), dónde se hace y el nivel arriba, el
+/// nombre, una línea con días, minutos y semanas, y «Usar». La descripción se
+/// corta en dos líneas: el detalle se ve en la rutina ya creada.
 class _TemplateCard extends StatelessWidget {
   const _TemplateCard({
     required this.template,
@@ -401,100 +405,89 @@ class _TemplateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final t = template;
-    // Días de la semana en orden; los de carrera, con su nombre.
-    final runDays = {for (final r in t.runDays) r.dayNumber};
-    final allDays = {...t.dayNumbers, ...runDays}.toList()..sort();
-    final days = allDays
-        .map(
-          (d) => runDays.contains(d)
-              ? l10n.trainingTemplatesRunDay(weekdayName(l10n, d))
-              : weekdayName(l10n, d),
-        )
-        .join(' · ');
-    return AppCard(
+    final use = disabled
+        ? null
+        : () => context.read<RoutineTemplatesBloc>().add(
+            RoutineTemplatesEvent.used(t.id),
+          );
+    final facts = [
+      l10n.trainingTemplatesPerWeek(t.daysPerWeek),
+      l10n.trainingTemplatesMinutes(t.minutes),
+      l10n.trainingWeeksCount(t.weeks),
+    ];
+    return AppCoverCard(
+      imageUrl: t.coverImageUrl,
+      padding: const EdgeInsets.all(TokensSpacing.m),
+      footer: Semantics(
+        container: true,
+        label: l10n.trainingTemplatesUseNamed(t.name),
+        excludeSemantics: true,
+        button: true,
+        enabled: !disabled,
+        onTap: use,
+        child: AppSecondaryButton(
+          label: l10n.trainingTemplatesUse,
+          icon: const Icon(Icons.add_task_rounded),
+          loading: busy,
+          onPressed: use,
+        ),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(t.name, style: context.textStyles.titleMedium),
-          if (t.description.isNotEmpty) ...[
-            const SizedBox(height: TokensSpacing.xs),
-            Text(t.description, style: context.textStyles.bodyMedium),
-          ],
-          const SizedBox(height: TokensSpacing.s),
           Wrap(
             spacing: TokensSpacing.xs,
             runSpacing: TokensSpacing.xs,
             children: [
-              AppPill(
-                icon: Icons.event_repeat_rounded,
-                label: l10n.trainingTemplatesPerWeek(t.daysPerWeek),
-                color: context.colors.secondary,
+              AppCoverPill(
+                icon: templatePlaceIcon(t.place),
+                label: templatePlaceLabel(l10n, t.place),
+                color: context.colors.primary,
               ),
-              AppPill(
-                icon: Icons.schedule_rounded,
-                label: l10n.trainingTemplatesMinutes(t.minutes),
-                // «≈» no se lee bien en voz alta.
-                semanticLabel: l10n.trainingEstimatedMinutesSpoken(t.minutes),
-              ),
+              AppCoverPill(label: templateLevelLabel(l10n, t.level)),
               if (t.hasRuns)
-                AppPill(
+                AppCoverPill(
                   icon: Icons.directions_run_rounded,
                   label: l10n.trainingTemplatesRuns(t.runDays.length),
-                  color: context.colors.secondary,
                 ),
               if (t.forExams)
-                AppPill(
+                AppCoverPill(
                   icon: Icons.school_rounded,
                   label: l10n.trainingTemplatesForExams,
-                  color: context.colors.tertiary,
                 ),
             ],
           ),
-          // Lugar, nivel y semanas en una línea de texto: la tarjeta lleva
-          // pocas pastillas (días, minutos y, si hay, carreras o exámenes).
           const SizedBox(height: TokensSpacing.s),
           Text(
-            [
-              templatePlaceLabel(l10n, t.place),
-              templateLevelLabel(l10n, t.level),
-              l10n.trainingWeeksCount(t.weeks),
-            ].join(' · '),
+            t.name,
+            style: context.textStyles.titleLarge,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: TokensSpacing.xxs),
+          // «≈» no se lee bien en voz alta.
+          Text(
+            facts.join(' · '),
+            semanticsLabel: [
+              facts.first,
+              l10n.trainingEstimatedMinutesSpoken(t.minutes),
+              facts.last,
+            ].join(', '),
             style: context.textStyles.bodyMedium?.copyWith(
-              color: context.colors.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          if (days.isNotEmpty) ...[
+          if (t.description.isNotEmpty) ...[
             const SizedBox(height: TokensSpacing.xs),
             Text(
-              days,
-              style: context.textStyles.labelMedium?.copyWith(
+              t.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: context.textStyles.bodySmall?.copyWith(
                 color: context.colors.onSurfaceVariant,
               ),
             ),
           ],
-          const SizedBox(height: TokensSpacing.m),
-          Semantics(
-            container: true,
-            label: l10n.trainingTemplatesUseNamed(t.name),
-            excludeSemantics: true,
-            button: true,
-            enabled: !disabled,
-            onTap: disabled
-                ? null
-                : () => context.read<RoutineTemplatesBloc>().add(
-                    RoutineTemplatesEvent.used(t.id),
-                  ),
-            child: AppSecondaryButton(
-              label: l10n.trainingTemplatesUse,
-              icon: const Icon(Icons.add_task_rounded),
-              loading: busy,
-              onPressed: disabled
-                  ? null
-                  : () => context.read<RoutineTemplatesBloc>().add(
-                      RoutineTemplatesEvent.used(t.id),
-                    ),
-            ),
-          ),
         ],
       ),
     );

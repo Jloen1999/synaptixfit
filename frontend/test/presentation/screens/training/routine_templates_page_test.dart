@@ -90,7 +90,7 @@ void main() {
     expect(find.text('Dónde'), findsOneWidget);
     expect(find.text('Ver 2 plantillas'), findsOneWidget);
 
-    await tester.tap(find.text('En casa'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'En casa'));
     await tester.pumpAndSettle();
     expect(find.text('Ver 1 plantilla'), findsOneWidget);
 

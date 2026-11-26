@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.training;
 
+import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.RoutineTemplate;
 import com.synaptixfit.domain.model.training.TemplateLevel;
 import com.synaptixfit.domain.model.training.TemplatePlace;
@@ -10,6 +11,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -28,9 +30,11 @@ public class RoutineTemplateJdbcAdapter implements RoutineTemplateRepositoryPort
     private static final String FALLBACK = "es";
 
     private final JdbcClient jdbc;
+    private final ExerciseSqlReader exercises;
 
-    public RoutineTemplateJdbcAdapter(JdbcClient jdbc) {
+    public RoutineTemplateJdbcAdapter(JdbcClient jdbc, ExerciseSqlReader exercises) {
         this.jdbc = jdbc;
+        this.exercises = exercises;
     }
 
     private record Head(UUID id, String code, TrainingGoal goal, TemplatePlace place, TemplateLevel level,
@@ -145,6 +149,15 @@ public class RoutineTemplateJdbcAdapter implements RoutineTemplateRepositoryPort
                     h.forExams(), h.minutes(), h.weeks(), templateDays, runs.getOrDefault(h.id(), List.of()),
                     h.active()));
         }
-        return result;
+        return withCovers(result);
+    }
+
+    /** Pone a cada plantilla la foto del primer ejercicio de su primer día que tenga una. */
+    private List<RoutineTemplate> withCovers(List<RoutineTemplate> templates) {
+        Map<UUID, ExerciseRef> refs = exercises.refs(templates.stream()
+                .flatMap(t -> t.coverCandidates().stream()).distinct().toList());
+        return templates.stream().map(t -> t.withCoverImageUrl(t.coverCandidates().stream()
+                .map(refs::get).filter(Objects::nonNull).map(ExerciseRef::stillImageUrl)
+                .filter(url -> url != null && !url.isBlank()).findFirst().orElse(null))).toList();
     }
 }

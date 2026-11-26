@@ -21,18 +21,20 @@ public final class RoutineTemplateDtos {
      * exámenes y ejercicios. {@code dayNumbers} son los días de gimnasio o casa; {@code runDays}, los de salir a
      * correr con su entreno de carrera (uno por día de la semana: el de la primera semana si el plan cambia cada
      * semana). {@code dayNames}: nombre de la sesión de cada día de {@code dayNumbers}, en el mismo orden (nulo si no
-     * tiene). {@code atHome} se mantiene para las apps anteriores.
+     * tiene). {@code atHome} se mantiene para las apps anteriores. {@code coverImageUrl}: foto de uno de sus
+     * ejercicios para el fondo de la tarjeta (nula si ninguno tiene).
      */
     public record RoutineTemplateResponse(UUID id, String code, String name, String description, TrainingGoal goal,
                                           boolean atHome, TemplatePlace place, TemplateLevel level, boolean forExams,
                                           int minutes, int weeks, int daysPerWeek, List<Integer> dayNumbers,
-                                          List<RunDayResponse> runDays, int exerciseCount, List<String> dayNames) {
+                                          List<RunDayResponse> runDays, int exerciseCount, List<String> dayNames,
+                                          String coverImageUrl) {
         public static RoutineTemplateResponse from(RoutineTemplate t) {
             return new RoutineTemplateResponse(t.id(), t.code(), t.name(), t.description(), t.goal(), t.atHome(),
                     t.place(), t.level(), t.forExams(), t.minutes(), t.weeks(), t.daysPerWeek(),
                     t.days().stream().map(RoutineTemplate.Day::dayNumber).toList(),
                     firstWeekRuns(t), t.days().stream().mapToInt(d -> d.exercises().size()).sum(),
-                    t.days().stream().map(RoutineTemplate.Day::name).toList());
+                    t.days().stream().map(RoutineTemplate.Day::name).toList(), t.coverImageUrl());
         }
 
         private static List<RunDayResponse> firstWeekRuns(RoutineTemplate t) {

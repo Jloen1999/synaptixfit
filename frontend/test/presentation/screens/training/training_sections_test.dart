@@ -79,7 +79,7 @@ void main() {
     await tester.pump();
     expect(find.text('Sugerencia descartada'), findsOneWidget);
 
-    await tester.tap(find.text('Correr'));
+    await tester.tap(find.text('Correr y deportes'));
     await tester.pumpAndSettle();
     expect(find.text('section:run'), findsOneWidget);
     expect(find.text('Sugerencia descartada'), findsNothing);

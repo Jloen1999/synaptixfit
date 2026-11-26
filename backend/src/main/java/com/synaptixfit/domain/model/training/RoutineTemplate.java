@@ -24,7 +24,7 @@ import java.util.UUID;
  */
 public record RoutineTemplate(UUID id, String code, String name, String description, TrainingGoal goal,
                               TemplatePlace place, TemplateLevel level, boolean forExams, int minutes, int weeks,
-                              List<Day> days, List<RunDay> runDays, boolean active) {
+                              List<Day> days, List<RunDay> runDays, boolean active, String coverImageUrl) {
 
     /** Día de la semana (1 = lunes) con el nombre de la sesión (nulo si no tiene) y sus ejercicios en orden. */
     public record Day(int dayNumber, String name, List<Item> exercises) {
@@ -81,6 +81,24 @@ public record RoutineTemplate(UUID id, String code, String name, String descript
                            TemplatePlace place, TemplateLevel level, boolean forExams, int minutes, int weeks,
                            List<Day> days, List<RunDay> runDays) {
         this(id, code, name, description, goal, place, level, forExams, minutes, weeks, days, runDays, true);
+    }
+
+    /** Sin foto de portada (la tarjeta pinta entonces el icono del lugar). */
+    public RoutineTemplate(UUID id, String code, String name, String description, TrainingGoal goal,
+                           TemplatePlace place, TemplateLevel level, boolean forExams, int minutes, int weeks,
+                           List<Day> days, List<RunDay> runDays, boolean active) {
+        this(id, code, name, description, goal, place, level, forExams, minutes, weeks, days, runDays, active, null);
+    }
+
+    /** La misma plantilla con la foto que la representa (la de uno de sus ejercicios), para su tarjeta. */
+    public RoutineTemplate withCoverImageUrl(String url) {
+        return new RoutineTemplate(id, code, name, description, goal, place, level, forExams, minutes, weeks, days,
+                runDays, active, url);
+    }
+
+    /** Ejercicios del primer día, en orden: de ellos sale la foto de portada. */
+    public List<UUID> coverCandidates() {
+        return days.isEmpty() ? List.of() : days.get(0).exercises().stream().map(Item::exerciseId).toList();
     }
 
     public RoutineTemplate {

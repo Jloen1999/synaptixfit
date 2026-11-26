@@ -49,7 +49,10 @@ void registerData(GetIt getIt, AppConfig config) {
     ..registerLazySingleton(
       () => GoogleAuthDataSource(
         clientId: config.googleClientId,
-        serverClientId: config.googleServerClientId,
+        // Android necesita el ID de cliente web para recibir el ID token. Si
+        // la compilación no trae `GOOGLE_SERVER_CLIENT_ID`, vale el mismo ID
+        // web de `GOOGLE_CLIENT_ID`: sin esto el APK no podía entrar con Google.
+        serverClientId: config.googleServerClientId ?? config.googleClientId,
       ),
     )
     ..registerLazySingleton<AuthRepositoryContract>(

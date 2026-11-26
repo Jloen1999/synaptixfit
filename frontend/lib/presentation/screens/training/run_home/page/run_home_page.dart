@@ -303,11 +303,7 @@ class _Content extends StatelessWidget {
                   ),
                 )
               else if (state.supported)
-                AppPrimaryButton(
-                  label: l10n.runGoRun,
-                  icon: Icons.directions_run_rounded,
-                  onPressed: record,
-                ),
+                _GoRunCard(onStart: record),
               // Sin GPS (web, escritorio) se apunta a mano (ADR 0039).
               if (!state.supported) ...[
                 if (unfinished != null || today != null)
@@ -334,7 +330,7 @@ class _Content extends StatelessWidget {
                     onTap: () => _createWorkout(context),
                   ),
                   TrainingQuickAction(
-                    icon: Icons.sports_soccer_rounded,
+                    icon: Icons.edit_note_rounded,
                     label: l10n.runQuickLog,
                     onTap: () => _RunHomeView.open(
                       context,
@@ -364,27 +360,6 @@ class _Content extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.l),
                 _Upcoming(planned: upcoming, supported: state.supported),
               ],
-              const SizedBox(height: TokensSpacing.l),
-              AppSectionHeader(
-                title: l10n.runLastTitle,
-                actionLabel: state.totalActivities > 0 ? l10n.runSeeAll : null,
-                onAction: state.totalActivities > 0
-                    ? () => _RunHomeView.open(context, TrainingPaths.activities)
-                    : null,
-              ),
-              const SizedBox(height: TokensSpacing.s),
-              if (state.activities.isEmpty)
-                AppEmptyState.compact(
-                  icon: Icons.directions_run_rounded,
-                  title: l10n.runActivitiesEmptyTitle,
-                  message: l10n.runActivitiesEmptyMessage,
-                  // Sin botón propio: «Apuntar partido» ya está arriba.
-                )
-              else
-                for (final a in state.activities.take(_lastCount)) ...[
-                  SportActivityTile(activity: a),
-                  const SizedBox(height: TokensSpacing.s),
-                ],
               const SizedBox(height: TokensSpacing.l),
               AppSectionHeader(title: l10n.runWorkoutsTitle),
               const SizedBox(height: TokensSpacing.s),
@@ -422,6 +397,27 @@ class _Content extends StatelessWidget {
                   ),
                   const SizedBox(height: TokensSpacing.s),
                 ],
+              const SizedBox(height: TokensSpacing.l),
+              AppSectionHeader(
+                title: l10n.runLastTitle,
+                actionLabel: state.totalActivities > 0 ? l10n.runSeeAll : null,
+                onAction: state.totalActivities > 0
+                    ? () => _RunHomeView.open(context, TrainingPaths.activities)
+                    : null,
+              ),
+              const SizedBox(height: TokensSpacing.s),
+              if (state.activities.isEmpty)
+                AppEmptyState.compact(
+                  icon: Icons.directions_run_rounded,
+                  title: l10n.runActivitiesEmptyTitle,
+                  message: l10n.runActivitiesEmptyMessage,
+                  // Sin botón propio: «Apuntar actividad» ya está arriba.
+                )
+              else
+                for (final a in state.activities.take(_lastCount)) ...[
+                  SportActivityTile(activity: a),
+                  const SizedBox(height: TokensSpacing.s),
+                ],
             ],
           ),
         ),
@@ -431,6 +427,65 @@ class _Content extends StatelessWidget {
 
   /// Actividades que se ven en «Últimas» (el resto, en el historial).
   static const _lastCount = 2;
+}
+
+/// Sin nada planeado para hoy: «Salir a correr» con lo que hace (graba la
+/// ruta con el GPS) y un solo botón, en vez de un botón suelto.
+class _GoRunCard extends StatelessWidget {
+  const _GoRunCard({required this.onStart});
+
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return AppCard(
+      color: context.colors.primaryContainer,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.directions_run_rounded,
+                size: TokensSize.iconL,
+                color: context.colors.onPrimaryContainer,
+              ),
+              const SizedBox(width: TokensSpacing.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        l10n.runGoRun,
+                        style: context.textStyles.titleLarge?.copyWith(
+                          color: context.colors.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      l10n.runGoRunHint,
+                      style: context.textStyles.bodyMedium?.copyWith(
+                        color: context.colors.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.m),
+          AppPrimaryButton(
+            label: l10n.runStartNow,
+            icon: Icons.play_arrow_rounded,
+            onPressed: onStart,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// «Hoy toca» de Correr (ADR 0055): el entreno de hoy, cuánto dura y «Salir a

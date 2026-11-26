@@ -40,6 +40,10 @@ abstract class RoutineTemplate with _$RoutineTemplate {
     /// Días de salir a correr (cuentan en [daysPerWeek]).
     @Default(<TemplateRunDay>[]) List<TemplateRunDay> runDays,
     @Default(0) int exerciseCount,
+
+    /// Foto de uno de sus ejercicios para el fondo de la tarjeta (la elige el
+    /// servidor; nula si ninguno tiene).
+    String? coverImageUrl,
   }) = _RoutineTemplate;
 
   const RoutineTemplate._();
