@@ -23,6 +23,7 @@
   "plannerReminderLine": "{type, select, STUDY{Rappel avant le début, selon « Autres rappels ».} REVIEW{Rappel avant le début, selon « Autres rappels ».} SPORT{Rappel avant le début, selon « Autres rappels ».} PERSONAL{Rappel avant le début, selon « Autres rappels ».} CLASS{Rappel du cours s’il est activé dans « Autres rappels ».} EXAM{Rappel les jours choisis dans « Autres rappels ».} DELIVERY{Rappel les jours choisis dans « Autres rappels ».} other{Pas de rappel.}}",
   "plannerReminderSettings": "Régler les rappels",
   "plannerAddBlock": "Ajouter au calendrier",
+  "plannerAddShort": "Ajouter",
   "plannerEmptyWeekHint": "Semaine libre : touche un créneau libre pour ajouter un événement.",
   "plannerResizeHandle": "Changer la durée",
   "plannerBlockSemantics": "{type}, de {start} à {end}",
@@ -412,12 +413,9 @@
   "plannerWeekRangeSameMonth": "{start} – {end} {month}",
   "plannerWeekHeaderLabel": "{title}, semaine du {start} au {end}",
   "plannerTomorrow": "Demain",
-  "plannerChipDeadlines": "{count, plural, =0{{count} rendus et examens} =1{1 rendu ou examen} other{{count} rendus et examens}}",
   "plannerChipBalance": "{study} h d’étude · {sport} h de sport",
   "plannerChipBalanceLabel": "{chip} : prévu cette semaine. {state}. Ouvre la charge de la semaine",
   "plannerChipConflicts": "{count, plural, =0{{count} conflits d’horaire} =1{1 conflit d’horaire} other{{count} conflits d’horaire}}",
-  "plannerWeekDeadlinesTitle": "Rendus et examens de la semaine",
-  "plannerWeekDeadlinesAll": "Voir tous les rendus et examens",
   "plannerDetailsWhen": "{day}, {time}",
   "plannerDetailsNote": "Note",
   "plannerDetailsOpenSubject": "Ouvrir la matière",
@@ -432,6 +430,6 @@
   "plannerDetailsGoToClass": "Rejoindre le cours en ligne",
   "plannerDetailsLinkFailed": "Nous n'avons pas pu ouvrir le lien du cours.",
   "guideCalendarSummaryTitle": "Ta semaine en chiffres",
-  "guideCalendarSummaryBody": "Touche un chiffre pour voir le détail : rendus, heures d’étude et de sport ou conflits d’horaire.",
+  "guideCalendarSummaryBody": "Touche un chiffre pour voir le détail : heures d’étude et de sport ou conflits d’horaire.",
   "plannerDetailsGoToClassSpoken": "Rejoindre le cours en ligne. S'ouvre en dehors de l'appli"
 }

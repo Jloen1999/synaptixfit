@@ -1,6 +1,8 @@
-import '../../../../domain/enums/item_time_status.dart';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../../../domain/enums/item_time_status.dart';
 import '../../../../domain/models/planner/calendar_block.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
@@ -57,6 +59,9 @@ class TimeBlockTile extends StatelessWidget {
   final ValueChanged<double> onResizeUpdate;
   final VoidCallback onResizeEnd;
   final VoidCallback onLockedTouched;
+
+  /// Relleno lateral del contenido (izquierda con la franja, derecha).
+  static const _padding = TokensSpacing.s + TokensSpacing.xs;
 
   bool get _movable => draggable && !block.isLocked && !block.completed;
   bool get _missed => block.timeStatus == ItemTimeStatus.missed;
@@ -141,7 +146,13 @@ class TimeBlockTile extends StatelessWidget {
                               TokensSpacing.xs,
                               TokensSpacing.xxs,
                             ),
-                            child: _content(context, color, timeText, compact),
+                            child: _content(
+                              context,
+                              color,
+                              timeText,
+                              compact,
+                              constraints.maxWidth,
+                            ),
                           ),
                           if (_movable && resizable && !compact)
                             Positioned(
@@ -173,7 +184,19 @@ class TimeBlockTile extends StatelessWidget {
     Color color,
     String timeText,
     bool compact,
+    double width,
   ) {
+    final l10n = context.localizations;
+    // Columna estrecha (7 días en el móvil): solo cabe un icono. Manda el ✓
+    // si está hecho; si no, el del tipo. El nombre completo va al lector.
+    if (width - _padding < TokensSize.iconXs * 2 + TokensSpacing.xs) {
+      return Align(
+        alignment: AlignmentDirectional.topStart,
+        child: block.completed
+            ? Icon(AppIcons.check, size: TokensSize.iconXs, color: color)
+            : Icon(block.type.icon, size: TokensSize.iconXs, color: color),
+      );
+    }
     final titleStyle = context.textStyles.labelMedium?.copyWith(
       fontWeight: FontWeight.w700,
       color: context.colors.onSurface,
@@ -181,10 +204,10 @@ class TimeBlockTile extends StatelessWidget {
     );
     final statusIcons = [
       if (block.completed)
-        Icon(AppIcons.done, size: TokensSize.iconXs, color: color),
+        Icon(AppIcons.check, size: TokensSize.iconXs, color: color),
       if (_missed)
         Tooltip(
-          message: context.localizations.plannerMissedLabel,
+          message: l10n.plannerMissedLabel,
           child: Icon(
             AppIcons.overdue,
             size: TokensSize.iconXs,
@@ -210,7 +233,13 @@ class TimeBlockTile extends StatelessWidget {
             style: titleStyle,
           ),
         ),
-        ...statusIcons,
+        // Si no caben todos, los primeros: el ✓ de hecho va delante.
+        ...statusIcons.take(
+          math.max(
+            0,
+            ((width - _padding - TokensSpacing.xs) ~/ TokensSize.iconXs) - 1,
+          ),
+        ),
       ],
     );
     if (compact) return header;
@@ -219,9 +248,12 @@ class TimeBlockTile extends StatelessWidget {
       children: [
         header,
         Text(
-          _missed
-              ? '$timeText · ${context.localizations.plannerMissedLabel}'
-              : timeText,
+          // El estado también en texto: el color no es la única señal.
+          switch ((block.completed, _missed)) {
+            (true, _) => '$timeText · ${l10n.plannerCompletedLabel}',
+            (_, true) => '$timeText · ${l10n.plannerMissedLabel}',
+            _ => timeText,
+          },
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: context.textStyles.labelSmall?.copyWith(

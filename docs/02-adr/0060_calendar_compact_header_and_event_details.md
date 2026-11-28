@@ -114,3 +114,4 @@ abría la página: va en la guía, que se ve una vez por cuenta y teléfono.
   limpieza (el endpoint del servidor no cambia).
 - «Ir a la clase» de la maqueta, resuelto en el ADR 0065: abre el enlace de la videollamada escrito en «Lugar»; sin
   enlace, la acción principal de una clase es «Abrir asignatura».
+- Tanda 1 (28-11-2026): «Entregas y exámenes» sigue en la barra con tono propio (`primaryContainer`) y sale de la línea de cifras (se quita su chip y sus textos); los chips que quedan llevan flecha; «+ Añadir» extendido que se encoge a «+» al bajar la rejilla; cada evento lleva el icono de su tipo y, hecho, ✓ y «Hecho» en texto (en columnas estrechas, solo el icono).

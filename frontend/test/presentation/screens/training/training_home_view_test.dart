@@ -23,6 +23,7 @@ import 'package:synaptixfit/domain/use_cases/training/submit_quick_check_in_use_
 import 'package:synaptixfit/presentation/screens/training/quick_check_in/bloc/quick_check_in_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/bloc/training_home_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/page/training_home_page.dart';
+import 'package:synaptixfit/presentation/screens/training/widgets/training_quick_actions.dart';
 import 'package:synaptixfit/presentation/widgets/widgets.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/continue_session_target.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
@@ -42,6 +43,7 @@ class _ContrastWithoutQuickActions extends MinimumTextContrastGuideline {
   const _ContrastWithoutQuickActions();
 
   static const _quickActions = {
+    'Nueva rutina',
     'Sesión libre',
     'Plantillas',
     'Ejercicios',
@@ -147,8 +149,9 @@ void main() {
     WidgetTester tester, {
     ThemeData? theme,
     double textScale = 1,
+    double width = 390,
   }) async {
-    tester.view.physicalSize = Size(390, 2400 * textScale);
+    tester.view.physicalSize = Size(width, 2400 * textScale);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -278,7 +281,10 @@ void main() {
 
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(const _ContrastWithoutQuickActions()));
+        await expectLater(
+          tester,
+          meetsGuideline(const _ContrastWithoutQuickActions()),
+        );
       }
       semantics.dispose();
     });
@@ -355,7 +361,10 @@ void main() {
           await pump(tester, theme: theme);
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
           await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-          await expectLater(tester, meetsGuideline(const _ContrastWithoutQuickActions()));
+          await expectLater(
+            tester,
+            meetsGuideline(const _ContrastWithoutQuickActions()),
+          );
         }
         await pump(tester, textScale: 2);
         expect(tester.takeException(), isNull);
@@ -422,18 +431,13 @@ void main() {
 
       expect(find.text('Pierna y empuje'), findsOneWidget);
       expect(find.text('≈ 45 min'), findsOneWidget);
-      for (final label in [
-        'Sesión libre',
-        'Plantillas',
-        'Ejercicios',
-        'Historial',
-        'Más',
-      ]) {
+      for (final label in ['Sesión libre', 'Plantillas', 'Más']) {
         expect(find.bySemanticsLabel(label), findsOneWidget);
       }
       expect(find.text('Esta semana'), findsOneWidget);
       expect(find.text('1 de 2 entrenos'), findsOneWidget);
-      expect(find.text('Nueva rutina'), findsOneWidget);
+      // El atajo y la tarjeta del final del carrusel.
+      expect(find.text('Nueva rutina'), findsNWidgets(2));
       // Hoy se lee como tal, con lo que toca.
       expect(
         find.bySemanticsLabel(RegExp(r', Hoy: toca entrenar$')),
@@ -475,11 +479,82 @@ void main() {
       semantics.dispose();
     });
 
+    Finder quick(String label) => find.descendant(
+      of: find.byType(TrainingQuickActions),
+      matching: find.text(label),
+    );
+
+    for (final (width, labels) in [
+      (320.0, ['Nueva rutina', 'Sesión libre', 'Plantillas', 'Más']),
+      (390.0, ['Nueva rutina', 'Sesión libre', 'Plantillas', 'Más']),
+      (
+        600.0,
+        [
+          'Nueva rutina',
+          'Sesión libre',
+          'Plantillas',
+          'Ejercicios',
+          'Historial',
+          'Más',
+        ],
+      ),
+    ]) {
+      testWidgets('a ${width.toInt()} px: ${labels.length} atajos en orden', (
+        tester,
+      ) async {
+        when(() => bloc.state).thenReturn(state);
+        await pump(tester, width: width);
+        expect(tester.takeException(), isNull);
+        for (final label in ['Ejercicios', 'Historial']) {
+          expect(
+            quick(label),
+            labels.contains(label) ? findsOneWidget : findsNothing,
+          );
+        }
+        final rects = [for (final l in labels) tester.getRect(quick(l))];
+        if (width < 390) {
+          // 2×2 con el icono al lado del nombre.
+          expect(rects[0].center.dy, moreOrLessEquals(rects[1].center.dy));
+          expect(rects[2].top, greaterThan(rects[0].bottom));
+          expect(rects[2].left, moreOrLessEquals(rects[0].left));
+          final icon = tester.getRect(
+            find.descendant(
+              of: find.byType(TrainingQuickActions),
+              matching: find.byIcon(AppIcons.add),
+            ),
+          );
+          expect(icon.right, lessThan(rects[0].left));
+          expect(
+            icon.center.dy,
+            moreOrLessEquals(rects[0].center.dy, epsilon: 2),
+          );
+        } else {
+          // Una sola fila, de izquierda a derecha.
+          for (var i = 1; i < rects.length; i++) {
+            expect(rects[i].top, moreOrLessEquals(rects[0].top));
+            expect(rects[i].left, greaterThan(rects[i - 1].left));
+          }
+        }
+      });
+    }
+
+    testWidgets('«Nueva rutina» abre las tres formas de crearla', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(state);
+      await pump(tester);
+      await tester.tap(quick('Nueva rutina'));
+      await tester.pumpAndSettle();
+      expect(find.text('Proponme una rutina'), findsOneWidget);
+    });
+
     testWidgets('«Más» abre lo que no está en la fila', (tester) async {
       when(() => bloc.state).thenReturn(state);
       await pump(tester);
       await tester.tap(find.bySemanticsLabel('Más'));
       await tester.pumpAndSettle();
+      expect(find.text('Historial'), findsOneWidget);
+      expect(find.text('Ejercicios'), findsOneWidget);
       expect(find.text('Plan semanal'), findsOneWidget);
       expect(find.text('Comunidad'), findsOneWidget);
       expect(find.text('Entrenar con amigos'), findsOneWidget);
@@ -494,7 +569,10 @@ void main() {
         await pump(tester, theme: theme);
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(const _ContrastWithoutQuickActions()));
+        await expectLater(
+          tester,
+          meetsGuideline(const _ContrastWithoutQuickActions()),
+        );
       }
       await pump(tester, textScale: 2);
       expect(tester.takeException(), isNull);
@@ -541,7 +619,10 @@ void main() {
         await tester.pump();
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(const _ContrastWithoutQuickActions()));
+        await expectLater(
+          tester,
+          meetsGuideline(const _ContrastWithoutQuickActions()),
+        );
       }
       await pump(tester, textScale: 2);
       await tester.pump();

@@ -24,7 +24,10 @@ import 'package:synaptixfit/presentation/screens/planner/calendar/page/calendar_
 import 'package:synaptixfit/presentation/screens/planner/planner_routes.dart';
 import 'package:synaptixfit/presentation/screens/planner/weekly_load/bloc/weekly_load_bloc.dart';
 import 'package:synaptixfit/presentation/screens/planner/weekly_load/page/weekly_load_sheet.dart';
+import 'package:synaptixfit/presentation/screens/planner/widgets/planner_visuals.dart';
+import 'package:synaptixfit/presentation/screens/planner/widgets/time_block_tile.dart';
 import 'package:synaptixfit/presentation/screens/planner/widgets/week_canvas.dart';
+import 'package:synaptixfit/presentation/theme/app_icons.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 import 'planner_fixtures.dart';
@@ -95,9 +98,9 @@ void main() {
     when(() => calendar.state).thenReturn(ready());
     when(() => calendar.isClosed).thenReturn(false);
     editor = _MockEditorBloc();
-    when(() => editor.state).thenReturn(
-      const BlockEditorState(status: BlockEditorStatus.ready),
-    );
+    when(
+      () => editor.state,
+    ).thenReturn(const BlockEditorState(status: BlockEditorStatus.ready));
     load = _MockLoadBloc();
     when(() => load.state).thenReturn(const WeeklyLoadState());
     session = _MockSessionBloc();
@@ -274,17 +277,24 @@ void main() {
   });
 
   group('cifras de la semana', () {
-    testWidgets('«1 entrega o examen» abre la lista y cada una su entrega', (
+    testWidgets('sin chip de entregas (las abre su icono) y con flecha', (
       tester,
     ) async {
       await pump(tester);
-      await tester.tap(find.text('1 entrega o examen'));
-      await tester.pumpAndSettle();
-      expect(find.text('Entregas y exámenes de esta semana'), findsOneWidget);
-      expect(find.text('Ver todas las entregas y exámenes'), findsOneWidget);
-      await tester.tap(find.text('Entrega P2'));
-      await tester.pumpAndSettle();
-      expect(find.text('entregas'), findsOneWidget);
+      expect(find.textContaining('entrega'), findsNothing);
+      // Los chips que quedan llevan flecha: se leen como botones.
+      for (final text in [
+        '1 choque de horario',
+        '10 h estudio · 3 h deporte',
+      ]) {
+        expect(
+          find.descendant(
+            of: find.widgetWithText(ActionChip, text),
+            matching: find.byIcon(AppIcons.next),
+          ),
+          findsOneWidget,
+        );
+      }
     });
 
     testWidgets('las horas abren la carga semanal y dicen qué son', (
@@ -322,15 +332,44 @@ void main() {
   });
 
   group('añadir', () {
-    testWidgets('«+» es un botón cuadrado de 56 con nombre que abre el '
-        'formulario', (tester) async {
+    testWidgets('«+ Añadir» con texto y nombre abre el formulario', (
+      tester,
+    ) async {
       await pump(tester);
       final add = find.byTooltip('Añadir al calendario');
       expect(add, findsOneWidget);
-      expect(tester.getSize(find.byType(FloatingActionButton)), const Size(56, 56));
+      expect(
+        find.descendant(
+          of: find.byType(FloatingActionButton),
+          matching: find.text('Añadir'),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(add);
       await tester.pumpAndSettle();
       expect(find.byType(BlockEditorSheet), findsOneWidget);
+    });
+
+    testWidgets('se encoge a «+» al bajar la rejilla y vuelve al parar', (
+      tester,
+    ) async {
+      await pump(tester);
+      final label = find.descendant(
+        of: find.byType(FloatingActionButton),
+        matching: find.text('Añadir'),
+      );
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('Bases de datos')) + const Offset(0, 200),
+      );
+      await gesture.moveBy(const Offset(0, -60));
+      await gesture.moveBy(const Offset(0, -60));
+      await tester.pump();
+      expect(label, findsNothing);
+      // Sin texto, el nombre sigue en el tooltip.
+      expect(find.byTooltip('Añadir al calendario'), findsOneWidget);
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(label, findsOneWidget);
     });
 
     testWidgets('mantener pulsado un hueco vacío pide añadir ahí', (
@@ -341,11 +380,83 @@ void main() {
       // Dos horas más abajo en la misma columna: hueco libre.
       await tester.longPressAt(tile + const Offset(0, 120));
       await tester.pumpAndSettle();
-      final slot = verify(
-        () => calendar.add(captureAny(that: isA<CalendarSlotTapped>())),
-      ).captured.single as CalendarSlotTapped;
+      final slot =
+          verify(
+                () => calendar.add(captureAny(that: isA<CalendarSlotTapped>())),
+              ).captured.single
+              as CalendarSlotTapped;
       expect(slot.start.day, now.day);
       expect(slot.start.hour, hour + 2);
+    });
+  });
+
+  group('eventos de la rejilla', () {
+    testWidgets('llevan el icono de su tipo y «Hecho» con ✓ y en texto', (
+      tester,
+    ) async {
+      when(
+        () => calendar.state,
+      ).thenReturn(ready().copyWith(blocks: [study.copyWith(completed: true)]));
+      final handle = tester.ensureSemantics();
+      await pump(tester);
+      final tile = find.byType(TimeBlockTile);
+      expect(
+        find.descendant(of: tile, matching: find.byIcon(BlockType.study.icon)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: tile, matching: find.byIcon(AppIcons.check)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: tile, matching: find.textContaining('· Hecho')),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(RegExp(r'Bases de datos, Hecho')),
+        findsOneWidget,
+      );
+      handle.dispose();
+    });
+
+    testWidgets('en un evento estrecho y corto queda solo el ✓', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('es'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 36,
+                height: 20,
+                child: TimeBlockTile(
+                  block: study.copyWith(completed: true),
+                  title: 'Bases de datos',
+                  start: study.start,
+                  end: study.end,
+                  busy: false,
+                  dragging: false,
+                  onTap: () {},
+                  onDragStart: () {},
+                  onDragUpdate: (_) {},
+                  onDragEnd: () {},
+                  onResizeUpdate: (_) {},
+                  onResizeEnd: () {},
+                  onLockedTouched: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byIcon(AppIcons.check), findsOneWidget);
+      expect(find.byIcon(BlockType.study.icon), findsNothing);
+      expect(find.text('Bases de datos'), findsNothing);
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -429,7 +540,7 @@ void main() {
       expect(tester.takeException(), isNull);
       // Los iconos bajan a una segunda fila y siguen a la vista.
       expect(find.byTooltip('Entregas y exámenes'), findsOneWidget);
-      expect(find.text('1 entrega o examen'), findsOneWidget);
+      expect(find.text('1 choque de horario'), findsOneWidget);
     });
   });
 }

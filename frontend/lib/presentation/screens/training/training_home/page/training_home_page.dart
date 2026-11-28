@@ -244,7 +244,8 @@ class _HomeContentState extends State<_HomeContent> {
   VoidCallback get onNewRoutine => widget.onNewRoutine;
   _GymGuideKeys get _guide => widget.guide;
 
-  /// «Más»: lo que se usa de vez en cuando, fuera de la fila de atajos.
+  /// «Más»: lo que se usa de vez en cuando, fuera de la fila de atajos. Lleva
+  /// siempre Historial y Ejercicios: en el móvil no están en la fila.
   Future<void> _showMore(BuildContext context) async {
     final l10n = context.localizations;
     final path = await showModalBottomSheet<String>(
@@ -271,6 +272,16 @@ class _HomeContentState extends State<_HomeContent> {
               ),
             ),
             for (final (icon, label, path) in [
+              (
+                AppIcons.history,
+                l10n.trainingHistoryTitle,
+                TrainingPaths.history,
+              ),
+              (
+                AppIcons.search,
+                l10n.trainingQuickExercises,
+                TrainingPaths.exercises,
+              ),
               (
                 AppIcons.calendar,
                 l10n.trainingWeeklyPlanTitle,
@@ -382,9 +393,16 @@ class _HomeContentState extends State<_HomeContent> {
                   ),
                 ),
               const SizedBox(height: TokensSpacing.s),
-              // Lo que más se usa, a un toque y sin bajar (ADR 0055).
+              // Lo que más se usa, a un toque y sin bajar (ADR 0055): «Nueva
+              // rutina» primero; Ejercicios e Historial solo si caben los seis
+              // en una fila (si no, están en «Más»).
               TrainingQuickActions(
                 actions: [
+                  TrainingQuickAction(
+                    icon: AppIcons.add,
+                    label: l10n.trainingNewRoutine,
+                    onTap: onNewRoutine,
+                  ),
                   TrainingQuickAction(
                     icon: AppIcons.freeSession,
                     label: l10n.trainingFreeSession,
@@ -406,6 +424,7 @@ class _HomeContentState extends State<_HomeContent> {
                   TrainingQuickAction(
                     icon: AppIcons.search,
                     label: l10n.trainingQuickExercises,
+                    wideOnly: true,
                     onTap: () => _TrainingHomeView.open(
                       context,
                       TrainingPaths.exercises,
@@ -414,11 +433,12 @@ class _HomeContentState extends State<_HomeContent> {
                   TrainingQuickAction(
                     icon: AppIcons.history,
                     label: l10n.trainingHistoryTitle,
+                    wideOnly: true,
                     onTap: () =>
                         _TrainingHomeView.open(context, TrainingPaths.history),
                   ),
                   TrainingQuickAction(
-                    icon: Icons.more_horiz_rounded,
+                    icon: AppIcons.moreActions,
                     label: l10n.trainingQuickMore,
                     onTap: () => _showMore(context),
                   ),

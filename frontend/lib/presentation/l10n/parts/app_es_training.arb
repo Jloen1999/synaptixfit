@@ -843,7 +843,7 @@
   "trainingPastActivityDuration": "Duración",
   "trainingPastActivityMinutes": "{minutes} min",
   "trainingPastActivitySave": "Guardar actividad",
-  "trainingPastActivitySaved": "Actividad apuntada. La ves en Entreno › Historial › Actividades y partidos.",
+  "trainingPastActivitySaved": "Actividad apuntada. La ves en Entreno › Gimnasio › Más › Historial › Actividades y partidos.",
   "trainingPastActivityNotFinished": "Esa actividad aún no ha terminado: elige una hora anterior o una duración menor.",
   "@trainingPastActivityMinutes": {
     "placeholders": {
@@ -2749,7 +2749,7 @@
   "runEditorDuration": "Duración",
   "runEditorDistance": "Distancia",
   "runEditorSave": "Guardar entreno",
-  "runWorkoutSavedWhere": "Entreno guardado. Lo tienes en Entreno › Correr › Tus entrenos de carrera.",
+  "runWorkoutSavedWhere": "Entreno guardado. Lo tienes en Entreno › Correr y deportes › Entrenos guiados.",
   "runErrorTooShort": "Hacen falta al menos 10 minutos en movimiento para que cuente como actividad.",
   "runErrorOutOfRange": "Solo se guardan carreras ya terminadas de los últimos 30 días. Puedes apuntarla a mano si fue esta semana.",
   "runErrorRouteTooLarge": "La ruta es demasiado larga para guardarla. Prueba a apuntar la actividad a mano.",
@@ -2832,7 +2832,7 @@
   "@trainingPastActivityMetersSuffix": {
     "description": "Unidad a la derecha del campo de distancia al nadar (metros)."
   },
-  "trainingPastActivitySavedRun": "Actividad apuntada. La tienes en Entreno › Correr › Tus actividades.",
+  "trainingPastActivitySavedRun": "Actividad apuntada. La tienes en Entreno › Correr y deportes › Últimas actividades.",
   "@trainingPastActivitySavedRun": {
     "description": "Aviso al apuntar una actividad desde Correr (se vuelve allí)."
   },

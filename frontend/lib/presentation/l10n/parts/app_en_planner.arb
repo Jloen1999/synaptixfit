@@ -23,6 +23,7 @@
   "plannerReminderLine": "{type, select, STUDY{Reminder before it starts, as set in “More reminders”.} REVIEW{Reminder before it starts, as set in “More reminders”.} SPORT{Reminder before it starts, as set in “More reminders”.} PERSONAL{Reminder before it starts, as set in “More reminders”.} CLASS{Class reminder if turned on in “More reminders”.} EXAM{Reminder on the days you chose in “More reminders”.} DELIVERY{Reminder on the days you chose in “More reminders”.} other{No reminder.}}",
   "plannerReminderSettings": "Adjust reminders",
   "plannerAddBlock": "Add to calendar",
+  "plannerAddShort": "Add",
   "plannerEmptyWeekHint": "Free week: tap a free slot to add an event.",
   "plannerResizeHandle": "Change length",
   "plannerBlockSemantics": "{type}, from {start} to {end}",
@@ -412,12 +413,9 @@
   "plannerWeekRangeSameMonth": "{month} {start} – {end}",
   "plannerWeekHeaderLabel": "{title}, week of {start} to {end}",
   "plannerTomorrow": "Tomorrow",
-  "plannerChipDeadlines": "{count, plural, =1{1 deadline or exam} other{{count} deadlines and exams}}",
   "plannerChipBalance": "{study} h study · {sport} h sport",
   "plannerChipBalanceLabel": "{chip}: planned this week. {state}. Opens the weekly load",
   "plannerChipConflicts": "{count, plural, =1{1 time clash} other{{count} time clashes}}",
-  "plannerWeekDeadlinesTitle": "Deadlines and exams this week",
-  "plannerWeekDeadlinesAll": "See all deadlines and exams",
   "plannerDetailsWhen": "{day}, {time}",
   "plannerDetailsNote": "Note",
   "plannerDetailsOpenSubject": "Open subject",
@@ -432,6 +430,6 @@
   "plannerDetailsGoToClass": "Join the online class",
   "plannerDetailsLinkFailed": "We couldn't open the class link.",
   "guideCalendarSummaryTitle": "Your week in numbers",
-  "guideCalendarSummaryBody": "Tap a number to see the details: deadlines, study and sport hours or time clashes.",
+  "guideCalendarSummaryBody": "Tap a number to see the details: study and sport hours or time clashes.",
   "plannerDetailsGoToClassSpoken": "Join the online class. Opens outside the app"
 }

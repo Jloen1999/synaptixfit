@@ -8,34 +8,22 @@ import '../../../widgets/widgets.dart';
 import 'planner_visuals.dart';
 
 /// Línea de cifras de la semana bajo la tira de días (ADR 0060): «1 choque de
-/// horario» (solo si los hay), «2 entregas y exámenes» y «10 h estudio · 3 h
-/// deporte». Cada chip se toca y abre su detalle: la lista de entregas de la
-/// semana, la carga semanal o la lista de choques. Sustituye a las tres
-/// franjas fijas de antes, que se comían la rejilla.
+/// horario» (solo si los hay) y «10 h estudio · 3 h deporte». Cada chip lleva
+/// flecha y abre su detalle: la lista de choques o la carga semanal. Las
+/// entregas y exámenes no van aquí: los abre su icono de la barra.
 class WeekSummaryChips extends StatelessWidget {
   const WeekSummaryChips({
     super.key,
-    required this.deadlines,
     required this.balance,
     required this.conflicts,
     required this.titleOf,
-    required this.onDeadlineTap,
-    required this.onAllDeadlines,
     required this.onBalanceTap,
     required this.onConflictTap,
   });
 
-  /// Entregas y exámenes de la semana (línea de tiempo).
-  final List<TimelineEntry> deadlines;
   final WeekBalance? balance;
   final List<BlockConflict> conflicts;
   final String Function(CalendarBlock block) titleOf;
-
-  /// Abre la entrega tocada (su id).
-  final ValueChanged<String> onDeadlineTap;
-
-  /// «Ver todas las entregas y exámenes».
-  final VoidCallback onAllDeadlines;
 
   /// Abre la carga semanal (horas planificadas y hechas, estado).
   final VoidCallback onBalanceTap;
@@ -56,19 +44,8 @@ class WeekSummaryChips extends StatelessWidget {
             size: TokensSize.iconS,
             color: context.palette.warning,
           ),
-          label: Text(l10n.plannerChipConflicts(conflicts.length)),
+          label: SummaryChipLabel(l10n.plannerChipConflicts(conflicts.length)),
           onPressed: () => _showConflicts(context),
-        ),
-      if (deadlines.isNotEmpty)
-        ActionChip(
-          // Acento y no rojo: una entrega no es un error.
-          avatar: Icon(
-            AppIcons.delivery,
-            size: TokensSize.iconS,
-            color: context.colors.primary,
-          ),
-          label: Text(l10n.plannerChipDeadlines(deadlines.length)),
-          onPressed: () => _showDeadlines(context),
         ),
       if (b != null) _BalanceChip(balance: b, onTap: onBalanceTap),
     ];
@@ -90,78 +67,6 @@ class WeekSummaryChips extends StatelessWidget {
       ),
     );
   }
-
-  /// Lo que antes enseñaba la franja de entregas: cada una con su día y hora,
-  /// hecha o no (con texto, no solo color), y abre su entrega.
-  Future<void> _showDeadlines(BuildContext context) =>
-      showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        isScrollControlled: true,
-        builder: (sheet) {
-          final l10n = sheet.localizations;
-          return SafeArea(
-            child: ListView(
-              shrinkWrap: true,
-              padding: const EdgeInsets.fromLTRB(
-                TokensSpacing.m,
-                0,
-                TokensSpacing.m,
-                TokensSpacing.l,
-              ),
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    l10n.plannerWeekDeadlinesTitle,
-                    style: sheet.textStyles.titleMedium,
-                  ),
-                ),
-                const SizedBox(height: TokensSpacing.s),
-                for (final d in deadlines)
-                  AppFocusOutline(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        d.completed
-                            ? AppIcons.done
-                            : (d.deadlineType?.icon ?? AppIcons.delivery),
-                        color: d.completed
-                            ? sheet.palette.success
-                            : sheet.colors.primary,
-                      ),
-                      title: Text(
-                        d.title ?? d.deadlineType?.label(sheet) ?? '',
-                      ),
-                      subtitle: Text(
-                        [
-                          '${PlannerFormats.dayShort(d.start)} · '
-                              '${PlannerFormats.time(d.start)}',
-                          if (d.completed) l10n.plannerDeadlineDoneCaption,
-                          ?d.subjectName,
-                        ].join(' · '),
-                      ),
-                      trailing: const Icon(AppIcons.next),
-                      onTap: () {
-                        Navigator.of(sheet).pop();
-                        onDeadlineTap(d.id);
-                      },
-                    ),
-                  ),
-                const SizedBox(height: TokensSpacing.s),
-                OutlinedButton.icon(
-                  icon: const Icon(AppIcons.delivery),
-                  onPressed: () {
-                    Navigator.of(sheet).pop();
-                    onAllDeadlines();
-                  },
-                  label: Text(l10n.plannerWeekDeadlinesAll),
-                ),
-              ],
-            ),
-          );
-        },
-      );
 
   /// Las parejas que coinciden y a qué hora; tocar una abre su evento.
   Future<void> _showConflicts(BuildContext context) =>
@@ -265,11 +170,34 @@ class _BalanceChip extends StatelessWidget {
           size: TokensSize.iconS,
           color: balance.state.color(context),
         ),
-        label: Text(label),
+        label: SummaryChipLabel(label),
         onPressed: onTap,
       ),
     );
   }
+}
+
+/// Texto de un chip de la línea de cifras con la flecha de «abre algo»: así
+/// se lee como botón y no como dato suelto. La flecha es decorativa (el chip
+/// ya es botón para el lector).
+class SummaryChipLabel extends StatelessWidget {
+  const SummaryChipLabel(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // En la fila que se desliza el ancho no tiene tope (una línea); con el
+      // texto grande los chips van en un Wrap y el texto baja de línea.
+      if (context.largeText) Flexible(child: Text(text)) else Text(text),
+      const SizedBox(width: TokensSpacing.xxs),
+      const ExcludeSemantics(
+        child: Icon(AppIcons.next, size: TokensSize.iconXs),
+      ),
+    ],
+  );
 }
 
 /// Estado del balance con icono y texto (no solo color).

@@ -104,6 +104,23 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   /// Rango de la semana: recibe el foco tras «Hoy».
   final _weekFocus = FocusNode(debugLabel: 'planner-week');
 
+  /// «+ Añadir» con su texto (falso: solo «+», mientras se desplaza).
+  bool _fabExtended = true;
+
+  /// El botón se encoge mientras la rejilla baja (no tapa los eventos de la
+  /// esquina) y vuelve al subir o al parar.
+  bool _onGridScroll(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false;
+    final extended = switch (n) {
+      ScrollUpdateNotification(:final scrollDelta?) when scrollDelta != 0 =>
+        scrollDelta < 0,
+      ScrollEndNotification() => true,
+      _ => _fabExtended,
+    };
+    if (extended != _fabExtended) setState(() => _fabExtended = extended);
+    return false;
+  }
+
   /// Partes que señala la guía la primera vez (ADR 0049 y 0060).
   final _addKey = GlobalKey(debugLabel: 'guide-calendar-add');
   final _weekKey = GlobalKey(debugLabel: 'guide-calendar-week');
@@ -521,12 +538,16 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
             // Sin barra de título: la fila de la semana hace de cabecera (su
             // rango es el encabezado de la pantalla para el lector) y deja la
             // altura a la rejilla (ADR 0060).
-            floatingActionButton: FloatingActionButton(
+            // «+ Añadir» con texto; al desplazar la rejilla se encoge a «+»
+            // y el tooltip sigue dando el nombre completo.
+            floatingActionButton: FloatingActionButton.extended(
               key: _addKey,
               heroTag: 'planner-add-block',
               tooltip: l10n.plannerAddBlock,
+              isExtended: _fabExtended,
               onPressed: () => _openEditor(start: _nextSlot(state.weekStart)),
-              child: const Icon(AppIcons.add),
+              icon: const Icon(AppIcons.add),
+              label: Text(l10n.plannerAddShort),
             ),
             body: SafeArea(
               child: Column(
@@ -542,7 +563,12 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
                       _bloc.add(const CalendarEvent.refreshed());
                     },
                   ),
-                  Expanded(child: _body(context, state)),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: _onGridScroll,
+                      child: _body(context, state),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -576,18 +602,9 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
               KeyedSubtree(
                 key: _summaryKey,
                 child: WeekSummaryChips(
-                  deadlines: state.deadlines,
                   balance: state.balance,
                   conflicts: state.conflicts,
                   titleOf: (b) => _titleOf(state, b),
-                  onDeadlineTap: (id) async {
-                    await context.push<void>(PlannerPaths.deadline(id));
-                    _bloc.add(const CalendarEvent.refreshed());
-                  },
-                  onAllDeadlines: () async {
-                    await context.push<void>(PlannerPaths.deadlines);
-                    _bloc.add(const CalendarEvent.refreshed());
-                  },
                   onBalanceTap: () => _openWeeklyLoad(state.weekStart),
                   onConflictTap: _openDetails,
                 ),
@@ -750,9 +767,15 @@ class _WeekHeader extends StatelessWidget {
         ? null
         : TextButton(onPressed: today, child: Text(l10n.plannerToday));
     final tools = <Widget>[
-      IconButton(
+      // Tono propio (el violeta de lo académico, como su chip): se distingue
+      // de «Concentrarme» y del ⋮ sin depender solo del dibujo.
+      IconButton.filledTonal(
         key: deadlinesKey,
         tooltip: l10n.plannerMenuDeadlines,
+        style: IconButton.styleFrom(
+          backgroundColor: context.colors.primaryContainer,
+          foregroundColor: context.colors.onPrimaryContainer,
+        ),
         onPressed: () => onOpen(PlannerPaths.deadlines),
         icon: const Icon(AppIcons.delivery),
       ),

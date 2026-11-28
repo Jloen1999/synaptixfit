@@ -72,6 +72,7 @@
   },
   "plannerReminderSettings": "Ajustar los avisos",
   "plannerAddBlock": "Añadir al calendario",
+  "plannerAddShort": "Añadir",
   "plannerEmptyWeekHint": "Semana libre: toca un hueco para añadir un evento.",
   "plannerResizeHandle": "Cambiar duración",
   "plannerBlockSemantics": "{type}, de {start} a {end}",
@@ -914,14 +915,6 @@
     }
   },
   "plannerTomorrow": "Mañana",
-  "plannerChipDeadlines": "{count, plural, =1{1 entrega o examen} other{{count} entregas y exámenes}}",
-  "@plannerChipDeadlines": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "plannerChipBalance": "{study} h estudio · {sport} h deporte",
   "@plannerChipBalance": {
     "placeholders": {
@@ -952,8 +945,6 @@
       }
     }
   },
-  "plannerWeekDeadlinesTitle": "Entregas y exámenes de esta semana",
-  "plannerWeekDeadlinesAll": "Ver todas las entregas y exámenes",
   "plannerDetailsWhen": "{day}, {time}",
   "@plannerDetailsWhen": {
     "placeholders": {
@@ -1002,6 +993,6 @@
   "plannerDetailsGoToClass": "Entrar a la clase en línea",
   "plannerDetailsLinkFailed": "No hemos podido abrir el enlace de la clase.",
   "guideCalendarSummaryTitle": "Tu semana en cifras",
-  "guideCalendarSummaryBody": "Toca una cifra para ver el detalle: entregas, horas de estudio y deporte o choques de horario.",
+  "guideCalendarSummaryBody": "Toca una cifra para ver el detalle: horas de estudio y deporte o choques de horario.",
   "plannerDetailsGoToClassSpoken": "Entrar a la clase en línea. Se abre fuera de la app"
 }

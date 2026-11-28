@@ -70,3 +70,4 @@ De arriba abajo, lo que se ve sin desplazarse en un móvil:
 - Gimnasio se reordena: las claves de la guía de la primera vez (ADR 0049) se movieron con sus partes («Hoy toca»,
   «Mis rutinas», el atajo Plantillas).
 - Se quitan 13 textos que ya no usa ninguna pantalla.
+- Tanda 1 (28-11-2026, maqueta `deportes_gimnasio_calendario`): atajos de Gimnasio Nueva rutina · Sesión libre · Plantillas · Más por ancho real (2×2 con el icono al lado si no caben cuatro; seis, con Ejercicios e Historial, si caben en una fila; si no, van en «Más»).
