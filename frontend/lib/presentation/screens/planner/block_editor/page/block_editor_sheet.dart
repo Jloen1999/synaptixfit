@@ -8,10 +8,13 @@ import '../../../../../domain/models/planner/block_draft.dart';
 import '../../../../../domain/models/planner/calendar_block.dart';
 import '../../../../../domain/models/planner/deadline.dart';
 import '../../../../../domain/models/planner/planner_options.dart';
+import '../../../../../domain/models/training/sport_activity.dart';
 import '../../../../extensions/context_extensions.dart';
+import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../training/widgets/sport_labels.dart';
 import '../../planner_routes.dart';
 import '../../widgets/block_type_picker.dart';
 import '../../widgets/planner_focus.dart';
@@ -19,12 +22,13 @@ import '../../widgets/planner_form_fields.dart';
 import '../../widgets/planner_visuals.dart';
 import '../bloc/block_editor_bloc.dart';
 
-/// Hoja de crear/editar un evento del calendario en tres pasos («¿Qué es?»,
-/// «¿Cuándo?», «Repetir y aviso») y «Más opciones» con lo que aplica a su
-/// tipo. Al crear incluye la pestaña para repartir una rutina. Al editar solo
-/// cambia el evento: marcarlo, moverlo, concentrarse o eliminarlo está en su
-/// ficha de lectura (ADR 0060), que es desde donde se abre. Devuelve un
-/// [BlockEditorOutcome] al cerrarse; lo resuelve el calendario.
+/// Hoja de crear/editar un evento del calendario. Crear va en dos pasos (ADR
+/// 0070): «¿Qué quieres añadir?» (tarjetas de [_AddKind]) y solo los campos
+/// de lo elegido, con cuándo, «Más opciones» y una acción que dice lo que se
+/// añade; repartir una rutina está dentro de «Gimnasio». Editar conserva sus
+/// pasos («¿Qué es?», «¿Cuándo?», «Repetir y aviso») y solo cambia el evento:
+/// marcarlo, moverlo o eliminarlo está en su ficha de lectura (ADR 0060).
+/// Devuelve un [BlockEditorOutcome] al cerrarse; lo resuelve el calendario.
 class BlockEditorSheet extends StatelessWidget {
   const BlockEditorSheet({super.key, this.block, this.start});
 
@@ -67,8 +71,33 @@ class _EditorView extends StatefulWidget {
   State<_EditorView> createState() => _EditorViewState();
 }
 
-class _EditorViewState extends State<_EditorView>
-    with SingleTickerProviderStateMixin, ErrorsMessageMixin {
+/// Lo que se puede añadir desde el paso 1. Deporte y WOD se guardan como
+/// evento de deporte con su nombre en los temas (sin campos nuevos en la API).
+enum _AddKind {
+  study(BlockType.study, AppTileTone.tertiary),
+  classSession(BlockType.classSession, AppTileTone.tertiary),
+  deadline(null, AppTileTone.tertiary),
+  gym(BlockType.sport, AppTileTone.secondary),
+  sport(BlockType.sport, AppTileTone.secondary),
+  wod(BlockType.sport, AppTileTone.secondary),
+  personal(BlockType.personal, AppTileTone.neutral),
+  rest(BlockType.rest, AppTileTone.neutral);
+
+  const _AddKind(this.type, this.tone);
+
+  /// Tipo de evento con el que se guarda (la entrega no crea evento).
+  final BlockType? type;
+  final AppTileTone tone;
+
+  IconData get icon => switch (this) {
+    _AddKind.deadline => AppIcons.exam,
+    _AddKind.sport => AppIcons.sportKind,
+    _AddKind.wod => AppIcons.wodKind,
+    _ => type!.icon,
+  };
+}
+
+class _EditorViewState extends State<_EditorView> with ErrorsMessageMixin {
   /// Pasos numerados de la hoja (el tercero siempre está: el aviso).
   /// Descanso, comida y sueño no llevan aviso (`ReminderPlanner`).
   bool get _hasReminder => switch (_type) {
@@ -82,9 +111,16 @@ class _EditorViewState extends State<_EditorView>
   /// Esta semana y 15 más: el límite del servidor (`MAX_WEEKLY_REPEATS`).
   static const _maxRepeatTotalWeeks = 16;
 
-  /// La pestaña «Distribuir rutina» solo al crear y si se ve el deporte.
-  late final bool _withRoutineTab;
-  late final TabController _tabs;
+  // Crear en dos pasos: sin [_kind] se está en «¿Qué quieres añadir?».
+  _AddKind? _kind;
+
+  /// Dentro de «Gimnasio»: repartir la rutina en vez de añadir un entreno.
+  bool _distributing = false;
+  Sport? _sport;
+  SportMode _sportMode = SportMode.match;
+
+  /// «Cambiar tipo»: recibe el foco al entrar en el paso 2.
+  final _changeKindFocus = FocusNode();
 
   // Evento.
   late BlockType _type;
@@ -139,9 +175,6 @@ class _EditorViewState extends State<_EditorView>
     super.initState();
     final b = widget.block;
     final focus = context.usageFocus;
-    _withRoutineTab = b == null && focus.allowsBlock(BlockType.sport);
-    _tabs = TabController(length: _withRoutineTab ? 2 : 1, vsync: this)
-      ..addListener(() => setState(() {}));
     final start = b?.start ?? widget.start;
     final end = b?.end ?? widget.start.add(const Duration(hours: 1));
     _type =
@@ -179,7 +212,7 @@ class _EditorViewState extends State<_EditorView>
 
   @override
   void dispose() {
-    _tabs.dispose();
+    _changeKindFocus.dispose();
     _topics.dispose();
     _location.dispose();
     _deadlineTitle.dispose();
@@ -226,12 +259,76 @@ class _EditorViewState extends State<_EditorView>
     });
   }
 
+  /// Paso 1 → paso 2: el foco va a «Cambiar tipo» (o al nombre, si es lo
+  /// único que se pide) para que el lector y el teclado sigan desde arriba.
+  void _pickKind(_AddKind kind) {
+    setState(() {
+      _kind = kind;
+      _distributing = false;
+      _sport = null;
+      _name.clear();
+    });
+    final type = kind.type;
+    if (type != null) _changeType(type);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      (kind == _AddKind.personal ? _nameFocus : _changeKindFocus)
+          .requestFocus();
+    });
+  }
+
+  String _kindLabel(BuildContext context, _AddKind kind) {
+    final l10n = context.localizations;
+    return switch (kind) {
+      _AddKind.deadline => l10n.plannerAddKindDeadline,
+      _AddKind.gym => l10n.plannerAddKindGym,
+      _AddKind.sport => l10n.plannerAddKindSport,
+      _AddKind.wod => l10n.trainingSectionWod,
+      _AddKind.rest => l10n.plannerAddKindRest,
+      _ => kind.type!.label(context),
+    };
+  }
+
+  /// Nombre con el que se guarda un deporte: «Partido de pádel», «Natación»
+  /// o lo que se escriba en «otro deporte».
+  String _sportText(AppLocalizations l10n) {
+    final sport = _sport;
+    if (sport == null) return '';
+    final name = SportLabels.name(l10n, sport);
+    if (sport == Sport.other) {
+      final typed = _name.text.trim();
+      return typed.isEmpty ? name : typed;
+    }
+    if (sport.category != SportCategory.match) return name;
+    final text = _sportMode == SportMode.match
+        ? l10n.plannerAddSportMatchOf(name.toLowerCase())
+        : l10n.plannerAddSportTrainingOf(name.toLowerCase());
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  /// Lo que dice la acción principal al crear: «Añadir partido de pádel».
+  String _addLabel(BuildContext context) {
+    final l10n = context.localizations;
+    final sportText = _sportText(l10n);
+    return l10n.plannerAddWhat(switch (_kind) {
+      _AddKind.gym => l10n.plannerAddGymWhat,
+      _AddKind.wod => l10n.trainingSectionWod,
+      _AddKind.personal => l10n.plannerAddPersonalWhat,
+      _AddKind.sport =>
+        sportText.isEmpty
+            ? l10n.plannerAddKindSport.toLowerCase()
+            : sportText[0].toLowerCase() + sportText.substring(1),
+      _ => _type.label(context).toLowerCase(),
+    });
+  }
+
   void _setDuration(int minutes) => setState(
     () => _endMin = (_startMin + minutes).clamp(_startMin, 24 * 60 - 1),
   );
 
   void _save() {
     final t = _type;
+    final l10n = context.localizations;
     context.read<BlockEditorBloc>().add(
       BlockEditorEvent.saveRequested(
         BlockDraft(
@@ -240,14 +337,22 @@ class _EditorViewState extends State<_EditorView>
           end: _at(_endMin),
           // Lo que no se muestra para este tipo no se guarda.
           subjectId: t.usesSubject ? _subjectId : null,
-          topics: t.requiresName
-              ? _name.text.trim()
-              : (t.usesTopics ? _topics.text : ''),
+          topics: switch (_kind) {
+            _AddKind.sport => _sportText(l10n),
+            _AddKind.wod => l10n.trainingSectionWod,
+            _ =>
+              t.requiresName
+                  ? _name.text.trim()
+                  : (t.usesTopics ? _topics.text : ''),
+          },
           location: t.usesLocation ? _location.text : '',
           priority: t.usesPriority ? _priority : null,
           privateBlock: _private,
           classKind: t == BlockType.classSession ? _classKind : null,
-          routineId: t == BlockType.sport ? _routineId : null,
+          routineId:
+              t == BlockType.sport && (_kind == null || _kind == _AddKind.gym)
+              ? _routineId
+              : null,
           // Si sigue siendo la misma rutina, el evento conserva su día
           // enlazado (si no, editarlo lo convertiría en deporte libre).
           routineWeekId: _keepsRoutineDay(t)
@@ -392,7 +497,12 @@ class _EditorViewState extends State<_EditorView>
       },
       builder: (context, state) {
         final feedback = _feedback(context, state);
-        final onRoutineTab = _withRoutineTab && _tabs.index == 1;
+        final kind = _kind;
+        final choosing = !_editing && kind == null;
+        final onRoutineTab = kind == _AddKind.gym && _distributing;
+        // Elegir tipo y «Entrega o examen» no llevan botón: sus tarjetas ya
+        // son la acción.
+        final hasAction = !choosing && kind != _AddKind.deadline;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -406,7 +516,9 @@ class _EditorViewState extends State<_EditorView>
                       child: Text(
                         _editing
                             ? l10n.plannerEditBlockTitle(_type.apiValue)
-                            : l10n.plannerNewBlockTitle,
+                            : kind == null
+                            ? l10n.plannerAddStepWhat
+                            : _kindLabel(context, kind),
                         style: context.textStyles.titleLarge,
                       ),
                     ),
@@ -419,63 +531,358 @@ class _EditorViewState extends State<_EditorView>
                 ],
               ),
             ),
-            if (_withRoutineTab)
-              TabBar(
-                controller: _tabs,
-                tabs: [
-                  Tab(text: l10n.plannerTabBlock),
-                  Tab(text: l10n.plannerTabRoutine),
-                ],
+            if (kind != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TokensSpacing.s,
+                ),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    focusNode: _changeKindFocus,
+                    onPressed: () => setState(() => _kind = null),
+                    icon: const Icon(AppIcons.back),
+                    label: Text(l10n.plannerAddChangeKind),
+                  ),
+                ),
               ),
             Expanded(
-              child: state.status == BlockEditorStatus.loading
+              child: choosing
+                  ? _kindStep(context)
+                  : state.status == BlockEditorStatus.loading
                   ? const _FormSkeleton()
-                  : TabBarView(
-                      controller: _tabs,
-                      children: [
-                        _blockForm(context, state),
-                        if (_withRoutineTab) _routineForm(context, state),
-                      ],
+                  : onRoutineTab
+                  ? _routineForm(context, state)
+                  : kind != null
+                  ? _createForm(context, state, kind)
+                  : _blockForm(context, state),
+            ),
+            if (hasAction)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  TokensSpacing.m,
+                  TokensSpacing.s,
+                  TokensSpacing.m,
+                  TokensSpacing.m,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (feedback != null) ...[
+                      AppInlineMessage(message: feedback),
+                      const SizedBox(height: TokensSpacing.s),
+                    ],
+                    AppPrimaryButton(
+                      label: onRoutineTab
+                          ? l10n.plannerDistributeAction
+                          : (_editing
+                                ? l10n.plannerSaveChanges
+                                : _addLabel(context)),
+                      loading: state.submitting,
+                      onPressed: state.status != BlockEditorStatus.ready
+                          ? null
+                          : onRoutineTab
+                          ? (_distRoutineId == null ||
+                                    (!_routineWeekdays && _weekdays.isEmpty)
+                                ? null
+                                : _distribute)
+                          : (kind == _AddKind.sport && _sport == null)
+                          ? null
+                          : _save,
                     ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                TokensSpacing.m,
-                TokensSpacing.s,
-                TokensSpacing.m,
-                TokensSpacing.m,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (feedback != null) ...[
-                    AppInlineMessage(message: feedback),
-                    const SizedBox(height: TokensSpacing.s),
                   ],
-                  AppPrimaryButton(
-                    label: onRoutineTab
-                        ? l10n.plannerDistributeAction
-                        : (_editing
-                              ? l10n.plannerSaveChanges
-                              : l10n.plannerCreateBlock),
-                    loading: state.submitting,
-                    onPressed: state.status != BlockEditorStatus.ready
-                        ? null
-                        : onRoutineTab
-                        ? (_distRoutineId == null ||
-                                  (!_routineWeekdays && _weekdays.isEmpty)
-                              ? null
-                              : _distribute)
-                        : _save,
-                  ),
-                ],
+                ),
               ),
-            ),
           ],
         );
       },
     );
   }
+
+  /// Paso 1: una tarjeta con icono y nombre por cada cosa que se puede
+  /// añadir según el modo de uso.
+  Widget _kindStep(BuildContext context) {
+    final focus = context.usageFocus;
+    return ListView(
+      padding: const EdgeInsets.all(TokensSpacing.m),
+      children: [
+        AppShortcutGrid(
+          tiles: [
+            for (final kind in _AddKind.values)
+              if (kind == _AddKind.deadline
+                  ? focus.includesAcademic
+                  : focus.allowsBlock(kind.type!))
+                AppShortcutTile(
+                  icon: kind.icon,
+                  label: _kindLabel(context, kind),
+                  tone: kind.tone,
+                  onTap: () => _pickKind(kind),
+                ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Paso 2: solo los campos de lo elegido, cuándo y «Más opciones».
+  Widget _createForm(
+    BuildContext context,
+    BlockEditorState state,
+    _AddKind kind,
+  ) {
+    final l10n = context.localizations;
+    const small = SizedBox(height: TokensSpacing.s);
+    const stepGap = SizedBox(height: TokensSpacing.l);
+    const padding = EdgeInsets.fromLTRB(
+      TokensSpacing.m,
+      TokensSpacing.s,
+      TokensSpacing.m,
+      TokensSpacing.xl,
+    );
+    if (kind == _AddKind.deadline) {
+      return ListView(
+        padding: padding,
+        children: [
+          Text(
+            l10n.plannerOpensDeadlineForm,
+            style: context.textStyles.bodyLarge,
+          ),
+          small,
+          AppShortcutGrid(
+            tiles: [
+              for (final t in const [BlockType.delivery, BlockType.exam])
+                AppShortcutTile(
+                  icon: t.icon,
+                  label: t.label(context),
+                  tone: kind.tone,
+                  onTap: () => _changeType(t),
+                ),
+            ],
+          ),
+        ],
+      );
+    }
+    final own = <Widget>[
+      ...switch (kind) {
+        _AddKind.study => [
+          _subjectField(context, state),
+          small,
+          _topicsField(context),
+        ],
+        _AddKind.classSession => [
+          _subjectField(context, state),
+          small,
+          _locationField(context, label: l10n.plannerFieldRoom),
+          small,
+          _classKindField(context),
+        ],
+        _AddKind.personal => _nameField(context, state),
+        _AddKind.gym => _gymFields(context, state),
+        _AddKind.sport => _sportFields(context),
+        _AddKind.rest => [
+          AppSegmentedChoice<BlockType>(
+            label: l10n.plannerAddRestWhich,
+            values: const [BlockType.rest, BlockType.meal, BlockType.sleep],
+            selected: _type,
+            labelOf: (t) => t.label(context),
+            onChanged: (t) {
+              if (t != null) _changeType(t);
+            },
+          ),
+        ],
+        _ => const <Widget>[],
+      },
+    ];
+    return ListView(
+      padding: padding,
+      children: [
+        if (state.optionsError != null) ...[
+          AppInlineMessage(
+            message: l10n.plannerOptionsError,
+            tone: AppMessageTone.warning,
+          ),
+          small,
+        ],
+        ...own,
+        if (own.isNotEmpty) stepGap,
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.plannerStepWhen,
+            style: context.textStyles.titleMedium,
+          ),
+        ),
+        small,
+        _dateField(context, false),
+        small,
+        ..._timeFields(context, false),
+        stepGap,
+        _moreOptionsToggle(context),
+        if (_moreOptions) ...[
+          small,
+          if (_type.canRepeatWeekly) ..._repeatFields(context),
+          ..._advancedFields(context, state),
+          if (_hasReminder) ...[small, _reminderNote(context)],
+        ],
+      ],
+    );
+  }
+
+  /// Gimnasio: la rutina del entreno o una sesión libre, y la puerta a
+  /// repartir la rutina entera.
+  List<Widget> _gymFields(BuildContext context, BlockEditorState state) {
+    final l10n = context.localizations;
+    return [
+      _routineField(context, state, none: l10n.plannerAddGymFree),
+      if (state.routines.isNotEmpty) ...[
+        const SizedBox(height: TokensSpacing.s),
+        OutlinedButton.icon(
+          onPressed: () => setState(() => _distributing = true),
+          icon: const Icon(Icons.event_repeat_rounded),
+          label: Text(l10n.plannerDistributeAction),
+        ),
+      ],
+    ];
+  }
+
+  /// Deporte: cuál y, si es de partido, partido o entreno.
+  List<Widget> _sportFields(BuildContext context) {
+    final l10n = context.localizations;
+    final sport = _sport;
+    const small = SizedBox(height: TokensSpacing.s);
+    return [
+      AppSegmentedChoice<Sport>(
+        label: l10n.plannerAddSportWhich,
+        // El WOD tiene su propia tarjeta en el paso 1.
+        values: [
+          for (final s in Sport.values)
+            if (s != Sport.wod) s,
+        ],
+        selected: sport,
+        labelOf: (s) => SportLabels.name(l10n, s),
+        onChanged: (s) => setState(() => _sport = s ?? _sport),
+      ),
+      if (sport?.category == SportCategory.match) ...[
+        small,
+        AppSegmentedChoice<SportMode>(
+          label: l10n.plannerAddSportMode,
+          values: SportMode.values,
+          selected: _sportMode,
+          labelOf: (m) => SportLabels.mode(l10n, m),
+          onChanged: (m) => setState(() => _sportMode = m ?? _sportMode),
+        ),
+      ],
+      if (sport == Sport.other) ...[
+        small,
+        AppTextField(
+          label: l10n.plannerAddSportOtherName,
+          controller: _name,
+          icon: Icons.label_outline_rounded,
+          textCapitalization: TextCapitalization.sentences,
+          // La acción principal nombra el deporte según se escribe.
+          onChanged: (_) => setState(() {}),
+        ),
+      ],
+    ];
+  }
+
+  Widget _dateField(BuildContext context, bool locked) => PickerField(
+    label: context.localizations.plannerFieldDate,
+    value: PlannerFormats.longDate(_day),
+    icon: Icons.calendar_today_rounded,
+    onTap: locked
+        ? null
+        : () async {
+            final picked = await pickPlannerDate(context, initial: _day);
+            if (picked != null) setState(() => _day = picked);
+          },
+  );
+
+  /// «Repetir cada semana» y cuántas semanas.
+  List<Widget> _repeatFields(BuildContext context) {
+    final l10n = context.localizations;
+    return [
+      AppFocusOutline(
+        child: SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _repeat,
+          onChanged: (v) => setState(() => _repeat = v),
+          title: Text(l10n.plannerRepeatWeekly),
+          subtitle: Text(l10n.plannerRepeatWeeklyHint),
+          secondary: const Icon(Icons.event_repeat_rounded),
+        ),
+      ),
+      if (_repeat)
+        Padding(
+          // Alineado con el texto del interruptor (después de su icono).
+          padding: const EdgeInsetsDirectional.only(
+            start: TokensSize.iconM + TokensSpacing.m,
+          ),
+          child: AppStepperField(
+            label: l10n.plannerRepeatWeeksLabel,
+            value: _repeatTotalWeeks,
+            min: 2,
+            max: _maxRepeatTotalWeeks,
+            display: l10n.plannerRepeatWeeks,
+            onChanged: (v) => setState(() => _repeatTotalWeeks = v),
+          ),
+        ),
+      const SizedBox(height: TokensSpacing.s),
+    ];
+  }
+
+  Widget _topicsField(BuildContext context) => AppTextField(
+    label: context.localizations.plannerFieldTopics,
+    hint: context.localizations.plannerFieldTopicsHint,
+    controller: _topics,
+    icon: AppIcons.note,
+    maxLines: 3,
+  );
+
+  Widget _locationField(BuildContext context, {String? label}) => AppTextField(
+    label: label ?? context.localizations.plannerFieldLocation,
+    controller: _location,
+    icon: AppIcons.location,
+  );
+
+  Widget _classKindField(BuildContext context) => AppSegmentedChoice<ClassKind>(
+    label: context.localizations.plannerFieldClassKind,
+    values: ClassKind.values,
+    selected: _classKind,
+    allowEmpty: true,
+    labelOf: (k) => k.label(context),
+    onChanged: (k) => setState(() => _classKind = k),
+  );
+
+  Widget _routineField(
+    BuildContext context,
+    BlockEditorState state, {
+    String? none,
+  }) {
+    final l10n = context.localizations;
+    return DropdownButtonFormField<String?>(
+      initialValue: _routineId,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: l10n.plannerFieldRoutine,
+        prefixIcon: const Icon(AppIcons.routine),
+      ),
+      items: [
+        DropdownMenuItem(
+          value: null,
+          child: Text(none ?? l10n.plannerNoRoutine),
+        ),
+        for (final r in state.routines)
+          DropdownMenuItem(value: r.id, child: Text(r.name)),
+      ],
+      onChanged: (v) => setState(() => _routineId = v),
+    );
+  }
+
+  // Lo que el paso 2 de crear ya pide arriba no se repite en «Más opciones».
+  bool get _subjectUp => _subjectFirst || _kind == _AddKind.classSession;
+  bool get _topicsUp => _kind == _AddKind.study;
+  bool get _classUp => _kind == _AddKind.classSession;
 
   Widget _blockForm(BuildContext context, BlockEditorState state) {
     final l10n = context.localizations;
@@ -541,17 +948,7 @@ class _EditorViewState extends State<_EditorView>
           ),
           small,
         ],
-        PickerField(
-          label: l10n.plannerFieldDate,
-          value: PlannerFormats.longDate(_day),
-          icon: Icons.calendar_today_rounded,
-          onTap: locked
-              ? null
-              : () async {
-                  final picked = await pickPlannerDate(context, initial: _day);
-                  if (picked != null) setState(() => _day = picked);
-                },
-        ),
+        _dateField(context, locked),
         small,
         ..._timeFields(context, locked),
         if (showStep3) ...[
@@ -567,34 +964,7 @@ class _EditorViewState extends State<_EditorView>
           ),
           small,
           // Exámenes y entregas no se repiten: cada uno tiene su fecha.
-          if (canRepeat) ...[
-            AppFocusOutline(
-              child: SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _repeat,
-                onChanged: (v) => setState(() => _repeat = v),
-                title: Text(l10n.plannerRepeatWeekly),
-                subtitle: Text(l10n.plannerRepeatWeeklyHint),
-                secondary: const Icon(Icons.event_repeat_rounded),
-              ),
-            ),
-            if (_repeat)
-              Padding(
-                // Alineado con el texto del interruptor (después de su icono).
-                padding: const EdgeInsetsDirectional.only(
-                  start: TokensSize.iconM + TokensSpacing.m,
-                ),
-                child: AppStepperField(
-                  label: l10n.plannerRepeatWeeksLabel,
-                  value: _repeatTotalWeeks,
-                  min: 2,
-                  max: _maxRepeatTotalWeeks,
-                  display: l10n.plannerRepeatWeeks,
-                  onChanged: (v) => setState(() => _repeatTotalWeeks = v),
-                ),
-              ),
-            small,
-          ],
+          if (canRepeat) ..._repeatFields(context),
           if (hasReminder) _reminderNote(context),
         ],
         stepGap,
@@ -686,13 +1056,15 @@ class _EditorViewState extends State<_EditorView>
     final l10n = context.localizations;
     final t = _type;
     return [
-      if (t.usesSubject && !_subjectFirst) l10n.plannerFieldSubject,
-      if (t.usesTopics && !t.requiresName) l10n.plannerFieldTopics,
-      if (t.usesLocation) l10n.plannerFieldLocation,
+      if (_kind != null && t.canRepeatWeekly) l10n.plannerRepeatWeekly,
+      if (t.usesSubject && !_subjectUp) l10n.plannerFieldSubject,
+      if (t.usesTopics && !t.requiresName && !_topicsUp)
+        l10n.plannerFieldTopics,
+      if (t.usesLocation && !_classUp) l10n.plannerFieldLocation,
       if (t.usesPriority) l10n.plannerFieldPriority,
-      if (t == BlockType.classSession) l10n.plannerFieldClassKind,
+      if (t == BlockType.classSession && !_classUp) l10n.plannerFieldClassKind,
       l10n.plannerFieldPrivate,
-      if (t == BlockType.sport) l10n.plannerFieldRoutine,
+      if (t == BlockType.sport && _kind == null) l10n.plannerFieldRoutine,
       if (t.usesChallenge) l10n.plannerFieldChallenge,
       if (t.usesDeadlineLink) l10n.plannerFieldDeadline,
     ];
@@ -776,28 +1148,15 @@ class _EditorViewState extends State<_EditorView>
     const small = SizedBox(height: TokensSpacing.s);
     const gap = SizedBox(height: TokensSpacing.m);
     return [
-      if (_type.usesSubject && !_subjectFirst) ...[
+      if (_type.usesSubject && !_subjectUp) ...[
         _subjectField(context, state),
         small,
       ],
-      if (_type.usesTopics && !_type.requiresName) ...[
-        AppTextField(
-          label: l10n.plannerFieldTopics,
-          hint: l10n.plannerFieldTopicsHint,
-          controller: _topics,
-          icon: AppIcons.note,
-          maxLines: 3,
-        ),
+      if (_type.usesTopics && !_type.requiresName && !_topicsUp) ...[
+        _topicsField(context),
         small,
       ],
-      if (_type.usesLocation) ...[
-        AppTextField(
-          label: l10n.plannerFieldLocation,
-          controller: _location,
-          icon: AppIcons.location,
-        ),
-        small,
-      ],
+      if (_type.usesLocation && !_classUp) ...[_locationField(context), small],
       if (_type.usesPriority) ...[
         small,
         // Con el texto al 200 % pasa a chips en varias filas: no se corta.
@@ -811,16 +1170,9 @@ class _EditorViewState extends State<_EditorView>
         ),
         small,
       ],
-      if (_type == BlockType.classSession) ...[
+      if (_type == BlockType.classSession && !_classUp) ...[
         small,
-        AppSegmentedChoice<ClassKind>(
-          label: l10n.plannerFieldClassKind,
-          values: ClassKind.values,
-          selected: _classKind,
-          allowEmpty: true,
-          labelOf: (k) => k.label(context),
-          onChanged: (k) => setState(() => _classKind = k),
-        ),
+        _classKindField(context),
         small,
       ],
       AppFocusOutline(
@@ -833,22 +1185,9 @@ class _EditorViewState extends State<_EditorView>
           secondary: const Icon(AppIcons.readOnly),
         ),
       ),
-      if (_type == BlockType.sport) ...[
+      if (_type == BlockType.sport && _kind == null) ...[
         gap,
-        DropdownButtonFormField<String?>(
-          initialValue: _routineId,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: l10n.plannerFieldRoutine,
-            prefixIcon: const Icon(AppIcons.routine),
-          ),
-          items: [
-            DropdownMenuItem(value: null, child: Text(l10n.plannerNoRoutine)),
-            for (final r in state.routines)
-              DropdownMenuItem(value: r.id, child: Text(r.name)),
-          ],
-          onChanged: (v) => setState(() => _routineId = v),
-        ),
+        _routineField(context, state),
       ],
       if (_type.usesChallenge) ...[
         gap,
@@ -1062,6 +1401,14 @@ class _EditorViewState extends State<_EditorView>
     return ListView(
       padding: const EdgeInsets.all(TokensSpacing.m),
       children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton(
+            onPressed: () => setState(() => _distributing = false),
+            child: Text(l10n.plannerAddSpreadBack),
+          ),
+        ),
+        const SizedBox(height: TokensSpacing.m),
         Text(
           l10n.plannerDistributeIntro,
           style: context.textStyles.bodyMedium?.copyWith(

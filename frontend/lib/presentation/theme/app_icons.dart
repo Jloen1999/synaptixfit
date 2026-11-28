@@ -91,6 +91,10 @@ abstract final class AppIcons {
   /// Rutina de entreno (un evento que es un día de rutina).
   static const IconData routine = Icons.fitness_center_rounded;
 
+  /// Tarjetas «Deporte» y «WOD» de «Añadir al calendario» (ADR 0070).
+  static const IconData sportKind = Icons.sports_soccer_rounded;
+  static const IconData wodKind = Icons.sports_gymnastics_rounded;
+
   /// Lugar de algo (aula, gimnasio).
   static const IconData location = Icons.place_outlined;
 

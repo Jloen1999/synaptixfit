@@ -168,8 +168,6 @@
   "plannerNoLoadYet": "Aún no hay carga registrada para esta semana. Recalcúlala para generarla.",
   "plannerNewBlockTitle": "Nuevo evento",
   "plannerEditBlockTitle": "{type, select, STUDY{Editar estudio} SPORT{Editar entreno} CLASS{Editar clase} REST{Editar descanso} MEAL{Editar comida} SLEEP{Editar sueño} EXAM{Editar examen} DELIVERY{Editar entrega} REVIEW{Editar repaso} PERSONAL{Editar evento personal} other{Editar evento}}",
-  "plannerTabBlock": "Un evento",
-  "plannerTabRoutine": "Distribuir rutina",
   "plannerFieldType": "Tipo",
   "plannerStepWhat": "¿Qué es?",
   "plannerStepWhen": "¿Cuándo?",
@@ -251,7 +249,7 @@
       }
     }
   },
-  "plannerDistributeAction": "Distribuir rutina",
+  "plannerDistributeAction": "Repartir mi rutina en la semana",
   "plannerNoRoutinesTitle": "No tienes rutinas",
   "plannerNoRoutinesMessage": "Crea una rutina en Entreno › Gimnasio para poder repartirla en la semana.",
   "plannerDeadlinesTitle": "Entregas y exámenes",
@@ -994,5 +992,44 @@
   "plannerDetailsLinkFailed": "No hemos podido abrir el enlace de la clase.",
   "guideCalendarSummaryTitle": "Tu semana en cifras",
   "guideCalendarSummaryBody": "Toca una cifra para ver el detalle: horas de estudio y deporte o choques de horario.",
-  "plannerDetailsGoToClassSpoken": "Entrar a la clase en línea. Se abre fuera de la app"
+  "plannerDetailsGoToClassSpoken": "Entrar a la clase en línea. Se abre fuera de la app",
+  "plannerAddStepWhat": "¿Qué quieres añadir?",
+  "plannerAddKindDeadline": "Entrega o examen",
+  "plannerAddKindGym": "Gimnasio",
+  "plannerAddKindSport": "Deporte",
+  "plannerAddKindRest": "Descanso, comida o sueño",
+  "plannerAddChangeKind": "Cambiar tipo",
+  "plannerAddWhat": "Añadir {what}",
+  "@plannerAddWhat": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerAddGymWhat": "entreno de gimnasio",
+  "plannerAddGymFree": "Sesión libre",
+  "plannerAddSportWhich": "¿Cuál?",
+  "plannerAddSportMode": "¿Partido o entreno?",
+  "plannerAddSportMatchOf": "Partido de {sport}",
+  "@plannerAddSportMatchOf": {
+    "placeholders": {
+      "sport": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerAddSportTrainingOf": "Entreno de {sport}",
+  "@plannerAddSportTrainingOf": {
+    "placeholders": {
+      "sport": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerAddSportOtherName": "¿Qué deporte?",
+  "plannerAddRestWhich": "¿Cuál de los tres?",
+  "plannerAddSpreadBack": "Añadir solo un entreno",
+  "plannerFieldRoom": "Aula",
+  "plannerAddPersonalWhat": "evento personal"
 }

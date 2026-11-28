@@ -16,6 +16,7 @@ import 'package:synaptixfit/presentation/screens/auth/session/bloc/session_bloc.
 import 'package:synaptixfit/presentation/screens/planner/block_editor/bloc/block_editor_bloc.dart';
 import 'package:synaptixfit/presentation/screens/planner/block_editor/page/block_editor_sheet.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
+import 'package:synaptixfit/presentation/widgets/widgets.dart';
 
 import 'planner_fixtures.dart';
 
@@ -25,8 +26,8 @@ class _MockEditorBloc extends MockBloc<BlockEditorEvent, BlockEditorState>
 class _MockSessionBloc extends MockBloc<SessionEvent, SessionState>
     implements SessionBloc {}
 
-/// Hoja de crear/editar evento: pasos, nombre de lo personal, atajos de
-/// duración, «Más opciones» según el tipo y accesibilidad.
+/// Hoja de crear/editar evento: crear en dos pasos (ADR 0070), nombre de lo
+/// personal, atajos de duración, «Más opciones» según el tipo y accesibilidad.
 void main() {
   late _MockEditorBloc editor;
   late _MockSessionBloc session;
@@ -116,25 +117,77 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('al crear se ven los tres pasos y los tipos más usados', (
+  testWidgets('al crear, el paso 1 pregunta qué se añade con ocho tarjetas', (
     tester,
   ) async {
     show();
     await pump(tester);
 
-    expect(find.text('Nuevo evento'), findsOneWidget);
-    expect(find.text('¿Qué es?'), findsOneWidget);
-    expect(find.text('¿Cuándo?'), findsOneWidget);
-    expect(find.text('Repetir y aviso'), findsOneWidget);
-    for (final label in ['Estudio', 'Repaso', 'Entreno', 'Clase', 'Personal']) {
-      expect(find.text(label), findsOneWidget);
+    expect(find.text('¿Qué quieres añadir?'), findsOneWidget);
+    for (final label in [
+      'Estudio',
+      'Clase',
+      'Entrega o examen',
+      'Gimnasio',
+      'Deporte',
+      'WOD',
+      'Personal',
+      'Descanso, comida o sueño',
+    ]) {
+      expect(find.widgetWithText(AppShortcutTile, label), findsOneWidget);
     }
-    // Los menos usados esperan en «Más tipos».
-    expect(find.text('Examen'), findsNothing);
-    await tapVisible(tester, find.text('Más tipos'));
-    expect(find.text('Examen'), findsOneWidget);
-    expect(find.text('Sueño'), findsOneWidget);
-    expect(find.text('Menos tipos'), findsOneWidget);
+    // Sin chips de tipo, sin «Más tipos» y sin botón hasta elegir.
+    expect(find.text('Más tipos'), findsNothing);
+    expect(find.text('¿Cuándo?'), findsNothing);
+    expect(find.byType(AppPrimaryButton), findsNothing);
+  });
+
+  testWidgets('paso 2 de Deporte: pádel y partido van en el evento', (
+    tester,
+  ) async {
+    show();
+    await pump(tester);
+
+    await tapVisible(tester, find.text('Deporte'));
+    // El foco entra en el paso 2 por «Cambiar tipo».
+    expect(
+      Focus.of(tester.element(find.text('Cambiar tipo'))).hasFocus,
+      isTrue,
+    );
+    expect(find.text('Añadir deporte'), findsOneWidget);
+    await tapVisible(tester, find.text('Pádel'));
+    expect(find.text('Partido'), findsOneWidget);
+    await tapVisible(tester, find.text('Añadir partido de pádel'));
+
+    final draft = savedDraft();
+    expect(draft.type, BlockType.sport);
+    expect(draft.topics, 'Partido de pádel');
+    expect(draft.routineId, isNull);
+    expect(draft.start, slot);
+  });
+
+  testWidgets('WOD se guarda como deporte con su nombre', (tester) async {
+    show();
+    await pump(tester);
+
+    await tapVisible(tester, find.text('WOD'));
+    await tapVisible(tester, find.text('Añadir WOD'));
+
+    final draft = savedDraft();
+    expect(draft.type, BlockType.sport);
+    expect(draft.topics, 'WOD');
+  });
+
+  testWidgets('«Cambiar tipo» vuelve al paso 1', (tester) async {
+    show();
+    await pump(tester);
+
+    await tapVisible(tester, find.text('Descanso, comida o sueño'));
+    expect(find.text('Añadir descanso'), findsOneWidget);
+    await tapVisible(tester, find.text('Comida'));
+    expect(find.text('Añadir comida'), findsOneWidget);
+    await tapVisible(tester, find.text('Cambiar tipo'));
+    expect(find.text('¿Qué quieres añadir?'), findsOneWidget);
   });
 
   testWidgets('Personal pide un nombre y lo envía en los temas', (
@@ -151,7 +204,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Nombre'),
       '  Dentista ',
     );
-    await tapVisible(tester, find.text('Añadir al calendario'));
+    await tapVisible(tester, find.text('Añadir evento personal'));
 
     final draft = savedDraft();
     expect(draft.type, BlockType.personal);
@@ -200,19 +253,20 @@ void main() {
   testWidgets('los atajos de duración cambian la hora de fin', (tester) async {
     show();
     await pump(tester);
+    await tapVisible(tester, find.text('Estudio'));
 
     expect(find.text('30 min'), findsOneWidget);
     expect(find.text('1 h'), findsOneWidget);
     await tapVisible(tester, find.text('2 h'));
     expect(find.text('11:00'), findsOneWidget);
 
-    await tapVisible(tester, find.text('Añadir al calendario'));
+    await tapVisible(tester, find.text('Añadir estudio'));
     final draft = savedDraft();
     expect(draft.end.difference(draft.start).inMinutes, 120);
     expect(draft.start, slot);
   });
 
-  testWidgets('al crear, «Entrega» abre el formulario de entrega (ADR 0039)', (
+  testWidgets('al crear, «Examen» abre el formulario de entrega (ADR 0039)', (
     tester,
   ) async {
     show();
@@ -248,7 +302,7 @@ void main() {
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
 
-    await tapVisible(tester, find.text('Más tipos'));
+    await tapVisible(tester, find.text('Entrega o examen'));
     await tapVisible(tester, find.text('Examen'));
 
     // Un solo concepto: no se crea un evento, se apunta la entrega con la
@@ -266,12 +320,17 @@ void main() {
     show();
     await pump(tester);
 
-    // Plegado al crear.
-    expect(find.widgetWithText(TextFormField, 'Temas'), findsNothing);
+    // Estudio pide asignatura y temas; lo poco usado espera plegado.
+    await tapVisible(tester, find.text('Estudio'));
+    expect(find.widgetWithText(TextFormField, 'Temas'), findsOneWidget);
+    expect(find.text('Prioridad'), findsNothing);
+    expect(find.text('Repetir cada semana'), findsNothing);
     await tapVisible(tester, find.text('Más opciones'));
     expect(find.text('Prioridad'), findsOneWidget);
+    expect(find.text('Repetir cada semana'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Temas'), findsOneWidget);
 
+    await tapVisible(tester, find.text('Cambiar tipo'));
     await tapVisible(tester, find.text('Personal'));
     expect(find.text('Prioridad'), findsNothing);
     expect(find.widgetWithText(TextFormField, 'Temas'), findsNothing);
@@ -331,15 +390,23 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('los pasos se anuncian como encabezados numerados', (
-      tester,
-    ) async {
+    testWidgets('cada paso tiene su encabezado para el lector', (tester) async {
       show();
       final semantics = tester.ensureSemantics();
       await pump(tester);
 
-      expect(find.bySemanticsLabel('Paso 1 de 3: ¿Qué es?'), findsOneWidget);
-      expect(find.bySemanticsLabel('Paso 2 de 3: ¿Cuándo?'), findsOneWidget);
+      expect(
+        tester.getSemantics(find.text('¿Qué quieres añadir?')),
+        matchesSemantics(label: '¿Qué quieres añadir?', isHeader: true),
+      );
+      await tapVisible(tester, find.text('Clase'));
+      // Clase: asignatura, aula y tipo a la vista.
+      expect(find.widgetWithText(TextFormField, 'Aula'), findsOneWidget);
+      expect(find.text('Tipo de clase'), findsWidgets);
+      expect(
+        tester.getSemantics(find.text('¿Cuándo?')),
+        matchesSemantics(label: '¿Cuándo?', isHeader: true),
+      );
       semantics.dispose();
     });
 
@@ -360,8 +427,21 @@ void main() {
     ) async {
       show();
       await pump(tester, textScale: 2, width: 320, locale: const Locale('fr'));
-      await tapVisible(tester, find.text('Plus de types'));
+      expect(tester.takeException(), isNull);
+      await tapVisible(tester, find.byType(AppShortcutTile).first);
       await tapVisible(tester, find.text('Plus d’options'));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Deporte en 320 px y al 200 %: paso 1 y paso 2 sin desbordes', (
+      tester,
+    ) async {
+      show();
+      await pump(tester, textScale: 2, width: 320);
+      expect(tester.takeException(), isNull);
+      await tapVisible(tester, find.text('Deporte'));
+      await tapVisible(tester, find.text('Pádel'));
+      expect(find.text('Añadir partido de pádel'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
