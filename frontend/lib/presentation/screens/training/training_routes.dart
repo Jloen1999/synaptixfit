@@ -17,6 +17,7 @@ import 'session_detail/page/session_detail_page.dart';
 import 'session_history/page/session_history_page.dart';
 import 'training_home/page/training_home_page.dart';
 import 'weekly_plan/page/weekly_plan_page.dart';
+import 'routine_template_detail/page/routine_template_detail_page.dart';
 import 'routine_templates/page/routine_templates_page.dart';
 import 'shared_routine/page/shared_routine_page.dart';
 import 'run_detail/page/run_detail_page.dart';
@@ -93,6 +94,9 @@ abstract final class TrainingPaths {
 
   /// Plantillas de rutina listas para usar (dentro de la pestaña).
   static const templates = '$root/templates';
+
+  /// Detalle de una plantilla (pantalla completa, con `push`).
+  static String template(String templateId) => '$templates/$templateId';
   static const pastActivity = '$root/past-activity';
 
   /// «Apuntar actividad» desde un apartado: al guardar, el aviso dice dónde
@@ -218,6 +222,12 @@ List<RouteBase> trainingBranchRoutes() => [
 
 /// Rutas a pantalla completa (sin barra inferior).
 List<RouteBase> trainingRoutes() => [
+  GoRoute(
+    path: '${TrainingPaths.templates}/:templateId',
+    builder: (_, state) => RoutineTemplateDetailPage(
+      templateId: state.pathParameters['templateId']!,
+    ),
+  ),
   // Enlace de una rutina compartida (ADR 0043): se abre a pantalla completa y
   // vuelve a Entreno al copiarla.
   GoRoute(

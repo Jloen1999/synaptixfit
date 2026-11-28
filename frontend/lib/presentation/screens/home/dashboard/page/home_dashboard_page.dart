@@ -62,7 +62,14 @@ class HomeDashboardPage extends StatelessWidget {
     return BlocProvider(
       create: (_) =>
           getIt<HomeDashboardBloc>()
-            ..add(HomeDashboardEvent.started(userId: legalReady ? userId : '')),
+            // La cuenta va siempre (su «Ahora no» se guarda con ella); el
+            // onboarding espera a la política.
+            ..add(
+              HomeDashboardEvent.started(
+                userId: userId,
+                checkOnboarding: legalReady,
+              ),
+            ),
       child: BlocListener<LegalAcceptanceBloc, LegalAcceptanceState>(
         listenWhen: (a, b) =>
             a.status != LegalGateStatus.accepted &&

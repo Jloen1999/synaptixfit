@@ -2,10 +2,15 @@ part of 'home_dashboard_bloc.dart';
 
 @freezed
 sealed class HomeDashboardEvent with _$HomeDashboardEvent {
-  /// Primera carga de la pestaña. [userId] limita la redirección al onboarding
-  /// a una vez por usuario y sesión de app.
-  const factory HomeDashboardEvent.started({required String userId}) =
-      HomeDashboardStarted;
+  /// Primera carga de la pestaña. [userId] es la cuenta de la sesión: guarda
+  /// su «Ahora no» y limita la redirección al onboarding a una vez por usuario
+  /// y sesión de app. [checkOnboarding] es falso mientras la política no esté
+  /// aceptada (el onboarding se comprueba después, con
+  /// `onboardingCheckRequested`).
+  const factory HomeDashboardEvent.started({
+    required String userId,
+    @Default(true) bool checkOnboarding,
+  }) = HomeDashboardStarted;
 
   /// Pull-to-refresh, reintento o vuelta de otra pantalla.
   const factory HomeDashboardEvent.refreshed() = HomeDashboardRefreshed;

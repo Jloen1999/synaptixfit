@@ -4502,5 +4502,10 @@
   "trainingCheckInSavedAt": "Saved today at {time}",
   "trainingCheckInSavedSpoken": "{saved}. {summary}",
   "trainingSetLoggedAnnounce": "Set {n} logged. {then}",
-  "trainingLiveStripItemNow": "{item}. Your turn"
+  "trainingLiveStripItemNow": "{item}. Your turn",
+  "trainingTemplateDetailEmpty": "This plan has no exercises yet",
+  "trainingTemplateDetailEmptyHint": "Go back to the list and pick another one.",
+  "trainingTemplateDetailRuns": "Running days",
+  "trainingTemplateRunHint": "When you use it, these runs are added to Training › Run.",
+  "trainingTemplateExerciseUnknown": "Exercise no longer available"
 }

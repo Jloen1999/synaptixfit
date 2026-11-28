@@ -118,7 +118,21 @@ void main() {
   });
 
   blocTest<ProgressOverviewBloc, ProgressOverviewState>(
-    '«Tu equilibrio» (carga y energía de hoy) se carga en Progreso',
+    'al entrar no pide el resumen de Inicio (la lectura más cara, ADR 0066)',
+    setUp: () =>
+        when(() => getOverview()).thenAnswer((_) async => Success(testOverview)),
+    build: build,
+    act: (bloc) => bloc.add(const ProgressOverviewEvent.started()),
+    expect: () => [
+      const ProgressOverviewState.loading(),
+      ProgressOverviewState.loaded(testOverview),
+    ],
+    verify: (_) => verifyNever(() => getToday()),
+  );
+
+  blocTest<ProgressOverviewBloc, ProgressOverviewState>(
+    '«Tu equilibrio» se lee al desplegar «Ver más cifras» y luego en cada '
+    'recarga',
     setUp: () {
       when(() => getOverview()).thenAnswer((_) async => Success(testOverview));
       when(
@@ -126,22 +140,33 @@ void main() {
       ).thenAnswer((_) async => Success(homeDashboardFixture));
     },
     build: build,
-    act: (bloc) => bloc.add(const ProgressOverviewEvent.started()),
+    seed: () => ProgressOverviewState.loaded(testOverview),
+    act: (bloc) async {
+      bloc.add(const ProgressOverviewEvent.balanceRequested());
+      await pump();
+      bloc.add(const ProgressOverviewEvent.refreshed());
+      await pump();
+    },
     expect: () => [
-      const ProgressOverviewState.loading(),
+      ProgressOverviewState.loaded(testOverview, loadingToday: true),
+      ProgressOverviewState.loaded(testOverview, today: homeDashboardFixture),
+      ProgressOverviewState.loaded(
+        testOverview,
+        today: homeDashboardFixture,
+        refreshing: true,
+      ),
       ProgressOverviewState.loaded(testOverview, today: homeDashboardFixture),
     ],
+    verify: (_) => verify(() => getToday()).called(2),
   );
 
   blocTest<ProgressOverviewBloc, ProgressOverviewState>(
-    'carga los datos de la pestaña; si «Tu equilibrio» falla, guarda el error',
-    setUp: () => when(
-      () => getOverview(),
-    ).thenAnswer((_) async => Success(testOverview)),
+    'si «Tu equilibrio» falla al desplegarlo, guarda el error',
     build: build,
-    act: (bloc) => bloc.add(const ProgressOverviewEvent.started()),
+    seed: () => ProgressOverviewState.loaded(testOverview),
+    act: (bloc) => bloc.add(const ProgressOverviewEvent.balanceRequested()),
     expect: () => [
-      const ProgressOverviewState.loading(),
+      ProgressOverviewState.loaded(testOverview, loadingToday: true),
       ProgressOverviewState.loaded(
         testOverview,
         todayError: const AppError.network(),
@@ -193,19 +218,9 @@ void main() {
     },
     expect: () => [
       const ProgressOverviewState.loading(),
-      ProgressOverviewState.loaded(
-        testOverview,
-        todayError: const AppError.network(),
-      ),
-      ProgressOverviewState.loaded(
-        testOverview,
-        todayError: const AppError.network(),
-        refreshing: true,
-      ),
-      ProgressOverviewState.loaded(
-        testOverview,
-        todayError: const AppError.network(),
-      ),
+      ProgressOverviewState.loaded(testOverview),
+      ProgressOverviewState.loaded(testOverview, refreshing: true),
+      ProgressOverviewState.loaded(testOverview),
     ],
   );
 

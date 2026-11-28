@@ -186,6 +186,26 @@ void main() {
       );
     });
 
+    test('guardar «Tu nota» y moderar el muro avisan (no estaban en el mapa)',
+        () {
+      expect(
+        DataChangeInterceptor.topicsFor('PUT', '/api/v1/exercises/e1/note'),
+        {DataTopic.training},
+      );
+      expect(
+        DataChangeInterceptor.topicsFor('DELETE', '/api/v1/admin/social/posts/p1'),
+        {DataTopic.social},
+      );
+      expect(
+        DataChangeInterceptor.topicsFor('PATCH', '/api/v1/admin/exercises/e1'),
+        {DataTopic.training},
+      );
+      expect(
+        DataChangeInterceptor.topicsFor('POST', '/api/v1/admin/lockdown'),
+        isEmpty,
+      );
+    });
+
     test('el login no avisa y un prefijo parecido no confunde', () {
       expect(
         DataChangeInterceptor.topicsFor('POST', '/api/v1/auth/login'),

@@ -17,6 +17,7 @@ import '../screens/training/session_history/bloc/session_history_bloc.dart';
 import '../screens/training/training_home/bloc/training_home_bloc.dart';
 import '../screens/training/weekly_plan/bloc/weekly_plan_bloc.dart';
 import '../screens/shell/bloc/open_session_bar_bloc.dart';
+import '../screens/training/routine_template_detail/bloc/routine_template_detail_bloc.dart';
 import '../screens/training/routine_templates/bloc/routine_templates_bloc.dart';
 import '../screens/training/routine_share/bloc/routine_share_bloc.dart';
 import '../screens/training/shared_routine/bloc/shared_routine_bloc.dart';
@@ -145,6 +146,9 @@ void registerTrainingPresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(() => RoutineTemplatesBloc(list: getIt(), use: getIt()))
+    ..registerFactory(
+      () => RoutineTemplateDetailBloc(get: getIt(), use: getIt()),
+    )
     // Compartir una rutina por enlace (ADR 0043).
     ..registerFactory(
       () => RoutineShareBloc(status: getIt(), share: getIt(), stop: getIt()),

@@ -342,12 +342,12 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     HomeDashboardSetupSnoozed event,
     Emitter<HomeDashboardState> emit,
   ) async {
-    final setup = state.setup;
-    if (setup == null) return;
+    if (state.setup == null) return;
     final now = _clock();
     final until = (await _snoozeSetup(now, userId: _userId)).valueOrNull;
-    if (until == null) return;
-    emit(state.copyWith(setup: setup.copyWith(snoozedUntil: until)));
+    final latest = state.setup;
+    if (until == null || latest == null) return;
+    emit(state.copyWith(setup: latest.copyWith(snoozedUntil: until)));
   }
 
   Future<void> _onTrainingStarted(
@@ -401,7 +401,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
       emit(state.copyWith(status: HomeDashboardStatus.loading, error: null));
     }
     final loaded = await _load(emit);
-    if (!loaded) return;
+    if (!loaded || !event.checkOnboarding) return;
     await _checkOnboarding(event.userId, emit);
   }
 
@@ -430,6 +430,16 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
           : state.copyWith(refreshing: true, error: null),
     );
     await _load(emit);
+  }
+
+  /// Una lectura que empezó antes de un «Ahora no» trae el plazo viejo (o
+  /// ninguno): se conserva el más reciente para que el aviso no reaparezca.
+  HomeSetup? _withLatestSnooze(HomeSetup? loaded) {
+    final kept = state.setup?.snoozedUntil;
+    final read = loaded?.snoozedUntil;
+    if (loaded == null || kept == null) return loaded;
+    if (read != null && !read.isBefore(kept)) return loaded;
+    return loaded.copyWith(snoozedUntil: kept);
   }
 
   /// Carga el resumen, los repasos, la agenda y el contador en paralelo. Solo
@@ -465,7 +475,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
                 unread.valueOrNull ?? state.unreadNotifications,
             upcoming:
                 upcoming.valueOrNull?.map(_toEvent).toList() ?? state.upcoming,
-            setup: setup.valueOrNull ?? state.setup,
+            setup: _withLatestSnooze(setup.valueOrNull) ?? state.setup,
           ),
         );
         return true;

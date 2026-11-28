@@ -801,7 +801,7 @@
   "runMapUnavailable": "Carte indisponible",
   "runMapAttribution": "© MapTiler © OpenStreetMap",
   "runStartShort": "Commencer",
-  "runStartNow": "Commencer",
+  "runStartNow": "Commencer à courir",
   "runCreateWorkout": "Créer un entraînement",
   "runCreateWorkoutTitle": "Nouvel entraînement de course",
   "runCreateWorkoutIntro": "Choisis-en un tout prêt ou crée-le de zéro.",
@@ -1077,7 +1077,6 @@
   "runQuickFree": "Course libre",
   "runQuickLog": "Noter une activité",
   "runGoRunHint": "Enregistre le parcours, la distance et l'allure avec le GPS du téléphone.",
-  "runStartNow": "Commencer à courir",
   "runNextTitle": "Prochaine séance",
   "runLastTitle": "Dernières activités",
   "runSeeAllCount": "Tout voir ({count})",
@@ -1106,5 +1105,10 @@
   "trainingCheckInSavedAt": "Enregistré aujourd'hui à {time}",
   "trainingCheckInSavedSpoken": "{saved}. {summary}",
   "trainingSetLoggedAnnounce": "Série {n} enregistrée. {then}",
-  "trainingLiveStripItemNow": "{item}. À toi"
+  "trainingLiveStripItemNow": "{item}. À toi",
+  "trainingTemplateDetailEmpty": "Ce modèle n'a pas encore d'exercices",
+  "trainingTemplateDetailEmptyHint": "Reviens à la liste et choisis-en un autre.",
+  "trainingTemplateDetailRuns": "Jours de course",
+  "trainingTemplateRunHint": "En l'utilisant, ces courses sont créées dans Entraînement › Courir.",
+  "trainingTemplateExerciseUnknown": "Exercice qui n'est plus disponible"
 }

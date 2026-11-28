@@ -4502,5 +4502,10 @@
   "trainingCheckInSavedAt": "Enregistré aujourd'hui à {time}",
   "trainingCheckInSavedSpoken": "{saved}. {summary}",
   "trainingSetLoggedAnnounce": "Série {n} enregistrée. {then}",
-  "trainingLiveStripItemNow": "{item}. À toi"
+  "trainingLiveStripItemNow": "{item}. À toi",
+  "trainingTemplateDetailEmpty": "Ce modèle n'a pas encore d'exercices",
+  "trainingTemplateDetailEmptyHint": "Reviens à la liste et choisis-en un autre.",
+  "trainingTemplateDetailRuns": "Jours de course",
+  "trainingTemplateRunHint": "En l'utilisant, ces courses sont créées dans Entraînement › Courir.",
+  "trainingTemplateExerciseUnknown": "Exercice qui n'est plus disponible"
 }

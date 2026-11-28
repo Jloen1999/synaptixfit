@@ -801,7 +801,7 @@
   "runMapUnavailable": "Map not available",
   "runMapAttribution": "© MapTiler © OpenStreetMap",
   "runStartShort": "Start",
-  "runStartNow": "Start",
+  "runStartNow": "Start running",
   "runCreateWorkout": "Create workout",
   "runCreateWorkoutTitle": "New running workout",
   "runCreateWorkoutIntro": "Pick a ready-made one or create it from scratch.",
@@ -1077,7 +1077,6 @@
   "runQuickFree": "Free run",
   "runQuickLog": "Log activity",
   "runGoRunHint": "Records your route, distance and pace with your phone's GPS.",
-  "runStartNow": "Start running",
   "runNextTitle": "Next workout",
   "runLastTitle": "Latest activities",
   "runSeeAllCount": "See all ({count})",
@@ -1106,5 +1105,10 @@
   "trainingCheckInSavedAt": "Saved today at {time}",
   "trainingCheckInSavedSpoken": "{saved}. {summary}",
   "trainingSetLoggedAnnounce": "Set {n} logged. {then}",
-  "trainingLiveStripItemNow": "{item}. Your turn"
+  "trainingLiveStripItemNow": "{item}. Your turn",
+  "trainingTemplateDetailEmpty": "This plan has no exercises yet",
+  "trainingTemplateDetailEmptyHint": "Go back to the list and pick another one.",
+  "trainingTemplateDetailRuns": "Running days",
+  "trainingTemplateRunHint": "When you use it, these runs are added to Training › Run.",
+  "trainingTemplateExerciseUnknown": "Exercise no longer available"
 }

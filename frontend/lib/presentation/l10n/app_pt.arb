@@ -4502,5 +4502,10 @@
   "trainingCheckInSavedAt": "Guardado hoje às {time}",
   "trainingCheckInSavedSpoken": "{saved}. {summary}",
   "trainingSetLoggedAnnounce": "Série {n} registada. {then}",
-  "trainingLiveStripItemNow": "{item}. É a tua vez"
+  "trainingLiveStripItemNow": "{item}. É a tua vez",
+  "trainingTemplateDetailEmpty": "Este modelo ainda não tem exercícios",
+  "trainingTemplateDetailEmptyHint": "Volta à lista e escolhe outro.",
+  "trainingTemplateDetailRuns": "Dias de corrida",
+  "trainingTemplateRunHint": "Ao usá-lo, estas corridas são criadas em Treino › Correr.",
+  "trainingTemplateExerciseUnknown": "Exercício já não disponível"
 }

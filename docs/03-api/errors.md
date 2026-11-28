@@ -262,7 +262,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `ROUTINE_NOT_FOUND` | 404 | Rutina inexistente, eliminada, ajena o no visible | No encontramos esa rutina. | Activo |
 | `ROUTINE_WEEK_NOT_FOUND` | 404 | La semana no pertenece a la rutina | Esa semana no existe. | Activo |
 | `ROUTINE_DAY_NOT_FOUND` | 404 | El día no pertenece a la rutina | Ese día no existe. | Activo |
-| `ROUTINE_TEMPLATE_NOT_FOUND` | 404 | La plantilla no existe o no tiene ejercicios | Esa plantilla ya no está disponible. | Activo |
+| `ROUTINE_TEMPLATE_NOT_FOUND` | 404 | La plantilla no existe, está retirada o no tiene ejercicios (al verla o al usarla) | Esa plantilla ya no está disponible. | Activo |
 | `ROUTINE_SHARE_LINK_NOT_FOUND` | 404 | Enlace de rutina desconocido, caducado, revocado, de una rutina borrada o de alguien bloqueado o silenciado; siempre el mismo para no revelar si existió (ADR 0043) | Este enlace ya no vale. Pide uno nuevo a quien te lo pasó. | Activo |
 | `ROUTINE_SHARE_LINK_LIMIT` | 422 | La rutina ya tiene 5 enlaces vigentes (ADR 0043) | Ya has creado muchos enlaces de esta rutina. Deja de compartirla y crea uno nuevo. | Activo |
 | `ROUTINE_EXERCISE_NOT_FOUND` | 404 | El ejercicio planificado no es de la rutina | Ese ejercicio no está en la rutina. | Activo |

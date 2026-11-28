@@ -134,6 +134,12 @@ class DataChangeInterceptor extends Interceptor {
     // copiar la rutina.
     '/api/v1/together': {DataTopic.social, DataTopic.training},
     '/api/v1/notifications': {DataTopic.social},
+    // «Tu nota» de un ejercicio: la ficha y «Cómo se hace» de Entreno.
+    '/api/v1/exercises': {DataTopic.training},
+    // Moderar quita publicaciones y comentarios del muro (Tú › Comunidad) y
+    // editar el catálogo de ejercicios cambia lo que enseña Entreno.
+    '/api/v1/admin/social': {DataTopic.social},
+    '/api/v1/admin/exercises': {DataTopic.training},
   };
 
   /// Cambios que no hizo esta app (el canal en directo, ADR 0047): se agrupan

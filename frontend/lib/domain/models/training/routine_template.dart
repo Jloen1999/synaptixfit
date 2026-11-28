@@ -11,7 +11,62 @@ abstract class TemplateRunDay with _$TemplateRunDay {
   const factory TemplateRunDay({
     required int dayNumber,
     required String workoutCode,
+
+    /// Nombre del entreno de carrera (solo en el detalle de la plantilla).
+    String? workoutName,
   }) = _TemplateRunDay;
+}
+
+/// Ejercicio de una plantilla en una semana de carga, tal como lo manda el
+/// servidor: series, repeticiones o rango, segundos aguantando y descanso.
+/// [name] e [imageUrl] son nulos si el ejercicio ya no está en el catálogo.
+@freezed
+abstract class TemplateExercise with _$TemplateExercise {
+  const factory TemplateExercise({
+    required String exerciseId,
+    String? name,
+    String? imageUrl,
+    required int sets,
+    required int reps,
+    int? repMin,
+    int? repMax,
+    int? repsInReserve,
+    int? holdSeconds,
+    required int restSeconds,
+  }) = _TemplateExercise;
+
+  const TemplateExercise._();
+
+  /// Con rango de repeticiones («8–12 reps»).
+  bool get hasRange => holdSeconds == null && repMin != null && repMax != null;
+}
+
+/// Día de la plantilla (1 = lunes) con el nombre de su sesión, si tiene, y sus
+/// ejercicios en orden.
+@freezed
+abstract class TemplateDay with _$TemplateDay {
+  const factory TemplateDay({
+    required int dayNumber,
+    String? name,
+    @Default(<TemplateExercise>[]) List<TemplateExercise> exercises,
+  }) = _TemplateDay;
+}
+
+/// Detalle de una plantilla para decidir antes de usarla: sus datos ([summary]),
+/// cada día con sus ejercicios y los días de carrera.
+@freezed
+abstract class RoutineTemplateDetail with _$RoutineTemplateDetail {
+  const factory RoutineTemplateDetail({
+    required RoutineTemplate summary,
+    @Default(<TemplateDay>[]) List<TemplateDay> days,
+    @Default(<TemplateRunDay>[]) List<TemplateRunDay> runDays,
+  }) = _RoutineTemplateDetail;
+
+  const RoutineTemplateDetail._();
+
+  /// Sin ejercicios ni carreras: no hay nada que enseñar.
+  bool get isEmpty =>
+      runDays.isEmpty && days.every((d) => d.exercises.isEmpty);
 }
 
 /// Plantilla de rutina lista para usar (ADR 0032). Se convierte en una rutina

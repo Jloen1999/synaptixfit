@@ -13,6 +13,9 @@ sealed class ProgressOverviewState with _$ProgressOverviewState {
     /// No se pudo leer «Tu equilibrio» (y no había uno anterior): la tarjeta
     /// lo dice y deja reintentar, en vez de desaparecer sin más.
     AppError? todayError,
+
+    /// Leyendo «Tu equilibrio» tras desplegar «Ver más cifras».
+    @Default(false) bool loadingToday,
     @Default(false) bool refreshing,
 
     /// Error de una recarga: se conservan los datos anteriores.

@@ -222,6 +222,14 @@ class RoutineRemoteDataSource {
         .toList();
   }
 
+  /// Detalle de una plantilla: días, ejercicios y carreras.
+  Future<RoutineTemplateDetailDto> template(String templateId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/training/templates/$templateId',
+    );
+    return RoutineTemplateDetailDto.fromJson(response.data!);
+  }
+
   /// Crea una rutina propia a partir de una plantilla.
   Future<RoutineDto> useTemplate(String templateId) => _routine(
     _dio.post<Map<String, dynamic>>(

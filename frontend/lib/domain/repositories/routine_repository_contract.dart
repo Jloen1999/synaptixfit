@@ -133,6 +133,9 @@ abstract interface class RoutineRepositoryContract {
   /// Plantillas listas para usar (ADR 0032).
   Future<AppResult<List<RoutineTemplate>>> listTemplates();
 
+  /// Detalle de una plantilla: días, ejercicios y carreras.
+  Future<AppResult<RoutineTemplateDetail>> getTemplate(String templateId);
+
   /// Crea una rutina propia y privada a partir de una plantilla.
   Future<AppResult<Routine>> useTemplate(String templateId);
 

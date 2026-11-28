@@ -5518,6 +5518,25 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/RoutineTemplateResponse"
+  /api/v1/training/templates/{templateId}:
+    get:
+      tags:
+      - Routine templates
+      operationId: detail_1
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RoutineTemplateDetailResponse"
   /api/v1/training/sessions/{sessionId}/load-suggestions:
     get:
       tags:
@@ -15409,6 +15428,8 @@ components:
           type: array
           items:
             type: string
+        coverImageUrl:
+          type: string
     RunDayResponse:
       type: object
       properties:
@@ -15416,6 +15437,72 @@ components:
           type: integer
           format: int32
         workoutCode:
+          type: string
+    RoutineTemplateDetailResponse:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/RoutineTemplateResponse"
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateDayResponse"
+        runDays:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateRunDayResponse"
+    TemplateDayResponse:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        name:
+          type: string
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateExerciseResponse"
+    TemplateExerciseResponse:
+      type: object
+      properties:
+        exerciseId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        imageUrl:
+          type: string
+        sets:
+          type: integer
+          format: int32
+        reps:
+          type: integer
+          format: int32
+        repMin:
+          type: integer
+          format: int32
+        repMax:
+          type: integer
+          format: int32
+        repsInReserve:
+          type: integer
+          format: int32
+        holdSeconds:
+          type: integer
+          format: int32
+        restSeconds:
+          type: integer
+          format: int32
+    TemplateRunDayResponse:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        workoutCode:
+          type: string
+        workoutName:
           type: string
     PageResponseSessionResponse:
       type: object

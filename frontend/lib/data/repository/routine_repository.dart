@@ -279,6 +279,12 @@ class RoutineRepository implements RoutineRepositoryContract {
       );
 
   @override
+  Future<AppResult<RoutineTemplateDetail>> getTemplate(String templateId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.template(templateId)).toDomain(),
+      );
+
+  @override
   Future<AppResult<Routine>> useTemplate(String templateId) =>
       RepositoryErrorHandler.guard(
         () async => (await _remote.useTemplate(templateId)).toDomain(),

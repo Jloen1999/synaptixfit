@@ -127,6 +127,28 @@ class RoutineTemplateIT {
                 .containsExactly("Semana 1 · 8 veces: 1 min corriendo y 1,5 andando");
     }
 
+    /** El detalle de una plantilla trae cada día con sus ejercicios (nombre, series y rango) y sus carreras. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void theDetailListsEachDayWithItsExercisesAndUnknownIsNotFound() throws Exception {
+        String token = register("plantillas-detalle@example.com");
+        String templates = body(get("/api/v1/training/templates"), token, 200);
+        String id = ((List<String>) JsonPath.read(templates, "$[?(@.code == 'empieza_a_correr')].id")).getFirst();
+
+        String detail = body(get("/api/v1/training/templates/" + id), token, 200);
+        assertThat((String) JsonPath.read(detail, "$.summary.code")).isEqualTo("empieza_a_correr");
+        assertThat((List<Object>) JsonPath.read(detail, "$.days")).isNotEmpty();
+        assertThat((List<String>) JsonPath.read(detail, "$.days[0].exercises[*].name")).isNotEmpty()
+                .doesNotContainNull();
+        assertThat((List<Integer>) JsonPath.read(detail, "$.days[0].exercises[*].sets")).allMatch(n -> n > 0);
+        assertThat((List<Integer>) JsonPath.read(detail, "$.runDays[*].dayNumber")).containsExactly(1, 3, 6);
+        assertThat((List<String>) JsonPath.read(detail, "$.runDays[*].workoutName")).doesNotContainNull();
+
+        mvc.perform(get("/api/v1/training/templates/" + UUID.randomUUID()).header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ROUTINE_TEMPLATE_NOT_FOUND"));
+    }
+
     /** ADR 0054: la primera sesión de un ejercicio pregunta cuántas sobraron y el peso pasa a los días que quedan. */
     @Test
     void theFirstSessionCalibratesTheWeightAndTheRoutineKeepsIt() throws Exception {

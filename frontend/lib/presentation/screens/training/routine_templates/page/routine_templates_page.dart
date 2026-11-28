@@ -14,8 +14,8 @@ import '../../training_routes.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
-import '../../widgets/training_section_bar.dart';
 import '../bloc/routine_templates_bloc.dart';
+import 'template_used_notice.dart';
 
 /// Plantillas de rutina listas para usar: se filtran por lugar, días, tiempo,
 /// nivel y exámenes (en una hoja, para que la lista se vea al entrar) y una se
@@ -53,24 +53,11 @@ class _TemplatesView extends StatelessWidget {
           );
           return;
         }
-        final routine = state.created!;
-        // El aviso sobrevive a esta pantalla: «Ver» usa el router, no este
-        // contexto, que ya no existirá al pulsarlo.
-        final router = GoRouter.of(context);
-        if (state.createdWithRuns) {
-          // Los entrenos de carrera los creó el servidor en Correr: el aviso
-          // dice dónde quedan y lleva hasta allí.
-          context.showActionSnack(
-            l10n.trainingTemplatesCreatedWithRuns(routine.name),
-            actionLabel: l10n.commonView,
-            onAction: () =>
-                router.go(TrainingPaths.section(TrainingSection.run)),
-          );
-        } else {
-          context.showSnack(l10n.trainingTemplatesCreated(routine.name));
-        }
-        // Las dos rutas viven en la pestaña de entreno: se cambia dentro de ella.
-        router.go(TrainingPaths.routine(routine.id));
+        announceTemplateUsed(
+          context,
+          state.created!,
+          withRuns: state.createdWithRuns,
+        );
       },
       builder: (context, state) {
         final bloc = context.read<RoutineTemplatesBloc>();
@@ -388,8 +375,8 @@ class _Filters extends StatelessWidget {
 
 /// Tarjeta de plantilla, para elegir de un vistazo: foto de uno de sus
 /// ejercicios de fondo ([AppCoverCard]), dónde se hace y el nivel arriba, el
-/// nombre, una línea con días, minutos y semanas, y «Usar». La descripción se
-/// corta en dos líneas: el detalle se ve en la rutina ya creada.
+/// nombre, una línea con días, minutos y semanas, y «Usar» sin entrar. Toda la
+/// tarjeta abre el detalle (días y ejercicios) para decidir antes.
 class _TemplateCard extends StatelessWidget {
   const _TemplateCard({
     required this.template,
@@ -417,6 +404,7 @@ class _TemplateCard extends StatelessWidget {
     ];
     return AppCoverCard(
       imageUrl: t.coverImageUrl,
+      onTap: () => context.push(TrainingPaths.template(t.id)),
       padding: const EdgeInsets.all(TokensSpacing.m),
       footer: Semantics(
         container: true,

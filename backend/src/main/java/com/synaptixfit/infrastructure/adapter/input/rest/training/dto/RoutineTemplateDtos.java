@@ -1,6 +1,9 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
+import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.RoutineTemplate;
+import com.synaptixfit.domain.model.training.RoutineTemplateDetail;
+import com.synaptixfit.domain.model.training.WeekType;
 import com.synaptixfit.domain.model.training.TemplateLevel;
 import com.synaptixfit.domain.model.training.TemplatePlace;
 import com.synaptixfit.domain.model.training.TrainingGoal;
@@ -48,5 +51,53 @@ public final class RoutineTemplateDtos {
 
     /** Día de salir a correr con el entreno de carrera {@code workoutCode} (se crea en Entreno › Correr). */
     public record RunDayResponse(int dayNumber, String workoutCode) {
+    }
+
+    /**
+     * Detalle de una plantilla: los datos de la tarjeta ({@code summary}), cada día con sus ejercicios y los días de
+     * carrera con el nombre de su entreno.
+     */
+    public record RoutineTemplateDetailResponse(RoutineTemplateResponse summary, List<TemplateDayResponse> days,
+                                                List<TemplateRunDayResponse> runDays) {
+        public static RoutineTemplateDetailResponse from(RoutineTemplateDetail detail) {
+            RoutineTemplate t = detail.template();
+            List<TemplateDayResponse> days = t.days().stream()
+                    .map(d -> new TemplateDayResponse(d.dayNumber(), d.name(), d.exercises().stream()
+                            .map(e -> TemplateExerciseResponse.from(e, detail.exercises().get(e.exerciseId())))
+                            .toList()))
+                    .toList();
+            Map<Integer, TemplateRunDayResponse> runs = new TreeMap<>();
+            t.runDays().stream()
+                    .sorted(Comparator.comparingInt(RoutineTemplate.RunDay::week))
+                    .forEach(d -> runs.putIfAbsent(d.dayNumber(),
+                            new TemplateRunDayResponse(d.dayNumber(), d.workoutCode(), d.workoutName())));
+            return new RoutineTemplateDetailResponse(RoutineTemplateResponse.from(t), days, List.copyOf(runs.values()));
+        }
+    }
+
+    /** Día de la plantilla (1 = lunes) con el nombre de la sesión (nulo si no tiene) y sus ejercicios en orden. */
+    public record TemplateDayResponse(int dayNumber, String name, List<TemplateExerciseResponse> exercises) {
+    }
+
+    /**
+     * Ejercicio en una semana de carga (las suaves hacen una serie menos): series, repeticiones (las de partida, el mínimo del rango si lo hay), rango y
+     * cuántas deben sobrar, segundos aguantando (planchas) y descanso. {@code name} e {@code imageUrl} son nulos si
+     * el ejercicio ya no está en el catálogo.
+     */
+    public record TemplateExerciseResponse(UUID exerciseId, String name, String imageUrl, int sets, int reps,
+                                           Integer repMin, Integer repMax, Integer repsInReserve,
+                                           Integer holdSeconds, int restSeconds) {
+        static TemplateExerciseResponse from(RoutineTemplate.Item item, RoutineTemplateDetail.ExerciseInfo info) {
+            ExerciseParameters p = RoutineTemplate.parametersFor(item, WeekType.LOAD);
+            var range = item.repRange();
+            return new TemplateExerciseResponse(item.exerciseId(), info == null ? null : info.name(),
+                    info == null ? null : info.imageUrl(), p.sets(), p.reps(),
+                    range == null ? null : range.min(), range == null ? null : range.max(),
+                    range == null ? null : range.reserve(), item.holdSeconds(), p.restSeconds());
+        }
+    }
+
+    /** Día de salir a correr con su entreno de carrera (el de la primera semana si el plan cambia cada semana). */
+    public record TemplateRunDayResponse(int dayNumber, String workoutCode, String workoutName) {
     }
 }

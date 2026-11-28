@@ -2498,7 +2498,7 @@
   "runMapUnavailable": "Mapa no disponible",
   "runMapAttribution": "© MapTiler © OpenStreetMap",
   "runStartShort": "Empezar",
-  "runStartNow": "Empezar",
+  "runStartNow": "Empezar a correr",
   "runCreateWorkout": "Crear entreno",
   "runCreateWorkoutTitle": "Nuevo entreno de carrera",
   "runCreateWorkoutIntro": "Elige uno listo o créalo desde cero.",
@@ -3369,7 +3369,6 @@
   "runQuickFree": "Correr libre",
   "runQuickLog": "Apuntar actividad",
   "runGoRunHint": "Graba la ruta, la distancia y el ritmo con el GPS del móvil.",
-  "runStartNow": "Empezar a correr",
   "runNextTitle": "Próximo entreno",
   "runLastTitle": "Últimas actividades",
   "runSeeAllCount": "Ver todos ({count})",
@@ -3522,5 +3521,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "trainingTemplateDetailEmpty": "Esta plantilla aún no tiene ejercicios",
+  "trainingTemplateDetailEmptyHint": "Vuelve a la lista y elige otra.",
+  "trainingTemplateDetailRuns": "Días de correr",
+  "trainingTemplateRunHint": "Al usarla, estas carreras se crean en Entreno › Correr.",
+  "trainingTemplateExerciseUnknown": "Ejercicio ya no disponible"
 }

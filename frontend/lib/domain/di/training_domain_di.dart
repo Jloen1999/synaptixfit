@@ -74,6 +74,7 @@ import '../use_cases/training/unskip_routine_day_use_case.dart';
 import '../use_cases/training/update_routine_exercise_use_case.dart';
 import '../use_cases/training/update_routine_use_case.dart';
 import '../use_cases/training/update_routine_week_use_case.dart';
+import '../use_cases/training/get_routine_template_use_case.dart';
 import '../use_cases/training/list_routine_templates_use_case.dart';
 import '../use_cases/training/use_routine_template_use_case.dart';
 import '../use_cases/training/copy_shared_routine_use_case.dart';
@@ -202,6 +203,9 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<ListRoutineTemplatesUseCaseContract>(
       () => ListRoutineTemplatesUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetRoutineTemplateUseCaseContract>(
+      () => GetRoutineTemplateUseCase(getIt()),
     )
     ..registerLazySingleton<UseRoutineTemplateUseCaseContract>(
       () => UseRoutineTemplateUseCase(getIt()),

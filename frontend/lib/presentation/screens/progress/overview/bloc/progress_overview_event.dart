@@ -7,6 +7,10 @@ sealed class ProgressOverviewEvent with _$ProgressOverviewEvent {
   /// Pull-to-refresh o reintento: conserva los datos mientras recarga.
   const factory ProgressOverviewEvent.refreshed() = ProgressOverviewRefreshed;
 
+  /// Se desplegó «Ver más cifras»: lee «Tu equilibrio» (no se pide al entrar).
+  const factory ProgressOverviewEvent.balanceRequested() =
+      ProgressOverviewBalanceRequested;
+
   /// «Ver N repasos pendientes»: pide la cola de repaso para abrirla en un
   /// toque (la misma que «Repasar todos» de Académico).
   const factory ProgressOverviewEvent.reviewRequested() =

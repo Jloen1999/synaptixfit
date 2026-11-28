@@ -418,6 +418,7 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
             :final overview,
             :final today,
             :final todayError,
+            :final loadingToday,
             :final openingReview,
             :final updatingStreak,
           ) =>
@@ -467,12 +468,24 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                       NextBadgeCard(badge: next, onOpen: widget.onOpenBadges),
                     _MoreToggle(
                       open: _more,
-                      onToggle: () => setState(() => _more = !_more),
+                      onToggle: () {
+                        setState(() => _more = !_more);
+                        // «Tu equilibrio» se pide al desplegar, no al entrar.
+                        if (_more) {
+                          context.read<ProgressOverviewBloc>().add(
+                            const ProgressOverviewEvent.balanceRequested(),
+                          );
+                        }
+                      },
                     ),
                     if (_more) ...[
                       // Carga cognitiva, carga física y energía de hoy: cifras
                       // técnicas que salieron de Inicio (ADR 0038).
-                      if (today != null)
+                      if (today == null && loadingToday)
+                        const AppSkeletonGroup(
+                          child: AppSkeleton(height: TokensSize.skeletonCard),
+                        )
+                      else if (today != null)
                         BalanceCard(
                           cognitive: today.cognitive,
                           crossRegulation: today.crossRegulation,

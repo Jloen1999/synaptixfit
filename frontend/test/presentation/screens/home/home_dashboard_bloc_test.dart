@@ -197,6 +197,61 @@ void main() {
   );
 
   blocTest<HomeDashboardBloc, HomeDashboardState>(
+    '«Ahora no» se guarda con la cuenta aunque la política aún no esté '
+    'comprobada (antes iba con un id vacío y al recargar volvía)',
+    setUp: () {
+      registerFallbackValue(DateTime(2026));
+      when(
+        () => snooze(any(), userId: any(named: 'userId')),
+      ).thenAnswer((_) async => Success(DateTime(2026, 10, 27, 9)));
+    },
+    build: build,
+    act: (bloc) async {
+      bloc.add(
+        const HomeDashboardEvent.started(userId: 'u1', checkOnboarding: false),
+      );
+      await bloc.stream.firstWhere(
+        (s) => s.status == HomeDashboardStatus.loaded,
+      );
+      bloc.add(const HomeDashboardEvent.setupSnoozed());
+    },
+    skip: 1,
+    verify: (_) {
+      verify(() => getSetup(userId: 'u1')).called(1);
+      verify(() => snooze(any(), userId: 'u1')).called(1);
+      verifyNever(() => getOnboarding());
+    },
+  );
+
+  blocTest<HomeDashboardBloc, HomeDashboardState>(
+    'una recarga que leyó antes del «Ahora no» no vuelve a enseñar el aviso',
+    setUp: () => when(() => getSetup(userId: any(named: 'userId'))).thenAnswer(
+      (_) async => const Success(
+        HomeSetup(pending: [HomeSetupTask.subjects], total: 3),
+      ),
+    ),
+    build: build,
+    seed: () => loaded.copyWith(
+      setup: HomeSetup(
+        pending: const [HomeSetupTask.subjects],
+        total: 3,
+        snoozedUntil: DateTime(2026, 10, 27, 9),
+      ),
+    ),
+    act: (bloc) => bloc.add(const HomeDashboardEvent.refreshed()),
+    skip: 1,
+    expect: () => [
+      loaded.copyWith(
+        setup: HomeSetup(
+          pending: const [HomeSetupTask.subjects],
+          total: 3,
+          snoozedUntil: DateTime(2026, 10, 27, 9),
+        ),
+      ),
+    ],
+  );
+
+  blocTest<HomeDashboardBloc, HomeDashboardState>(
     'carga el resumen, los repasos y el contador',
     build: build,
     act: (bloc) => bloc.add(const HomeDashboardEvent.started(userId: 'u1')),

@@ -404,6 +404,7 @@ abstract class TemplateRunDayDto with _$TemplateRunDayDto {
   const factory TemplateRunDayDto({
     required int dayNumber,
     required String workoutCode,
+    String? workoutName,
   }) = _TemplateRunDayDto;
 
   const TemplateRunDayDto._();
@@ -411,6 +412,86 @@ abstract class TemplateRunDayDto with _$TemplateRunDayDto {
   factory TemplateRunDayDto.fromJson(Map<String, dynamic> json) =>
       _$TemplateRunDayDtoFromJson(json);
 
-  TemplateRunDay toDomain() =>
-      TemplateRunDay(dayNumber: dayNumber, workoutCode: workoutCode);
+  TemplateRunDay toDomain() => TemplateRunDay(
+    dayNumber: dayNumber,
+    workoutCode: workoutCode,
+    workoutName: workoutName,
+  );
+}
+
+/// Detalle de una plantilla (`GET /training/templates/{id}`).
+@freezed
+abstract class RoutineTemplateDetailDto with _$RoutineTemplateDetailDto {
+  const factory RoutineTemplateDetailDto({
+    required RoutineTemplateDto summary,
+    @Default(<TemplateDayDto>[]) List<TemplateDayDto> days,
+    @Default(<TemplateRunDayDto>[]) List<TemplateRunDayDto> runDays,
+  }) = _RoutineTemplateDetailDto;
+
+  const RoutineTemplateDetailDto._();
+
+  factory RoutineTemplateDetailDto.fromJson(Map<String, dynamic> json) =>
+      _$RoutineTemplateDetailDtoFromJson(json);
+
+  RoutineTemplateDetail toDomain() => RoutineTemplateDetail(
+    summary: summary.toDomain(),
+    days: [for (final d in days) d.toDomain()],
+    runDays: [for (final d in runDays) d.toDomain()],
+  );
+}
+
+/// Día del detalle de una plantilla (`days[]`).
+@freezed
+abstract class TemplateDayDto with _$TemplateDayDto {
+  const factory TemplateDayDto({
+    required int dayNumber,
+    String? name,
+    @Default(<TemplateExerciseDto>[]) List<TemplateExerciseDto> exercises,
+  }) = _TemplateDayDto;
+
+  const TemplateDayDto._();
+
+  factory TemplateDayDto.fromJson(Map<String, dynamic> json) =>
+      _$TemplateDayDtoFromJson(json);
+
+  TemplateDay toDomain() => TemplateDay(
+    dayNumber: dayNumber,
+    name: name,
+    exercises: [for (final e in exercises) e.toDomain()],
+  );
+}
+
+/// Ejercicio de un día del detalle de una plantilla (`exercises[]`).
+@freezed
+abstract class TemplateExerciseDto with _$TemplateExerciseDto {
+  const factory TemplateExerciseDto({
+    required String exerciseId,
+    String? name,
+    String? imageUrl,
+    @Default(1) int sets,
+    @Default(0) int reps,
+    int? repMin,
+    int? repMax,
+    int? repsInReserve,
+    int? holdSeconds,
+    @Default(0) int restSeconds,
+  }) = _TemplateExerciseDto;
+
+  const TemplateExerciseDto._();
+
+  factory TemplateExerciseDto.fromJson(Map<String, dynamic> json) =>
+      _$TemplateExerciseDtoFromJson(json);
+
+  TemplateExercise toDomain() => TemplateExercise(
+    exerciseId: exerciseId,
+    name: name,
+    imageUrl: imageUrl,
+    sets: sets,
+    reps: reps,
+    repMin: repMin,
+    repMax: repMax,
+    repsInReserve: repsInReserve,
+    holdSeconds: holdSeconds,
+    restSeconds: restSeconds,
+  );
 }

@@ -34,6 +34,7 @@ class ProgressOverviewBloc
   }) : super(const ProgressOverviewState.loading()) {
     on<ProgressOverviewStarted>(_onStarted);
     on<ProgressOverviewRefreshed>(_onRefreshed);
+    on<ProgressOverviewBalanceRequested>(_onBalanceRequested);
     on<ProgressOverviewReviewRequested>(_onReviewRequested);
     on<ProgressOverviewReviewHandled>(_onReviewHandled);
     on<ProgressOverviewStreakPaused>(_onStreakPaused);
@@ -46,8 +47,14 @@ class ProgressOverviewBloc
   /// Resumen de hoy (carga cognitiva, carga física y energía), el mismo que
   /// el de Inicio: «Tu equilibrio» se ve aquí (ADR 0038). Es opcional: si
   /// falla, el resto de Progreso se ve y la tarjeta dice el error con
-  /// «Reintentar» (`todayError`, ADR 0039).
+  /// «Reintentar» (`todayError`, ADR 0039). Es la lectura más cara de la
+  /// pestaña (unas 60 consultas, el 60 % de las de entrar) y la tarjeta va
+  /// plegada en «Ver más cifras»: solo se pide al desplegarla (ADR 0066).
   final GetHomeDashboardUseCaseContract _getToday;
+
+  /// Se desplegó «Ver más cifras»: desde entonces las recargas también leen
+  /// «Tu equilibrio».
+  bool _balanceWanted = false;
 
   /// Cola de repaso: el resumen solo trae cuántos hay, así que los ids se
   /// piden al tocar «Ver N repasos pendientes» (y no en cada carga).
@@ -104,6 +111,30 @@ class ProgressOverviewBloc
     final current = state;
     if (current is! ProgressOverviewLoaded) return;
     emit(current.copyWith(streakJustPaused: null, streakError: null));
+  }
+
+  Future<void> _onBalanceRequested(
+    ProgressOverviewBalanceRequested event,
+    Emitter<ProgressOverviewState> emit,
+  ) async {
+    _balanceWanted = true;
+    final current = state;
+    if (current is! ProgressOverviewLoaded ||
+        current.loadingToday ||
+        current.today != null) {
+      return;
+    }
+    emit(current.copyWith(loadingToday: true, todayError: null));
+    final result = await _getToday();
+    final latest = state;
+    if (latest is! ProgressOverviewLoaded) return;
+    emit(
+      latest.copyWith(
+        loadingToday: false,
+        today: result.valueOrNull ?? latest.today,
+        todayError: result.errorOrNull,
+      ),
+    );
   }
 
   Future<void> _onReviewRequested(
@@ -167,16 +198,16 @@ class ProgressOverviewBloc
       return _load(emit);
     }
     emit(current.copyWith(refreshing: true, refreshError: null));
-    final todayF = _getToday();
+    final todayF = _balanceWanted ? _getToday() : null;
     final result = await _getOverview();
     final todayResult = await todayF;
-    final today = todayResult.valueOrNull ?? current.today;
+    final today = todayResult?.valueOrNull ?? current.today;
     emit(
       result.fold(
         (overview) => ProgressOverviewState.loaded(
           overview,
           today: today,
-          todayError: today == null ? todayResult.errorOrNull : null,
+          todayError: today == null ? todayResult?.errorOrNull : null,
         ),
         (error) => current.copyWith(refreshing: false, refreshError: error),
       ),
@@ -184,15 +215,15 @@ class ProgressOverviewBloc
   }
 
   Future<void> _load(Emitter<ProgressOverviewState> emit) async {
-    final todayF = _getToday();
+    final todayF = _balanceWanted ? _getToday() : null;
     final result = await _getOverview();
     final todayResult = await todayF;
     emit(
       result.fold(
         (overview) => ProgressOverviewState.loaded(
           overview,
-          today: todayResult.valueOrNull,
-          todayError: todayResult.errorOrNull,
+          today: todayResult?.valueOrNull,
+          todayError: todayResult?.errorOrNull,
         ),
         ProgressOverviewState.failure,
       ),
