@@ -25,6 +25,7 @@ import 'social_data_di.dart';
 import 'admin_data_di.dart';
 import 'reminders_data_di.dart';
 import 'run_data_di.dart';
+import 'wod_data_di.dart';
 import 'wellbeing_data_di.dart';
 import 'guides_data_di.dart';
 
@@ -80,5 +81,6 @@ void registerData(GetIt getIt, AppConfig config) {
   registerRemindersData(getIt);
   registerWellbeingData(getIt);
   registerRunData(getIt);
+  registerWodData(getIt);
   registerGuidesData(getIt);
 }

@@ -39,6 +39,9 @@ enum Sport {
   basketball('BASKETBALL', SportCategory.match, ActivityKind.match),
   volleyball('VOLLEYBALL', SportCategory.match, ActivityKind.match),
   tennis('TENNIS', SportCategory.match, ActivityKind.match),
+
+  /// Un WOD (ADR 0069): lo apunta el servidor al guardar una marca.
+  wod('WOD', SportCategory.other, ActivityKind.other),
   other('OTHER', SportCategory.other, ActivityKind.other);
 
   const Sport(this.api, this.category, this.kind);

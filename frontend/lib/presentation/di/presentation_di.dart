@@ -17,6 +17,7 @@ import 'social_presentation_di.dart';
 import 'admin_presentation_di.dart';
 import 'reminders_presentation_di.dart';
 import 'run_presentation_di.dart';
+import 'wod_presentation_di.dart';
 import 'wellbeing_presentation_di.dart';
 import 'guides_presentation_di.dart';
 
@@ -57,5 +58,6 @@ void registerPresentation(GetIt getIt) {
   registerRemindersPresentation(getIt);
   registerWellbeingPresentation(getIt);
   registerRunPresentation(getIt);
+  registerWodPresentation(getIt);
   registerGuidesPresentation(getIt);
 }

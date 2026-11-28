@@ -263,7 +263,8 @@ class _PastActivityViewState extends State<_PastActivityView>
       // Se vuelve al historial, a «Actividades y partidos».
       case null:
         context.showSnack(l10n.trainingPastActivitySaved);
-      case TrainingSection.gym:
+      // Desde WOD no se apunta una actividad a mano: la crea su marca.
+      case TrainingSection.gym || TrainingSection.wod:
         withView(l10n.trainingPastActivitySaved, TrainingPaths.activities);
     }
   }

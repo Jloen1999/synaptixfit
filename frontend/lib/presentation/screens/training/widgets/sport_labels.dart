@@ -20,6 +20,7 @@ abstract final class SportLabels {
     Sport.basketball => l10n.sportBasketball,
     Sport.volleyball => l10n.sportVolleyball,
     Sport.tennis => l10n.sportTennis,
+    Sport.wod => l10n.trainingSectionWod,
     Sport.other => l10n.sportOther,
   };
 
@@ -56,6 +57,7 @@ abstract final class SportLabels {
       Sport.padel => 'padel',
       Sport.basketball => 'basketball',
       Sport.tennis => 'tennis',
+      Sport.wod => 'gym',
       Sport.volleyball || Sport.other => 'other',
     }}.webp',
   );

@@ -295,4 +295,5 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `RUN_OUT_OF_RANGE` | 422 | La carrera aún no ha terminado (más de 2 min de margen de reloj) o empezó hace más de 30 días | Solo se guardan carreras ya terminadas de los últimos 30 días. Puedes apuntarla a mano si fue esta semana. | Activo |
 | `RUN_ROUTE_TOO_LARGE` | 413 | La ruta supera 20 000 puntos o la petición pasa de 2 MB, se declare o no su tamaño (`STATUS_BY_CODE`: es el tamaño, no un dato mal escrito) | La ruta es demasiado larga para guardarla. Prueba a apuntar la actividad a mano. | Activo |
 | `RUN_NOT_FOUND` | 404 | La carrera con GPS no existe o es de otro usuario | Esa carrera ya no existe. | Activo |
+| `WOD_NOT_FOUND` | 404 | El WOD no existe o es de otro usuario (una plantilla desconocida, un formato mal montado o una marca que no cuadra con el formato son `VALIDATION_ERROR` de su campo; ADR 0069) | Ese WOD ya no existe. | Activo |
 | `RUN_WORKOUT_NOT_FOUND` | 404 | El entreno de carrera no existe o es de otro usuario (una plantilla desconocida es `VALIDATION_ERROR` del campo `templateCode`) | Ese entreno de carrera ya no existe. | Activo |

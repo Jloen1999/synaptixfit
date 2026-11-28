@@ -9,6 +9,7 @@ String? trainingErrorMessage(AppLocalizations l10n, String code) =>
       'RUN_ROUTE_TOO_LARGE' => l10n.runErrorRouteTooLarge,
       'RUN_NOT_FOUND' => l10n.runErrorNotFound,
       'RUN_WORKOUT_NOT_FOUND' => l10n.runErrorWorkoutNotFound,
+      'WOD_NOT_FOUND' => l10n.wodErrorNotFound,
       'CYCLE_CONSENT_REQUIRED' => l10n.trainingErrorCycleConsentRequired,
       'HEALTH_CONSENT_REQUIRED' => l10n.trainingErrorHealthConsentRequired,
       'CYCLE_TRACKING_OFF' => l10n.trainingErrorCycleTrackingOff,

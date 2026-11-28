@@ -16,8 +16,8 @@ reducidas a 1200 px de ancho, recortadas a 16:9 y convertidas a WebP (calidad 80
 | `other.webp` | Otro deporte | Kenny Nguyễn | https://unsplash.com/photos/Srqa975RQDY |
 | `gym.webp` | Gimnasio | Danielle Cerullo | https://unsplash.com/photos/CQfNt66ttZM |
 
-`gym.webp` está preparada pero aún no se usa en ninguna pantalla: «Gimnasio» no tiene tarjeta en la rejilla de
-«Deportes».
+`gym.webp` es el fondo del WOD en marcha (ADR 0069), bajo un velo oscuro; «Gimnasio» no tiene tarjeta en la rejilla
+de «Deportes».
 
 Para cambiar una foto: sustituye el archivo con el mismo nombre (WebP, unos 1200 px de ancho, 120 KB como mucho)
 y actualiza su fila.

@@ -18,6 +18,8 @@ public enum Sport {
     BASKETBALL(SportCategory.MATCH, ActivityKind.MATCH, "baloncesto", "basket", "basquet"),
     VOLLEYBALL(SportCategory.MATCH, ActivityKind.MATCH, "voley", "volley", "voleibol", "volei"),
     TENNIS(SportCategory.MATCH, ActivityKind.MATCH, "tenis", "tennis"),
+    /** Entreno del día por formato (ADR 0069): lo apunta el servidor al guardar una marca de WOD. */
+    WOD(SportCategory.OTHER, ActivityKind.OTHER),
     OTHER(SportCategory.OTHER, ActivityKind.OTHER);
 
     private final SportCategory category;

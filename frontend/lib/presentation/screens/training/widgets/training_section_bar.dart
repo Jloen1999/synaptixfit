@@ -7,11 +7,12 @@ import '../training_routes.dart';
 
 /// Apartados de la pestaña Entreno. Se elige con `?section=` en `/training`,
 /// así cada apartado tiene su enlace y la barra inferior se conserva. Para
-/// añadir uno (p. ej. CrossFit) basta un valor aquí, su texto y su pantalla
-/// en `trainingBranchRoutes`.
+/// añadir uno basta un valor aquí, su texto y su pantalla en
+/// `trainingBranchRoutes`.
 enum TrainingSection {
   gym('gym', Icons.fitness_center_rounded),
-  run('run', Icons.directions_run_rounded);
+  run('run', Icons.directions_run_rounded),
+  wod('wod', Icons.timer_outlined);
 
   const TrainingSection(this.query, this.icon);
 
@@ -24,10 +25,11 @@ enum TrainingSection {
   String label(BuildContext context) => switch (this) {
     TrainingSection.gym => context.localizations.trainingSectionGym,
     TrainingSection.run => context.localizations.trainingSectionRun,
+    TrainingSection.wod => context.localizations.trainingSectionWod,
   };
 }
 
-/// Selector «Gimnasio | Correr» bajo la barra de Entreno. Cambia de apartado
+/// Selector «Gimnasio | Deportes | WOD» bajo la barra de Entreno. Cambia de apartado
 /// con `go` (misma pestaña, otra consulta): no apila pantallas.
 class TrainingSectionBar extends StatelessWidget
     implements PreferredSizeWidget {

@@ -28,6 +28,10 @@ import 'run_workout_editor/page/run_workout_editor_page.dart';
 import 'sports/page/other_sport_page.dart';
 import 'sports/page/sport_run_page.dart';
 import 'widgets/training_section_bar.dart';
+import 'wod_editor/page/wod_editor_page.dart';
+import 'wod_home/page/wod_home_page.dart';
+import 'wod_live/page/wod_live_page.dart';
+import '../../../domain/models/training/wod.dart';
 import '../../../domain/models/training/sport_activity.dart';
 import '../../../domain/models/training/run.dart';
 
@@ -128,6 +132,14 @@ abstract final class TrainingPaths {
   /// «Otro deporte»: buscador y «Añadir».
   static const otherSport = '$root/sports/other';
 
+  /// Editor de mi WOD (pantalla completa, ADR 0069). `extra`: el `Wod` del
+  /// que se parte (uno mío o una plantilla de ejemplo); sin él, desde cero.
+  static const wodEditor = '$root/wods/edit';
+
+  /// WOD en marcha, con su cronómetro (pantalla completa). `extra`:
+  /// `WodLiveArgs`.
+  static const wodLive = '$root/wods/live';
+
   /// «Mi ciclo» (opcional, ADR 0033).
   static const cycle = '$root/cycle';
 
@@ -188,6 +200,7 @@ List<RouteBase> trainingBranchRoutes() => [
       state.uri.queryParameters['section'],
     )) {
       TrainingSection.run => const RunHomePage(),
+      TrainingSection.wod => const WodHomePage(),
       TrainingSection.gym => const TrainingHomePage(),
     },
     routes: [
@@ -300,6 +313,18 @@ List<RouteBase> trainingRoutes() => [
   GoRoute(
     path: TrainingPaths.otherSport,
     builder: (_, _) => const OtherSportPage(),
+  ),
+  // WOD (ADR 0069): el editor y el cronómetro, a pantalla completa.
+  GoRoute(
+    path: TrainingPaths.wodEditor,
+    builder: (_, state) =>
+        WodEditorPage(wod: state.extra is Wod ? state.extra! as Wod : null),
+  ),
+  GoRoute(
+    path: TrainingPaths.wodLive,
+    builder: (_, state) => WodLivePage(
+      args: state.extra is WodLiveArgs ? state.extra! as WodLiveArgs : null,
+    ),
   ),
   GoRoute(path: TrainingPaths.cycle, builder: (_, _) => const CyclePage()),
   // Grabar una carrera, a pantalla completa como la sesión en vivo.

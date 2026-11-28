@@ -10,6 +10,45 @@ servers:
 security:
 - bearer: []
 paths:
+  /api/v1/training/wods/{id}:
+    put:
+      tags:
+      - Training - WOD
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WodRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WodResponse"
+    delete:
+      tags:
+      - Training - WOD
+      operationId: delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
   /api/v1/training/weekly-plans/{weekStart}:
     get:
       tags:
@@ -71,7 +110,7 @@ paths:
     put:
       tags:
       - Training - Run workouts
-      operationId: update
+      operationId: update_1
       parameters:
       - name: workoutId
         in: path
@@ -95,7 +134,7 @@ paths:
     delete:
       tags:
       - Training - Run workouts
-      operationId: delete
+      operationId: delete_1
       parameters:
       - name: workoutId
         in: path
@@ -589,7 +628,7 @@ paths:
     patch:
       tags:
       - Wellness profile
-      operationId: update_1
+      operationId: update_2
       requestBody:
         content:
           application/json:
@@ -668,7 +707,7 @@ paths:
     patch:
       tags:
       - Academic profile
-      operationId: update_2
+      operationId: update_3
       requestBody:
         content:
           application/json:
@@ -753,7 +792,7 @@ paths:
     put:
       tags:
       - Planner - Blocks
-      operationId: update_3
+      operationId: update_4
       parameters:
       - name: blockId
         in: path
@@ -777,7 +816,7 @@ paths:
     delete:
       tags:
       - Planner - Blocks
-      operationId: delete_1
+      operationId: delete_2
       parameters:
       - name: blockId
         in: path
@@ -1192,7 +1231,7 @@ paths:
     put:
       tags:
       - Admin - Exercises
-      operationId: update_4
+      operationId: update_5
       parameters:
       - name: exerciseId
         in: path
@@ -1216,7 +1255,7 @@ paths:
     delete:
       tags:
       - Admin - Exercises
-      operationId: delete_2
+      operationId: delete_3
       parameters:
       - name: exerciseId
         in: path
@@ -1231,6 +1270,55 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/DeleteExerciseResponse"
+  /api/v1/training/wods:
+    post:
+      tags:
+      - Training - WOD
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WodRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WodResponse"
+  /api/v1/training/wods/results:
+    get:
+      tags:
+      - Training - WOD
+      operationId: marks
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WodMarkResponse"
+    post:
+      tags:
+      - Training - WOD
+      operationId: saveResult
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WodResultRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WodMarkResponse"
   /api/v1/training/templates/{templateId}/use:
     post:
       tags:
@@ -1558,7 +1646,7 @@ paths:
     post:
       tags:
       - Training - Run workouts
-      operationId: create
+      operationId: create_1
       requestBody:
         content:
           application/json:
@@ -1706,7 +1794,7 @@ paths:
     post:
       tags:
       - Social - Together
-      operationId: create_1
+      operationId: create_2
       requestBody:
         content:
           application/json:
@@ -2166,7 +2254,7 @@ paths:
     post:
       tags:
       - Academic - Subjects
-      operationId: create_2
+      operationId: create_3
       requestBody:
         content:
           application/json:
@@ -2766,7 +2854,7 @@ paths:
     post:
       tags:
       - Social - Posts
-      operationId: create_3
+      operationId: create_4
       requestBody:
         content:
           application/json:
@@ -3017,7 +3105,7 @@ paths:
     post:
       tags:
       - Routines
-      operationId: create_4
+      operationId: create_5
       requestBody:
         content:
           application/json:
@@ -3108,7 +3196,7 @@ paths:
     post:
       tags:
       - Routines
-      operationId: create_5
+      operationId: create_6
       parameters:
       - name: routineId
         in: path
@@ -3648,7 +3736,7 @@ paths:
     post:
       tags:
       - Planner - Deadlines
-      operationId: create_6
+      operationId: create_7
       requestBody:
         content:
           application/json:
@@ -3677,7 +3765,7 @@ paths:
     post:
       tags:
       - Planner - calendar feed
-      operationId: create_7
+      operationId: create_8
       responses:
         "201":
           description: Created
@@ -3728,7 +3816,7 @@ paths:
     post:
       tags:
       - Planner - Blocks
-      operationId: create_8
+      operationId: create_9
       requestBody:
         content:
           application/json:
@@ -3930,7 +4018,7 @@ paths:
     post:
       tags:
       - Academic - Notes
-      operationId: create_9
+      operationId: create_10
       requestBody:
         content:
           application/json:
@@ -4144,7 +4232,7 @@ paths:
     post:
       tags:
       - Challenges
-      operationId: create_10
+      operationId: create_11
       requestBody:
         content:
           application/json:
@@ -4649,7 +4737,7 @@ paths:
     post:
       tags:
       - Admin - Exercises
-      operationId: create_11
+      operationId: create_12
       requestBody:
         content:
           application/json:
@@ -4703,7 +4791,7 @@ paths:
     delete:
       tags:
       - Training sessions
-      operationId: delete_3
+      operationId: delete_4
       parameters:
       - name: sessionId
         in: path
@@ -4765,7 +4853,7 @@ paths:
     delete:
       tags:
       - Academic - Subjects
-      operationId: delete_4
+      operationId: delete_5
       parameters:
       - name: subjectId
         in: path
@@ -4779,7 +4867,7 @@ paths:
     patch:
       tags:
       - Academic - Subjects
-      operationId: update_5
+      operationId: update_6
       parameters:
       - name: subjectId
         in: path
@@ -4889,7 +4977,7 @@ paths:
     delete:
       tags:
       - Social - Posts
-      operationId: delete_5
+      operationId: delete_6
       parameters:
       - name: postId
         in: path
@@ -4928,7 +5016,7 @@ paths:
     delete:
       tags:
       - Social - Comments
-      operationId: delete_6
+      operationId: delete_7
       parameters:
       - name: commentId
         in: path
@@ -4985,7 +5073,7 @@ paths:
     delete:
       tags:
       - Routines
-      operationId: delete_7
+      operationId: delete_8
       parameters:
       - name: routineId
         in: path
@@ -4999,7 +5087,7 @@ paths:
     patch:
       tags:
       - Routines
-      operationId: update_6
+      operationId: update_7
       parameters:
       - name: routineId
         in: path
@@ -5177,7 +5265,7 @@ paths:
     delete:
       tags:
       - Planner - Deadlines
-      operationId: delete_8
+      operationId: delete_9
       parameters:
       - name: deadlineId
         in: path
@@ -5191,7 +5279,7 @@ paths:
     patch:
       tags:
       - Planner - Deadlines
-      operationId: update_7
+      operationId: update_8
       parameters:
       - name: deadlineId
         in: path
@@ -5259,7 +5347,7 @@ paths:
     delete:
       tags:
       - Academic - Notes
-      operationId: delete_9
+      operationId: delete_10
       parameters:
       - name: noteId
         in: path
@@ -5273,7 +5361,7 @@ paths:
     patch:
       tags:
       - Academic - Notes
-      operationId: update_8
+      operationId: update_9
       parameters:
       - name: noteId
         in: path
@@ -5327,7 +5415,7 @@ paths:
     patch:
       tags:
       - Account
-      operationId: update_9
+      operationId: update_10
       parameters:
       - name: zone
         in: query
@@ -5369,7 +5457,7 @@ paths:
     delete:
       tags:
       - Challenges
-      operationId: delete_10
+      operationId: delete_11
       parameters:
       - name: challengeId
         in: path
@@ -5383,7 +5471,7 @@ paths:
     patch:
       tags:
       - Challenges
-      operationId: update_10
+      operationId: update_11
       parameters:
       - name: challengeId
         in: path
@@ -5451,7 +5539,7 @@ paths:
     delete:
       tags:
       - Admin - Users
-      operationId: delete_11
+      operationId: delete_12
       parameters:
       - name: userId
         in: path
@@ -5515,6 +5603,38 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ExerciseResponse"
+  /api/v1/training/wods/today:
+    get:
+      tags:
+      - Training - WOD
+      operationId: today_1
+      parameters:
+      - name: templateCode
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WodBoardResponse"
+  /api/v1/training/wods/templates:
+    get:
+      tags:
+      - Training - WOD
+      operationId: templates
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WodTemplateResponse"
   /api/v1/training/weekly-plans:
     get:
       tags:
@@ -5687,7 +5807,7 @@ paths:
     delete:
       tags:
       - Training - Runs
-      operationId: delete_12
+      operationId: delete_13
       parameters:
       - name: blockId
         in: path
@@ -5721,7 +5841,7 @@ paths:
     get:
       tags:
       - Training - Run workouts
-      operationId: templates
+      operationId: templates_1
       responses:
         "200":
           description: OK
@@ -6089,7 +6209,7 @@ paths:
     get:
       tags:
       - Social - Together
-      operationId: templates_1
+      operationId: templates_2
       responses:
         "200":
           description: OK
@@ -6340,7 +6460,7 @@ paths:
     delete:
       tags:
       - Academic - Study materials
-      operationId: delete_13
+      operationId: delete_14
       parameters:
       - name: materialId
         in: path
@@ -7254,7 +7374,7 @@ paths:
     delete:
       tags:
       - Academic - Files
-      operationId: delete_14
+      operationId: delete_15
       parameters:
       - name: fileId
         in: path
@@ -8511,7 +8631,7 @@ paths:
     delete:
       tags:
       - Notifications
-      operationId: delete_15
+      operationId: delete_16
       parameters:
       - name: notificationId
         in: path
@@ -8554,6 +8674,106 @@ paths:
           description: No Content
 components:
   schemas:
+    WodMovementDto:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 30
+          minLength: 0
+        name:
+          type: string
+          maxLength: 60
+          minLength: 0
+        quantity:
+          type: integer
+          format: int32
+          maximum: 10000
+          minimum: 1
+        unit:
+          type: string
+          enum:
+          - REPS
+          - CALORIES
+          - METERS
+        rxKg:
+          type: number
+          format: double
+        scaledKg:
+          type: number
+          format: double
+    WodRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        templateCode:
+          type: string
+          maxLength: 30
+          minLength: 0
+        title:
+          type: string
+          maxLength: 80
+          minLength: 0
+        strength:
+          type: string
+          maxLength: 300
+          minLength: 0
+        format:
+          type: string
+          enum:
+          - FOR_TIME
+          - AMRAP
+          - EMOM
+          - TABATA
+        timeCapSeconds:
+          type: integer
+          format: int32
+        rounds:
+          type: integer
+          format: int32
+        movements:
+          type: array
+          items:
+            $ref: "#/components/schemas/WodMovementDto"
+          maxItems: 12
+          minItems: 1
+      required:
+      - format
+      - movements
+    WodResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        templateCode:
+          type: string
+        title:
+          type: string
+        strength:
+          type: string
+        format:
+          type: string
+          enum:
+          - FOR_TIME
+          - AMRAP
+          - EMOM
+          - TABATA
+        timeCapSeconds:
+          type: integer
+          format: int32
+        rounds:
+          type: integer
+          format: int32
+        movements:
+          type: array
+          items:
+            $ref: "#/components/schemas/WodMovementDto"
     WeeklyPlanRequest:
       type: object
       properties:
@@ -11015,6 +11235,107 @@ components:
           - YOGA
           - PILATES
           - REHAB
+    WodResultRequest:
+      type: object
+      properties:
+        wodId:
+          type: string
+          format: uuid
+        wod:
+          $ref: "#/components/schemas/WodRequest"
+        division:
+          type: string
+          enum:
+          - RX
+          - SCALED
+        scoreType:
+          type: string
+          enum:
+          - TIME
+          - ROUNDS_REPS
+          - REPS
+          - LOAD
+        value:
+          type: integer
+          format: int32
+          maximum: 100000
+          minimum: 0
+        extraReps:
+          type: integer
+          format: int32
+          maximum: 100000
+          minimum: 0
+        capped:
+          type: boolean
+        durationSeconds:
+          type: integer
+          format: int32
+          maximum: 18000
+          minimum: 1
+        effort:
+          type: integer
+          format: int32
+          maximum: 10
+          minimum: 1
+      required:
+      - division
+      - value
+    WodMarkResponse:
+      type: object
+      properties:
+        result:
+          $ref: "#/components/schemas/WodResultResponse"
+        title:
+          type: string
+        templateCode:
+          type: string
+        format:
+          type: string
+          enum:
+          - FOR_TIME
+          - AMRAP
+          - EMOM
+          - TABATA
+        best:
+          type: boolean
+    WodResultResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        wodId:
+          type: string
+          format: uuid
+        division:
+          type: string
+          enum:
+          - RX
+          - SCALED
+        scoreType:
+          type: string
+          enum:
+          - TIME
+          - ROUNDS_REPS
+          - REPS
+          - LOAD
+        value:
+          type: integer
+          format: int32
+        extraReps:
+          type: integer
+          format: int32
+        capped:
+          type: boolean
+        durationSeconds:
+          type: integer
+          format: int32
+        blockId:
+          type: string
+          format: uuid
+        performedAt:
+          type: string
+          format: date-time
     StartSessionRequest:
       type: object
       properties:
@@ -14254,6 +14575,7 @@ components:
           - BASKETBALL
           - VOLLEYBALL
           - TENNIS
+          - WOD
           - OTHER
         sportName:
           type: string
@@ -15438,6 +15760,68 @@ components:
           type: boolean
       required:
       - active
+    WodBoardResponse:
+      type: object
+      properties:
+        wodId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        templateCode:
+          type: string
+        example:
+          type: boolean
+        title:
+          type: string
+        strength:
+          type: string
+        format:
+          type: string
+          enum:
+          - FOR_TIME
+          - AMRAP
+          - EMOM
+          - TABATA
+        timeCapSeconds:
+          type: integer
+          format: int32
+        rounds:
+          type: integer
+          format: int32
+        movements:
+          type: array
+          items:
+            $ref: "#/components/schemas/WodMovementDto"
+        bestRx:
+          $ref: "#/components/schemas/WodResultResponse"
+        bestScaled:
+          $ref: "#/components/schemas/WodResultResponse"
+        todayResult:
+          $ref: "#/components/schemas/WodResultResponse"
+    WodTemplateResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        format:
+          type: string
+          enum:
+          - FOR_TIME
+          - AMRAP
+          - EMOM
+          - TABATA
+        timeCapSeconds:
+          type: integer
+          format: int32
+        rounds:
+          type: integer
+          format: int32
+        movements:
+          type: array
+          items:
+            $ref: "#/components/schemas/WodMovementDto"
     PageResponseWeeklyPlanResponse:
       type: object
       properties:
@@ -16986,6 +17370,7 @@ components:
           - BASKETBALL
           - VOLLEYBALL
           - TENNIS
+          - WOD
           - OTHER
         sportCategory:
           type: string

@@ -126,6 +126,8 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
             sections.put("gpsRuns", rows("carreras_gps t", "t.usuario_id = :id", "t.iniciada_en"));
         }
         sections.put("runWorkouts", rows("entrenos_carrera t", "t.usuario_id = :id", "t.creado_en"));
+        sections.put("wods", rows("wods t", "t.usuario_id = :id", "t.creado_en"));
+        sections.put("wodResults", rows("resultados_wod t", "t.usuario_id = :id", "t.hecho_en"));
         sections.put("loggedActivities", rows("actividades_apuntadas t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("reminderOptions", single("opciones_avisos"));
         sections.put("legalAcceptances", rows("aceptaciones_legales t", "t.usuario_id = :id", "t.aceptada_en"));

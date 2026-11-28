@@ -3649,5 +3649,290 @@
   "sportSuggestDance": "Baile",
   "sportSuggestMartial": "Artes marciales",
   "sportSuggestHiking": "Senderismo",
-  "sportSuggestSkating": "Patinaje"
+  "sportSuggestSkating": "Patinaje",
+  "trainingSectionWod": "WOD",
+  "wodAddMine": "Añadir mi WOD",
+  "wodExamplePill": "WOD de ejemplo",
+  "wodEdit": "Editar",
+  "wodChangeExample": "Cambiar por otro",
+  "wodTemplatesTitle": "Elige un WOD de ejemplo",
+  "wodDefaultTitle": "WOD de hoy",
+  "wodBoardLabel": "Pizarra del WOD",
+  "wodFormatForTime": "Por tiempo",
+  "wodFormatAmrap": "AMRAP",
+  "wodFormatEmom": "EMOM",
+  "wodFormatTabata": "Tabata",
+  "wodFormatHelpForTime": "Haz todo lo antes posible.",
+  "wodFormatHelpAmrap": "Haz todas las rondas que puedas antes de que se acabe el tiempo.",
+  "wodFormatHelpEmom": "Cada minuto haz lo que pone y descansa lo que sobre.",
+  "wodFormatHelpTabata": "8 rondas: 20 segundos a tope y 10 de descanso.",
+  "wodHeadlineRounds": "{count, plural, =0{0 rondas} =1{1 ronda} other{{count} rondas}}",
+  "@wodHeadlineRounds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wodHeadlineMinutes": "{format} {minutes} min",
+  "@wodHeadlineMinutes": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "wodTimeCap": "Límite: {minutes} min",
+  "@wodTimeCap": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "wodNoTimeCap": "Sin límite de tiempo",
+  "wodStrength": "Fuerza",
+  "wodMaxReps": "Las que puedas",
+  "wodQuantityCalories": "{count} cal",
+  "@wodQuantityCalories": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wodQuantityMeters": "{count} m",
+  "@wodQuantityMeters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wodKg": "{kg} kg",
+  "@wodKg": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "wodDivisionLabel": "¿Cómo lo haces?",
+  "wodDivisionRx": "Rx",
+  "wodDivisionScaled": "Adaptado",
+  "wodDivisionRxSpoken": "Rx, tal cual está escrito",
+  "wodDivisionHelp": "Rx = tal cual está escrito. Adaptado = con menos peso o un movimiento más fácil.",
+  "wodBestMark": "Tu mejor marca: {score}",
+  "@wodBestMark": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "wodNoBestMark": "Aún no tienes marca en este WOD",
+  "wodTodayMark": "Hoy: {score}",
+  "@wodTodayMark": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "wodTodayNone": "Hoy aún no lo has hecho",
+  "wodStartTimer": "Empezar cronómetro",
+  "wodLogMark": "Apuntar marca",
+  "wodMarksTitle": "Mis marcas",
+  "wodMarksEmptyTitle": "Aún no tienes marcas",
+  "wodMarksEmptyMessage": "Haz el WOD de hoy y guarda cómo te fue: aquí verás tus mejores marcas.",
+  "wodMarkBest": "Mejor marca",
+  "wodScoreRoundsReps": "{rounds, plural, =0{0 rondas} =1{1 ronda} other{{rounds} rondas}} + {reps} reps",
+  "@wodScoreRoundsReps": {
+    "placeholders": {
+      "rounds": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "wodScoreReps": "{count, plural, =0{0 repeticiones} =1{1 repetición} other{{count} repeticiones}}",
+  "@wodScoreReps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wodScoreCapped": "Sin terminar: {score}",
+  "@wodScoreCapped": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "wodMarkLine": "{score} · {division}",
+  "@wodMarkLine": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "division": {
+        "type": "String"
+      }
+    }
+  },
+  "wodMarkSaved": "Marca guardada. La tienes en Entreno › WOD › Mis marcas.",
+  "wodMarkSavedBest": "¡Mejor marca! La tienes en Entreno › WOD › Mis marcas.",
+  "wodResultTitle": "¿Cómo te fue?",
+  "wodResultMinutes": "Minutos",
+  "wodResultSeconds": "Segundos",
+  "wodResultRounds": "Rondas completas",
+  "wodResultExtraReps": "Repeticiones de más",
+  "wodResultReps": "Repeticiones",
+  "wodResultCapped": "No terminé a tiempo",
+  "wodResultCappedHelp": "Apunta las repeticiones que llevabas.",
+  "wodResultSave": "Guardar marca",
+  "wodResultInvalid": "Escribe tu marca para guardarla.",
+  "wodLivePause": "Pausa",
+  "wodLiveResume": "Seguir",
+  "wodLiveFinish": "Terminar",
+  "wodLivePaused": "En pausa",
+  "wodLiveWork": "Trabajo",
+  "wodLiveRest": "Descanso",
+  "wodLiveRoundOf": "Ronda {round} de {total}",
+  "@wodLiveRoundOf": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "wodLiveMinuteOf": "Minuto {round} de {total}",
+  "@wodLiveMinuteOf": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "wodLiveTimeLeft": "Quedan",
+  "wodLiveElapsed": "Llevas",
+  "wodLiveTimeUp": "¡Tiempo!",
+  "wodLiveClockLabel": "Cronómetro: {time}",
+  "@wodLiveClockLabel": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wodLiveAnnounceWork": "Ronda {round}: trabajo",
+  "@wodLiveAnnounceWork": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "wodLiveAnnounceRest": "Descanso",
+  "wodLiveAnnounceMinute": "Minuto {round}",
+  "@wodLiveAnnounceMinute": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "wodLiveAnnounceDone": "Tiempo. WOD terminado.",
+  "wodLiveExitTitle": "¿Salir del WOD?",
+  "wodLiveExitMessage": "El cronómetro se perderá y no se guardará ninguna marca.",
+  "wodLiveExitConfirm": "Salir",
+  "wodLiveExitStay": "Seguir con el WOD",
+  "wodLiveMissingTitle": "No hay ningún WOD en marcha",
+  "wodLiveMissingMessage": "Vuelve a Entreno › WOD y toca «Empezar cronómetro».",
+  "wodLiveGoToWod": "Ir a WOD",
+  "wodLiveTitle": "WOD en marcha",
+  "wodEditorNewTitle": "Mi WOD",
+  "wodEditorEditTitle": "Editar WOD",
+  "wodEditorName": "Título (opcional)",
+  "wodEditorFormat": "Formato",
+  "wodEditorTimeCap": "Límite de tiempo",
+  "wodEditorDuration": "Duración",
+  "wodEditorMinutes": "{minutes} min",
+  "@wodEditorMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "wodEditorNoCap": "Sin límite",
+  "wodEditorRounds": "Rondas",
+  "wodEditorStrength": "Parte de fuerza (opcional)",
+  "wodEditorStrengthHint": "Ej.: Sentadilla 5 × 5",
+  "wodEditorMovements": "Movimientos",
+  "wodEditorMovementN": "Movimiento {n}",
+  "@wodEditorMovementN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "wodEditorMovementName": "Nombre",
+  "wodEditorQuantity": "Cantidad",
+  "wodEditorUnit": "Unidad",
+  "wodUnitNameReps": "Repeticiones",
+  "wodUnitNameCalories": "Calorías",
+  "wodUnitNameMeters": "Metros",
+  "wodEditorRxKg": "Kg Rx (opcional)",
+  "wodEditorScaledKg": "Kg adaptado (opcional)",
+  "wodEditorAddMovement": "Añadir movimiento",
+  "wodEditorRemoveMovement": "Quitar movimiento {n}",
+  "@wodEditorRemoveMovement": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "wodEditorSave": "Guardar WOD",
+  "wodEditorDelete": "Eliminar WOD",
+  "wodEditorDeleteTitle": "¿Eliminar este WOD?",
+  "wodEditorDeleteMessage": "Se borrarán también sus marcas. Los entrenos ya apuntados se quedan.",
+  "wodEditorNeedsMovement": "Añade al menos un movimiento con nombre.",
+  "wodEditorTabataNote": "Tabata dura siempre 4 minutos: 8 rondas de 20 segundos y 10 de descanso.",
+  "wodSavedWhere": "WOD guardado. Lo tienes en Entreno › WOD.",
+  "wodDeleted": "WOD eliminado.",
+  "wodErrorNotFound": "Ese WOD ya no existe.",
+  "wodTemplateTripleTen": "Triple diez",
+  "wodTemplateTwelveNonstop": "Doce sin parar",
+  "wodTemplateMinuteByMinute": "Minuto a minuto",
+  "wodTemplateFourMinutes": "Cuatro minutos",
+  "wodTemplateRunAndPush": "Corre y empuja",
+  "wodTemplateTwoDumbbells": "Dos mancuernas",
+  "wodTemplateSwingClock": "Reloj de balanceos",
+  "wodTemplateLongList": "La lista larga",
+  "wodMoveAirSquat": "Sentadillas",
+  "wodMovePushUp": "Flexiones",
+  "wodMoveSitUp": "Abdominales",
+  "wodMoveBurpee": "Burpees",
+  "wodMoveLunge": "Zancadas",
+  "wodMoveRun": "Carrera",
+  "wodMoveDumbbellThruster": "Sentadilla con empuje (mancuernas)",
+  "wodMoveDumbbellRow": "Remo con mancuerna",
+  "wodMoveKettlebellSwing": "Balanceo con pesa rusa",
+  "wodMoveJumpRope": "Saltos de comba"
 }

@@ -39,6 +39,8 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM carreras_gps WHERE usuario_id = :id",
             "DELETE FROM eventos_entreno_carrera WHERE usuario_id = :id",
             "DELETE FROM entrenos_carrera WHERE usuario_id = :id",
+            // WOD (ADR 0069): sus marcas caen en cascada con cada WOD.
+            "DELETE FROM wods WHERE usuario_id = :id",
             "DELETE FROM seguimiento_ciclo WHERE usuario_id = :id",
             "DELETE FROM pausas_racha WHERE usuario_id = :id",
             // Con amigos (ADR 0044): lo compartido con amigos sale de la persona; lo que creó y sigue usando

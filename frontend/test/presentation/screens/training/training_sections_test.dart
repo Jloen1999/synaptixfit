@@ -8,7 +8,7 @@ import 'package:synaptixfit/presentation/screens/training/training_routes.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/training_section_bar.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
-/// Pestaña Entreno con apartados «Gimnasio | Correr» (ADR 0037): cada uno
+/// Pestaña Entreno con apartados «Gimnasio | Deportes | WOD» (ADR 0037 y 0069): cada uno
 /// tiene su enlace en `/training`, se cambia con `go` (sin apilar) y los
 /// enlaces de siempre a rutinas no cambian.
 void main() {
@@ -16,6 +16,11 @@ void main() {
     expect(TrainingPaths.section(TrainingSection.gym), '/training');
     expect(TrainingPaths.section(TrainingSection.run), '/training?section=run');
     expect(TrainingSection.fromQuery('run'), TrainingSection.run);
+    expect(TrainingPaths.section(TrainingSection.wod), '/training?section=wod');
+    expect(TrainingSection.fromQuery('wod'), TrainingSection.wod);
+    expect(TrainingSection.values, hasLength(3));
+    expect(TrainingPaths.wodEditor, '/training/wods/edit');
+    expect(TrainingPaths.wodLive, '/training/wods/live');
     expect(TrainingSection.fromQuery(null), TrainingSection.gym);
     expect(TrainingSection.fromQuery('crossfit'), TrainingSection.gym);
     expect(TrainingPaths.routine('r1'), '/training/routines/r1');
@@ -90,6 +95,16 @@ void main() {
       '/training?section=run',
     );
     // `go`, no `push`: no hay nada debajo a lo que volver.
+    expect(router.canPop(), isFalse);
+
+    // El tercer apartado (ADR 0069).
+    await tester.tap(find.text('WOD'));
+    await tester.pumpAndSettle();
+    expect(find.text('section:wod'), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.toString(),
+      '/training?section=wod',
+    );
     expect(router.canPop(), isFalse);
   });
 }
