@@ -600,8 +600,19 @@ void main() {
     testWidgets('la sesión libre descansa con el mismo panel que la rutina', (
       tester,
     ) async {
+      // Una libre antigua: series sin ejercicio («Series libres», ADR 0067).
+      final base = ready(rest: 75);
       when(() => bloc.state).thenReturn(
-        ready(rest: 75).copyWith(exercises: const [], dayNumber: null),
+        base.copyWith(
+          exercises: const [],
+          dayNumber: null,
+          session: base.session!.copyWith(
+            sets: [
+              for (final s in base.session!.sets)
+                s.copyWith(plannedExerciseId: null),
+            ],
+          ),
+        ),
       );
       await pump(tester, const LiveSessionPage(sessionId: 's1'));
       expect(tester.takeException(), isNull);

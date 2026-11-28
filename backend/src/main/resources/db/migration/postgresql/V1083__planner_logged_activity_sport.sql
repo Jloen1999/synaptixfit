@@ -38,6 +38,7 @@ UPDATE actividades_apuntadas a SET deporte = 'OTHER',
 WHERE a.deporte IS NULL;
 
 ALTER TABLE actividades_apuntadas
+    ALTER COLUMN deporte SET DEFAULT 'OTHER',
     ALTER COLUMN deporte SET NOT NULL,
     ADD CONSTRAINT ck_actividades_apuntadas_deporte CHECK (deporte IN ('RUN', 'WALK', 'BIKE', 'SWIM', 'FOOTBALL',
         'PADEL', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS', 'OTHER')),
