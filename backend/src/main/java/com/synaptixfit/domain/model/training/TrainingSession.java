@@ -1,6 +1,7 @@
 package com.synaptixfit.domain.model.training;
 
 import com.synaptixfit.domain.exception.training.SessionAlreadyCompletedException;
+import com.synaptixfit.domain.exception.training.SessionNotFreeException;
 import com.synaptixfit.domain.exception.training.SessionNotCompletedException;
 import com.synaptixfit.domain.exception.training.SessionSetNotFoundException;
 import com.synaptixfit.domain.exception.training.SessionUnmarkExpiredException;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -30,6 +32,10 @@ import java.util.UUID;
  * <p>Series de calentamiento (ADR 0031): van en una lista aparte ({@link #warmupSets}) con su propia
  * numeración. {@link #sets} solo devuelve las de trabajo, que son las que cuentan para el volumen, los
  * récords, la propuesta de peso y el progreso del día.
+ *
+ * <p>Sesión libre (ADR 0067): no tiene día de rutina, pero lleva su propia lista de ejercicios
+ * ({@link #freeExercises}), elegida al empezar o sumada sobre la marcha. Sus series se enlazan con esos huecos, así
+ * queda registrado qué se hizo. Las sesiones libres antiguas no tienen lista: sus series quedan «sin ejercicio».
  */
 public final class TrainingSession {
 
@@ -48,6 +54,7 @@ public final class TrainingSession {
     private final List<SessionSet> warmupSets;
     private Instant pausedAt;
     private long pausedSeconds;
+    private final List<PlannedExercise> freeExercises;
 
     public TrainingSession(UUID id, UUID userId, UUID routineId, UUID dayId, SessionType type, Instant startedAt,
                            Instant completedAt, int durationMinutes, Integer rpe, Double calories, int xpAwarded,
@@ -59,6 +66,15 @@ public final class TrainingSession {
     public TrainingSession(UUID id, UUID userId, UUID routineId, UUID dayId, SessionType type, Instant startedAt,
                            Instant completedAt, int durationMinutes, Integer rpe, Double calories, int xpAwarded,
                            List<SessionSet> sets, Instant pausedAt, long pausedSeconds) {
+        this(id, userId, routineId, dayId, type, startedAt, completedAt, durationMinutes, rpe, calories, xpAwarded,
+                sets, pausedAt, pausedSeconds, List.of());
+    }
+
+    /** Con los ejercicios de una sesión libre ({@code freeExercises}; vacía en una de rutina). */
+    public TrainingSession(UUID id, UUID userId, UUID routineId, UUID dayId, SessionType type, Instant startedAt,
+                           Instant completedAt, int durationMinutes, Integer rpe, Double calories, int xpAwarded,
+                           List<SessionSet> sets, Instant pausedAt, long pausedSeconds,
+                           List<PlannedExercise> freeExercises) {
         this.id = Objects.requireNonNull(id, "id");
         this.userId = Objects.requireNonNull(userId, "userId");
         this.routineId = routineId;
@@ -75,6 +91,7 @@ public final class TrainingSession {
         this.warmupSets = new ArrayList<>(all.stream().filter(SessionSet::warmup).toList());
         this.pausedAt = completedAt == null ? pausedAt : null;
         this.pausedSeconds = Math.max(0, pausedSeconds);
+        this.freeExercises = new ArrayList<>(dayId != null || freeExercises == null ? List.of() : freeExercises);
     }
 
     /**
@@ -227,6 +244,52 @@ public final class TrainingSession {
         SessionType type = dayId == null ? SessionType.FREE : SessionType.ROUTINE;
         return new TrainingSession(UUID.randomUUID(), userId, routineId, dayId, type, now, null, 0, null, null, 0,
                 List.of());
+    }
+
+    /** Sesión libre que empieza con los ejercicios {@code exercises} (puede ir vacía y sumarlos después). */
+    public static TrainingSession startFree(UUID userId, Instant now, List<FreeExercise> exercises) {
+        TrainingSession session = start(userId, null, null, now);
+        (exercises == null ? List.<FreeExercise>of() : exercises)
+                .forEach(e -> session.addFreeExercise(e.exercise(), e.parameters()));
+        return session;
+    }
+
+    /**
+     * Suma un ejercicio a la lista de la sesión libre, al final. Si ya está, devuelve el que había: un doble toque o
+     * un reintento no lo repite. En una sesión de rutina da {@code SESSION_NOT_FREE}: su lista es la del día.
+     */
+    public PlannedExercise addFreeExercise(ExerciseRef exercise, ExerciseParameters parameters) {
+        ensureInProgress();
+        if (dayId != null) {
+            throw new SessionNotFreeException();
+        }
+        Optional<PlannedExercise> existing = freeExercises.stream()
+                .filter(p -> p.exerciseId().equals(exercise.id())).findFirst();
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        PlannedExercise added = new PlannedExercise(UUID.randomUUID(), exercise, parameters, freeExercises.size() + 1,
+                List.of());
+        freeExercises.add(added);
+        return added;
+    }
+
+    /** Hueco de la lista de la sesión libre (vacío si no es de esta sesión). */
+    public Optional<PlannedExercise> findFreeExercise(UUID plannedExerciseId) {
+        return freeExercises.stream().filter(p -> p.id().equals(plannedExerciseId)).findFirst();
+    }
+
+    /** Ejercicios de la sesión libre, en el orden en que se sumaron (vacía en una de rutina). */
+    public List<PlannedExercise> freeExercises() {
+        return freeExercises.stream().sorted(Comparator.comparingInt(PlannedExercise::order)).toList();
+    }
+
+    /** Ejercicio que se suma a una sesión libre, con sus cifras de partida. */
+    public record FreeExercise(ExerciseRef exercise, ExerciseParameters parameters) {
+        public FreeExercise {
+            Objects.requireNonNull(exercise, "exercise");
+            Objects.requireNonNull(parameters, "parameters");
+        }
     }
 
     /** Registra (o sustituye) la serie {@code setNumber} del ejercicio planificado indicado. */

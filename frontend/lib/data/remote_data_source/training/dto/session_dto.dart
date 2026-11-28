@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'routine_dto.dart' show blankToNull;
+import 'routine_dto.dart' show blankToNull, PlannedExerciseDto;
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/training/exercise_calibration.dart';
 import '../../../../domain/models/training/load_suggestion.dart';
@@ -68,6 +68,7 @@ abstract class SessionDto with _$SessionDto {
     DateTime? pausedAt,
     @Default(0) int pausedSeconds,
     List<SessionSetDto>? warmupSets,
+    List<PlannedExerciseDto>? exercises,
   }) = _SessionDto;
 
   const SessionDto._();
@@ -93,6 +94,7 @@ abstract class SessionDto with _$SessionDto {
     warmupSets: (warmupSets ?? const [])
         .map((s) => s.toDomain(warmup: true))
         .toList(),
+    exercises: (exercises ?? const []).map((e) => e.toDomain()).toList(),
   );
 }
 

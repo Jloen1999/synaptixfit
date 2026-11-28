@@ -387,6 +387,58 @@ class TrainingFlowIT {
     }
 
     /** ADR 0027: repeticiones por serie, sustituir un ejercicio, portada de la rutina y series de tiempo. */
+    /** Sesión libre con ejercicios (ADR 0067): lista, series con su ejercicio, añadir, repetir y guardar como rutina. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void freeSessionWithExercisesRepeatAndSaveAsRoutine() throws Exception {
+        String token = register("libre@example.com");
+        String bench = jdbc.sql("SELECT CAST(id AS text) FROM ejercicios WHERE 'peso' = ANY (tipo_medicion)"
+                + " AND COALESCE(activo, true) ORDER BY nombre LIMIT 1").query(String.class).single();
+        String timed = jdbc.sql("SELECT CAST(id AS text) FROM ejercicios WHERE tipo_medicion = ARRAY['tiempo']"
+                + " AND COALESCE(activo, true) ORDER BY nombre LIMIT 1").query(String.class).single();
+
+        String session = body(post("/api/v1/training/sessions")
+                .content("{\"exerciseIds\":[\"%s\"]}".formatted(bench)), token, 201);
+        String sessionId = JsonPath.read(session, "$.id");
+        assertThat((String) JsonPath.read(session, "$.type")).isEqualTo("FREE");
+        String slot = JsonPath.read(session, "$.exercises[0].id");
+        assertThat((String) JsonPath.read(session, "$.exercises[0].exerciseId")).isEqualTo(bench);
+
+        String added = body(post("/api/v1/training/sessions/" + sessionId + "/exercises")
+                .content("{\"exerciseId\":\"%s\"}".formatted(timed)), token, 200);
+        assertThat((List<?>) JsonPath.read(added, "$.exercises")).hasSize(2);
+        body(post("/api/v1/training/sessions/" + sessionId + "/exercises")
+                .content("{\"exerciseId\":\"%s\"}".formatted(timed)), token, 200);
+
+        body(post("/api/v1/training/sessions/" + sessionId + "/sets").content(
+                "{\"plannedExerciseId\":\"%s\",\"setNumber\":1,\"repsDone\":8,\"weightKg\":40}".formatted(slot)),
+                token, 200);
+        String withSets = body(get("/api/v1/training/sessions/" + sessionId), token, 200);
+        assertThat((String) JsonPath.read(withSets, "$.sets[0].plannedExerciseId")).isEqualTo(slot);
+        assertThat((List<?>) JsonPath.read(withSets, "$.exercises")).hasSize(2);
+
+        String done = body(post("/api/v1/training/sessions/" + sessionId + "/finish")
+                .content("{\"durationSeconds\":1800,\"rpe\":6}"), token, 200);
+        // La XP sigue la regla de cualquier sesión: en la prueba dura segundos y no da XP por corta.
+        assertThat((String) JsonPath.read(done, "$.xpWithheld")).isEqualTo("SHORT_SESSION");
+        String week = body(get("/api/v1/training/week"), token, 200);
+        assertThat((List<String>) JsonPath.read(week, "$.days[?(@.today == true)].state")).containsExactly("DONE");
+
+        String routine = body(post("/api/v1/training/sessions/" + sessionId + "/routine")
+                .content("{\"name\":\"Pierna del jueves\"}"), token, 201);
+        assertThat((String) JsonPath.read(routine, "$.name")).isEqualTo("Pierna del jueves");
+        assertThat((List<?>) JsonPath.read(routine, "$.weeks[0].days[0].exercises")).hasSize(1);
+
+        String again = body(post("/api/v1/training/sessions")
+                .content("{\"fromSessionId\":\"%s\"}".formatted(sessionId)), token, 201);
+        assertThat((String) JsonPath.read(again, "$.exercises[0].exerciseId")).isEqualTo(bench);
+        String againId = JsonPath.read(again, "$.id");
+        mvc.perform(auth(post("/api/v1/training/sessions/" + againId + "/routine")
+                        .content("{\"name\":\"Nada\"}"), token))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("SESSION_NOTHING_TO_SAVE"));
+    }
+
     @Test
     void perSetTargetsReplaceExerciseAndTimedSets() throws Exception {
         String token = register("perset@example.com");

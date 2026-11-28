@@ -246,7 +246,9 @@ class _HomeContentState extends State<_HomeContent> {
 
   /// «Más»: lo que se usa de vez en cuando, fuera de la fila de atajos. Lleva
   /// siempre Historial y Ejercicios: en el móvil no están en la fila.
-  Future<void> _showMore(BuildContext context) async {
+  /// Con [wideShown], Historial y Ejercicios ya están en los atajos: la hoja
+  /// no los repite.
+  Future<void> _showMore(BuildContext context, {bool wideShown = false}) async {
     final l10n = context.localizations;
     final path = await showModalBottomSheet<String>(
       context: context,
@@ -272,16 +274,18 @@ class _HomeContentState extends State<_HomeContent> {
               ),
             ),
             for (final (icon, label, path) in [
-              (
-                AppIcons.history,
-                l10n.trainingHistoryTitle,
-                TrainingPaths.history,
-              ),
-              (
-                AppIcons.search,
-                l10n.trainingQuickExercises,
-                TrainingPaths.exercises,
-              ),
+              if (!wideShown) ...[
+                (
+                  AppIcons.history,
+                  l10n.trainingHistoryTitle,
+                  TrainingPaths.history,
+                ),
+                (
+                  AppIcons.search,
+                  l10n.trainingQuickExercises,
+                  TrainingPaths.exercises,
+                ),
+              ],
               (
                 AppIcons.calendar,
                 l10n.trainingWeeklyPlanTitle,
@@ -406,11 +410,11 @@ class _HomeContentState extends State<_HomeContent> {
                   TrainingQuickAction(
                     icon: AppIcons.freeSession,
                     label: l10n.trainingFreeSession,
+                    // Elegir antes qué se hace (ADR 0067): ejercicios,
+                    // repetir un entreno o un día de plantilla.
                     onTap: state.startingSession || state.working
                         ? null
-                        : () => bloc.add(
-                            const TrainingHomeEvent.sessionStarted(),
-                          ),
+                        : () => context.push(TrainingPaths.freeSession),
                   ),
                   TrainingQuickAction(
                     key: _guide.templates,
@@ -437,10 +441,11 @@ class _HomeContentState extends State<_HomeContent> {
                     onTap: () =>
                         _TrainingHomeView.open(context, TrainingPaths.history),
                   ),
-                  TrainingQuickAction(
+                  TrainingQuickAction.more(
                     icon: AppIcons.moreActions,
                     label: l10n.trainingQuickMore,
-                    onTap: () => _showMore(context),
+                    onMore: (wideShown) =>
+                        _showMore(context, wideShown: wideShown),
                   ),
                 ],
               ),

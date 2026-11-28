@@ -560,6 +560,28 @@ void main() {
       expect(find.text('Entrenar con amigos'), findsOneWidget);
     });
 
+    testWidgets('a 600 px, «Más» no repite Ejercicios ni Historial', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(state);
+      await pump(tester, width: 600);
+      await tester.tap(find.bySemanticsLabel('Más'));
+      await tester.pumpAndSettle();
+      final sheet = find.byType(BottomSheet);
+      expect(
+        find.descendant(of: sheet, matching: find.text('Historial')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: sheet, matching: find.text('Ejercicios')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: sheet, matching: find.text('Plan semanal')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('táctil, etiquetas, contraste y texto al 200 %', (
       tester,
     ) async {

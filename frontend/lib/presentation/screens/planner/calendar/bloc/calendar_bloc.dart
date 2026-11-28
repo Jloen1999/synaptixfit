@@ -245,7 +245,8 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
     silent: state.status == CalendarStatus.ready,
   );
 
-  /// Carga bloques (obligatorio), conflictos, entregas y balance (opcionales).
+  /// Carga bloques (obligatorio), conflictos, títulos (de la línea de tiempo)
+  /// y balance (opcionales).
   Future<void> _load(
     Emitter<CalendarState> emit,
     DateTime weekStart, {
@@ -260,7 +261,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
           error: null,
           blocks: weekChanged ? const [] : state.blocks,
           conflicts: weekChanged ? const [] : state.conflicts,
-          deadlines: weekChanged ? const [] : state.deadlines,
           balance: weekChanged ? null : state.balance,
         ),
       );
@@ -293,11 +293,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
             error: null,
             blocks: value,
             conflicts: conflicts.valueOrNull ?? state.conflicts,
-            deadlines: entries == null
-                ? state.deadlines
-                : entries
-                      .where((t) => t.kind == TimelineKind.deadline)
-                      .toList(),
             blockTitles: entries == null
                 ? state.blockTitles
                 : {

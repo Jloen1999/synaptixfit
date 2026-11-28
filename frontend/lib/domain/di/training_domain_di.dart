@@ -67,6 +67,9 @@ import '../use_cases/training/save_pending_sets_use_case.dart';
 import '../use_cases/training/save_weekly_plan_use_case.dart';
 import '../use_cases/training/search_exercises_use_case.dart';
 import '../use_cases/training/skip_routine_day_use_case.dart';
+import '../use_cases/training/add_session_exercise_use_case.dart';
+import '../use_cases/training/save_session_as_routine_use_case.dart';
+import '../use_cases/training/start_free_session_use_case.dart';
 import '../use_cases/training/start_session_use_case.dart';
 import '../use_cases/training/submit_check_in_use_case.dart';
 import '../use_cases/training/unmark_session_use_case.dart';
@@ -167,6 +170,15 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetTrainingWeekUseCaseContract>(
       () => GetTrainingWeekUseCase(getIt()),
+    )
+    ..registerLazySingleton<StartFreeSessionUseCaseContract>(
+      () => StartFreeSessionUseCase(getIt()),
+    )
+    ..registerLazySingleton<AddSessionExerciseUseCaseContract>(
+      () => AddSessionExerciseUseCase(getIt()),
+    )
+    ..registerLazySingleton<SaveSessionAsRoutineUseCaseContract>(
+      () => SaveSessionAsRoutineUseCase(getIt()),
     )
     ..registerLazySingleton<StartSessionUseCaseContract>(
       () => StartSessionUseCase(getIt()),

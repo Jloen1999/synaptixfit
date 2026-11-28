@@ -51,6 +51,38 @@ class TrainingRepository implements TrainingRepositoryContract {
   );
 
   @override
+  Future<AppResult<TrainingSession>> startFreeSession({
+    List<String>? exerciseIds,
+    String? fromSessionId,
+    String? templateId,
+    int? templateDayNumber,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.startFreeSession(
+      exerciseIds: exerciseIds,
+      fromSessionId: fromSessionId,
+      templateId: templateId,
+      templateDayNumber: templateDayNumber,
+    )).toDomain(),
+  );
+
+  @override
+  Future<AppResult<TrainingSession>> addSessionExercise(
+    String sessionId,
+    String exerciseId,
+  ) => RepositoryErrorHandler.guard(
+    () async =>
+        (await _remote.addSessionExercise(sessionId, exerciseId)).toDomain(),
+  );
+
+  @override
+  Future<AppResult<String>> saveSessionAsRoutine(
+    String sessionId,
+    String name,
+  ) => RepositoryErrorHandler.guard(
+    () => _remote.saveSessionAsRoutine(sessionId, name),
+  );
+
+  @override
   Future<AppResult<TrainingSession>> getSession(String sessionId) =>
       RepositoryErrorHandler.guard(
         () async => (await _remote.getSession(sessionId)).toDomain(),

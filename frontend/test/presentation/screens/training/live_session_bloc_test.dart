@@ -17,6 +17,8 @@ import 'package:synaptixfit/domain/use_cases/training/delete_set_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/finish_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_routine_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/add_session_exercise_use_case.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/use_cases/training/record_set_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/pause_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/resume_session_use_case.dart';
@@ -35,6 +37,19 @@ import 'training_fixtures.dart';
 import 'live_session_draft_fakes.dart';
 
 class _MockGetSession extends Mock implements GetSessionUseCaseContract {}
+
+/// «Añadir ejercicio» que devuelve la sesión con el ejercicio sumado.
+class _FakeAddExercise implements AddSessionExerciseUseCaseContract {
+  _FakeAddExercise(this.result);
+  final TrainingSession result;
+  final calls = <String>[];
+
+  @override
+  Future<AppResult<TrainingSession>> call(String sessionId, String id) async {
+    calls.add(id);
+    return Success(result);
+  }
+}
 
 class _MockPause extends Mock implements PauseSessionUseCaseContract {}
 
@@ -136,7 +151,11 @@ void main() {
     ).thenAnswer((_) async => const Success(SessionBookends()));
   });
 
-  LiveSessionBloc build({DateTime Function()? clock}) => LiveSessionBloc(
+  LiveSessionBloc build({
+    DateTime Function()? clock,
+    AddSessionExerciseUseCaseContract? addExercise,
+  }) => LiveSessionBloc(
+    addExercise: addExercise,
     getSession: getSession,
     getRoutine: getRoutine,
     recordSet: recordSet,
@@ -177,6 +196,67 @@ void main() {
     activeExerciseId: active,
     exerciseSeconds: seconds,
   );
+
+  group('sesión libre con ejercicios (ADR 0067)', () {
+    final free = TrainingFixtures.session(startedAt: startedAt).copyWith(
+      routineId: null,
+      dayId: null,
+      type: SessionType.free,
+      exercises: [TrainingFixtures.planned('f1')],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'la lista de la sesión es la de la tabla, sin leer ninguna rutina',
+      setUp: () =>
+          when(() => getSession('s1')).thenAnswer((_) async => Success(free)),
+      build: build,
+      act: (b) => b.add(const LiveSessionEvent.started('s1')),
+      verify: (b) {
+        expect(b.state.exercises.map((e) => e.id), ['f1']);
+        expect(b.state.isFreeSession, isTrue);
+        expect(b.state.isFree, isFalse);
+        verifyNever(() => getRoutine(any()));
+      },
+    );
+
+    final withSecond = free.copyWith(
+      exercises: [
+        TrainingFixtures.planned('f1'),
+        TrainingFixtures.planned('f2', order: 1),
+      ],
+    );
+    final add = _FakeAddExercise(withSecond);
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      '«Añadir ejercicio» lo suma al final y pasa a ser el que toca',
+      build: () => build(addExercise: add),
+      seed: () => ready(session: free).copyWith(
+        exercises: free.exercises,
+        dayNumber: null,
+        activeExerciseId: 'f1',
+      ),
+      act: (b) => b.add(const LiveSessionEvent.exerciseAdded('ex-f2')),
+      verify: (b) {
+        expect(add.calls, ['ex-f2']);
+        expect(b.state.exercises.map((e) => e.id), ['f1', 'f2']);
+        expect(b.state.activeExerciseId, 'f2');
+        expect(b.state.exerciseAddedCount, 1);
+        expect(b.state.addingExercise, isFalse);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'si ya estaba, solo va a él',
+      build: () => build(addExercise: add),
+      seed: () => ready(
+        session: withSecond,
+      ).copyWith(exercises: withSecond.exercises, activeExerciseId: 'f2'),
+      act: (b) => b.add(const LiveSessionEvent.exerciseAdded('ex-f1')),
+      verify: (b) {
+        expect(b.state.activeExerciseId, 'f1');
+        expect(b.state.exercises, hasLength(2));
+      },
+    );
+  });
 
   blocTest<LiveSessionBloc, LiveSessionState>(
     'tras cargar, añade lo que hizo la última vez en cada ejercicio',

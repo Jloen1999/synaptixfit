@@ -19,6 +19,8 @@ import '../../../../../domain/models/training/session_adaptation.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../exercise_explorer/bloc/exercise_explorer_bloc.dart';
+import '../../widgets/exercise_picker_list.dart';
 import '../../widgets/exercise_thumbnail.dart';
 import '../../widgets/metric_chips.dart';
 import '../../widgets/training_content.dart';
@@ -517,6 +519,19 @@ class _LiveViewState extends State<_LiveView> {
 
   /// «Cambiar solo hoy»: alternativas del ejercicio de la rutina; el elegido
   /// se usa en esta sesión y la rutina no cambia (ADR 0031).
+  /// «Añadir ejercicio» (sesión libre, ADR 0067): el buscador en una hoja; el
+  /// elegido se suma a la lista y pasa a ser el que toca.
+  Future<void> _addExercise(LiveSessionState state) async {
+    final exercise = await showAddExerciseSheet(
+      context,
+      createBloc: () => getIt<ExerciseExplorerBloc>(),
+      current: {for (final e in state.exercises) e.exerciseId},
+    );
+    if (exercise != null && mounted) {
+      _bloc.add(LiveSessionEvent.exerciseAdded(exercise.id));
+    }
+  }
+
   Future<void> _swap(LiveSessionState state, PlannedExercise e) async {
     final original = state.originals[e.id] ?? e;
     final bloc = _bloc;
@@ -685,6 +700,22 @@ class _LiveViewState extends State<_LiveView> {
             Directionality.of(context),
           ),
         ),
+        // Ejercicio sumado a la sesión libre: se dice cuál y que ya toca.
+        BlocListener<LiveSessionBloc, LiveSessionState>(
+          listenWhen: (p, c) => c.exerciseAddedCount != p.exerciseAddedCount,
+          listener: (context, state) {
+            final added = state.exercises
+                .where((e) => e.id == state.activeExerciseId)
+                .firstOrNull;
+            if (added != null) {
+              _announce(
+                context.localizations.trainingFreeExerciseAdded(
+                  added.exerciseName,
+                ),
+              );
+            }
+          },
+        ),
       ],
       child: BlocConsumer<LiveSessionBloc, LiveSessionState>(
         listenWhen: (p, c) => c.effect != null && p.effect != c.effect,
@@ -786,6 +817,24 @@ class _LiveViewState extends State<_LiveView> {
                       LiveSessionEvent.started(state.sessionId ?? ''),
                     ),
                   ),
+                  // Sesión libre nueva sin ejercicios todavía (ADR 0067).
+                  LiveStatus.ready
+                      when !state.completed &&
+                          state.isFree &&
+                          !state.looseSetsOnly =>
+                    AppEmptyState(
+                      icon: AppIcons.freeSession,
+                      title: l10n.trainingFreeEmptyTitle,
+                      message: l10n.trainingFreeEmptyMessage,
+                      action: AppPrimaryButton(
+                        label: l10n.trainingAddExercise,
+                        icon: AppIcons.add,
+                        loading: state.addingExercise,
+                        onPressed: state.addingExercise
+                            ? null
+                            : () => unawaited(_addExercise(state)),
+                      ),
+                    ),
                   LiveStatus.ready when state.completed || state.isFree =>
                     Column(
                       children: [
@@ -842,6 +891,20 @@ class _LiveViewState extends State<_LiveView> {
                           header: [
                             // Entrenar con amigos (ADR 0044): solo se ve si lo es.
                             const WorkoutTogetherPanel(),
+                            // Sesión libre (ADR 0067): sumar otro sobre la marcha.
+                            if (state.isFreeSession) ...[
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: FilledButton.tonalIcon(
+                                  onPressed: state.addingExercise
+                                      ? null
+                                      : () => unawaited(_addExercise(state)),
+                                  icon: const Icon(AppIcons.add),
+                                  label: Text(l10n.trainingAddExercise),
+                                ),
+                              ),
+                              const SizedBox(height: TokensSpacing.m),
+                            ],
                             // Sin conexión: las series se guardan en el teléfono.
                             if (state.pendingSets.isNotEmpty) ...[
                               AppInlineMessage(
@@ -896,7 +959,9 @@ class _LiveViewState extends State<_LiveView> {
                   ),
                 },
                 bottomNavigationBar:
-                    state.status != LiveStatus.ready || state.completed
+                    state.status != LiveStatus.ready ||
+                        state.completed ||
+                        (state.isFree && !state.looseSetsOnly)
                     ? null
                     : state.isFree
                     ? _FreeBottomBar(

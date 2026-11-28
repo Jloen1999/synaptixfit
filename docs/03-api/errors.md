@@ -281,6 +281,9 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `SESSION_NOT_COMPLETED` | 409 | Desmarcar o corregir una sesión no finalizada | Esta sesión no está finalizada. | Activo |
 | `SESSION_DAY_MISMATCH` | 400 | Día sin rutina o de otra rutina | Ese día no pertenece a la rutina. | Activo |
 | `SESSION_STALE_OPEN` | 409 | Empezar un día que tiene una sesión abandonada (abierta más de 6 h) sin cerrar | Tienes una sesión de ese día sin terminar. Termínala con lo registrado o descártala antes. | Activo |
+| `SESSION_NOT_FREE` | 409 | «Añadir ejercicio» en una sesión de un día de rutina (ADR 0067) | Solo la sesión libre suma ejercicios sobre la marcha. | Activo |
+| `SESSION_NOTHING_TO_REPEAT` | 422 | Repetir una sesión sin series con ejercicio (sesión libre antigua) | Ese entreno no guardó qué ejercicios hiciste. Elige otro o los ejercicios a mano. | Activo |
+| `SESSION_NOTHING_TO_SAVE` | 422 | «Guardar como rutina» sin ninguna serie hecha con su ejercicio | Para guardarla como rutina, apunta al menos una serie de un ejercicio. | Activo |
 | `SESSION_UNMARK_EXPIRED` | 422 | Desmarcar una sesión terminada otro día (se corrige o se elimina) | Solo se desmarca el mismo día. Puedes corregirla o eliminarla. | Activo |
 | `SESSION_PAST_DATE_INVALID` | 422 | Registrar una sesión pasada con fecha futura o de hace más de 7 días | Elige hoy o uno de los 7 días anteriores. | Activo |
 | `TRAINING_PROFILE_REQUIRED` | 422 | Generar rutina sin perfil de bienestar | Completa tu perfil de bienestar para generar una rutina. | Activo |

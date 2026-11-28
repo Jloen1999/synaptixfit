@@ -16,6 +16,13 @@ import com.synaptixfit.application.port.input.training.PauseTrainingSessionUseCa
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
 import com.synaptixfit.application.port.input.training.ResumeTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
+import com.synaptixfit.application.port.input.training.StartFreeSessionUseCase;
+import com.synaptixfit.application.port.input.training.AddSessionExerciseUseCase;
+import com.synaptixfit.application.port.input.training.SaveSessionAsRoutineUseCase;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.RoutineResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.AddSessionExerciseRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.SaveAsRoutineRequest;
+import com.synaptixfit.infrastructure.i18n.RequestLanguage;
 import com.synaptixfit.application.port.input.training.UnmarkTrainingSessionUseCase;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
@@ -78,6 +85,9 @@ public class TrainingSessionController {
     private final GetLoadSuggestionsUseCase loadSuggestions;
     private final PauseTrainingSessionUseCase pause;
     private final ResumeTrainingSessionUseCase resume;
+    private final StartFreeSessionUseCase startFree;
+    private final AddSessionExerciseUseCase addExercise;
+    private final SaveSessionAsRoutineUseCase saveAsRoutine;
 
     public TrainingSessionController(StartTrainingSessionUseCase start, RecordSessionSetUseCase recordSet,
                                      DeleteSessionSetUseCase deleteSet, FinishTrainingSessionUseCase finish,
@@ -88,7 +98,12 @@ public class TrainingSessionController {
                                      GetPendingTrainingDayUseCase pendingDay, GetTrainingWeekUseCase trainingWeek,
                                      GetSessionAdaptationUseCase adaptation,
                                      GetLoadSuggestionsUseCase loadSuggestions,
-                                     PauseTrainingSessionUseCase pause, ResumeTrainingSessionUseCase resume) {
+                                     PauseTrainingSessionUseCase pause, ResumeTrainingSessionUseCase resume,
+                                     StartFreeSessionUseCase startFree, AddSessionExerciseUseCase addExercise,
+                                     SaveSessionAsRoutineUseCase saveAsRoutine) {
+        this.startFree = startFree;
+        this.addExercise = addExercise;
+        this.saveAsRoutine = saveAsRoutine;
         this.pause = pause;
         this.resume = resume;
         this.start = start;
@@ -124,7 +139,13 @@ public class TrainingSessionController {
     /** Empieza (o recupera si ya está en curso para ese día) una sesión. */
     @PostMapping("/sessions")
     @ResponseStatus(HttpStatus.CREATED)
-    public SessionResponse start(@CurrentUserId UUID userId, @RequestBody(required = false) StartSessionRequest request) {
+    public SessionResponse start(@CurrentUserId UUID userId,
+                                 @Valid @RequestBody(required = false) StartSessionRequest request) {
+        if (request != null && request.freePlan()) {
+            return SessionResponse.from(startFree.startFree(new StartFreeSessionUseCase.Command(userId,
+                    request.exerciseIds(), request.fromSessionId(), request.templateId(),
+                    request.templateDayNumber(), RequestLanguage.code())));
+        }
         return SessionResponse.from(start.start(userId, request == null ? null : request.routineId(),
                 request == null ? null : request.dayId()));
     }
@@ -161,6 +182,22 @@ public class TrainingSessionController {
     public SessionResponse recordSet(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
                                      @Valid @RequestBody RecordSetRequest request) {
         return SessionResponse.from(recordSet.recordSet(request.toCommand(userId, sessionId)));
+    }
+
+    /** «Añadir ejercicio» a una sesión libre en curso (409 SESSION_NOT_FREE en una de rutina). */
+    @PostMapping("/sessions/{sessionId}/exercises")
+    public SessionResponse addExercise(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
+                                       @Valid @RequestBody AddSessionExerciseRequest request) {
+        return SessionResponse.from(addExercise.addExercise(userId, sessionId, request.exerciseId()));
+    }
+
+    /** «Guardar como rutina»: rutina propia de un día con lo hecho en la sesión libre (422 SESSION_NOTHING_TO_SAVE). */
+    @PostMapping("/sessions/{sessionId}/routine")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RoutineResponse saveAsRoutine(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
+                                         @Valid @RequestBody SaveAsRoutineRequest request) {
+        return RoutineResponse.from(saveAsRoutine.saveAsRoutine(userId, sessionId, request.name().strip()), null,
+                userId);
     }
 
     /** Pausa la sesión: el tiempo deja de contar para la duración (y la carga) hasta reanudarla. */

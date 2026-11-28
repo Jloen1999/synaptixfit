@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../enums/training_enums.dart';
 import 'recommendation.dart';
+import 'routine.dart';
 
 part 'session.freezed.dart';
 
@@ -60,6 +61,10 @@ abstract class TrainingSession with _$TrainingSession {
     /// Series de calentamiento (ADR 0031): aparte de [sets], que son solo las
     /// de trabajo.
     @Default(<SessionSet>[]) List<SessionSet> warmupSets,
+
+    /// Ejercicios de una sesión libre (ADR 0067), en orden; vacía en una de
+    /// rutina (su lista es la del día) y en las libres antiguas.
+    @Default(<PlannedExercise>[]) List<PlannedExercise> exercises,
   }) = _TrainingSession;
 
   const TrainingSession._();
@@ -67,6 +72,15 @@ abstract class TrainingSession with _$TrainingSession {
   bool get isCompleted => status == SessionStatus.completed;
 
   bool get isPaused => pausedAt != null;
+
+  /// Sesión libre con alguna serie de su lista: se ofrece «Guardar como
+  /// rutina» (el servidor decide con `SESSION_NOTHING_TO_SAVE` si no hay nada
+  /// que guardar; ADR 0067).
+  bool get offersSaveAsRoutine {
+    final slots = {for (final e in exercises) e.id};
+    return dayId == null &&
+        sets.any((s) => slots.contains(s.plannedExerciseId));
+  }
 
   /// Segundos entrenados hasta [now] (desde que empezó menos las pausas), solo
   /// para enseñar el cronómetro: la duración que cuenta la acota el servidor.

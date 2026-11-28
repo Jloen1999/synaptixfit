@@ -93,6 +93,10 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
     required CalibrationAnswer answer,
   }) = LiveSessionCalibrationAnswered;
 
+  /// «Añadir ejercicio» a la sesión libre (ADR 0067).
+  const factory LiveSessionEvent.exerciseAdded(String exerciseId) =
+      LiveSessionExerciseAdded;
+
   const factory LiveSessionEvent.exerciseSwapped(
     String plannedExerciseId,
     ExerciseSwap? swap,

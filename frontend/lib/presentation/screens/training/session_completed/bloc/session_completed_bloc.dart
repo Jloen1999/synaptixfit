@@ -13,6 +13,7 @@ import '../../../../../domain/use_cases/training/apply_recommendation_use_case.d
 import '../../../../../domain/use_cases/training/discard_recommendation_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_highlights_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_use_case.dart';
+import '../../../../../domain/use_cases/training/save_session_as_routine_use_case.dart';
 import '../../training_effect.dart';
 import '../../../../../domain/enums/challenge_status.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
@@ -38,7 +39,9 @@ class SessionCompletedBloc
     required this._createPost,
     required this._getStreak,
     required this._listChallenges,
+    this._saveAsRoutine,
   }) : super(const SessionCompletedState()) {
+    on<SessionCompletedRoutineSaveRequested>(_onSaveAsRoutine);
     on<SessionCompletedStarted>(_onStarted);
     on<SessionCompletedShareRequested>(_onShare);
     on<SessionCompletedRecommendationApplied>(_onApply);
@@ -61,6 +64,28 @@ class SessionCompletedBloc
   final CreatePostUseCaseContract _createPost;
   final GetStreakUseCaseContract _getStreak;
   final ListMyChallengesUseCaseContract _listChallenges;
+  final SaveSessionAsRoutineUseCaseContract? _saveAsRoutine;
+
+  /// «Guardar como rutina» (sesión libre, ADR 0067): una vez; la rutina nueva
+  /// queda en Mis rutinas y la página ofrece «Ver rutina».
+  Future<void> _onSaveAsRoutine(
+    SessionCompletedRoutineSaveRequested event,
+    Emitter<SessionCompletedState> emit,
+  ) async {
+    final save = _saveAsRoutine;
+    final id = state.session?.id;
+    if (save == null || id == null || state.savingRoutine) return;
+    if (state.savedRoutineId != null) return;
+    emit(state.copyWith(savingRoutine: true));
+    final result = await save(id, event.name.trim());
+    switch (result) {
+      case Success(:final value):
+        emit(state.copyWith(savingRoutine: false, savedRoutineId: value));
+      case Failure(:final error):
+        emit(state.copyWith(savingRoutine: false));
+        _effect(emit, TrainingEffect.error(error));
+    }
+  }
 
   /// Con [result] (recién finalizada) no hace falta pedir nada; sin él
   /// (enlace directo) se carga la sesión y no se conoce la experiencia.

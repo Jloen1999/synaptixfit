@@ -12,7 +12,17 @@ class TrainingQuickAction {
     required this.onTap,
     this.key,
     this.wideOnly = false,
-  });
+  }) : onMore = null;
+
+  /// «Más»: al tocarlo sabe si los [wideOnly] ya están a la vista, para no
+  /// volver a ofrecerlos en su hoja.
+  const TrainingQuickAction.more({
+    required this.icon,
+    required this.label,
+    required void Function(bool wideShown) this.onMore,
+    this.key,
+  }) : onTap = null,
+       wideOnly = false;
 
   final IconData icon;
   final String label;
@@ -26,6 +36,14 @@ class TrainingQuickAction {
   /// Solo a la vista si caben todos en una fila (tablet, escritorio): en el
   /// móvil esa acción vive en «Más».
   final bool wideOnly;
+
+  final void Function(bool wideShown)? onMore;
+
+  /// Lo que hace al tocarlo, sabiendo si los [wideOnly] están a la vista.
+  VoidCallback? tapWith({required bool wideShown}) {
+    final more = onMore;
+    return more == null ? onTap : () => more(wideShown);
+  }
 }
 
 /// Fila de atajos de Gimnasio y de Correr (ADR 0055): lo que más se usa, a un
@@ -86,9 +104,15 @@ class TrainingQuickActions extends StatelessWidget {
         } else {
           (visible, inline) = (base, !fitsInRow(base));
         }
+        final wideShown = visible.any((a) => a.wideOnly);
         final buttons = [
           for (final action in visible)
-            _QuickActionButton(key: action.key, action: action, inline: inline),
+            _QuickActionButton(
+              key: action.key,
+              action: action,
+              onTap: action.tapWith(wideShown: wideShown),
+              inline: inline,
+            ),
         ];
         if (!inline) return _row(buttons);
         // Dos por fila si el icono y la palabra más larga caben; si no, uno.
@@ -131,10 +155,12 @@ class _QuickActionButton extends StatelessWidget {
   const _QuickActionButton({
     super.key,
     required this.action,
+    required this.onTap,
     required this.inline,
   });
 
   final TrainingQuickAction action;
+  final VoidCallback? onTap;
 
   /// Icono a la izquierda del nombre (filas de dos) en vez de encima.
   final bool inline;
@@ -166,13 +192,13 @@ class _QuickActionButton extends StatelessWidget {
     return Semantics(
       container: true,
       button: true,
-      enabled: action.onTap != null,
+      enabled: onTap != null,
       label: action.label,
-      onTap: action.onTap,
+      onTap: onTap,
       excludeSemantics: true,
       child: AppFocusOutline(
         child: InkWell(
-          onTap: action.onTap,
+          onTap: onTap,
           borderRadius: BorderRadius.circular(TokensRadius.m),
           child: Padding(
             padding: inline

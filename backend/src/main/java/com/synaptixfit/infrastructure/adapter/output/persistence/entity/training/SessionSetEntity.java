@@ -43,6 +43,12 @@ public class SessionSetEntity {
 
     @Column(name = "ejercicio_id")
     private UUID ejercicioId;
+    /** Hueco de la lista de una sesión libre (ADR 0067); el de rutina va en {@code seleccion_id}. */
+    @Column(name = "hueco_libre_id")
+    private UUID huecoLibreId;
+
+    public UUID getHuecoLibreId() { return huecoLibreId; }
+    public void setHuecoLibreId(UUID v) { this.huecoLibreId = v; }
     @Column(name = "calentamiento")
     private boolean calentamiento;
     @Column(name = "al_fallo")

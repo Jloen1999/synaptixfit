@@ -120,11 +120,25 @@ abstract class LiveSessionState with _$LiveSessionState {
     /// miraba (al marcar su última serie o con «Ir al siguiente»): la pantalla
     /// lo resalta, lo desplaza a la vista y lo anuncia una vez (ADR 0062).
     @Default(0) int advancedCount,
+
+    /// «Añadir ejercicio» en curso, y cuántas veces se ha sumado o elegido uno
+    /// (la pantalla lo lleva a la vista y lo anuncia; ADR 0067).
+    @Default(false) bool addingExercise,
+    @Default(0) int exerciseAddedCount,
   }) = _LiveSessionState;
 
   const LiveSessionState._();
 
   bool get isFree => exercises.isEmpty;
+
+  /// Sesión sin día de rutina: lleva su propia lista y «Añadir ejercicio».
+  bool get isFreeSession => session != null && session!.dayId == null;
+
+  /// Sesión libre antigua: series sin ejercicio y sin lista («Series
+  /// libres»). Una libre nueva y vacía enseña «Añadir ejercicio».
+  bool get looseSetsOnly =>
+      isFree &&
+      (session?.sets.any((s) => s.plannedExerciseId == null) ?? false);
 
   bool get completed => session?.isCompleted ?? false;
 

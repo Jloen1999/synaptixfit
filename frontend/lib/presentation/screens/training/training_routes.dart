@@ -18,6 +18,7 @@ import 'session_history/page/session_history_page.dart';
 import 'training_home/page/training_home_page.dart';
 import 'weekly_plan/page/weekly_plan_page.dart';
 import 'routine_template_detail/page/routine_template_detail_page.dart';
+import 'free_session_start/page/free_session_start_page.dart';
 import 'routine_templates/page/routine_templates_page.dart';
 import 'shared_routine/page/shared_routine_page.dart';
 import 'run_detail/page/run_detail_page.dart';
@@ -63,6 +64,8 @@ abstract final class TrainingPaths {
   static String sessionDetail(String sessionId) =>
       '${session(sessionId)}/detail';
 
+  /// «Sesión libre: cómo empezar» (ADR 0067), a pantalla completa.
+  static const freeSession = '$root/free-session';
   static const history = '$root/history';
   static const checkIn = '$root/check-in';
 
@@ -222,6 +225,10 @@ List<RouteBase> trainingBranchRoutes() => [
 
 /// Rutas a pantalla completa (sin barra inferior).
 List<RouteBase> trainingRoutes() => [
+  GoRoute(
+    path: TrainingPaths.freeSession,
+    builder: (_, _) => const FreeSessionStartPage(),
+  ),
   GoRoute(
     path: '${TrainingPaths.templates}/:templateId',
     builder: (_, state) => RoutineTemplateDetailPage(

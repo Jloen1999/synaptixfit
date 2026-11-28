@@ -111,6 +111,11 @@ abstract final class AppIcons {
 
   /// Entrenar sin rutina (sesión libre). No es `kcal` (el rayo).
   static const IconData freeSession = Icons.play_circle_outline_rounded;
+
+  /// Sesión libre (ADR 0067): «Repetir un entreno» y «Un día de una
+  /// plantilla» (no comparten dibujo con «Repasar» ni con la lista).
+  static const IconData repeatWorkout = Icons.restart_alt_rounded;
+  static const IconData templateDay = Icons.view_day_rounded;
   static const IconData calendar = Icons.calendar_month_rounded;
   static const IconData today = Icons.today_rounded;
   static const IconData notifications = Icons.notifications_outlined;

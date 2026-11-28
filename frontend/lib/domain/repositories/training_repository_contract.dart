@@ -24,6 +24,25 @@ abstract interface class TrainingRepositoryContract {
     String? dayId,
   });
 
+  /// Sesión libre con su lista de ejercicios (ADR 0067): elegidos
+  /// ([exerciseIds]), repetir otra ([fromSessionId]) o un día de plantilla
+  /// ([templateId] + [templateDayNumber]). Sin ninguna, empieza vacía.
+  Future<AppResult<TrainingSession>> startFreeSession({
+    List<String>? exerciseIds,
+    String? fromSessionId,
+    String? templateId,
+    int? templateDayNumber,
+  });
+
+  /// «Añadir ejercicio» a la sesión libre en curso.
+  Future<AppResult<TrainingSession>> addSessionExercise(
+    String sessionId,
+    String exerciseId,
+  );
+
+  /// «Guardar como rutina»: id de la rutina creada con lo hecho.
+  Future<AppResult<String>> saveSessionAsRoutine(String sessionId, String name);
+
   Future<AppResult<TrainingSession>> getSession(String sessionId);
 
   /// Adaptación de hoy de la sesión (regulación cruzada).

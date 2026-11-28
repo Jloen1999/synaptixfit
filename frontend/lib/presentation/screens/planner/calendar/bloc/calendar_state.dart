@@ -10,9 +10,6 @@ abstract class CalendarState with _$CalendarState {
     @Default(<CalendarBlock>[]) List<CalendarBlock> blocks,
     @Default(<BlockConflict>[]) List<BlockConflict> conflicts,
 
-    /// Entregas y exámenes de la semana (línea de tiempo).
-    @Default(<TimelineEntry>[]) List<TimelineEntry> deadlines,
-
     /// Título visible de cada bloque (asignatura o título de la línea de tiempo).
     @Default(<String, String>{}) Map<String, String> blockTitles,
 

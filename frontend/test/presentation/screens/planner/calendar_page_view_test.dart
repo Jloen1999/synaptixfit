@@ -13,7 +13,6 @@ import 'package:synaptixfit/app/di/app_di.dart';
 import 'package:synaptixfit/domain/enums/planner_enums.dart';
 import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
 import 'package:synaptixfit/domain/models/planner/planner_week.dart';
-import 'package:synaptixfit/domain/models/planner/weekly_planning.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/auth/session/bloc/session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/planner/block_editor/bloc/block_editor_bloc.dart';
@@ -66,13 +65,6 @@ void main() {
     subjectId: 's1',
   );
   final other = study.copyWith(id: 'b2');
-  final delivery = TimelineEntry(
-    kind: TimelineKind.deadline,
-    id: 'd1',
-    title: 'Entrega P2',
-    deadlineType: DeadlineType.assignment,
-    start: DateTime(now.year, now.month, now.day, 23, 59),
-  );
 
   CalendarState ready({DateTime? week}) => CalendarState(
     weekStart: week ?? monday,
@@ -80,7 +72,6 @@ void main() {
     blocks: [study],
     blockTitles: const {'b1': 'Bases de datos'},
     blockSubjects: const {'b1': 'Bases de datos'},
-    deadlines: [delivery],
     conflicts: [BlockConflict(first: study, second: other)],
     balance: testBalance,
   );

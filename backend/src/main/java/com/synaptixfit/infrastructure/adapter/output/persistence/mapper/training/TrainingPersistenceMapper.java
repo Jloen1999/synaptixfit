@@ -4,12 +4,15 @@ import com.synaptixfit.domain.model.training.DailyCheckIn;
 import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.ExerciseAdjustment;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
+import com.synaptixfit.domain.model.training.ExerciseRef;
+import com.synaptixfit.domain.model.training.PlannedExercise;
 import com.synaptixfit.domain.model.training.RepRange;
 import com.synaptixfit.domain.model.training.Recommendation;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.model.training.WeeklyTrainingPlan;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.DailyCheckInEntity;
+import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.FreeSessionExerciseEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.RecommendationEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.SessionSetEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.TrainingSessionEntity;
@@ -32,15 +35,49 @@ public final class TrainingPersistenceMapper {
     // ------------------------------------------------------------------ sesiones
 
     public static TrainingSession toDomain(TrainingSessionEntity e, List<SessionSetEntity> sets) {
+        return toDomain(e, sets, List.of());
+    }
+
+    /** Con la lista de ejercicios de la sesión libre ({@code freeExercises}, ADR 0067). */
+    public static TrainingSession toDomain(TrainingSessionEntity e, List<SessionSetEntity> sets,
+                                           List<PlannedExercise> freeExercises) {
         return new TrainingSession(e.getId(), e.getUsuarioId(), e.getRutinaId(), e.getDiaId(),
                 TrainingDbValues.sessionType(e.getTipo()), e.getCreadoEn(), e.getCompletadaEn(), e.getDuracionMinutos(),
                 e.getRpe(), e.getCaloriasQuemadas(), e.getXpOtorgado(),
                 sets.stream().map(TrainingPersistenceMapper::toDomain).toList(), e.getPausadaEn(),
-                e.getSegundosEnPausa());
+                e.getSegundosEnPausa(), freeExercises);
+    }
+
+    /** Hueco de la lista de una sesión libre ↔ fila de {@code ejercicios_sesion_libre}. */
+    public static PlannedExercise toDomain(FreeSessionExerciseEntity e, ExerciseRef exercise) {
+        ExerciseParameters parameters = ExerciseParameters.clamped(e.getSeries(), e.getRepeticiones(),
+                e.getDescansoSegundos(), e.getPesoKg(), null, e.getDuracionObjetivoSegundos(), e.getDistanciaMetros(),
+                e.getSegundosIsometricos()).withRepRange(RepRange.ofStored(e.getRepMin(), e.getRepMax(),
+                e.getRepsEnReserva()));
+        return new PlannedExercise(e.getId(), exercise, parameters, e.getOrden(), List.of());
+    }
+
+    public static void copy(PlannedExercise p, UUID sessionId, FreeSessionExerciseEntity e) {
+        ExerciseParameters x = p.parameters();
+        e.setId(p.id());
+        e.setSesionId(sessionId);
+        e.setEjercicioId(p.exerciseId());
+        e.setOrden(p.order());
+        e.setSeries(x.sets());
+        e.setRepeticiones(x.reps());
+        e.setDescansoSegundos(x.restSeconds());
+        e.setPesoKg(x.weightKg());
+        e.setDuracionObjetivoSegundos(x.targetDurationSeconds());
+        e.setDistanciaMetros(x.distanceMeters());
+        e.setSegundosIsometricos(x.isometricSeconds());
+        e.setRepMin(x.repRange() == null ? null : x.repRange().min());
+        e.setRepMax(x.repRange() == null ? null : x.repRange().max());
+        e.setRepsEnReserva(x.repRange() == null ? null : x.repRange().reserve());
     }
 
     public static SessionSet toDomain(SessionSetEntity e) {
-        return new SessionSet(e.getId(), e.getSeleccionId(), Math.max(1, e.getNumeroSerie()),
+        UUID slot = e.getSeleccionId() != null ? e.getSeleccionId() : e.getHuecoLibreId();
+        return new SessionSet(e.getId(), slot, Math.max(1, e.getNumeroSerie()),
                 e.getRepeticionesRealizadas(), e.getPesoKg(), e.isCompletada(), Math.max(0, e.getFailedReps()),
                 e.getDuracionSegundos(), e.getDistanciaMetros(), e.getEjercicioId(), e.getSegundosActivos(),
                 e.isCalentamiento(), e.isAlFallo());
@@ -62,10 +99,12 @@ public final class TrainingPersistenceMapper {
         e.setSegundosEnPausa((int) Math.min(Integer.MAX_VALUE, s.pausedSeconds()));
     }
 
-    public static void copy(SessionSet s, UUID sessionId, SessionSetEntity e) {
+    /** {@code freeSlot}: la serie es de un hueco de la lista de una sesión libre (va en su propia columna). */
+    public static void copy(SessionSet s, UUID sessionId, SessionSetEntity e, boolean freeSlot) {
         e.setId(s.id());
         e.setSesionId(sessionId);
-        e.setSeleccionId(s.plannedExerciseId());
+        e.setSeleccionId(freeSlot ? null : s.plannedExerciseId());
+        e.setHuecoLibreId(freeSlot ? s.plannedExerciseId() : null);
         e.setNumeroSerie(s.setNumber());
         e.setRepeticionesRealizadas(s.repsDone());
         e.setPesoKg(s.weightKg());

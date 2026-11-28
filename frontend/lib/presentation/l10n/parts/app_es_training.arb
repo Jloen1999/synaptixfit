@@ -3526,5 +3526,81 @@
   "trainingTemplateDetailEmptyHint": "Vuelve a la lista y elige otra.",
   "trainingTemplateDetailRuns": "Días de correr",
   "trainingTemplateRunHint": "Al usarla, estas carreras se crean en Entreno › Correr.",
-  "trainingTemplateExerciseUnknown": "Ejercicio ya no disponible"
+  "trainingTemplateExerciseUnknown": "Ejercicio ya no disponible",
+  "trainingErrorSessionNotFree": "Solo la sesión libre suma ejercicios sobre la marcha.",
+  "trainingErrorSessionNothingToRepeat": "Ese entreno no guardó qué ejercicios hiciste. Elige otro o los ejercicios a mano.",
+  "trainingErrorSessionNothingToSave": "Para guardarla como rutina, apunta al menos una serie de un ejercicio.",
+  "trainingFreeByMuscleGroup": "Por grupo muscular",
+  "trainingFreeChosen": "Elegido",
+  "trainingFreeAddExercise": "Añadir {name}",
+  "@trainingFreeAddExercise": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingFreeRemoveExercise": "Quitar {name}",
+  "@trainingFreeRemoveExercise": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingFreeStartIntro": "Elige los ejercicios sobre la marcha. Cuenta como cualquier entreno.",
+  "trainingFreeStartFrom": "Empieza desde",
+  "trainingFreeRepeat": "Repetir un entreno",
+  "trainingFreeRepeatNone": "Aún no tienes entrenos terminados",
+  "trainingFreeTemplateDay": "Un día de una plantilla",
+  "trainingFreeTemplateDayHint": "Sin guardarla como rutina",
+  "trainingFreeChooseExercises": "O elige los ejercicios",
+  "trainingFreeStartEmpty": "Empezar sin ejercicios",
+  "trainingFreeStartWith": "{count, plural, =0{Elige algún ejercicio} =1{Empezar con 1 ejercicio} other{Empezar con {count} ejercicios}}",
+  "@trainingFreeStartWith": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingFreeExerciseCount": "{count, plural, =0{Sin ejercicios} =1{1 ejercicio} other{{count} ejercicios}}",
+  "@trainingFreeExerciseCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingFreeTemplateDays": "{count, plural, =0{Sin días fijos} =1{1 día por semana} other{{count} días por semana}}",
+  "@trainingFreeTemplateDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingFreeOtherTemplate": "Otra plantilla",
+  "trainingFreeExerciseAdded": "{name} añadido. Ahora toca.",
+  "@trainingFreeExerciseAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingFreeEmptyTitle": "Añade tu primer ejercicio",
+  "trainingFreeEmptyMessage": "Cada serie se guarda con su ejercicio, así sabrás qué hiciste.",
+  "trainingFreeSaveAsRoutine": "Guardar como rutina",
+  "trainingFreeSaveAsRoutineHint": "¿Lo repetirás? Guárdalo como rutina.",
+  "trainingFreeRoutineName": "Sesión libre del {weekday}",
+  "@trainingFreeRoutineName": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingFreeRoutineSaved": "Guardada en Mis rutinas",
+  "trainingFreeOpenRoutine": "Ver rutina"
 }

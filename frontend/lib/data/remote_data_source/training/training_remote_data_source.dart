@@ -39,6 +39,41 @@ class TrainingRemoteDataSource {
     ),
   );
 
+  /// Sesión libre con su lista (ADR 0067): una sola fuente por llamada.
+  Future<SessionDto> startFreeSession({
+    List<String>? exerciseIds,
+    String? fromSessionId,
+    String? templateId,
+    int? templateDayNumber,
+  }) => _session(
+    _dio.post<Map<String, dynamic>>(
+      '$_base/sessions',
+      data: {
+        'exerciseIds': ?exerciseIds,
+        'fromSessionId': ?fromSessionId,
+        'templateId': ?templateId,
+        'templateDayNumber': ?templateDayNumber,
+      },
+    ),
+  );
+
+  Future<SessionDto> addSessionExercise(String sessionId, String exerciseId) =>
+      _session(
+        _dio.post<Map<String, dynamic>>(
+          '$_base/sessions/$sessionId/exercises',
+          data: {'exerciseId': exerciseId},
+        ),
+      );
+
+  /// «Guardar como rutina»: devuelve el id de la rutina creada.
+  Future<String> saveSessionAsRoutine(String sessionId, String name) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/sessions/$sessionId/routine',
+      data: {'name': name},
+    );
+    return response.data!['id'] as String;
+  }
+
   Future<SessionDto> getSession(String sessionId) =>
       _session(_dio.get<Map<String, dynamic>>('$_base/sessions/$sessionId'));
 

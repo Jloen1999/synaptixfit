@@ -26,6 +26,10 @@ sealed class SessionCompletedEvent with _$SessionCompletedEvent {
     String recommendationId,
   ) = SessionCompletedRecommendationDiscardConfirmed;
 
+  /// «Guardar como rutina» con el nombre elegido (sesión libre, ADR 0067).
+  const factory SessionCompletedEvent.routineSaveRequested(String name) =
+      SessionCompletedRoutineSaveRequested;
+
   /// Publica el resumen en el muro con el texto ya redactado por la página.
   const factory SessionCompletedEvent.shareRequested(String description) =
       SessionCompletedShareRequested;

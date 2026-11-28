@@ -26,5 +26,9 @@ abstract class SessionCompletedState with _$SessionCompletedState {
     /// Racha y retos activos que cuentan entrenos (llegan después).
     Streak? streak,
     @Default(<Challenge>[]) List<Challenge> trainingChallenges,
+
+    /// «Guardar como rutina» en curso y la rutina creada (ADR 0067).
+    @Default(false) bool savingRoutine,
+    String? savedRoutineId,
   }) = _SessionCompletedState;
 }

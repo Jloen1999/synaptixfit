@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:synaptixfit/domain/use_cases/training/save_session_as_routine_use_case.dart';
 import 'package:synaptixfit/domain/enums/post_type.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/app_result.dart';
@@ -40,6 +41,7 @@ void main() {
   late _Highlights getHighlights;
   late _CreatePost createPost;
   late _Discard discard;
+  final save = _SaveAsRoutine();
 
   const recommendation = Recommendation(
     id: 'r1',
@@ -88,6 +90,23 @@ void main() {
     createPost: createPost,
     getStreak: _Streak(),
     listChallenges: _Challenges(),
+    saveAsRoutine: save,
+  );
+
+  blocTest<SessionCompletedBloc, SessionCompletedState>(
+    '«Guardar como rutina» guarda una vez y recuerda la rutina creada',
+    build: build,
+    seed: () => SessionCompletedState(
+      status: CompletedStatus.ready,
+      session: TrainingFixtures.session(startedAt: DateTime(2026, 10, 25)),
+    ),
+    act: (b) => b
+      ..add(const SessionCompletedEvent.routineSaveRequested(' Pierna '))
+      ..add(const SessionCompletedEvent.routineSaveRequested('Otra')),
+    verify: (b) {
+      expect(b.state.savedRoutineId, 'r-new');
+      expect(save.names, ['Pierna']);
+    },
   );
 
   group('descarte diferido de una sugerencia', () {
@@ -227,4 +246,14 @@ class _Challenges implements ListMyChallengesUseCaseContract {
   }) async => const Success(
     ChallengePage(items: [], page: 0, totalPages: 0, totalItems: 0),
   );
+}
+
+class _SaveAsRoutine implements SaveSessionAsRoutineUseCaseContract {
+  final names = <String>[];
+
+  @override
+  Future<AppResult<String>> call(String sessionId, String name) async {
+    names.add(name);
+    return const Success('r-new');
+  }
 }

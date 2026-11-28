@@ -18,6 +18,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
@@ -39,7 +40,31 @@ public final class SessionDtos {
     }
 
     /** Ambos nulos: sesión libre. {@code dayId} exige {@code routineId}. */
-    public record StartSessionRequest(UUID routineId, UUID dayId) {
+    /**
+     * Empezar una sesión: de un día de rutina ({@code routineId} + {@code dayId}) o libre. La libre (ADR 0067) lleva
+     * una sola fuente para su lista: {@code exerciseIds} (elegidos), {@code fromSessionId} (repetir una sesión) o
+     * {@code templateId} + {@code templateDayNumber} (un día de plantilla); sin ninguna, empieza vacía.
+     */
+    public record StartSessionRequest(UUID routineId, UUID dayId, @Size(max = 30) List<UUID> exerciseIds,
+                                      UUID fromSessionId, UUID templateId,
+                                      @Min(1) @Max(7) Integer templateDayNumber) {
+        public StartSessionRequest(UUID routineId, UUID dayId) {
+            this(routineId, dayId, null, null, null, null);
+        }
+
+        /** Lleva lista de sesión libre (si no, es el arranque de siempre). */
+        public boolean freePlan() {
+            return routineId == null && dayId == null
+                    && (exerciseIds != null || fromSessionId != null || templateId != null);
+        }
+    }
+
+    /** «Añadir ejercicio» a una sesión libre en curso. */
+    public record AddSessionExerciseRequest(@NotNull UUID exerciseId) {
+    }
+
+    /** «Guardar como rutina»: el nombre de la rutina nueva. */
+    public record SaveAsRoutineRequest(@NotBlank @Size(max = 100) String name) {
     }
 
     /**
@@ -153,13 +178,16 @@ public final class SessionDtos {
     public record SessionResponse(UUID id, UUID routineId, UUID dayId, SessionType type, SessionStatus status,
                                   Instant startedAt, Instant completedAt, int durationMinutes, Integer rpe,
                                   Double calories, int xpAwarded, List<SessionSetResponse> sets,
-                                  Instant pausedAt, long pausedSeconds, List<SessionSetResponse> warmupSets) {
+                                  Instant pausedAt, long pausedSeconds, List<SessionSetResponse> warmupSets,
+                                  List<RoutineDtos.PlannedExerciseResponse> exercises) {
+        /** {@code exercises}: la lista de una sesión libre (ADR 0067); vacía en una de rutina. */
         public static SessionResponse from(TrainingSession s) {
             return new SessionResponse(s.id(), s.routineId(), s.dayId(), s.type(),
                     s.isCompleted() ? SessionStatus.COMPLETED : SessionStatus.IN_PROGRESS, s.startedAt(),
                     s.completedAt(), s.durationMinutes(), s.rpe(), s.calories(), s.xpAwarded(),
                     s.sets().stream().map(SessionSetResponse::from).toList(), s.pausedAt(), s.pausedSeconds(),
-                    s.warmupSets().stream().map(SessionSetResponse::from).toList());
+                    s.warmupSets().stream().map(SessionSetResponse::from).toList(),
+                    s.freeExercises().stream().map(RoutineDtos.PlannedExerciseResponse::from).toList());
         }
     }
 

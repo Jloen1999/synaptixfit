@@ -2,13 +2,17 @@ package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.traini
 
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
+import com.synaptixfit.domain.model.training.ExerciseRef;
+import com.synaptixfit.domain.model.training.PlannedExercise;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.model.training.generation.CompletedSessionSummary;
 import com.synaptixfit.domain.port.output.training.TrainingSessionRepositoryPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.FreeSessionExerciseEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.SessionSetEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.TrainingSessionEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training.TrainingPersistenceMapper;
+import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.FreeSessionExerciseJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.SessionSetJpaRepository;
 import com.synaptixfit.infrastructure.adapter.output.persistence.repository.training.TrainingSessionJpaRepository;
 import java.sql.ResultSet;
@@ -33,13 +37,18 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
 
     private final TrainingSessionJpaRepository sessions;
     private final SessionSetJpaRepository sets;
+    private final FreeSessionExerciseJpaRepository freeExercises;
+    private final ExerciseSqlReader exerciseReader;
     private final JdbcClient jdbc;
     private final Clock clock;
 
     public TrainingSessionPersistenceAdapter(TrainingSessionJpaRepository sessions, SessionSetJpaRepository sets,
-                                             JdbcClient jdbc, Clock clock) {
+                                             FreeSessionExerciseJpaRepository freeExercises,
+                                             ExerciseSqlReader exerciseReader, JdbcClient jdbc, Clock clock) {
         this.sessions = sessions;
         this.sets = sets;
+        this.freeExercises = freeExercises;
+        this.exerciseReader = exerciseReader;
         this.jdbc = jdbc;
         this.clock = clock;
     }
@@ -49,6 +58,19 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
         TrainingSessionEntity entity = sessions.findById(session.id()).orElseGet(TrainingSessionEntity::new);
         TrainingPersistenceMapper.copy(session, entity);
         sessions.saveAndFlush(entity);
+        // La lista de la sesión libre va antes que las series, que enlazan con ella (ADR 0067). Solo crece.
+        Map<UUID, FreeSessionExerciseEntity> slots = new HashMap<>();
+        freeExercises.findBySesionIdIn(List.of(session.id())).forEach(f -> slots.put(f.getId(), f));
+        List<FreeSessionExerciseEntity> slotRows = new ArrayList<>();
+        for (PlannedExercise p : session.freeExercises()) {
+            FreeSessionExerciseEntity f = slots.getOrDefault(p.id(), new FreeSessionExerciseEntity());
+            TrainingPersistenceMapper.copy(p, session.id(), f);
+            slotRows.add(f);
+        }
+        if (!slotRows.isEmpty()) {
+            freeExercises.saveAllAndFlush(slotRows);
+        }
+        Set<UUID> freeSlotIds = session.freeExercises().stream().map(PlannedExercise::id).collect(Collectors.toSet());
 
         Map<UUID, SessionSetEntity> existing = new HashMap<>();
         sets.findBySesionIdIn(List.of(session.id())).forEach(s -> existing.put(s.getId(), s));
@@ -65,7 +87,8 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
                 e = new SessionSetEntity();
                 e.setCreadoEn(clock.instant());
             }
-            TrainingPersistenceMapper.copy(s, session.id(), e);
+            TrainingPersistenceMapper.copy(s, session.id(), e,
+                    s.plannedExerciseId() != null && freeSlotIds.contains(s.plannedExerciseId()));
             rows.add(e);
         }
         sets.saveAll(rows);
@@ -189,11 +212,19 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
         if (entities.isEmpty()) {
             return List.of();
         }
-        Map<UUID, List<SessionSetEntity>> bySession = sets.findBySesionIdIn(
-                entities.stream().map(TrainingSessionEntity::getId).toList()).stream()
+        List<UUID> ids = entities.stream().map(TrainingSessionEntity::getId).toList();
+        Map<UUID, List<SessionSetEntity>> bySession = sets.findBySesionIdIn(ids).stream()
                 .collect(Collectors.groupingBy(SessionSetEntity::getSesionId));
+        List<FreeSessionExerciseEntity> slotRows = freeExercises.findBySesionIdIn(ids);
+        Map<UUID, ExerciseRef> refs = slotRows.isEmpty() ? Map.of()
+                : exerciseReader.refs(slotRows.stream().map(FreeSessionExerciseEntity::getEjercicioId).toList());
+        Map<UUID, List<PlannedExercise>> slotsBySession = new HashMap<>();
+        slotRows.stream().filter(f -> refs.containsKey(f.getEjercicioId()))
+                .forEach(f -> slotsBySession.computeIfAbsent(f.getSesionId(), k -> new ArrayList<>())
+                        .add(TrainingPersistenceMapper.toDomain(f, refs.get(f.getEjercicioId()))));
         return entities.stream()
-                .map(e -> TrainingPersistenceMapper.toDomain(e, bySession.getOrDefault(e.getId(), List.of())))
+                .map(e -> TrainingPersistenceMapper.toDomain(e, bySession.getOrDefault(e.getId(), List.of()),
+                        slotsBySession.getOrDefault(e.getId(), List.of())))
                 .toList();
     }
 }

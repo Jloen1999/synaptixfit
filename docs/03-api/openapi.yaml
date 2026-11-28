@@ -1342,6 +1342,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/SessionResponse"
+  /api/v1/training/sessions/{sessionId}/routine:
+    post:
+      tags:
+      - Training sessions
+      operationId: saveAsRoutine
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAsRoutineRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RoutineResponse"
   /api/v1/training/sessions/{sessionId}/resume:
     post:
       tags:
@@ -1410,6 +1435,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/FinishSessionResponse"
+  /api/v1/training/sessions/{sessionId}/exercises:
+    post:
+      tags:
+      - Training sessions
+      operationId: addExercise
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSessionExerciseRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
   /api/v1/training/sessions/{sessionId}/calibrations:
     get:
       tags:
@@ -3184,7 +3234,7 @@ paths:
     post:
       tags:
       - Routines
-      operationId: addExercise
+      operationId: addExercise_1
       parameters:
       - name: routineId
         in: path
@@ -10974,6 +11024,24 @@ components:
         dayId:
           type: string
           format: uuid
+        exerciseIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 30
+          minItems: 0
+        fromSessionId:
+          type: string
+          format: uuid
+        templateId:
+          type: string
+          format: uuid
+        templateDayNumber:
+          type: integer
+          format: int32
+          maximum: 7
+          minimum: 1
     SessionResponse:
       type: object
       properties:
@@ -11029,6 +11097,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SessionSetResponse"
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedExerciseResponse"
     SessionSetResponse:
       type: object
       properties:
@@ -11140,6 +11212,15 @@ components:
           format: uuid
       required:
       - setNumber
+    SaveAsRoutineRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 0
+      required:
+      - name
     ResumeSessionRequest:
       type: object
       properties:
@@ -11311,6 +11392,14 @@ components:
         details:
           type: object
           additionalProperties: {}
+    AddSessionExerciseRequest:
+      type: object
+      properties:
+        exerciseId:
+          type: string
+          format: uuid
+      required:
+      - exerciseId
     CalibrateRequest:
       type: object
       properties:

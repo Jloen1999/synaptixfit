@@ -124,7 +124,7 @@ void main() {
   });
 
   blocTest<CalendarBloc, CalendarState>(
-    'carga la semana actual con bloques, entregas, títulos y balance',
+    'carga la semana actual con bloques, títulos y balance',
     build: build,
     act: (bloc) => bloc.add(const CalendarEvent.started()),
     expect: () => [
@@ -137,7 +137,6 @@ void main() {
           .having((s) => s.status, 'status', CalendarStatus.ready)
           .having((s) => s.weekStart, 'weekStart', testMonday)
           .having((s) => s.blocks, 'blocks', [b1])
-          .having((s) => s.deadlines, 'deadlines', [deadlineEntry])
           .having((s) => s.blockTitles, 'titles', {'b1': 'Cálculo'})
           .having((s) => s.blockSubjects, 'asignaturas', {'b1': 'Cálculo'})
           .having((s) => s.balance, 'balance', testBalance),
@@ -153,7 +152,8 @@ void main() {
     'con un evento que adelanta un reto, pide los retos una vez y nombra la tarea',
     setUp: () {
       when(() => getBlocks(any())).thenAnswer(
-        (_) async => Success([b1.copyWith(challengeId: 'c1', milestoneId: 't2')]),
+        (_) async =>
+            Success([b1.copyWith(challengeId: 'c1', milestoneId: 't2')]),
       );
       when(() => getChallenges()).thenAnswer(
         (_) async => const Success([
@@ -565,18 +565,17 @@ void main() {
 
     blocTest<CalendarBloc, CalendarState>(
       '«Empezar el entreno» abre la sesión de ese día de rutina',
-      setUp: () => when(
-        () => startSession(routineId: 'r1', dayId: 'd2'),
-      ).thenAnswer(
-        (_) async => Success(
-          TrainingSession(
-            id: 's1',
-            type: SessionType.routine,
-            status: SessionStatus.inProgress,
-            startedAt: testNow,
+      setUp: () =>
+          when(() => startSession(routineId: 'r1', dayId: 'd2')).thenAnswer(
+            (_) async => Success(
+              TrainingSession(
+                id: 's1',
+                type: SessionType.routine,
+                status: SessionStatus.inProgress,
+                startedAt: testNow,
+              ),
+            ),
           ),
-        ),
-      ),
       build: build,
       seed: () => ready().copyWith(blocks: [routineDay]),
       act: (bloc) => bloc.add(const CalendarEvent.trainingStartRequested('b1')),
@@ -598,11 +597,10 @@ void main() {
 
     blocTest<CalendarBloc, CalendarState>(
       'con una sesión a medias, avisa con el error del servidor',
-      setUp: () => when(
-        () => startSession(routineId: 'r1', dayId: 'd2'),
-      ).thenAnswer(
-        (_) async => const Failure(AppError.business('SESSION_STALE_OPEN')),
-      ),
+      setUp: () =>
+          when(() => startSession(routineId: 'r1', dayId: 'd2')).thenAnswer(
+            (_) async => const Failure(AppError.business('SESSION_STALE_OPEN')),
+          ),
       build: build,
       seed: () => ready().copyWith(blocks: [routineDay]),
       act: (bloc) => bloc.add(const CalendarEvent.trainingStartRequested('b1')),

@@ -22,6 +22,7 @@ import '../../../../../domain/use_cases/training/calibrate_exercise_use_case.dar
 import '../../../../../domain/use_cases/training/get_session_calibrations_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_bookends_use_case.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
+import '../../../../../domain/use_cases/training/add_session_exercise_use_case.dart';
 import '../../../../../domain/use_cases/training/cancel_session_use_case.dart';
 import '../../../../../domain/use_cases/training/delete_set_use_case.dart';
 import '../../../../../domain/use_cases/training/finish_session_use_case.dart';
@@ -63,6 +64,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     required this._resumeSession,
     required this._loadDraft,
     required this._saveDraft,
+    this._addExercise,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        super(const LiveSessionState()) {
@@ -149,6 +151,62 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     on<LiveSessionGroupPauseChanged>(_onGroupPauseChanged);
     on<LiveSessionExerciseSwapped>(_onExerciseSwapped);
     on<LiveSessionCalibrationAnswered>(_onCalibrationAnswered);
+    on<LiveSessionExerciseAdded>(_onExerciseAdded);
+  }
+
+  final AddSessionExerciseUseCaseContract? _addExercise;
+
+  /// «Añadir ejercicio» en la sesión libre (ADR 0067): el servidor lo suma a
+  /// su lista con sus cifras de partida y pasa a ser el que toca. Si ya estaba,
+  /// solo se va a él.
+  Future<void> _onExerciseAdded(
+    LiveSessionExerciseAdded event,
+    Emitter<LiveSessionState> emit,
+  ) async {
+    final id = state.sessionId;
+    final add = _addExercise;
+    if (id == null || add == null || state.addingExercise || state.completed) {
+      return;
+    }
+    final existing = state.exercises
+        .where((e) => e.exerciseId == event.exerciseId)
+        .firstOrNull;
+    if (existing != null) {
+      emit(
+        state.copyWith(
+          activeExerciseId: existing.id,
+          exerciseAddedCount: state.exerciseAddedCount + 1,
+        ),
+      );
+      return;
+    }
+    emit(state.copyWith(addingExercise: true));
+    switch (await add(id, event.exerciseId)) {
+      case Success(value: final session):
+        // Se conservan los de la pantalla (con sus cambios de hoy) y se suman
+        // los nuevos del servidor.
+        final known = {for (final e in state.exercises) e.id};
+        final added = [
+          for (final e in session.exercises)
+            if (!known.contains(e.id)) e,
+        ];
+        emit(
+          state.copyWith(
+            addingExercise: false,
+            session: _withPending(session, state.pendingSets),
+            exercises: [...state.exercises, ...added],
+            plannedSetsById: {
+              ...state.plannedSetsById,
+              for (final e in added) e.id: e.parameters.sets,
+            },
+            activeExerciseId: added.firstOrNull?.id ?? state.activeExerciseId,
+            exerciseAddedCount: state.exerciseAddedCount + 1,
+          ),
+        );
+      case Failure(:final error):
+        emit(state.copyWith(addingExercise: false));
+        _effect(emit, TrainingEffect.error(error));
+    }
   }
 
   final GetSessionUseCaseContract _getSession;
@@ -204,7 +262,10 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     RoutineDay? day;
     final routineId = session.routineId;
     final dayId = session.dayId;
-    if (routineId != null && dayId != null) {
+    if (dayId == null) {
+      // Sesión libre (ADR 0067): su propia lista; vacía en las antiguas.
+      exercises = session.exercises;
+    } else if (routineId != null) {
       final routine = await _getRoutine(routineId);
       switch (routine) {
         case Success(value: final r):

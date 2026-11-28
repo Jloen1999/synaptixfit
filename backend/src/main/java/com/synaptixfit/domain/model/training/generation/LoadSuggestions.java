@@ -128,7 +128,7 @@ public final class LoadSuggestions {
      * Parámetros con lo que se hizo de verdad: la serie de más peso (y sus repeticiones) o, si no hay peso,
      * la de más repeticiones; el aguante, el tiempo y la distancia más largos.
      */
-    static ExerciseParameters performed(ExerciseParameters plan, Collection<MeasurementType> types,
+    public static ExerciseParameters performed(ExerciseParameters plan, Collection<MeasurementType> types,
                                         List<SessionSet> sets) {
         boolean usesWeight = types.contains(MeasurementType.WEIGHT);
         boolean isometric = types.contains(MeasurementType.TIME) && !types.contains(MeasurementType.REPETITIONS)

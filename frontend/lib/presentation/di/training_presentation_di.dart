@@ -11,6 +11,7 @@ import '../screens/training/exercise_explorer/bloc/exercise_explorer_bloc.dart';
 import '../screens/training/live_session/bloc/live_session_bloc.dart';
 import '../screens/training/routine_detail/bloc/routine_detail_bloc.dart';
 import '../screens/training/routine_editor/bloc/routine_editor_bloc.dart';
+import '../screens/training/free_session_start/bloc/free_session_start_bloc.dart';
 import '../screens/training/session_completed/bloc/session_completed_bloc.dart';
 import '../screens/training/session_detail/bloc/session_detail_bloc.dart';
 import '../screens/training/session_history/bloc/session_history_bloc.dart';
@@ -132,10 +133,20 @@ void registerTrainingPresentation(GetIt getIt) {
         resumeSession: getIt(),
         loadDraft: getIt(),
         saveDraft: getIt(),
+        addExercise: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => FreeSessionStartBloc(
+        start: getIt(),
+        getHistory: getIt(),
+        listTemplates: getIt(),
+        getTemplate: getIt(),
       ),
     )
     ..registerFactory(
       () => SessionCompletedBloc(
+        saveAsRoutine: getIt(),
         getSession: getIt(),
         apply: getIt(),
         discard: getIt(),

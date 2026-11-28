@@ -219,8 +219,10 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         if (c.sets() != null) {
             c.sets().forEach(s -> applySet(session, s, routine, true));
         }
-        List<PlannedExercise> planned = routine.flatMap(r -> session.dayId() == null ? Optional.empty() : r.findDay(session.dayId()))
+        List<PlannedExercise> dayPlanned = routine.flatMap(r -> session.dayId() == null ? Optional.empty() : r.findDay(session.dayId()))
                 .map(RoutineDay::exercises).orElse(List.of());
+        // Las kcal de una sesión libre salen de sus ejercicios, como las de un día de rutina (ADR 0067).
+        List<PlannedExercise> planned = session.dayId() == null ? session.freeExercises() : dayPlanned;
         Map<UUID, Integer> realDurations = new HashMap<>();
         if (c.realDurations() != null) {
             planned.forEach(p -> {
@@ -249,7 +251,8 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
                 r.plannedExercise(plannedId).recordRealDuration(seconds, completedAt)));
 
         ExperienceChange experience = awardExperience.award(c.userId(), xp);
-        Map<UUID, PlannedExercise> plannedById = planned.stream()
+        // Las propuestas de progresión cambian la rutina: solo con los huecos de un día de rutina.
+        Map<UUID, PlannedExercise> plannedById = dayPlanned.stream()
                 .collect(Collectors.toMap(PlannedExercise::id, Function.identity()));
         TrainingGoal goal = routine.map(Routine::goal).orElse(TrainingGoal.HYPERTROPHY);
         // Las sesiones anteriores deciden «dos seguidas sin llegar al mínimo del rango» (ADR 0054).
@@ -382,7 +385,10 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
     }
 
     private List<PlannedExercise> plannedOf(TrainingSession session) {
-        if (session.routineId() == null || session.dayId() == null) {
+        if (session.dayId() == null) {
+            return session.freeExercises();
+        }
+        if (session.routineId() == null) {
             return List.of();
         }
         return routines.findById(session.routineId()).flatMap(r -> r.findDay(session.dayId()))
@@ -402,7 +408,9 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
      */
     private void applySet(TrainingSession session, RecordSessionSetUseCase.Command c, Optional<Routine> routine,
                           boolean lenient) {
+        // En una sesión libre, el hueco es de su propia lista (ADR 0067).
         Optional<PlannedExercise> planned = c.plannedExerciseId() == null ? Optional.empty()
+                : session.dayId() == null ? session.findFreeExercise(c.plannedExerciseId())
                 : routine.flatMap(r -> r.findPlannedExercise(c.plannedExerciseId()));
         if (c.plannedExerciseId() != null && planned.isEmpty() && !lenient) {
             throw new RoutineExerciseNotFoundException(c.plannedExerciseId());

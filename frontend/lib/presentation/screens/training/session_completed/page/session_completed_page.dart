@@ -13,6 +13,7 @@ import '../../training_routes.dart';
 import '../../widgets/personal_record_row.dart';
 import '../../widgets/recommendation_card.dart';
 import '../../widgets/training_content.dart';
+import '../../widgets/training_dialogs.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../bloc/session_completed_bloc.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
@@ -173,6 +174,10 @@ class _CompletedView extends StatelessWidget {
                               ),
                             ),
                           ),
+                      ],
+                      if (state.session?.offersSaveAsRoutine ?? false) ...[
+                        const SizedBox(height: TokensSpacing.m),
+                        _SaveAsRoutineRow(state: state),
                       ],
                       const SizedBox(height: TokensSpacing.l),
                       AppPrimaryButton(
@@ -469,6 +474,62 @@ class _ChallengeProgress extends StatelessWidget {
             Text(progressText, style: context.textStyles.bodySmall),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// «Guardar como rutina» de una sesión libre (ADR 0067): opcional y con el
+/// nombre propuesto por el día; ya guardada, «Ver rutina».
+class _SaveAsRoutineRow extends StatelessWidget {
+  const _SaveAsRoutineRow({required this.state});
+
+  final SessionCompletedState state;
+
+  Future<void> _save(BuildContext context) async {
+    final l10n = context.localizations;
+    final bloc = context.read<SessionCompletedBloc>();
+    final started = state.session!.startedAt;
+    final name = await showTextPromptDialog(
+      context,
+      title: l10n.trainingFreeSaveAsRoutine,
+      label: l10n.trainingName,
+      initial: l10n.trainingFreeRoutineName(
+        DateFormat.EEEE(l10n.localeName).format(started),
+      ),
+      maxLength: 100,
+    );
+    if (name != null && name.trim().isNotEmpty) {
+      bloc.add(SessionCompletedEvent.routineSaveRequested(name));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final saved = state.savedRoutineId;
+    final label = saved != null
+        ? l10n.trainingFreeOpenRoutine
+        : l10n.trainingFreeSaveAsRoutine;
+    return AppCard(
+      child: AppTextWithAction(
+        actionLabel: label,
+        actionIcon: true,
+        action: OutlinedButton.icon(
+          onPressed: state.savingRoutine
+              ? null
+              : saved != null
+              ? () => context.go(TrainingPaths.routine(saved))
+              : () => _save(context),
+          icon: Icon(saved != null ? AppIcons.next : AppIcons.add),
+          label: Text(label),
+        ),
+        child: Text(
+          saved != null
+              ? l10n.trainingFreeRoutineSaved
+              : l10n.trainingFreeSaveAsRoutineHint,
+          style: context.textStyles.bodyMedium,
+        ),
       ),
     );
   }
