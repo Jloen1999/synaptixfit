@@ -11,6 +11,7 @@ import 'package:synaptixfit/domain/models/training/sport_activity.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/run_home/bloc/run_home_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/run_home/page/run_home_page.dart';
+import 'package:synaptixfit/presentation/screens/training/run_home/page/sport_grid.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/run_map.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 import 'package:synaptixfit/presentation/widgets/widgets.dart';
@@ -174,15 +175,17 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('hoy toca arriba, atajos y «Próximo» en una línea', (
+  testWidgets('hoy toca arriba, la rejilla y «Próximo» en una línea', (
     tester,
   ) async {
     final handle = tester.ensureSemantics();
     await pump(tester, withToday);
     expect(find.text('Rodaje suave'), findsOneWidget);
     expect(find.text('Salir a correr'), findsOneWidget);
-    expect(find.bySemanticsLabel('Correr libre'), findsOneWidget);
-    expect(find.bySemanticsLabel('Apuntar actividad'), findsOneWidget);
+    // «Apuntar actividad» ya no es un atajo suelto: cada deporte lleva el suyo.
+    expect(find.bySemanticsLabel('Apuntar actividad'), findsNothing);
+    expect(find.bySemanticsLabel('Correr libre'), findsNothing);
+    expect(find.byType(SportGrid), findsOneWidget);
     expect(find.byType(RunMap), findsNothing);
     // «Próximo» enseña uno y despliega el resto.
     expect(find.text('Series 1'), findsOneWidget);
@@ -193,16 +196,70 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets(
-    'sin entreno hoy, «Salir a correr» y sin «Correr libre» repetido',
-    (tester) async {
-      final handle = tester.ensureSemantics();
-      await pump(tester, empty);
-      expect(find.text('Salir a correr'), findsOneWidget);
-      expect(find.bySemanticsLabel('Correr libre'), findsNothing);
-      handle.dispose();
-    },
-  );
+  testWidgets('sin nada hoy manda la rejilla: siete deportes y ningún botón '
+      'relleno', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pump(tester, empty);
+    expect(find.text('Elige un deporte'), findsOneWidget);
+    for (final name in [
+      'Correr, andar o bici',
+      'Fútbol',
+      'Pádel',
+      'Natación',
+      'Baloncesto',
+      'Tenis',
+      'Otro deporte',
+    ]) {
+      expect(find.text(name), findsOneWidget, reason: name);
+    }
+    // Sin tarjeta de bici aparte y sin «Salir a correr» suelto.
+    expect(find.text('Bici'), findsNothing);
+    expect(find.text('Salir a correr'), findsNothing);
+    // Elegir el deporte es la acción: la rejilla no lleva botón relleno.
+    expect(
+      find.descendant(
+        of: find.byType(SportGrid),
+        matching: find.bySubtype<ButtonStyleButton>(),
+      ),
+      findsNothing,
+    );
+    // Cada tarjeta es un botón con su nombre y su línea corta.
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('sport-PADEL'))),
+      isSemantics(label: 'Pádel\nPartido o entreno', isButton: true),
+    );
+    // «Crear entreno guiado» sigue a mano, en la cabecera de su lista.
+    expect(find.text('Crear entreno guiado'), findsOneWidget);
+    handle.dispose();
+  });
+
+  testWidgets('a 320 px la rejilla cabe sin desbordarse', (tester) async {
+    when(() => bloc.state).thenReturn(empty);
+    tester.view.physicalSize = const Size(320, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('es'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const RunHomePage(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    // De dos en dos: fútbol y pádel comparten fila.
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('sport-FOOTBALL'))).dy,
+      tester.getTopLeft(find.byKey(const ValueKey('sport-PADEL'))).dy,
+    );
+  });
 
   for (final (name, state) in [
     ('con datos', full),

@@ -7,12 +7,14 @@ import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/training/routine.dart';
 import '../../../../../domain/models/training/sport_activity.dart';
 import '../../../../extensions/context_extensions.dart';
+import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../activity_history/page/activity_history_view.dart';
 import '../../training_routes.dart';
+import '../../widgets/sport_labels.dart';
 import '../../widgets/training_labels.dart';
 import '../../widgets/training_section_bar.dart';
 import '../bloc/past_activity_bloc.dart';
@@ -23,22 +25,35 @@ import '../bloc/past_activity_bloc.dart';
 /// y cuánto; al guardar se pide el esfuerzo, como al marcar un bloque de
 /// deporte. [from] es el apartado desde el que se abrió (nulo: el historial):
 /// el aviso final dice dónde queda según a dónde se vuelve.
+///
+/// Con [sport] (elegido en «Deportes», ADR 0068) es el formulario de ese
+/// deporte, sin elegir tipo: partido o entreno con resultado opcional en los
+/// de partido, metros en natación, kilómetros en correr, andar o bici y el
+/// nombre ([sportName]) en «otro deporte».
 class PastActivityPage extends StatelessWidget {
-  const PastActivityPage({super.key, this.from});
+  const PastActivityPage({super.key, this.from, this.sport, this.sportName});
 
   final TrainingSection? from;
+  final Sport? sport;
+  final String? sportName;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => getIt<PastActivityBloc>(),
-    child: _PastActivityView(from: from),
+    child: _PastActivityView(from: from, sport: sport, sportName: sportName),
   );
 }
 
 class _PastActivityView extends StatefulWidget {
-  const _PastActivityView({required this.from});
+  const _PastActivityView({
+    required this.from,
+    required this.sport,
+    required this.sportName,
+  });
 
   final TrainingSection? from;
+  final Sport? sport;
+  final String? sportName;
 
   @override
   State<_PastActivityView> createState() => _PastActivityViewState();
@@ -52,8 +67,22 @@ class _PastActivityViewState extends State<_PastActivityView>
   final _title = TextEditingController();
   final _distance = TextEditingController();
 
+  /// Deporte del formulario (nulo: el formulario general, con «Tipo»). En
+  /// correr, andar o bici se puede cambiar entre los tres.
+  late Sport? _sport = widget.sport;
+
+  /// Nombre de «otro deporte» y datos de un partido.
+  late final _name = TextEditingController(text: widget.sportName);
+  final _score = TextEditingController();
+  String? _nameError;
+  SportMode _mode = SportMode.match;
+  MatchResult? _result;
+
+  bool get _isMatch =>
+      _sport?.category == SportCategory.match && _mode == SportMode.match;
+
   /// Tipo elegido: decide si se pide la distancia y en qué unidad.
-  ActivityKind? _kind;
+  late ActivityKind? _kind = widget.sport?.kind;
 
   /// Nadando la distancia va en metros (largos de piscina); lo demás, en km.
   bool get _inMeters => _kind == ActivityKind.swim;
@@ -74,6 +103,8 @@ class _PastActivityViewState extends State<_PastActivityView>
   void dispose() {
     _title.dispose();
     _distance.dispose();
+    _name.dispose();
+    _score.dispose();
     super.dispose();
   }
 
@@ -158,6 +189,18 @@ class _PastActivityViewState extends State<_PastActivityView>
       return;
     }
     setState(() => _distanceError = null);
+    final sport = _sport;
+    final name = _name.text.trim();
+    if (sport == Sport.other && name.isEmpty) {
+      setState(() => _nameError = l10n.sportOtherNameRequired);
+      return;
+    }
+    // El evento del calendario se llama como el deporte.
+    final title = switch (sport) {
+      null => _title.text,
+      Sport.other => name,
+      _ => SportLabels.name(l10n, sport),
+    };
     final end = _start.add(Duration(minutes: _minutes));
     if (end.isAfter(DateTime.now())) {
       setState(() => _notFinished = l10n.trainingPastActivityNotFinished);
@@ -168,7 +211,7 @@ class _PastActivityViewState extends State<_PastActivityView>
     final effort = await showEffortDialog(
       context,
       confirmLabel: l10n.trainingPastActivitySave,
-      subtitle: _title.text.trim().isEmpty ? null : _title.text.trim(),
+      subtitle: title.trim().isEmpty ? null : title.trim(),
     );
     if (effort == null) return;
     bloc.add(
@@ -176,9 +219,21 @@ class _PastActivityViewState extends State<_PastActivityView>
         start: _start,
         minutes: _minutes,
         effort: effort,
-        title: _title.text,
+        title: title,
         kind: _kind,
         distanceMeters: meters,
+        // Qué vale en cada deporte lo decide el servidor: aquí va lo elegido.
+        sport: sport == null
+            ? null
+            : SportEntry(
+                sport: sport,
+                name: sport == Sport.other ? name : null,
+                mode: sport.category == SportCategory.match ? _mode : null,
+                result: _isMatch ? _result : null,
+                scoreText: _isMatch && _score.text.trim().isNotEmpty
+                    ? _score.text.trim()
+                    : null,
+              ),
       ),
     );
   }
@@ -269,6 +324,91 @@ class _PastActivityViewState extends State<_PastActivityView>
     ];
   }
 
+  /// Campo de la distancia: metros nadando, kilómetros en lo demás.
+  Widget _distanceField(AppLocalizations l10n) => AppTextField(
+    controller: _distance,
+    label: _inMeters
+        ? l10n.trainingPastActivityMeters
+        : l10n.trainingPastActivityDistance,
+    icon: Icons.straighten_rounded,
+    keyboardType: TextInputType.numberWithOptions(decimal: !_inMeters),
+    textInputAction: TextInputAction.done,
+    suffixText: _inMeters
+        ? l10n.trainingPastActivityMetersSuffix
+        : l10n.trainingPastActivityKmSuffix,
+    helper: _inMeters
+        ? l10n.trainingPastActivityMetersHint
+        : l10n.trainingPastActivityDistanceHint,
+    // El error va en el propio campo (el lector lo lee con él) y sustituye
+    // a la ayuda mientras se ve.
+    errorText: _distanceError,
+    onChanged: (_) => setState(() => _distanceError = null),
+  );
+
+  /// Lo propio del deporte elegido en «Deportes»: cuál de los tres (correr,
+  /// andar o bici) y la distancia, partido o entreno, o el nombre.
+  List<Widget> _sportSection(AppLocalizations l10n, Sport sport) => [
+    if (sport.recordsWithGps) ...[
+      AppSegmentedChoice<Sport>(
+        label: l10n.trainingPastActivityKind,
+        values: const [Sport.run, Sport.walk, Sport.bike],
+        selected: sport,
+        labelOf: (s) => SportLabels.name(l10n, s),
+        onChanged: (s) => setState(() {
+          _sport = s;
+          _kind = s?.kind ?? _kind;
+        }),
+      ),
+      const SizedBox(height: TokensSpacing.m),
+    ],
+    if (sport.category == SportCategory.match)
+      AppSegmentedChoice<SportMode>(
+        label: l10n.sportModeLabel,
+        values: SportMode.values,
+        selected: _mode,
+        labelOf: (m) => SportLabels.mode(l10n, m),
+        onChanged: (m) => setState(() => _mode = m ?? _mode),
+      ),
+    if (sport == Sport.other)
+      AppTextField(
+        controller: _name,
+        label: l10n.sportOtherNameLabel,
+        icon: Icons.sports_rounded,
+        textInputAction: TextInputAction.done,
+        maxLength: SportEntry.nameMax,
+        errorText: _nameError,
+        onChanged: (_) => setState(() => _nameError = null),
+      ),
+    if (sport.kind.measuresDistance) _distanceField(l10n),
+  ];
+
+  /// Resultado de un partido: opcional, y el marcador como se quiera escribir.
+  Widget _resultCard(AppLocalizations l10n) => AppCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppSectionHeader(title: l10n.sportResultTitle),
+        AppSegmentedChoice<MatchResult>(
+          label: l10n.sportResultLabel,
+          values: MatchResult.values,
+          selected: _result,
+          allowEmpty: true,
+          labelOf: (r) => SportLabels.result(l10n, r),
+          onChanged: (r) => setState(() => _result = r),
+        ),
+        const SizedBox(height: TokensSpacing.m),
+        AppTextField(
+          controller: _score,
+          label: l10n.sportScoreLabel,
+          icon: Icons.scoreboard_outlined,
+          textInputAction: TextInputAction.done,
+          maxLength: SportEntry.scoreMax,
+          helper: l10n.sportScoreHint,
+        ),
+      ],
+    ),
+  );
+
   /// Desde Correr vuelve a Correr; si no, al historial («Actividades y
   /// partidos»), donde queda lo apuntado.
   String get _back => widget.from == TrainingSection.run
@@ -279,6 +419,7 @@ class _PastActivityViewState extends State<_PastActivityView>
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final today = DateUtils.dateOnly(DateTime.now());
+    final sport = _sport;
     // Nombres rápidos para lo que no tiene tipo propio (partido u otro
     // deporte); correr, andar, bici y nadar ya se eligen en «Tipo».
     final suggestions = [
@@ -305,7 +446,13 @@ class _PastActivityViewState extends State<_PastActivityView>
       builder: (context, state) => Scaffold(
         appBar: AppPageBar.reading(
           leading: AppBackButton(fallback: _back),
-          title: Text(l10n.trainingPastActivityTitle),
+          title: Text(
+            sport == null
+                ? l10n.trainingPastActivityTitle
+                : sport.recordsWithGps
+                ? l10n.sportEnduranceTitle
+                : SportLabels.name(l10n, sport),
+          ),
         ),
         body: AppContentWidth.reading(
           child: ListView(
@@ -313,7 +460,11 @@ class _PastActivityViewState extends State<_PastActivityView>
             children: [
               // Desde Correr solo se apunta deporte: el día de la rutina se
               // apunta desde Gimnasio o el historial, donde se busca.
-              if (widget.from != TrainingSection.run) ...[
+              if (sport != null) ...[
+                SportPhotoHeader(sport: sport),
+                const SizedBox(height: TokensSpacing.m),
+              ],
+              if (widget.from != TrainingSection.run && sport == null) ...[
                 SegmentedButton<bool>(
                   segments: [
                     ButtonSegment(
@@ -347,6 +498,8 @@ class _PastActivityViewState extends State<_PastActivityView>
                   children: [
                     if (_routineMode)
                       ..._routineSection(context, state)
+                    else if (sport != null)
+                      ..._sportSection(l10n, sport)
                     else ...[
                       AppSectionHeader(title: l10n.trainingPastActivityWhat),
                       AppSegmentedChoice<ActivityKind>(
@@ -390,28 +543,7 @@ class _PastActivityViewState extends State<_PastActivityView>
                       ),
                       if (_kind?.measuresDistance ?? false) ...[
                         const SizedBox(height: TokensSpacing.m),
-                        AppTextField(
-                          controller: _distance,
-                          label: _inMeters
-                              ? l10n.trainingPastActivityMeters
-                              : l10n.trainingPastActivityDistance,
-                          icon: Icons.straighten_rounded,
-                          keyboardType: TextInputType.numberWithOptions(
-                            decimal: !_inMeters,
-                          ),
-                          textInputAction: TextInputAction.done,
-                          suffixText: _inMeters
-                              ? l10n.trainingPastActivityMetersSuffix
-                              : l10n.trainingPastActivityKmSuffix,
-                          helper: _inMeters
-                              ? l10n.trainingPastActivityMetersHint
-                              : l10n.trainingPastActivityDistanceHint,
-                          // El error va en el propio campo (el lector lo lee con
-                          // él) y sustituye a la ayuda mientras se ve.
-                          errorText: _distanceError,
-                          onChanged: (_) =>
-                              setState(() => _distanceError = null),
-                        ),
+                        _distanceField(l10n),
                       ],
                     ],
                   ],
@@ -484,6 +616,10 @@ class _PastActivityViewState extends State<_PastActivityView>
                   ],
                 ),
               ),
+              if (_isMatch) ...[
+                const SizedBox(height: TokensSpacing.m),
+                _resultCard(l10n),
+              ],
             ],
           ),
         ),
@@ -511,7 +647,11 @@ class _PastActivityViewState extends State<_PastActivityView>
                     const SizedBox(height: TokensSpacing.s),
                   ],
                   AppPrimaryButton(
-                    label: l10n.trainingPastActivitySave,
+                    label: sport?.category != SportCategory.match
+                        ? l10n.trainingPastActivitySave
+                        : _mode == SportMode.match
+                        ? l10n.sportSaveMatch
+                        : l10n.sportSaveTraining,
                     icon: Icons.check_rounded,
                     loading: state.submitting,
                     onPressed: !_routineMode

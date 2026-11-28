@@ -2360,7 +2360,7 @@
   "trainingHealthConsentRequired": "Marca la casilla para dar tu permiso.",
   "trainingErrorHealthConsentRequired": "Antes de apuntar cómo te encuentras, danos tu permiso para guardarlo.",
   "trainingSectionGym": "Gimnasio",
-  "trainingSectionRun": "Correr y deportes",
+  "trainingSectionRun": "Deportes",
   "trainingPlanThisWeek": "Esta semana: {type}. {why}",
   "@trainingPlanThisWeek": {
     "placeholders": {
@@ -2499,7 +2499,7 @@
   "runMapAttribution": "© MapTiler © OpenStreetMap",
   "runStartShort": "Empezar",
   "runStartNow": "Empezar a correr",
-  "runCreateWorkout": "Crear entreno",
+  "runCreateWorkout": "Crear entreno guiado",
   "runCreateWorkoutTitle": "Nuevo entreno de carrera",
   "runCreateWorkoutIntro": "Elige uno listo o créalo desde cero.",
   "runCreateFromScratch": "Desde cero",
@@ -2586,10 +2586,10 @@
   },
   "runSeeAll": "Ver todas",
   "runActivitiesEmptyTitle": "Aún no hay actividades",
-  "runActivitiesEmptyMessage": "Graba tu primera carrera o apunta a mano lo que hiciste sin la app.",
+  "runActivitiesEmptyMessage": "Elige un deporte arriba y apunta lo que hiciste, o graba tu primera carrera.",
   "runWorkoutsTitle": "Entrenos guiados",
   "runWorkoutsEmptyTitle": "Aún no tienes entrenos guiados",
-  "runWorkoutsEmptyMessage": "Crea uno con «Crear entreno»: te guía paso a paso mientras corres.",
+  "runWorkoutsEmptyMessage": "Crea uno con «Crear entreno guiado»: te guía paso a paso mientras corres.",
   "runEditWorkout": "Cambiar entreno",
   "runDeleteWorkout": "Eliminar",
   "runBatteryHelp": "¿Se corta el GPS con la pantalla apagada?",
@@ -2674,12 +2674,12 @@
   },
   "runLeaveTitle": "¿Salir de la carrera?",
   "runLeavePause": "Pausar y salir",
-  "runLeavePauseWhere": "Queda guardada. La sigues en Entreno › Correr, con «Seguir con la carrera».",
-  "runPausedWhere": "Carrera en pausa. Síguela en Entreno › Correr con «Seguir con la carrera».",
-  "runSavedWhere": "Carrera guardada. La tienes en Entreno › Correr › Tus actividades.",
-  "runQueuedWhere": "Sin conexión: se subirá sola. La verás en Entreno › Correr.",
+  "runLeavePauseWhere": "Queda guardada. La sigues en Entreno › Deportes, con «Seguir con la carrera».",
+  "runPausedWhere": "Carrera en pausa. Síguela en Entreno › Deportes con «Seguir con la carrera».",
+  "runSavedWhere": "Carrera guardada. La tienes en Entreno › Deportes › Últimas actividades.",
+  "runQueuedWhere": "Sin conexión: se subirá sola. La verás en Entreno › Deportes.",
   "runRejectedTitle": "No se ha podido guardar",
-  "runBackToRun": "Volver a Correr",
+  "runBackToRun": "Volver a Deportes",
   "runMovingTime": "Tiempo en movimiento",
   "runMovingTimeExplain": "Sin pausas ni ratos parado.",
   "runElevation": "Desnivel positivo",
@@ -2749,7 +2749,7 @@
   "runEditorDuration": "Duración",
   "runEditorDistance": "Distancia",
   "runEditorSave": "Guardar entreno",
-  "runWorkoutSavedWhere": "Entreno guardado. Lo tienes en Entreno › Correr y deportes › Entrenos guiados.",
+  "runWorkoutSavedWhere": "Entreno guardado. Lo tienes en Entreno › Deportes › Entrenos guiados.",
   "runErrorTooShort": "Hacen falta al menos 10 minutos en movimiento para que cuente como actividad.",
   "runErrorOutOfRange": "Solo se guardan carreras ya terminadas de los últimos 30 días. Puedes apuntarla a mano si fue esta semana.",
   "runErrorRouteTooLarge": "La ruta es demasiado larga para guardarla. Prueba a apuntar la actividad a mano.",
@@ -2773,11 +2773,11 @@
   "@runSavedProgress": {
     "description": "Grabar carrera: guardada, se abre su detalle."
   },
-  "runQueuedProgress": "Guardada en este móvil. Volviendo a Correr…",
+  "runQueuedProgress": "Guardada en este móvil. Volviendo a Deportes…",
   "@runQueuedProgress": {
     "description": "Grabar carrera: sin conexión, queda en la cola del móvil."
   },
-  "runDiscardedProgress": "Carrera descartada. Volviendo a Correr…",
+  "runDiscardedProgress": "Carrera descartada. Volviendo a Deportes…",
   "@runDiscardedProgress": {
     "description": "Grabar carrera: descartada, se vuelve a Correr."
   },
@@ -2832,7 +2832,7 @@
   "@trainingPastActivityMetersSuffix": {
     "description": "Unidad a la derecha del campo de distancia al nadar (metros)."
   },
-  "trainingPastActivitySavedRun": "Actividad apuntada. La tienes en Entreno › Correr y deportes › Últimas actividades.",
+  "trainingPastActivitySavedRun": "Actividad apuntada. La tienes en Entreno › Deportes › Últimas actividades.",
   "@trainingPastActivitySavedRun": {
     "description": "Aviso al apuntar una actividad desde Correr (se vuelve allí)."
   },
@@ -2932,7 +2932,7 @@
     }
   },
   "trainingSessionDone": "Hecho",
-  "trainingTemplatesCreatedWithRuns": "Listo: «{name}» ya es tu rutina. Sus carreras están en Entreno › Correr.",
+  "trainingTemplatesCreatedWithRuns": "Listo: «{name}» ya es tu rutina. Sus carreras están en Entreno › Deportes.",
   "@trainingTemplatesCreatedWithRuns": {
     "placeholders": {
       "name": {
@@ -3525,7 +3525,7 @@
   "trainingTemplateDetailEmpty": "Esta plantilla aún no tiene ejercicios",
   "trainingTemplateDetailEmptyHint": "Vuelve a la lista y elige otra.",
   "trainingTemplateDetailRuns": "Días de correr",
-  "trainingTemplateRunHint": "Al usarla, estas carreras se crean en Entreno › Correr.",
+  "trainingTemplateRunHint": "Al usarla, estas carreras se crean en Entreno › Deportes.",
   "trainingTemplateExerciseUnknown": "Ejercicio ya no disponible",
   "trainingErrorSessionNotFree": "Solo la sesión libre suma ejercicios sobre la marcha.",
   "trainingErrorSessionNothingToRepeat": "Ese entreno no guardó qué ejercicios hiciste. Elige otro o los ejercicios a mano.",
@@ -3602,5 +3602,52 @@
     }
   },
   "trainingFreeRoutineSaved": "Guardada en Mis rutinas",
-  "trainingFreeOpenRoutine": "Ver rutina"
+  "trainingFreeOpenRoutine": "Ver rutina",
+  "sportsGridTitle": "Elige un deporte",
+  "sportEnduranceTitle": "Correr, andar o bici",
+  "sportEnduranceSubtitle": "Con GPS o apuntado",
+  "sportFootball": "Fútbol",
+  "sportPadel": "Pádel",
+  "sportSwim": "Natación",
+  "sportBasketball": "Baloncesto",
+  "sportTennis": "Tenis",
+  "sportVolleyball": "Vóley",
+  "sportOther": "Otro deporte",
+  "sportMatchSubtitle": "Partido o entreno",
+  "sportSwimSubtitle": "Largos y metros",
+  "sportOtherSubtitle": "Yoga, escalada, baile…",
+  "sportRunStart": "Empezar",
+  "sportRunStartHint": "Graba la ruta con el GPS del móvil.",
+  "sportLogDone": "Apuntar una ya hecha",
+  "sportGuidedHint": "Series que la app te va diciendo mientras corres",
+  "sportModeLabel": "¿Qué fue?",
+  "sportModeMatch": "Partido",
+  "sportModeTraining": "Entreno o clase",
+  "sportResultTitle": "Resultado (opcional)",
+  "sportResultLabel": "¿Cómo acabó?",
+  "sportResultWin": "Ganado",
+  "sportResultDraw": "Empate",
+  "sportResultLoss": "Perdido",
+  "sportScoreLabel": "Marcador (opcional)",
+  "sportScoreHint": "Como quieras: 3-2, 6-4 6-3…",
+  "sportSaveMatch": "Guardar partido",
+  "sportSaveTraining": "Guardar entreno",
+  "sportOtherNameLabel": "¿Qué deporte fue?",
+  "sportOtherNameRequired": "Escribe qué deporte fue.",
+  "sportOtherSearch": "Buscar o escribir un deporte",
+  "sportOtherAdd": "Añadir «{name}»",
+  "@sportOtherAdd": {
+    "description": "Otro deporte: fila para apuntar el deporte escrito en el buscador.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sportSuggestYoga": "Yoga",
+  "sportSuggestClimbing": "Escalada",
+  "sportSuggestDance": "Baile",
+  "sportSuggestMartial": "Artes marciales",
+  "sportSuggestHiking": "Senderismo",
+  "sportSuggestSkating": "Patinaje"
 }

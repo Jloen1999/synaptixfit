@@ -25,10 +25,18 @@ import '../bloc/run_recorder_bloc.dart';
 /// (aviso fijo «Grabando tu carrera · 3,2 km · 18:40»). Salir a mitad la pausa
 /// y se sigue desde Entreno › Correr.
 class RunRecorderPage extends StatelessWidget {
-  const RunRecorderPage({super.key, this.workoutId, this.eventId});
+  const RunRecorderPage({
+    super.key,
+    this.workoutId,
+    this.eventId,
+    this.kind,
+  });
 
   final String? workoutId;
   final String? eventId;
+
+  /// Tipo elegido en «Correr, andar o bici»; se puede cambiar antes de empezar.
+  final ActivityKind? kind;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +56,7 @@ class RunRecorderPage extends StatelessWidget {
           RunRecorderEvent.started(
             workoutId: workoutId,
             eventId: eventId,
+            kind: kind,
             texts: texts,
           ),
         ),

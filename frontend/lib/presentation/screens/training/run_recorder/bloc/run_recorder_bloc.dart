@@ -143,6 +143,7 @@ class RunRecorderBloc extends Bloc<RunRecorderEvent, RunRecorderState> {
     emit(
       state.copyWith(
         phase: RunPhase.ready,
+        kind: e.kind ?? state.kind,
         workout: workout,
         eventId: e.eventId,
         guide: _guideFor(workout),

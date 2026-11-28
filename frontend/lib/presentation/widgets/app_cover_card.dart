@@ -34,6 +34,7 @@ class AppCoverCard extends StatelessWidget {
     super.key,
     required this.child,
     this.imageUrl,
+    this.image,
     this.onTap,
     this.padding = const EdgeInsets.all(TokensSpacing.l),
     this.footer,
@@ -49,6 +50,10 @@ class AppCoverCard extends StatelessWidget {
   /// Lo que necesita el ancho entero (botón principal, progreso, acciones).
   final Widget? footer;
   final String? imageUrl;
+
+  /// Foto empaquetada con la app (un recurso); si llega, manda sobre
+  /// [imageUrl]. El contraste se garantiza igual que con una foto de red.
+  final ImageProvider? image;
   final VoidCallback? onTap;
   final EdgeInsetsGeometry padding;
 
@@ -96,14 +101,16 @@ class AppCoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = imageUrl;
-    if (layout == AppCoverLayout.bottom) return _bottomText(context, url);
-    if (url != null && !context.largeText) return _sidePhoto(context, url);
-    return _duotoneBackground(context, url);
+    final photo =
+        image ?? (url == null ? null : CachedNetworkImageProvider(url));
+    if (layout == AppCoverLayout.bottom) return _bottomText(context, photo);
+    if (photo != null && !context.largeText) return _sidePhoto(context, photo);
+    return _duotoneBackground(context, photo);
   }
 
   /// Foto a dos tonos (o, sin foto, un degradado del mismo tono): el fondo
   /// seguro de las dos variantes con texto encima.
-  Widget _safePhoto(BuildContext context, String? url, Alignment alignment) {
+  Widget _safePhoto(BuildContext context, ImageProvider? url, Alignment alignment) {
     final surface = context.colors.surface;
     final tinted = tint(context);
     final darkFirst = tinted.computeLuminance() < surface.computeLuminance();
@@ -129,7 +136,7 @@ class AppCoverCard extends StatelessWidget {
                 colors: [surface, tinted],
               ),
               image: DecorationImage(
-                image: CachedNetworkImageProvider(url),
+                image: url,
                 fit: BoxFit.cover,
                 alignment: alignment,
                 colorFilter: darkFirst
@@ -144,7 +151,7 @@ class AppCoverCard extends StatelessWidget {
 
   /// Franja de foto arriba, con sus colores, que se funde con la superficie;
   /// el texto va debajo, sobre la superficie lisa.
-  Widget _bottomText(BuildContext context, String? url) {
+  Widget _bottomText(BuildContext context, ImageProvider? url) {
     final surface = context.colors.surface;
     final tinted = tint(context);
     // Color de reserva: sin foto, mientras carga o si falla.
@@ -173,7 +180,7 @@ class AppCoverCard extends StatelessWidget {
                     image: url == null
                         ? null
                         : DecorationImage(
-                            image: CachedNetworkImageProvider(url),
+                            image: url,
                             fit: BoxFit.cover,
                             onError: (_, _) {},
                           ),
@@ -209,7 +216,7 @@ class AppCoverCard extends StatelessWidget {
   }
 
   /// Foto visible en el lado final y texto sobre la superficie lisa.
-  Widget _sidePhoto(BuildContext context, String url) {
+  Widget _sidePhoto(BuildContext context, ImageProvider url) {
     final surface = context.colors.surface;
     return AppCard(
       color: surface,
@@ -228,7 +235,7 @@ class AppCoverCard extends StatelessWidget {
                 child: Ink(
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: CachedNetworkImageProvider(url),
+                      image: url,
                       fit: BoxFit.cover,
                       // Sin foto (error de red) queda la superficie.
                       onError: (_, _) {},
@@ -282,7 +289,7 @@ class AppCoverCard extends StatelessWidget {
     );
   }
 
-  Widget _duotoneBackground(BuildContext context, String? url) {
+  Widget _duotoneBackground(BuildContext context, ImageProvider? url) {
     final surface = context.colors.surface;
     return AppCard(
       color: surface,

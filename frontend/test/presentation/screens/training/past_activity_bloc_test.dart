@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/training/sport_activity.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/log_past_activity_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_pending_day_use_case.dart';
@@ -65,6 +66,95 @@ void main() {
       PastActivityState(savedXp: 0),
     ],
     verify: (_) => verifyNever(() => getAccount()),
+  );
+
+  // Deportes (ADR 0068): lo elegido en el formulario del deporte viaja tal
+  // cual; qué vale en cada deporte lo decide el servidor.
+  const padel = SportEntry(
+    sport: Sport.padel,
+    mode: SportMode.match,
+    result: MatchResult.win,
+    scoreText: '6-4 6-3',
+  );
+
+  blocTest<PastActivityBloc, PastActivityState>(
+    'un partido se guarda con su deporte, resultado y marcador',
+    setUp: () => when(
+      () => log(
+        start: start,
+        minutes: 90,
+        effort: 7,
+        title: 'Pádel',
+        kind: ActivityKind.match,
+        sport: padel,
+      ),
+    ).thenAnswer((_) async => Success(_FakeCompletion(0))),
+    build: build,
+    act: (bloc) => bloc.add(
+      PastActivityEvent.submitted(
+        start: start,
+        minutes: 90,
+        effort: 7,
+        title: 'Pádel',
+        kind: ActivityKind.match,
+        sport: padel,
+      ),
+    ),
+    expect: () => const [
+      PastActivityState(submitting: true),
+      PastActivityState(savedXp: 0),
+    ],
+    verify: (_) => verify(
+      () => log(
+        start: start,
+        minutes: 90,
+        effort: 7,
+        title: 'Pádel',
+        kind: ActivityKind.match,
+        sport: padel,
+      ),
+    ).called(1),
+  );
+
+  blocTest<PastActivityBloc, PastActivityState>(
+    'natación y «otro deporte» mandan sus metros y su nombre',
+    setUp: () => when(
+      () => log(
+        start: any(named: 'start'),
+        minutes: any(named: 'minutes'),
+        effort: any(named: 'effort'),
+        title: any(named: 'title'),
+        kind: any(named: 'kind'),
+        distanceMeters: any(named: 'distanceMeters'),
+        sport: any(named: 'sport'),
+      ),
+    ).thenAnswer((_) async => Success(_FakeCompletion(0))),
+    build: build,
+    act: (bloc) async {
+      bloc.add(
+        PastActivityEvent.submitted(
+          start: start,
+          minutes: 40,
+          effort: 5,
+          title: 'Natación',
+          kind: ActivityKind.swim,
+          distanceMeters: 1500,
+          sport: const SportEntry(sport: Sport.swim),
+        ),
+      );
+      await bloc.stream.firstWhere((s) => s.savedXp != null);
+    },
+    verify: (_) => verify(
+      () => log(
+        start: start,
+        minutes: 40,
+        effort: 5,
+        title: 'Natación',
+        kind: ActivityKind.swim,
+        distanceMeters: 1500,
+        sport: const SportEntry(sport: Sport.swim),
+      ),
+    ).called(1),
   );
 
   blocTest<PastActivityBloc, PastActivityState>(

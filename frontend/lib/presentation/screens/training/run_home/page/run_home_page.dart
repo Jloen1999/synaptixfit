@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/training/run.dart';
+import '../../../../../domain/models/training/sport_activity.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
@@ -14,17 +15,19 @@ import '../../../progress/widgets/achievement_share.dart';
 import '../../activity_history/page/activity_history_view.dart';
 import '../../training_routes.dart';
 import '../../widgets/run_labels.dart';
-import '../../widgets/training_quick_actions.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_section_bar.dart';
 import '../../run_workout_editor/page/run_workout_editor_page.dart';
 import '../bloc/run_home_bloc.dart';
+import 'create_run_workout_sheet.dart';
+import 'sport_grid.dart';
 
-/// Apartado «Correr» de la pestaña Entreno (ADR 0037 y 0055): arriba, la
-/// carrera a medias, «Hoy toca» o «Salir a correr» (el mapa sale al grabar);
-/// los atajos; dos cifras de la semana; «Próximo» y «Últimas», y tus entrenos
-/// de carrera. En web o escritorio explica que se graba desde el móvil y deja
-/// apuntar la actividad a mano.
+/// Apartado «Deportes» de la pestaña Entreno (ADR 0037, 0055 y 0068): arriba,
+/// la carrera a medias o el entreno de hoy si lo hay; la rejilla de deportes
+/// ([SportGrid]: elegir uno es la acción, y cada uno lleva su «apuntar uno ya
+/// hecho»); dos cifras de la semana; «Próximo», los entrenos guiados y
+/// «Últimas actividades». En web o escritorio explica que se graba desde el
+/// móvil.
 class RunHomePage extends StatelessWidget {
   const RunHomePage({super.key});
 
@@ -119,68 +122,7 @@ class _Content extends StatelessWidget {
   final RunHomeState state;
 
   Future<void> _createWorkout(BuildContext context) async {
-    final l10n = context.localizations;
-    final code = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (sheet) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.only(bottom: TokensSpacing.m),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.l),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  l10n.runCreateWorkoutTitle,
-                  style: sheet.textStyles.titleLarge,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                TokensSpacing.l,
-                TokensSpacing.xs,
-                TokensSpacing.l,
-                TokensSpacing.s,
-              ),
-              child: Text(l10n.runCreateWorkoutIntro),
-            ),
-            for (final t in state.templates)
-              AppFocusOutline(
-                child: ListTile(
-                  leading: Icon(
-                    Icons.directions_run_rounded,
-                    color: sheet.colors.secondary,
-                  ),
-                  title: Text(RunLabels.templateName(l10n, t.templateCode)),
-                  subtitle: Text(
-                    [
-                      RunLabels.templateWhy(l10n, t.templateCode),
-                      t.groups.map((g) => RunLabels.group(l10n, g)).join(' · '),
-                    ].join('\n'),
-                  ),
-                  isThreeLine: true,
-                  onTap: () => Navigator.of(sheet).pop(t.templateCode),
-                ),
-              ),
-            AppFocusOutline(
-              child: ListTile(
-                leading: Icon(
-                  Icons.edit_note_rounded,
-                  color: sheet.colors.secondary,
-                ),
-                title: Text(l10n.runCreateFromScratch),
-                subtitle: Text(l10n.runCreateFromScratchHint),
-                onTap: () => Navigator.of(sheet).pop(''),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    final code = await showCreateRunWorkoutSheet(context, state.templates);
     if (code == null || !context.mounted) return;
     await _RunHomeView.open(
       context,
@@ -236,8 +178,8 @@ class _Content extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final unfinished = state.unfinished;
-    // Un solo botón destacado: seguir la carrera a medias, si no el entreno de
-    // hoy y, si no hay, «Salir a correr» (ADR 0055).
+    // Un solo botón destacado, y solo si hay algo empezado o planeado: seguir
+    // la carrera a medias o el entreno de hoy. Sin nada, manda la rejilla.
     final today = unfinished == null
         ? state.planned.dueToday(DateTime.now())
         : null;
@@ -301,9 +243,7 @@ class _Content extends StatelessWidget {
                     workoutId: today.workoutId,
                     eventId: today.blockId,
                   ),
-                )
-              else if (state.supported)
-                _GoRunCard(onStart: record),
+                ),
               // Sin GPS (web, escritorio) se apunta a mano (ADR 0039).
               if (!state.supported) ...[
                 if (unfinished != null || today != null)
@@ -313,37 +253,27 @@ class _Content extends StatelessWidget {
                   tone: AppMessageTone.info,
                 ),
               ],
+              if (unfinished != null || today != null || !state.supported)
+                const SizedBox(height: TokensSpacing.l),
+              // Elegir el deporte es la acción (ADR 0068): cada tarjeta abre
+              // su pantalla, con su «apuntar uno ya hecho».
+              AppSectionHeader(title: l10n.sportsGridTitle),
               const SizedBox(height: TokensSpacing.s),
-              // Atajos a un toque (ADR 0055). «Correr libre» solo si arriba ya
-              // hay otro botón: si no, sería el mismo «Salir a correr».
-              TrainingQuickActions(
-                actions: [
-                  if (state.supported && unfinished == null && today != null)
-                    TrainingQuickAction(
-                      icon: Icons.directions_run_rounded,
-                      label: l10n.runQuickFree,
-                      onTap: record,
-                    ),
-                  TrainingQuickAction(
-                    icon: Icons.add_task_rounded,
-                    label: l10n.runCreateWorkout,
-                    onTap: () => _createWorkout(context),
-                  ),
-                  TrainingQuickAction(
-                    icon: Icons.edit_note_rounded,
-                    label: l10n.runQuickLog,
-                    onTap: () => _RunHomeView.open(
-                      context,
-                      TrainingPaths.logActivity(from: TrainingSection.run),
-                    ),
-                  ),
-                  TrainingQuickAction(
-                    icon: AppIcons.history,
-                    label: l10n.trainingHistoryTitle,
-                    onTap: () =>
-                        _RunHomeView.open(context, TrainingPaths.activities),
-                  ),
-                ],
+              SportGrid(
+                onEndurance: () => _RunHomeView.open(
+                  context,
+                  TrainingPaths.sportRun(gps: state.supported),
+                  extra: state.templates,
+                ),
+                onSport: (sport) => _RunHomeView.open(
+                  context,
+                  sport == Sport.other
+                      ? TrainingPaths.otherSport
+                      : TrainingPaths.logActivity(
+                          from: TrainingSection.run,
+                          sport: sport,
+                        ),
+                ),
               ),
               if (state.pendingUploads > 0) ...[
                 const SizedBox(height: TokensSpacing.s),
@@ -353,7 +283,7 @@ class _Content extends StatelessWidget {
                 ),
               ],
               if (state.week case final week?) ...[
-                const SizedBox(height: TokensSpacing.s),
+                const SizedBox(height: TokensSpacing.l),
                 _WeekCard(week: week),
               ],
               if (upcoming.isNotEmpty) ...[
@@ -361,14 +291,18 @@ class _Content extends StatelessWidget {
                 _Upcoming(planned: upcoming, supported: state.supported),
               ],
               const SizedBox(height: TokensSpacing.l),
-              AppSectionHeader(title: l10n.runWorkoutsTitle),
+              AppSectionHeader(
+                title: l10n.runWorkoutsTitle,
+                actionLabel: l10n.runCreateWorkout,
+                onAction: () => _createWorkout(context),
+              ),
               const SizedBox(height: TokensSpacing.s),
               if (state.workouts.isEmpty)
                 AppEmptyState.compact(
                   icon: Icons.format_list_numbered_rounded,
                   title: l10n.runWorkoutsEmptyTitle,
                   message: l10n.runWorkoutsEmptyMessage,
-                  // Sin botón propio: «Crear entreno» ya está arriba.
+                  // Sin botón propio: «Crear entreno guiado» va en la cabecera.
                 )
               else
                 for (final w in state.workouts) ...[
@@ -411,7 +345,7 @@ class _Content extends StatelessWidget {
                   icon: Icons.directions_run_rounded,
                   title: l10n.runActivitiesEmptyTitle,
                   message: l10n.runActivitiesEmptyMessage,
-                  // Sin botón propio: «Apuntar actividad» ya está arriba.
+                  // Sin botón propio: se apunta desde cada deporte, arriba.
                 )
               else
                 for (final a in state.activities.take(_lastCount)) ...[
@@ -427,65 +361,6 @@ class _Content extends StatelessWidget {
 
   /// Actividades que se ven en «Últimas» (el resto, en el historial).
   static const _lastCount = 2;
-}
-
-/// Sin nada planeado para hoy: «Salir a correr» con lo que hace (graba la
-/// ruta con el GPS) y un solo botón, en vez de un botón suelto.
-class _GoRunCard extends StatelessWidget {
-  const _GoRunCard({required this.onStart});
-
-  final VoidCallback onStart;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    return AppCard(
-      color: context.colors.primaryContainer,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.directions_run_rounded,
-                size: TokensSize.iconL,
-                color: context.colors.onPrimaryContainer,
-              ),
-              const SizedBox(width: TokensSpacing.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        l10n.runGoRun,
-                        style: context.textStyles.titleLarge?.copyWith(
-                          color: context.colors.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      l10n.runGoRunHint,
-                      style: context.textStyles.bodyMedium?.copyWith(
-                        color: context.colors.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: TokensSpacing.m),
-          AppPrimaryButton(
-            label: l10n.runStartNow,
-            icon: Icons.play_arrow_rounded,
-            onPressed: onStart,
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// «Hoy toca» de Correr (ADR 0055): el entreno de hoy, cuánto dura y «Salir a

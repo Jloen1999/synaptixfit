@@ -397,7 +397,7 @@
   "@challengesRuleGoAcademic": {
     "description": "Botón de un reto que se cuenta con repasos o tests: abre la pestaña Académico"
   },
-  "challengesRuleGoRun": "Ir a Correr",
+  "challengesRuleGoRun": "Ir a Deportes",
   "@challengesRuleGoRun": {
     "description": "Botón de un reto que se cuenta con carreras: abre Entreno › Correr"
   },
@@ -685,7 +685,7 @@
   "challengesRuleHelpTests": "Cuenta cada semana (de lunes a domingo) con al menos un test o simulacro terminado.",
   "challengesRuleHelpCheckIns": "Cuenta cada día en que respondes «¿Qué tal estás hoy?». Solo se mira que respondiste, nunca las respuestas, y este reto no se comparte.",
   "challengesRuleHelpPlannedWeeks": "Cuenta cada semana que dejas planificada en el calendario, con al menos 3 eventos.",
-  "challengesRuleHelpRuns": "Cuenta cada carrera que grabas en Entreno › Correr.",
+  "challengesRuleHelpRuns": "Cuenta cada carrera que grabas en Entreno › Deportes.",
   "challengesRuleHelpGeneric": "Avanza solo con lo que haces en la app.",
   "challengesErrorTemplateNotFound": "Esa plantilla de reto ya no está disponible.",
   "challengesErrorTemplateAlreadyActive": "Ya tienes este reto en marcha.",

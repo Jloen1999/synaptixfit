@@ -7,6 +7,10 @@ sealed class RunRecorderEvent with _$RunRecorderEvent {
   const factory RunRecorderEvent.started({
     String? workoutId,
     String? eventId,
+
+    /// Correr, andar o bici ya elegido en «Deportes» (si no hay una carrera a
+    /// medias, que conserva el suyo).
+    ActivityKind? kind,
     required RunNotificationTexts texts,
   }) = RunRecorderStarted;
 

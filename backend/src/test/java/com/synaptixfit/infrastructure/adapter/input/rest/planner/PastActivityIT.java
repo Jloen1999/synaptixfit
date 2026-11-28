@@ -141,4 +141,46 @@ class PastActivityIT {
                                 .formatted(yesterday, UUID.randomUUID())))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void aMatchKeepsItsSportResultAndScoreAndOldAppsStillReadTheirKind() throws Exception {
+        Instant yesterday = Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofDays(1));
+        String padel = ("{\"start\":\"%s\",\"minutes\":90,\"title\":\"Pádel\",\"effort\":7,\"sport\":\"PADEL\","
+                + "\"mode\":\"MATCH\",\"result\":\"WIN\",\"scoreText\":\"6-4 6-3\"}").formatted(yesterday);
+        String climbing = ("{\"start\":\"%s\",\"minutes\":60,\"effort\":5,\"sport\":\"OTHER\","
+                + "\"sportName\":\"  Escalada   libre \"}").formatted(yesterday.minus(Duration.ofHours(5)));
+        // Una app anterior: solo la clase y el título.
+        String legacy = "{\"start\":\"%s\",\"minutes\":60,\"title\":\"Fútbol\",\"effort\":6,\"kind\":\"MATCH\"}"
+                .formatted(yesterday.minus(Duration.ofHours(10)));
+        for (String json : new String[] {padel, climbing, legacy}) {
+            mvc.perform(post("/api/v1/planner/past-activities").header("Authorization", auth)
+                    .contentType(MediaType.APPLICATION_JSON).content(json)).andExpect(status().isCreated());
+        }
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/planner/past-activities").header("Authorization", auth))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].sport").value("PADEL"))
+                .andExpect(jsonPath("$.items[0].sportCategory").value("MATCH"))
+                .andExpect(jsonPath("$.items[0].kind").value("MATCH"))
+                .andExpect(jsonPath("$.items[0].mode").value("MATCH"))
+                .andExpect(jsonPath("$.items[0].result").value("WIN"))
+                .andExpect(jsonPath("$.items[0].scoreText").value("6-4 6-3"))
+                .andExpect(jsonPath("$.items[1].sport").value("OTHER"))
+                .andExpect(jsonPath("$.items[1].sportName").value("Escalada libre"))
+                .andExpect(jsonPath("$.items[1].title").value("Escalada libre"))
+                .andExpect(jsonPath("$.items[1].kind").value("OTHER"))
+                .andExpect(jsonPath("$.items[2].sport").value("FOOTBALL"))
+                .andExpect(jsonPath("$.items[2].kind").value("MATCH"));
+    }
+
+    @Test
+    void aScoreLongerThanTwentyLettersIsRejected() throws Exception {
+        Instant yesterday = Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofDays(1));
+        mvc.perform(post("/api/v1/planner/past-activities").header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(("{\"start\":\"%s\",\"minutes\":60,\"effort\":6,\"sport\":\"TENNIS\","
+                                + "\"scoreText\":\"%s\"}").formatted(yesterday, "1".repeat(21))))
+                .andExpect(status().isBadRequest());
+    }
 }

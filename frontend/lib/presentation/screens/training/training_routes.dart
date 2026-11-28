@@ -25,7 +25,10 @@ import 'run_detail/page/run_detail_page.dart';
 import 'run_home/page/run_home_page.dart';
 import 'run_recorder/page/run_recorder_page.dart';
 import 'run_workout_editor/page/run_workout_editor_page.dart';
+import 'sports/page/other_sport_page.dart';
+import 'sports/page/sport_run_page.dart';
 import 'widgets/training_section_bar.dart';
+import '../../../domain/models/training/sport_activity.dart';
 import '../../../domain/models/training/run.dart';
 
 /// Rutas del módulo training.
@@ -105,8 +108,25 @@ abstract final class TrainingPaths {
   /// «Apuntar actividad» desde un apartado: al guardar, el aviso dice dónde
   /// queda según a dónde se vuelve (en Correr, «Tus actividades»). Sin
   /// apartado, se viene del historial.
-  static String logActivity({TrainingSection? from}) =>
-      _withQuery(pastActivity, {'from': ?from?.query});
+  /// Con [sport] (elegido en «Deportes», ADR 0068) el formulario es el de ese
+  /// deporte; [name] es el nombre de «otro deporte».
+  static String logActivity({
+    TrainingSection? from,
+    Sport? sport,
+    String? name,
+  }) => _withQuery(pastActivity, {
+    'from': ?from?.query,
+    'sport': ?sport?.api,
+    'name': ?name,
+  });
+
+  /// «Correr, andar o bici» (pantalla completa). [gps] falso: este
+  /// dispositivo no graba y solo se apunta a mano.
+  static String sportRun({bool gps = true}) =>
+      _withQuery('$root/sports/run', {if (!gps) 'gps': '0'});
+
+  /// «Otro deporte»: buscador y «Añadir».
+  static const otherSport = '$root/sports/other';
 
   /// «Mi ciclo» (opcional, ADR 0033).
   static const cycle = '$root/cycle';
@@ -129,10 +149,16 @@ abstract final class TrainingPaths {
 
   /// Grabar una carrera (pantalla completa), con un entreno de carrera o
   /// desde su evento del calendario si se indican.
-  static String recordRun({String? workoutId, String? eventId}) => _withQuery(
-    '$root/run/record',
-    {'workout': ?workoutId, 'event': ?eventId},
-  );
+  /// [kind] es el tipo ya elegido en «Correr, andar o bici».
+  static String recordRun({
+    String? workoutId,
+    String? eventId,
+    ActivityKind? kind,
+  }) => _withQuery('$root/run/record', {
+    'workout': ?workoutId,
+    'event': ?eventId,
+    'kind': ?kind?.api,
+  });
 
   /// Crear un entreno de carrera (desde una plantilla si se indica).
   static String newRunWorkout({String? template}) =>
@@ -257,7 +283,23 @@ List<RouteBase> trainingRoutes() => [
       from: TrainingSection.values
           .where((s) => s.query == state.uri.queryParameters['from'])
           .firstOrNull,
+      sport: Sport.fromApi(state.uri.queryParameters['sport']),
+      sportName: state.uri.queryParameters['name'],
     ),
+  ),
+  // Deportes (ADR 0068), a pantalla completa como «Apuntar actividad».
+  GoRoute(
+    path: '${TrainingPaths.root}/sports/run',
+    builder: (_, state) => SportRunPage(
+      gps: state.uri.queryParameters['gps'] != '0',
+      templates: state.extra is List<RunWorkout>
+          ? state.extra! as List<RunWorkout>
+          : const [],
+    ),
+  ),
+  GoRoute(
+    path: TrainingPaths.otherSport,
+    builder: (_, _) => const OtherSportPage(),
   ),
   GoRoute(path: TrainingPaths.cycle, builder: (_, _) => const CyclePage()),
   // Grabar una carrera, a pantalla completa como la sesión en vivo.
@@ -266,6 +308,7 @@ List<RouteBase> trainingRoutes() => [
     builder: (_, state) => RunRecorderPage(
       workoutId: state.uri.queryParameters['workout'],
       eventId: state.uri.queryParameters['event'],
+      kind: ActivityKind.fromApi(state.uri.queryParameters['kind']),
     ),
   ),
   // El resumen va como ruta hermana (no hija) para no reconstruir la sesión debajo.

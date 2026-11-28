@@ -82,6 +82,8 @@ flutter:
   generate: true
   assets:
     - assets/images/
+    # Una foto por deporte (ADR 0068); créditos en su CREDITS.md.
+    - assets/images/sports/
     # Manrope y DM Sans empaquetadas (OFL): google_fonts las toma por nombre
     # de archivo y no las descarga en tiempo de ejecución.
     - assets/google_fonts/

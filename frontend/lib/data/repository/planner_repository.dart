@@ -122,14 +122,22 @@ class PlannerRepository implements PlannerRepositoryContract {
     String? title,
     ActivityKind? kind,
     int? distanceMeters,
+    SportEntry? sport,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.logPastActivity({
       'start': PlannerJson.toInstant(start),
       'minutes': minutes,
       'effort': effort,
       if (title != null && title.isNotEmpty) 'title': title,
-      'kind': ?kind?.api,
+      // La clase de antes viaja también: un servidor anterior a ADR 0068 la
+      // entiende y descarta lo demás.
+      'kind': ?(kind ?? sport?.sport.kind)?.api,
       'distanceMeters': ?distanceMeters,
+      'sport': ?sport?.sport.api,
+      'sportName': ?sport?.name,
+      'mode': ?sport?.mode?.api,
+      'result': ?sport?.result?.api,
+      'scoreText': ?sport?.scoreText,
     })).toDomain(),
   );
 

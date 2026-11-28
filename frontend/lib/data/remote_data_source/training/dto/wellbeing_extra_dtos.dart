@@ -92,6 +92,16 @@ abstract final class WellbeingExtraDtos {
         speedKmh: (json['speedKmh'] as num?)?.toDouble(),
         source: ActivitySource.fromApi(json['source'] as String?),
         elevationGainMeters: json['elevationGainMeters'] as int?,
+        sport: switch (Sport.fromApi(json['sport'] as String?)) {
+          null => null,
+          final sport => SportEntry(
+            sport: sport,
+            name: json['sportName'] as String?,
+            mode: SportMode.fromApi(json['mode'] as String?),
+            result: MatchResult.fromApi(json['result'] as String?),
+            scoreText: json['scoreText'] as String?,
+          ),
+        },
       );
 
   static TrainingPage<SportActivity> activities(Map<String, dynamic> json) =>

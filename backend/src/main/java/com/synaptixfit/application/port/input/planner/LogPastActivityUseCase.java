@@ -3,6 +3,7 @@ package com.synaptixfit.application.port.input.planner;
 import com.synaptixfit.domain.model.planner.ActivityKind;
 import com.synaptixfit.domain.model.planner.ActivitySource;
 import com.synaptixfit.domain.model.planner.ActivityType;
+import com.synaptixfit.domain.model.planner.SportDetails;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -22,10 +23,18 @@ public interface LogPastActivityUseCase {
      * @param source  a mano (por defecto) o grabada con el GPS de la app (ADR 0037)
      * @param challengeId reto del evento planificado que sustituye (opcional; nunca llega del cliente)
      * @param milestoneId tarea de reto de ese evento: así sigue avanzando con la actividad (opcional)
+     * @param sport   deporte y datos de partido (ADR 0068); sin él se deduce de {@code kind} y el título
      */
     record Command(UUID userId, Instant start, int minutes, String title, Integer effort, ActivityType type,
                    UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source,
-                   UUID challengeId, UUID milestoneId) {
+                   UUID challengeId, UUID milestoneId, SportDetails sport) {
+
+        public Command(UUID userId, Instant start, int minutes, String title, Integer effort, ActivityType type,
+                       UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source,
+                       UUID challengeId, UUID milestoneId) {
+            this(userId, start, minutes, title, effort, type, subjectId, kind, distanceMeters, source, challengeId,
+                    milestoneId, null);
+        }
 
         public Command(UUID userId, Instant start, int minutes, String title, Integer effort, ActivityType type,
                        UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source) {

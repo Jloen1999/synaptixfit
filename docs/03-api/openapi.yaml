@@ -14242,6 +14242,38 @@ components:
           format: int32
           maximum: 300000
           minimum: 100
+        sport:
+          type: string
+          enum:
+          - RUN
+          - WALK
+          - BIKE
+          - SWIM
+          - FOOTBALL
+          - PADEL
+          - BASKETBALL
+          - VOLLEYBALL
+          - TENNIS
+          - OTHER
+        sportName:
+          type: string
+          maxLength: 80
+          minLength: 0
+        mode:
+          type: string
+          enum:
+          - MATCH
+          - TRAINING
+        result:
+          type: string
+          enum:
+          - WIN
+          - DRAW
+          - LOSS
+        scoreText:
+          type: string
+          maxLength: 20
+          minLength: 0
       required:
       - start
     IcsImportRequest:
@@ -16942,6 +16974,40 @@ components:
         paceSecondsPer100m:
           type: integer
           format: int32
+        sport:
+          type: string
+          enum:
+          - RUN
+          - WALK
+          - BIKE
+          - SWIM
+          - FOOTBALL
+          - PADEL
+          - BASKETBALL
+          - VOLLEYBALL
+          - TENNIS
+          - OTHER
+        sportCategory:
+          type: string
+          enum:
+          - ENDURANCE
+          - MATCH
+          - OTHER
+        sportName:
+          type: string
+        mode:
+          type: string
+          enum:
+          - MATCH
+          - TRAINING
+        result:
+          type: string
+          enum:
+          - WIN
+          - DRAW
+          - LOSS
+        scoreText:
+          type: string
     Day:
       type: object
       properties:

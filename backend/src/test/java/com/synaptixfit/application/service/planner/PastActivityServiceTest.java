@@ -12,6 +12,10 @@ import com.synaptixfit.domain.model.planner.ChallengeRef;
 import com.synaptixfit.domain.model.planner.LoggedSportActivity;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
+import com.synaptixfit.domain.model.planner.MatchResult;
+import com.synaptixfit.domain.model.planner.Sport;
+import com.synaptixfit.domain.model.planner.SportDetails;
+import com.synaptixfit.domain.model.planner.SportMode;
 import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import java.time.Duration;
 import java.time.Instant;
@@ -32,6 +36,7 @@ class PastActivityServiceTest {
     private PlannerFakes f;
     private PastActivityService service;
     private final Map<UUID, Integer> loggedMinutes = new HashMap<>();
+    private final Map<UUID, SportDetails> loggedSport = new HashMap<>();
     private final UUID challenge = UUID.randomUUID();
     private final UUID task = UUID.randomUUID();
 
@@ -41,8 +46,9 @@ class PastActivityServiceTest {
         f.directory.challenges.computeIfAbsent(f.user, u -> new HashSet<>()).addAll(Set.of(challenge, task));
         LoggedActivityRepositoryPort logged = new LoggedActivityRepositoryPort() {
             @Override
-            public void save(UUID blockId, UUID userId, ActivityKind kind, int minutes, Integer distanceMeters,
-                             ActivitySource source, Instant now) {
+            public void save(UUID blockId, UUID userId, ActivityKind kind, SportDetails sport, int minutes,
+                             Integer distanceMeters, ActivitySource source, Instant now) {
+                loggedSport.put(blockId, sport);
                 loggedMinutes.put(blockId, minutes);
             }
 
@@ -83,5 +89,28 @@ class PastActivityServiceTest {
         assertThat(block.details().challengeId()).isNull();
         assertThat(block.details().milestoneId()).isNull();
         assertThat(block.completed()).isTrue();
+    }
+
+    @Test
+    void aMatchIsSavedWithItsSportAndCountsLikeAnyActivity() {
+        Instant start = PlannerFakes.NOW.minus(Duration.ofHours(3));
+        SportDetails padel = new SportDetails(Sport.PADEL, null, SportMode.MATCH, MatchResult.WIN, "6-4 6-3");
+
+        CalendarBlock block = service.logPastActivity(new LogPastActivityUseCase.Command(f.user, start, 90, "Pádel",
+                7, ActivityType.SPORT, null, null, null, ActivitySource.MANUAL, null, null, padel)).block();
+
+        assertThat(block.completed()).isTrue();
+        assertThat(loggedSport.get(block.id())).isEqualTo(padel);
+    }
+
+    @Test
+    void anOldAppWithoutSportGetsItFromItsKindAndTitle() {
+        Instant start = PlannerFakes.NOW.minus(Duration.ofHours(3));
+
+        CalendarBlock block = service.logPastActivity(new LogPastActivityUseCase.Command(f.user, start, 60, "Fútbol",
+                6, ActivityType.SPORT, null, ActivityKind.MATCH, null)).block();
+
+        assertThat(loggedSport.get(block.id()).sport()).isEqualTo(Sport.FOOTBALL);
+        assertThat(loggedSport.get(block.id()).mode()).isEqualTo(SportMode.MATCH);
     }
 }

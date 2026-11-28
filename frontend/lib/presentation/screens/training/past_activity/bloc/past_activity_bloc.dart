@@ -15,7 +15,8 @@ part 'past_activity_bloc.freezed.dart';
 part 'past_activity_event.dart';
 part 'past_activity_state.dart';
 
-/// «Apuntar actividad»: guarda una actividad física ya pasada (deporte libre)
+/// «Apuntar actividad»: guarda una actividad física ya pasada (deporte libre,
+/// o el deporte elegido en «Deportes» con sus datos de partido, ADR 0068)
 /// o un día de la rutina en curso hecho sin la app, que avanza la rutina y
 /// cuenta en su fecha. Las reglas (de los últimos 7 días, ya terminada, topes
 /// de XP) las decide el servidor.
@@ -101,6 +102,7 @@ class PastActivityBloc extends Bloc<PastActivityEvent, PastActivityState> {
       title: event.title,
       kind: event.kind,
       distanceMeters: event.distanceMeters,
+      sport: event.sport,
     );
     switch (result.errorOrNull) {
       case final AppError error:

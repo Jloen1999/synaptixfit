@@ -28,9 +28,11 @@ import java.util.UUID;
  * @param kind           clase de deporte (por defecto {@link ActivityKind#OTHER}); nula en estudio
  * @param distanceMeters distancia, solo en clases que se miden así ({@link ActivityKind#measuresDistance()})
  * @param source         a mano o con el GPS de la app (ADR 0037): cambia cuántos días atrás se acepta
+ * @param sport          deporte y datos de partido (ADR 0068); si no llega, se deduce de la clase y el título
  */
 public record PastActivity(Instant start, int minutes, String title, Integer effort, ActivityType type,
-                           UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source) {
+                           UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source,
+                           SportDetails sport) {
 
     public static final int MAX_DAYS_BACK = 7;
     /** Como mucho 5 horas: más no es una sesión normal y descuadraría la carga. */
@@ -51,7 +53,13 @@ public record PastActivity(Instant start, int minutes, String title, Integer eff
             Guard.range(minutes, "minutes", MIN_SPORT_MINUTES, MAX_MINUTES);
             Guard.range(Guard.notNull(effort, "effort"), "effort", 1, 10);
             subjectId = null;
-            kind = kind == null ? ActivityKind.OTHER : kind;
+            if (sport != null) {
+                // El deporte manda; la clase de antes se deduce de él para las apps ya instaladas.
+                kind = sport.sport().legacyKind();
+            } else {
+                kind = kind == null ? ActivityKind.OTHER : kind;
+                sport = SportDetails.fromLegacy(kind, title);
+            }
             if (!kind.measuresDistance()) {
                 distanceMeters = null;
             } else if (distanceMeters != null
@@ -64,11 +72,21 @@ public record PastActivity(Instant start, int minutes, String title, Integer eff
             effort = null;
             kind = null;
             distanceMeters = null;
+            sport = null;
         }
         title = title == null || title.isBlank() ? null : title.strip();
+        if (title == null && sport != null) {
+            // «Otro deporte» sin título: el evento del calendario se llama como el deporte.
+            title = sport.name();
+        }
         if (title != null && title.length() > CalendarBlock.TOPICS_MAX) {
             title = title.substring(0, CalendarBlock.TOPICS_MAX);
         }
+    }
+
+    public PastActivity(Instant start, int minutes, String title, Integer effort, ActivityType type,
+                        UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source) {
+        this(start, minutes, title, effort, type, subjectId, kind, distanceMeters, source, null);
     }
 
     public PastActivity(Instant start, int minutes, String title, Integer effort, ActivityType type,

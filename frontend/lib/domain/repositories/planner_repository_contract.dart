@@ -50,6 +50,7 @@ abstract interface class PlannerRepositoryContract {
     String? title,
     ActivityKind? kind,
     int? distanceMeters,
+    SportEntry? sport,
   });
 
   /// Estudio ya hecho (últimos 7 días): bloque de estudio completado.

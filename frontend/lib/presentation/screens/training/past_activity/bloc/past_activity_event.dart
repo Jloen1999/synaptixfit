@@ -9,6 +9,9 @@ sealed class PastActivityEvent with _$PastActivityEvent {
     String? title,
     ActivityKind? kind,
     int? distanceMeters,
+
+    /// Deporte elegido en «Deportes» y, si es un partido, cómo fue.
+    SportEntry? sport,
   }) = PastActivitySubmitted;
 
   /// Carga la rutina en curso para apuntar uno de sus días.

@@ -13,6 +13,7 @@ abstract interface class LogPastActivityUseCaseContract {
     String? title,
     ActivityKind? kind,
     int? distanceMeters,
+    SportEntry? sport,
   });
 }
 
@@ -29,6 +30,7 @@ class LogPastActivityUseCase implements LogPastActivityUseCaseContract {
     String? title,
     ActivityKind? kind,
     int? distanceMeters,
+    SportEntry? sport,
   }) => _repository.logPastActivity(
     start: start,
     minutes: minutes,
@@ -36,5 +38,6 @@ class LogPastActivityUseCase implements LogPastActivityUseCaseContract {
     title: title?.trim(),
     kind: kind,
     distanceMeters: distanceMeters,
+    sport: sport,
   );
 }

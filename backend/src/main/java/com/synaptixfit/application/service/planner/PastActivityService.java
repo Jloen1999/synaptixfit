@@ -11,6 +11,7 @@ import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.planner.PastActivity;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.Priority;
+import com.synaptixfit.domain.model.planner.SportDetails;
 import com.synaptixfit.domain.model.planner.TimeRange;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
@@ -63,7 +64,7 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
         Instant now = clock.instant();
         PastActivity activity = new PastActivity(command.start(), command.minutes(), command.title(),
                 command.effort(), command.type(), command.subjectId(), command.kind(), command.distanceMeters(),
-                command.source());
+                command.source(), command.sport());
         activity.requireLoggableAt(now);
         if (activity.subjectId() != null && subjects.findOwned(command.userId(), activity.subjectId()).isEmpty()) {
             throw new PlannerSubjectNotFoundException(activity.subjectId());
@@ -94,8 +95,8 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
         // La actividad se guarda antes de completar: así la carga física sale ya con sus minutos reales
         // (BlockCompletionService los lee con ActivityMinutesPort).
         if (activity.type() == ActivityType.SPORT) {
-            logged.save(block.id(), command.userId(), activity.kind(), activity.minutes(), activity.distanceMeters(),
-                    activity.source(), now);
+            logged.save(block.id(), command.userId(), activity.kind(), activity.sport(), activity.minutes(),
+                    activity.distanceMeters(), activity.source(), now);
         }
         SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), block.id(), true,
                 activity.effort());
@@ -110,7 +111,9 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
         int effort = Guard.range(command.effort(), "effort", 1, 10);
         Instant now = clock.instant();
         // Primero la actividad y después completar: la carga física lee ya los minutos nuevos.
-        logged.save(command.blockId(), command.userId(), command.kind(), command.minutes(),
+        // Un evento hecho como actividad (la carrera grabada desde su entreno) solo sabe su clase.
+        logged.save(command.blockId(), command.userId(), command.kind(),
+                SportDetails.fromLegacy(command.kind(), null), command.minutes(),
                 command.distanceMeters(), command.source(), now);
         SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), command.blockId(), true,
                 effort);

@@ -4,6 +4,10 @@ import com.synaptixfit.domain.model.planner.ActivityKind;
 import com.synaptixfit.domain.model.planner.ActivitySource;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.LoggedSportActivity;
+import com.synaptixfit.domain.model.planner.MatchResult;
+import com.synaptixfit.domain.model.planner.Sport;
+import com.synaptixfit.domain.model.planner.SportDetails;
+import com.synaptixfit.domain.model.planner.SportMode;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.port.output.planner.ActivityMinutesPort;
@@ -17,7 +21,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
 /**
- * Implementa {@link LoggedActivityRepositoryPort} sobre {@code actividades_apuntadas} (V1041) y los bloques de deporte
+ * Implementa {@link LoggedActivityRepositoryPort} sobre {@code actividades_apuntadas} (V1041, V1083) y los bloques de deporte
  * completados de {@code horarios_academicos}; el esfuerzo sale de su registro de carga física
  * ({@code registros_carga_fisica.bloque_id}). Los minutos del bloque se calculan en Java (SQL estándar).
  */
@@ -31,12 +35,13 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort, 
     }
 
     @Override
-    public void save(UUID blockId, UUID userId, ActivityKind kind, int minutes, Integer distanceMeters,
-                     ActivitySource source, Instant now) {
+    public void save(UUID blockId, UUID userId, ActivityKind kind, SportDetails sport, int minutes,
+                     Integer distanceMeters, ActivitySource source, Instant now) {
         // Guardar o reemplazar: un evento desmarcado conserva su fila y, al volver a hacerlo (p. ej. grabando otra vez
         // la carrera), se sustituye en vez de chocar con la clave primaria. SQL estándar (ADR 0012), sin ON CONFLICT.
         int updated = jdbc.sql("UPDATE actividades_apuntadas SET clase = :kind, minutos_reales = :minutes,"
-                        + " distancia_metros = :distance, origen = :source, creado_en = :now"
+                        + " distancia_metros = :distance, origen = :source, creado_en = :now, deporte = :sport,"
+                        + " deporte_nombre = :sportName, modalidad = :mode, resultado = :result, marcador = :score"
                         + " WHERE bloque_id = :block AND usuario_id = :user")
                 .param("block", blockId)
                 .param("user", userId)
@@ -45,12 +50,19 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort, 
                 .param("distance", distanceMeters)
                 .param("source", source.name())
                 .param("now", Timestamp.from(now))
+                .param("sport", sport.sport().name())
+                .param("sportName", sport.name())
+                .param("mode", name(sport.mode()))
+                .param("result", name(sport.result()))
+                .param("score", sport.scoreText())
                 .update();
         if (updated > 0) {
             return;
         }
         jdbc.sql("INSERT INTO actividades_apuntadas (bloque_id, usuario_id, clase, minutos_reales, distancia_metros,"
-                        + " origen, creado_en) VALUES (:block, :user, :kind, :minutes, :distance, :source, :now)")
+                        + " origen, creado_en, deporte, deporte_nombre, modalidad, resultado, marcador)"
+                        + " VALUES (:block, :user, :kind, :minutes, :distance, :source, :now, :sport, :sportName,"
+                        + " :mode, :result, :score)")
                 .param("block", blockId)
                 .param("user", userId)
                 .param("kind", kind.name())
@@ -58,7 +70,16 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort, 
                 .param("distance", distanceMeters)
                 .param("source", source.name())
                 .param("now", Timestamp.from(now))
+                .param("sport", sport.sport().name())
+                .param("sportName", sport.name())
+                .param("mode", name(sport.mode()))
+                .param("result", name(sport.result()))
+                .param("score", sport.scoreText())
                 .update();
+    }
+
+    private static String name(Enum<?> value) {
+        return value == null ? null : value.name();
     }
 
     /**
@@ -88,7 +109,8 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort, 
                 .query(Long.class)
                 .single();
         var items = jdbc.sql("SELECT b.id, b.hora_inicio, b.hora_fin, b.temas, a.clase, a.minutos_reales,"
-                        + " a.distancia_metros, a.origen, c.desnivel_metros, r.rpe_sesion FROM horarios_academicos b"
+                        + " a.distancia_metros, a.origen, a.deporte, a.deporte_nombre, a.modalidad, a.resultado,"
+                        + " a.marcador, c.desnivel_metros, r.rpe_sesion FROM horarios_academicos b"
                         + " LEFT JOIN actividades_apuntadas a ON a.bloque_id = b.id"
                         + " LEFT JOIN carreras_gps c ON c.bloque_id = b.id"
                         + " LEFT JOIN registros_carga_fisica r ON r.bloque_id = b.id"
@@ -109,12 +131,18 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort, 
                     String kind = rs.getString("clase");
                     Number effort = (Number) rs.getObject("rpe_sesion");
                     String source = rs.getString("origen");
+                    String sportCode = rs.getString("deporte");
+                    String mode = rs.getString("modalidad");
+                    String result = rs.getString("resultado");
+                    SportDetails details = sportCode == null ? null : new SportDetails(Sport.valueOf(sportCode),
+                            rs.getString("deporte_nombre"), mode == null ? null : SportMode.valueOf(mode),
+                            result == null ? null : MatchResult.valueOf(result), rs.getString("marcador"));
                     return new LoggedSportActivity(rs.getObject("id", UUID.class), start, minutes,
                             rs.getString("temas"), kind == null ? null : ActivityKind.valueOf(kind),
                             (Integer) rs.getObject("distancia_metros"),
                             effort == null ? null : (int) Math.round(effort.doubleValue()),
                             source == null ? null : ActivitySource.valueOf(source),
-                            (Integer) rs.getObject("desnivel_metros"));
+                            (Integer) rs.getObject("desnivel_metros"), details);
                 })
                 .list();
         return new PageResult<>(items, page.page(), page.size(), total);

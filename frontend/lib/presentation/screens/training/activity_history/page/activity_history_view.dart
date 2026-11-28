@@ -11,6 +11,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_routes.dart';
 import '../../widgets/run_labels.dart';
+import '../../widgets/sport_labels.dart';
 import '../bloc/activity_history_bloc.dart';
 
 /// Pestaña «Actividades y partidos» del historial: deporte hecho fuera de las
@@ -145,6 +146,15 @@ class SportActivityTile extends StatelessWidget {
         };
     final pace = activity.paceSecondsPerKm;
     final figures = <(String, String?)>[
+      if (activity.sport case final s? when s.mode == SportMode.training)
+        (SportLabels.mode(l10n, SportMode.training), null),
+      if (activity.sport?.result case final r?)
+        (
+          [SportLabels.result(l10n, r), ?activity.sport?.scoreText].join(' '),
+          null,
+        )
+      else if (activity.sport?.scoreText case final score?)
+        (score, null),
       (l10n.trainingActivityMinutes(activity.minutes), null),
       if (activity.distanceMeters case final m?)
         (l10n.trainingActivityDistance(number.format(m / 1000)), null),
